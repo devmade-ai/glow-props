@@ -1,21 +1,26 @@
 # glow-props
 
-A static site that delivers fetchable text files.
+A static file host deployed via GitHub Pages. Serves fetchable config files — like `CLAUDE.md` — so Claude Code sessions across any project can pull shared rules from a single URL.
 
-## Structure
+## How It Works
 
-```
-index.html          Landing page listing available texts
-texts/              Directory of text files
-  hello.txt         Sample text
-```
+1. Files in this repo are deployed to GitHub Pages automatically on push to `main`.
+2. Any file becomes fetchable at `https://devmade-ai.github.io/glow-props/<path>`.
 
-## Usage
+## Hosted Files
 
-1. Add `.txt` or `.md` files to `texts/`.
-2. Link them from `index.html`.
-3. Deploy to any static host (GitHub Pages, Netlify, etc.).
+| File | URL | Purpose |
+|------|-----|---------|
+| `CLAUDE.md` | `https://devmade-ai.github.io/glow-props/CLAUDE.md` | Global AI assistant rules (process, principles, code standards, documentation, prohibitions) |
 
-### GitHub Pages
+## Adding Files
 
-Enable Pages in your repo settings, set source to the branch you want, and root `/`. Your texts will be available at `https://<user>.github.io/glow-props/texts/<filename>`.
+1. Add any `.md`, `.txt`, or other static file to the repo root or a subdirectory.
+2. Push to `main`.
+3. Access it at `https://devmade-ai.github.io/glow-props/<path>`.
+
+## Deployment
+
+Automated via GitHub Actions. The workflow at `.github/workflows/deploy.yml` deploys to GitHub Pages on every push to `main`.
+
+**Setup:** In repo Settings > Pages, set the source to **GitHub Actions**.
