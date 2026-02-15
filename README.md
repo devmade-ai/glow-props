@@ -19,6 +19,21 @@ A static file host deployed via GitHub Pages. Serves fetchable config files — 
 2. Push to `main`.
 3. Access it at `https://devmade-ai.github.io/glow-props/<path>`.
 
+## Using in Other Projects (Claude Code Web)
+
+To have any project automatically fetch these rules at session start, copy the `.claude/` directory into that project:
+
+```
+.claude/
+  hooks/
+    session-start.sh    # Fetches CLAUDE.md from GitHub Pages
+  settings.json         # Registers the SessionStart hook
+```
+
+The hook only runs in Claude Code web sessions (`$CLAUDE_CODE_REMOTE=true`). Local sessions are unaffected. If the fetch fails (e.g., offline), the session continues normally.
+
+Once merged into a repo's default branch, all future web sessions for that repo will pull the latest rules automatically.
+
 ## Deployment
 
 Automated via GitHub Actions. The workflow at `.github/workflows/deploy.yml` deploys to GitHub Pages on every push to `main`.
