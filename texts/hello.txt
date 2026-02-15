@@ -1,0 +1,5 @@
+Hello from glow-props!
+
+This is a sample text file served as a static asset.
+Add more .txt or .md files to the texts/ directory and
+link them from index.html to make them fetchable.
