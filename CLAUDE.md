@@ -9,8 +9,6 @@ To fetch it directly:
 curl -sf "https://devmade-ai.github.io/glow-props/CLAUDE.md"
 ```
 
-To auto-fetch at session start in any project, copy the `.claude/` directory from this repo into the target project. The `SessionStart` hook runs `curl` against the URL above and outputs the contents for Claude Code to read.
-
 ## Process
 
 1. **Read these preferences first**
