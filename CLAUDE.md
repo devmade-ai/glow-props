@@ -1,5 +1,14 @@
 # READ AND FOLLOW THE FUCKING PROCESS, PRINCIPLES, CODE STANDARDS, DOCUMENTATION, AI NOTES, AND PROHIBITIONS EVERY TIME
 
+## Fetching This File
+
+This file is hosted at: `https://devmade-ai.github.io/glow-props/CLAUDE.md`
+
+To fetch it directly:
+```bash
+curl -sf "https://devmade-ai.github.io/glow-props/CLAUDE.md"
+```
+
 ## Process
 
 1. **Read these preferences first**
@@ -94,7 +103,7 @@ Epic: feature-name
 Semver: patch|minor|major
 ```
 
-**Tags:** Use from the project's tag list (see docs/EXTRACTION_PLAYBOOK.md)
+**Tags:** Use relevant tags for the change (e.g., documentation, pwa, debug, ui, refactor, testing)
 **Complexity:** 1=trivial, 2=small, 3=medium, 4=large, 5=major rewrite
 **Urgency:** 1=planned, 2=normal, 3=elevated, 4=urgent, 5=critical
 **Impact:** internal, user-facing, infrastructure, or api
@@ -242,8 +251,6 @@ These footers are required on every commit. No exceptions.
 
 ## AI Notes
 
-<!-- Reminders and learnings for AI assistants - add to this as needed -->
-
 - Always read a file before attempting to edit it
 - Check for existing patterns in the codebase before creating new ones
 - Commit and push changes before ending a session
@@ -270,3 +277,32 @@ Never:
 - Proceed with assumptions when a single clarifying question would prevent a wrong commit
 
 ### REMINDER: READ AND FOLLOW THE FUCKING PROHIBITIONS EVERY TIME
+
+## Suggested Implementations
+
+Reference patterns for features that should be implemented across all projects. These describe the architecture and behavior to follow — adapt file names and frameworks to the specific project.
+
+### PWA System
+
+The PWA system has four parts:
+
+**Service worker & updates** (`usePWAUpdate.ts`): Wraps `vite-plugin-pwa`'s `useRegisterSW` hook with `registerType: 'prompt'` — users control when updates apply. Checks for new service worker versions every 60 minutes via `registration.update()`. Exposes `hasUpdate` boolean and `updateApp()` to the UI. The offline-ready notification auto-dismisses after 3 seconds.
+
+**Install detection** (`usePWAInstall.ts`): Detects browser type (Chrome/Edge/Brave/Safari/Firefox) via UA string. Captures the `beforeinstallprompt` event on Chromium browsers for native install. For Safari and Firefox, falls back to manual instruction flow. Tracks install analytics in localStorage (last 50 events: prompted, installed, dismissed, instructions-viewed). Respects standalone mode detection (hides prompt when already installed). Dismiss state persisted in localStorage.
+
+**Install prompt UI** (`InstallPrompt.tsx`): Renders a banner with "Install" (Chromium native) or "How to Install" (Safari/Firefox) buttons, plus a "Not now" dismiss. Hidden when already in standalone mode, dismissed, or unsupported browser.
+
+**Manual install instructions** (`InstallInstructionsModal.tsx`): Browser-specific step-by-step guides in a modal. Four variants: Safari iOS (Share → Add to Home Screen), Safari macOS (File → Add to Dock), Firefox Android (menu → Install), Firefox desktop (tells user to use Chrome/Edge instead). Plain language, aimed at non-technical users.
+
+### Debug System
+
+The debug system is an alpha-phase diagnostic tool, intended to be removed post-alpha.
+
+**In-memory event store** (`debugLog.ts`): A pub/sub system with a capped circular buffer of 200 entries. Each entry has: `id`, `timestamp`, `source` (boot/db/graph/graphData/pwa/render/global/seed), `severity` (info/success/warn/error), `event`, and optional `details`. Subscribers get notified on every new entry. Global `window.error` and `unhandledrejection` listeners are installed at module load time to capture crashes early. No external dependencies or persistence — purely in-memory.
+
+**Floating debug pill** (`DebugPill.tsx`): Renders in a separate React root (survives App crashes). Collapsed state shows a "dbg" pill with entry count and error/warning badges. Expanded state has two tabs:
+
+- **Log tab**: Scrollable list of all debug entries, color-coded by source and severity (e.g., `pwa` = teal, `error` = red). Timestamps formatted as `HH:MM:SS.mmm`. Auto-scrolls to newest entry.
+- **Environment tab**: Runtime diagnostics — URL, user agent, screen/viewport dimensions, online status, protocol, standalone mode, service worker support, IndexedDB support, and current timestamp.
+
+Actions: "Copy" generates a full debug report (environment + all log entries) to clipboard with textarea fallback for environments without Clipboard API. "Clear" wipes all entries.
