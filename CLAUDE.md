@@ -242,8 +242,6 @@ These footers are required on every commit. No exceptions.
 
 ## AI Notes
 
-<!-- Reminders and learnings for AI assistants - add to this as needed -->
-
 - Always read a file before attempting to edit it
 - Check for existing patterns in the codebase before creating new ones
 - Commit and push changes before ending a session
