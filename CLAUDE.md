@@ -94,7 +94,7 @@ Epic: feature-name
 Semver: patch|minor|major
 ```
 
-**Tags:** Use from the project's tag list (see docs/EXTRACTION_PLAYBOOK.md)
+**Tags:** Use relevant tags for the change (e.g., documentation, pwa, debug, ui, refactor, testing)
 **Complexity:** 1=trivial, 2=small, 3=medium, 4=large, 5=major rewrite
 **Urgency:** 1=planned, 2=normal, 3=elevated, 4=urgent, 5=critical
 **Impact:** internal, user-facing, infrastructure, or api
