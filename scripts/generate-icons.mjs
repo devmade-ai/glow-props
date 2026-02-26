@@ -6,7 +6,7 @@ import { fileURLToPath } from 'url';
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = join(__dirname, '..');
 const SVG_SOURCE = join(ROOT, 'assets', 'icon-source.svg');
-const IMAGES_DIR = join(ROOT, 'assets', 'images');
+const IMAGES_DIR = join(ROOT, 'public', 'assets', 'images');
 
 // Requirement: Generate all icon sizes from a single SVG source
 // Approach: Sharp resizes SVG → PNG at each target size
