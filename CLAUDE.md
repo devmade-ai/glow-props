@@ -294,6 +294,101 @@ The PWA system has four parts:
 
 **Manual install instructions** (`InstallInstructionsModal.tsx`): Browser-specific step-by-step guides in a modal. Four variants: Safari iOS (Share → Add to Home Screen), Safari macOS (File → Add to Dock), Firefox Android (menu → Install), Firefox desktop (tells user to use Chrome/Edge instead). Plain language, aimed at non-technical users.
 
+#### Fix: Timer Leaks on Unmount (Nested Timeouts)
+
+Debounce patterns using `setTimeout` leak when a component unmounts mid-timeout. The nested case is worse: a timeout callback sets *another* timeout, and cleaning up only the outer one leaves the inner one orphaned — it fires after unmount, updating state or triggering side effects on a dead component.
+
+**Broken:**
+```typescript
+useEffect(() => {
+  const outer = setTimeout(() => {
+    doSomething();
+    const inner = setTimeout(() => save(), 500); // leaked
+  }, 300);
+  return () => clearTimeout(outer); // only clears outer
+}, [value]);
+```
+
+**Fix — track all timeout IDs:**
+```typescript
+useEffect(() => {
+  const timeouts: ReturnType<typeof setTimeout>[] = [];
+
+  const outer = setTimeout(() => {
+    doSomething();
+    const inner = setTimeout(() => save(), 500);
+    timeouts.push(inner);
+  }, 300);
+  timeouts.push(outer);
+
+  return () => timeouts.forEach(clearTimeout);
+}, [value]);
+```
+
+**Alternative — mounted ref guard:**
+```typescript
+const mountedRef = useRef(true);
+useEffect(() => () => { mountedRef.current = false; }, []);
+
+// In any async/timeout callback:
+if (!mountedRef.current) return;
+```
+
+**General rule:** Every `setTimeout`, `setInterval`, `addEventListener`, or `subscribe` call inside a `useEffect` needs a corresponding cleanup in the return function. If callbacks create *new* async operations, those need cleanup too.
+
+#### Fix: PWA Install Prompt Race Condition
+
+In SPAs, the `beforeinstallprompt` event can fire before the framework mounts. This event fires once — if nothing is listening, it's lost, and the install prompt never appears.
+
+The timing on repeat visits (cached SW): Browser parses HTML → SW registers instantly from cache → browser fires `beforeinstallprompt` → **nothing listening yet** → React mounts, `useEffect` attaches listener → **too late**.
+
+**Part 1: Inline script in `index.html` (before any module scripts)**
+
+```html
+<script>
+  window.addEventListener('beforeinstallprompt', function (e) {
+    e.preventDefault();
+    window.__pwaInstallPromptEvent = e;
+  });
+</script>
+```
+
+This is a classic (non-module) script — executes synchronously during HTML parse, before any `<script type="module">` begins loading. Stashes the event on `window` for the framework to pick up later. `e.preventDefault()` suppresses the browser's default mini-infobar so you control the UX.
+
+**Part 2: Framework hook consumes the stashed event**
+
+```typescript
+function consumeEarlyCapturedEvent(): BeforeInstallPromptEvent | null {
+  const win = window as unknown as Record<string, unknown>;
+  const captured = win.__pwaInstallPromptEvent as BeforeInstallPromptEvent | undefined;
+  if (captured) {
+    delete win.__pwaInstallPromptEvent;
+    return captured;
+  }
+  return null;
+}
+
+// In your hook:
+const [deferredPrompt, setDeferredPrompt] = useState(consumeEarlyCapturedEvent);
+
+// Fallback listener for first-visit case (SW registers after mount)
+useEffect(() => {
+  if (deferredPrompt) return; // already have it
+
+  const handler = (e: Event) => {
+    e.preventDefault();
+    setDeferredPrompt(e as BeforeInstallPromptEvent);
+  };
+
+  window.addEventListener('beforeinstallprompt', handler);
+  return () => window.removeEventListener('beforeinstallprompt', handler);
+}, [deferredPrompt]);
+```
+
+**Why both parts:** On repeat visits (cached SW), the event fires before mount — the inline script catches it. On first visits (SW registers late), the event fires after mount — the `useEffect` listener catches it. Neither alone covers both cases.
+
+**Framework-agnostic:** The inline HTML script is identical for any framework. Only the consumption changes (Vue: `ref()` in `onMounted`, Svelte: `onMount`, vanilla: `DOMContentLoaded`).
+
 ### Debug System
 
 The debug system is an alpha-phase diagnostic tool, intended to be removed post-alpha.
