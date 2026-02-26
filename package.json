@@ -1,0 +1,12 @@
+{
+  "name": "glow-props",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Static file host for shared Claude Code configuration, deployed via GitHub Pages.",
+  "scripts": {
+    "generate-icons": "node scripts/generate-icons.mjs"
+  },
+  "devDependencies": {
+    "sharp": "^0.34.5"
+  }
+}
