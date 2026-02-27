@@ -1,4 +1,4 @@
-# READ AND FOLLOW THE FUCKING PROCESS, PRINCIPLES, CODE STANDARDS, DOCUMENTATION, AI NOTES, AND PROHIBITIONS EVERY TIME
+# READ AND FOLLOW THE PROCESS, PRINCIPLES, CODE STANDARDS, DOCUMENTATION, AI NOTES, AND PROHIBITIONS EVERY TIME
 
 ## Fetching This File
 
@@ -15,7 +15,7 @@ curl -sf "https://devmade-ai.github.io/glow-props/CLAUDE.md"
 2. **Gather context from documentation** (CLAUDE.md, relevant docs/)
 3. **Then proceed with the task**
 
-### REMINDER: READ AND FOLLOW THE FUCKING PROCESS EVERY TIME
+### REMINDER: READ AND FOLLOW THE PROCESS EVERY TIME
 
 ## Principles
 
@@ -27,7 +27,7 @@ curl -sf "https://devmade-ai.github.io/glow-props/CLAUDE.md"
 6. **Follow conventions** - Best practices and consistent patterns
 7. **Repeatable process** - Follow consistent steps to ensure all the above
 
-### REMINDER: READ AND FOLLOW THE FUCKING PRINCIPLES EVERY TIME
+### REMINDER: READ AND FOLLOW THE PRINCIPLES EVERY TIME
 
 ## Code Standards
 
@@ -114,7 +114,7 @@ Semver: patch|minor|major
 
 These footers are required on every commit. No exceptions.
 
-### REMINDER: READ AND FOLLOW THE FUCKING CODE STANDARDS EVERY TIME
+### REMINDER: READ AND FOLLOW THE CODE STANDARDS EVERY TIME
 
 ## Documentation
 
@@ -247,7 +247,7 @@ These footers are required on every commit. No exceptions.
 
 **Why:** Ensures consistent, thorough testing. Prevents regressions by documenting what to verify after changes.
 
-### REMINDER: READ AND FOLLOW THE FUCKING DOCUMENTATION EVERY TIME
+### REMINDER: READ AND FOLLOW THE DOCUMENTATION EVERY TIME
 
 ## AI Notes
 
@@ -261,7 +261,7 @@ These footers are required on every commit. No exceptions.
 - **Check build tools before building.** Run `npm install` or verify `node_modules/.bin/vite` exists before attempting `npm run build`. The `sharp` package may not be installed (used by prebuild icon generation), so use `./node_modules/.bin/vite build` directly to skip the prebuild step.
 - **Communication style:** Direct, concise responses. No filler phrases or conversational padding. State facts and actions. Ask specific questions with concrete options when clarification is needed.
 
-### REMINDER: READ AND FOLLOW THE FUCKING AI NOTES EVERY TIME
+### REMINDER: READ AND FOLLOW THE AI NOTES EVERY TIME
 
 ## Prohibitions
 
@@ -276,7 +276,7 @@ Never:
 - Remove features during "cleanup" without checking if they're documented as intentional (see AI_MISTAKES.md)
 - Proceed with assumptions when a single clarifying question would prevent a wrong commit
 
-### REMINDER: READ AND FOLLOW THE FUCKING PROHIBITIONS EVERY TIME
+### REMINDER: READ AND FOLLOW THE PROHIBITIONS EVERY TIME
 
 ## Suggested Implementations
 
