@@ -389,6 +389,40 @@ useEffect(() => {
 
 **Framework-agnostic:** The inline HTML script is identical for any framework. Only the consumption changes (Vue: `ref()` in `onMounted`, Svelte: `onMount`, vanilla: `DOMContentLoaded`).
 
+#### Fix: PWA Install Prompt — Chrome Android
+
+`beforeinstallprompt` never fires on Chrome Android despite valid SW registration, HTTPS, and icons in place. No install banner appears.
+
+**Manifest fixes** (`vite.config.ts` / manifest config):
+
+**1. Add explicit `id` field**
+```json
+"id": "/your-base-path/"
+```
+Chrome uses `id` for stable app identity. Without it, Chrome derives identity from `start_url`, which can cause mismatches on path changes or redeployments.
+
+**2. Add explicit `purpose: 'any'` to non-maskable icons**
+```json
+{ "src": "pwa-192x192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+{ "src": "pwa-512x512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" }
+```
+The spec defaults to `any` when omitted, but Chrome can be picky. Being explicit removes ambiguity.
+
+**3. Add `prefer_related_applications: false`**
+```json
+"prefer_related_applications": false
+```
+Without this, Chrome may skip `beforeinstallprompt` if it thinks a related native app exists.
+
+**Diagnostic logging** (composable / install detection code):
+
+Log install system state at boot so debug reports are useful:
+- Browser detected, standalone mode, dismiss state
+- Whether early-captured `beforeinstallprompt` was consumed
+- After 5 seconds with no `beforeinstallprompt`: log a warning with `hasManifestLink` (is `<link rel="manifest">` in DOM?) and `swControlled` (does `navigator.serviceWorker.controller` exist?)
+
+The `swControlled` check is key — on first visit, the SW registers but doesn't control the page until reload. If `swControlled: false` shows up, that's likely why Chrome won't fire the event.
+
 ### Debug System
 
 The debug system is an alpha-phase diagnostic tool, intended to be removed post-alpha.
