@@ -560,6 +560,8 @@ if (!mountedRef.current) return;
 4. **`registerType: 'prompt'`** gives users control. `autoUpdate` silently refreshes mid-work.
 5. **Diagnostic 5s timeout on Chromium** — log `hasManifestLink` and `swControlled` state for debugging. `swControlled: false` on first visit is expected (SW doesn't control until reload).
 6. **Clean up all timers** — every `setTimeout`/`setInterval` in `useEffect` needs cleanup. Nested timeouts need the array pattern or mounted ref guard.
+7. **400 DPI rasterization** — Sharp renders the SVG at ~5.5x the coordinate space before downscaling, so edges are anti-aliased from high-res source data instead of the default 72 DPI. The 192px PWA icon benefits most.
+8. **`shape-rendering="geometricPrecision"`** — tells the SVG rasterizer to prioritize accurate geometry over rendering speed. Add to the root `<svg>` element.
 
 ### Debug System
 
@@ -576,7 +578,7 @@ Actions: "Copy" generates a full debug report (environment + all log entries) to
 
 ### App Icons from SVG Source
 
-Single SVG source file, Sharp converts to all needed PNG sizes. One command regenerates everything.
+Single SVG source file, Sharp converts to all needed PNG sizes at 400 DPI for crisp edges. One command regenerates everything.
 
 **Dependencies:** `sharp` (devDependency)
 
@@ -612,6 +614,11 @@ const ROOT = join(__dirname, '..');
 const SVG_SOURCE = join(ROOT, 'assets', 'icon-source.svg');
 const IMAGES_DIR = join(ROOT, 'assets', 'images');
 
+// 400 DPI: ~5.5x the default 72 DPI. Sharp rasterizes the SVG at this density
+// before downscaling, so edges are anti-aliased from high-res source data.
+// The 192px PWA icon benefits most — arc and needle edges are noticeably crisper.
+const SVG_DENSITY = 400;
+
 const ICONS = [
   { name: 'icon.png', size: 1024 },
   { name: 'adaptive-icon.png', size: 1024 },
@@ -626,7 +633,7 @@ async function generate() {
   mkdirSync(IMAGES_DIR, { recursive: true });
 
   for (const icon of ICONS) {
-    await sharp(svgBuffer)
+    await sharp(svgBuffer, { density: SVG_DENSITY })
       .resize(icon.size, icon.size)
       .png()
       .toFile(join(IMAGES_DIR, icon.name));
@@ -645,6 +652,7 @@ generate().catch((err) => {
 
 **SVG design rules for maskable icons:**
 - Canvas must be square (e.g. `viewBox="0 0 1024 1024"`)
+- Add `shape-rendering="geometricPrecision"` to the root `<svg>` element — tells the rasterizer to prioritize accurate geometry over speed
 - Background fills entire canvas (no transparency)
 - Important content stays within the inner 80% (safe zone for maskable crop)
 - Design must be legible at 48px (favicon) — avoid fine details
