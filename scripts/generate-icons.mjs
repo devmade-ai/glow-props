@@ -9,8 +9,12 @@ const SVG_SOURCE = join(ROOT, 'assets', 'icon-source.svg');
 const IMAGES_DIR = join(ROOT, 'public', 'assets', 'images');
 
 // Requirement: Generate all icon sizes from a single SVG source
-// Approach: Sharp resizes SVG → PNG at each target size
+// Approach: Sharp rasterizes SVG at 400 DPI (~5.5x coordinate space) then resizes to target
+// Why 400 DPI: Default 72 DPI produces blurry edges at small sizes (especially 192px PWA icon).
+//   Rasterizing high then downscaling gives Sharp more source pixels for anti-aliasing.
+// Alternative: Increase SVG viewBox size — rejected, changes coordinate space for all elements
 // Sizes cover: app icon (1024), adaptive/splash (1024), PWA manifest (192, 512), favicon (48)
+const SVG_DENSITY = 400;
 const ICONS = [
   { name: 'icon.png', size: 1024 },
   { name: 'adaptive-icon.png', size: 1024 },
@@ -25,7 +29,7 @@ async function generate() {
   mkdirSync(IMAGES_DIR, { recursive: true });
 
   for (const icon of ICONS) {
-    await sharp(svgBuffer)
+    await sharp(svgBuffer, { density: SVG_DENSITY })
       .resize(icon.size, icon.size)
       .png()
       .toFile(join(IMAGES_DIR, icon.name));
