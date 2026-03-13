@@ -1,4 +1,4 @@
-# READ AND FOLLOW THE PROCESS, PRINCIPLES, CODE STANDARDS, DOCUMENTATION, AI NOTES, AND PROHIBITIONS EVERY TIME
+# READ AND FOLLOW THE PROCESS, PRINCIPLES, CODE STANDARDS, DOCUMENTATION, AI NOTES, TRIGGERS, AND PROHIBITIONS EVERY TIME
 
 ## Fetching This File
 
@@ -279,8 +279,50 @@ Never:
 - Skip error handling "for now"
 - Remove features during "cleanup" without checking if they're documented as intentional (see AI_MISTAKES.md)
 - Proceed with assumptions when a single clarifying question would prevent a wrong commit
+- Use interactive input prompts or selection UIs — list options as numbered text instead
 
 ### REMINDER: READ AND FOLLOW THE PROHIBITIONS EVERY TIME
+
+## Triggers
+
+Single-word commands that invoke focused analysis passes. Each trigger has a short alias. Type the word or alias to activate.
+
+| # | Trigger | Alias | What it does |
+|---|---------|-------|--------------|
+| 1 | `review` | `rev` | Code review — bugs, UI, UX, simplification |
+| 2 | `audit` | `aud` | Code quality — hacks, anti-patterns, latent bugs, race conditions |
+| 3 | `docs` | `doc` | Documentation accuracy vs actual code |
+| 4 | `mobile` | `tap` | Mobile UX — touch targets, viewport, safe areas |
+| 5 | `clean` | `cln` | Hygiene — duplication, refactor candidates, dead code |
+| 6 | `performance` | `perf` | Re-renders, expensive ops, bundle size, DB/API, memory |
+| 7 | `security` | `sec` | Injection, auth gaps, data exposure, insecure defaults, CVEs |
+| 8 | `debug` | `dbg` | Debug pill coverage — missing logs, noise |
+| 9 | `improve` | `imp` | Open-ended — architecture, DX, anything else |
+| 10 | `start` | `go` | Sequential sweep of all 9 above, one at a time |
+
+### Trigger behavior
+
+- Each trigger runs a single focused pass and reports findings.
+- Findings are listed as numbered text — never interactive prompts or selection UIs.
+- One trigger per response. Never combine multiple triggers in a single response.
+
+### `start` / `go` behavior
+
+Runs all 9 triggers in priority sequence, one at a time:
+
+`rev` → `aud` → `doc` → `tap` → `cln` → `perf` → `sec` → `dbg` → `imp`
+
+After each trigger completes and findings are presented, the user responds with one of:
+1. `fix` — apply the suggested fixes, then move to the next trigger
+2. `skip` — skip this trigger's findings and move to the next trigger
+3. `stop` — end the sweep entirely
+
+Rules:
+- Always pause after each trigger — never auto-advance to the next one.
+- Never run multiple triggers in one response.
+- Wait for the user's explicit `fix`, `skip`, or `stop` before proceeding.
+
+### REMINDER: READ AND FOLLOW THE TRIGGERS EVERY TIME
 
 ## Suggested Implementations
 
