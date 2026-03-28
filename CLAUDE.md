@@ -264,6 +264,7 @@ These footers are required on every commit. No exceptions.
   - Use `GITHUB_ALL_REPO_TOKEN` with the GitHub API (`api.github.com/repos/devmade-ai/{repo}/contents/{path}`) to read files from other devmade-ai repos
   - Use `$(printenv GITHUB_ALL_REPO_TOKEN)` not `$GITHUB_ALL_REPO_TOKEN` to avoid shell expansion issues
   - Never clone sibling repos — use the API instead
+- **Discontinued repos — skip entirely:** `plant-fur` and `coin-zapp` are discontinued. Do not check, audit, align, or include them in cross-project operations.
 
 ### REMINDER: READ AND FOLLOW THE AI NOTES EVERY TIME
 
