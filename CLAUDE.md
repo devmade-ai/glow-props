@@ -1395,7 +1395,7 @@ html.dark { color-scheme: dark; }
 - **`color-scheme: dark` on `html.dark`**: Without this, native `<select>`, `<input>`, `<option>` dropdowns, and default scrollbars remain light-themed even when the app is dark.
 - **Adapt the dark palette to your brand**: The hex values above use deep indigo backgrounds; swap for slate, neutral, or any dark hue. Keep the token names unchanged.
 
-Wire the tokens into Tailwind so components use `text-ui-text` instead of hardcoded colors:
+Wire the tokens into Tailwind so components use `text-ui-text` instead of hardcoded colors. **Using `ui.*` classes eliminates most `dark:` prefixes** — since the CSS variables resolve differently under `:root` vs `.dark`, `bg-ui-surface` auto-switches without needing `dark:bg-ui-surface`. This is the primary benefit of semantic tokens. However, hover states, placeholder text, dividers, and focus rings that reference non-semantic Tailwind colors (e.g., `hover:bg-zinc-100`) still need explicit `dark:` variants:
 
 ```js
 // tailwind.config.js (v3) — in theme.extend.colors:
@@ -1424,17 +1424,19 @@ Both look for a `.dark` class on `<html>`. The hook below manages that class.
 
 #### React Web (`useDarkMode.js`)
 
-Hook with localStorage persistence, system preference fallback, and safe storage access.
+Hook with localStorage persistence, system preference fallback, cross-tab sync, dynamic meta theme-color, and safe storage access.
 
 ```js
 import { useState, useEffect } from 'react'
 
-// Requirement: User-controlled dark/light mode with system fallback
-// Approach: localStorage persistence, .dark class on <html>, matchMedia listener
+// Requirement: User-controlled dark/light mode with system fallback and cross-tab sync
+// Approach: localStorage persistence, .dark class on <html>, matchMedia listener,
+//   storage event for cross-tab sync, dynamic meta theme-color update
 // Alternatives:
 //   - CSS-only prefers-color-scheme: Rejected — no user override possible
 //   - React Context: Rejected — overkill for web (DOM class is the source of truth)
 //   - Zustand/Redux: Rejected — theme is UI-only state, no cross-component actions
+//   - next-themes: Rejected — SSR/multi-theme/forced-page features not needed for SPA
 
 function safeStorageGet(key) {
   try { return localStorage.getItem(key) } catch { return null }
@@ -1451,7 +1453,7 @@ export function useDarkMode() {
     return window.matchMedia('(prefers-color-scheme: dark)').matches
   })
 
-  // Apply .dark class to <html> and persist
+  // Apply .dark class to <html>, persist, and update meta theme-color
   useEffect(() => {
     const root = document.documentElement
     if (isDark) {
@@ -1460,7 +1462,28 @@ export function useDarkMode() {
       root.classList.remove('dark')
     }
     safeStorageSet('darkMode', isDark)
+
+    // Dynamically update meta theme-color so Android Chrome address bar syncs
+    // with manual toggles, not just system preference changes.
+    // The two-tag media-query approach in HTML only handles pre-JS system preference.
+    const meta = document.querySelector('meta[name="theme-color"]')
+    if (meta) meta.setAttribute('content', isDark ? '#1a1a2e' : '#ffffff')
   }, [isDark])
+
+  // Cross-tab sync — when another tab changes darkMode in localStorage,
+  // update this tab to match. The storage event only fires in OTHER tabs
+  // (not the one that wrote), so there's no infinite loop risk.
+  // Both next-themes and use-dark-mode include this; without it, two tabs
+  // show different themes until the stale tab is refreshed.
+  useEffect(() => {
+    const handleStorage = (e) => {
+      if (e.key === 'darkMode' && e.newValue !== null) {
+        setIsDark(e.newValue === 'true')
+      }
+    }
+    window.addEventListener('storage', handleStorage)
+    return () => window.removeEventListener('storage', handleStorage)
+  }, [])
 
   // Track OS preference changes — only when user hasn't made an explicit choice
   useEffect(() => {
@@ -1482,6 +1505,8 @@ export function useDarkMode() {
 - **System preference is a fallback, not an override**: Once the user toggles manually, their choice is stored and system changes are ignored. Overriding a manual choice with OS preference changes is disorienting.
 - **`.dark` on `document.documentElement`**: Applying to `<html>` rather than `<body>` ensures `:root`-level styles and pseudo-elements also switch.
 - **No CSS transition on theme switch**: Instant switches are the industry standard (GitHub, Discord, VS Code). Transitions cause visual inconsistency — different elements change at different rates. If transitions are ever wanted, use the inject-remove-stylesheet pattern to disable them during programmatic switches.
+- **Cross-tab sync via `storage` event**: The `storage` event only fires in *other* tabs (not the one that wrote to localStorage), so there's no infinite loop risk. Without this, two tabs show different themes until the stale tab is refreshed. Both `next-themes` and `use-dark-mode` include this feature.
+- **Dynamic meta theme-color update**: The two `<meta name="theme-color">` tags with `media` queries only respond to *system* preference changes. When the user toggles in-app, the hook must also update the meta tag's `content` attribute so Android Chrome's address bar color syncs. Adapt the hex values (`#1a1a2e` / `#ffffff`) to match your project's `--color-surface` tokens.
 
 #### Flash Prevention (`index.html`)
 
@@ -1658,6 +1683,8 @@ function RootLayoutInner({ fontsLoaded }: { fontsLoaded: boolean }) {
 
 **Content themes vs app dark mode**: App theme (dark/light) controls the application chrome. Content themes (templates, canvas styles, color schemes) are independent — a user may want a light content theme while using the app in dark mode. Do not conflate these two concepts.
 
+**Debug pill in separate React root**: The debug pill renders in its own React root (survives App crashes) and cannot access `useDarkMode` or `AppThemeProvider`. On web, read the `.dark` class from `document.documentElement` directly to determine theme. Do not attempt to share React context across separate roots.
+
 #### Key Lessons
 
 1. **System preference is a fallback, not an override.** Once the user toggles manually, their choice persists. Overriding a manual choice with OS preference changes is disorienting.
@@ -1673,3 +1700,6 @@ function RootLayoutInner({ fontsLoaded }: { fontsLoaded: boolean }) {
 11. **No CSS transitions on theme switch.** Instant switches are the industry standard (GitHub, Discord, VS Code). Transitions cause visual inconsistency — different elements change at different rates. If transitions are ever wanted, use the inject-remove-stylesheet pattern to disable them during programmatic switches.
 12. **In Android PWA standalone mode, the manifest `theme_color` overrides meta tags.** If dynamic theme-color is needed in standalone, update the meta tag's `content` attribute via JS. On iOS, the meta tag approach works correctly in standalone.
 13. **Strict CSP blocks the flash prevention inline script.** For static hosting, precompute the script's SHA-256 hash and add `'sha256-<hash>'` to the CSP `script-src` directive. For SSR, use a per-request nonce. Most deployments don't set strict CSP — document as a caveat, not a blocker.
+14. **Cross-tab sync requires the `storage` event listener.** The `storage` event only fires in other tabs (not the one that wrote), so there is no infinite loop. Without it, toggling dark mode in one tab leaves other tabs on the old theme until refresh. This is a standard feature in `next-themes` and `use-dark-mode`.
+15. **Dynamic meta theme-color update is needed for manual toggles.** The two-tag `media` query approach only responds to system preference. When the user toggles in-app, update the meta tag's `content` attribute in the hook's `useEffect` so Android Chrome's address bar syncs. On iOS standalone PWAs, use `apple-mobile-web-app-status-bar-style: black-translucent` — it shows the page background through the status bar and is the only option that adapts to dark mode. iOS status bar text is always white with `black-translucent` (platform limitation).
+16. **Some Tailwind utilities still need `dark:` prefixes even with semantic tokens.** The `ui.*` token classes auto-switch for text, background, and border colors. But hover states (`hover:bg-zinc-100 dark:hover:bg-zinc-700`), placeholder text, dividers, and focus rings may still need explicit `dark:` variants because they reference non-semantic Tailwind colors.
