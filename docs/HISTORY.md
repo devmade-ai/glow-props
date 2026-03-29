@@ -5,9 +5,11 @@
 ### Theme & Dark Mode - Suggested Implementation Updates
 - Added cross-tab sync via `storage` event to `useDarkMode.js` hook template
 - Added dynamic meta theme-color update for manual toggle sync on Android Chrome
+- Fixed querySelector bug: switched to `querySelectorAll` to update both meta theme-color tags (querySelector only returns the first DOM match, leaving the second stale)
 - Documented debug pill theme detection pattern (separate React root reads `.dark` class)
 - Clarified that `ui.*` semantic token classes eliminate most `dark:` prefixes
-- Added Key Lessons 14-16: cross-tab sync, dynamic theme-color + iOS black-translucent, residual `dark:` prefix cases
+- Added PWA System cross-reference note linking manifest `theme_color` to dynamic meta updates
+- Reorganized Key Lessons into logical groups: Foundations, HTML & browser chrome, CSS & Tailwind, Storage & sync, React Native
 
 ## 2026-03-23
 
