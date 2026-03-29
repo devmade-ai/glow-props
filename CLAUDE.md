@@ -366,6 +366,7 @@ VitePWA({
 - **`id`**: Stable app identity. Without it, Chrome derives from `start_url` — breaks on config changes or redeployments.
 - **`prefer_related_applications: false`**: Without this, Chrome may skip `beforeinstallprompt` if it thinks a native app exists.
 - **Separate icon purposes**: `any` for standard display (192, 512), `maskable` for full-bleed (1024). Never combine `"any maskable"` — browsers pick the wrong one. Use a dedicated 1024x1024 for maskable.
+- **`theme_color` is a static fallback**: The manifest value applies before JS loads and overrides meta tags in Android PWA standalone mode. For apps with dark mode, the `useDarkMode` hook dynamically updates `<meta name="theme-color">` tags on manual toggles — see the Theme & Dark Mode section. The manifest value should match your default (light) theme.
 
 #### Install Prompt Race Condition (`index.html`)
 
@@ -1395,7 +1396,7 @@ html.dark { color-scheme: dark; }
 - **`color-scheme: dark` on `html.dark`**: Without this, native `<select>`, `<input>`, `<option>` dropdowns, and default scrollbars remain light-themed even when the app is dark.
 - **Adapt the dark palette to your brand**: The hex values above use deep indigo backgrounds; swap for slate, neutral, or any dark hue. Keep the token names unchanged.
 
-Wire the tokens into Tailwind so components use `text-ui-text` instead of hardcoded colors:
+Wire the tokens into Tailwind so components use `text-ui-text` instead of hardcoded colors. **Using `ui.*` classes eliminates most `dark:` prefixes** — since the CSS variables resolve differently under `:root` vs `.dark`, `bg-ui-surface` auto-switches without needing `dark:bg-ui-surface`. This is the primary benefit of semantic tokens. However, hover states, placeholder text, dividers, and focus rings that reference non-semantic Tailwind colors (e.g., `hover:bg-zinc-100`) still need explicit `dark:` variants:
 
 ```js
 // tailwind.config.js (v3) — in theme.extend.colors:
@@ -1424,17 +1425,19 @@ Both look for a `.dark` class on `<html>`. The hook below manages that class.
 
 #### React Web (`useDarkMode.js`)
 
-Hook with localStorage persistence, system preference fallback, and safe storage access.
+Hook with localStorage persistence, system preference fallback, cross-tab sync, dynamic meta theme-color, and safe storage access.
 
 ```js
 import { useState, useEffect } from 'react'
 
-// Requirement: User-controlled dark/light mode with system fallback
-// Approach: localStorage persistence, .dark class on <html>, matchMedia listener
+// Requirement: User-controlled dark/light mode with system fallback and cross-tab sync
+// Approach: localStorage persistence, .dark class on <html>, matchMedia listener,
+//   storage event for cross-tab sync, dynamic meta theme-color update
 // Alternatives:
 //   - CSS-only prefers-color-scheme: Rejected — no user override possible
 //   - React Context: Rejected — overkill for web (DOM class is the source of truth)
 //   - Zustand/Redux: Rejected — theme is UI-only state, no cross-component actions
+//   - next-themes: Rejected — SSR/multi-theme/forced-page features not needed for SPA
 
 function safeStorageGet(key) {
   try { return localStorage.getItem(key) } catch { return null }
@@ -1451,7 +1454,7 @@ export function useDarkMode() {
     return window.matchMedia('(prefers-color-scheme: dark)').matches
   })
 
-  // Apply .dark class to <html> and persist
+  // Apply .dark class to <html>, persist, and update meta theme-color
   useEffect(() => {
     const root = document.documentElement
     if (isDark) {
@@ -1460,7 +1463,33 @@ export function useDarkMode() {
       root.classList.remove('dark')
     }
     safeStorageSet('darkMode', isDark)
+
+    // Dynamically update ALL meta theme-color tags so Android Chrome address bar
+    // syncs with manual toggles, not just system preference changes.
+    // The two-tag media-query approach in HTML only handles pre-JS system preference.
+    // querySelectorAll (not querySelector) is required because the HTML has two tags
+    // with different media attributes — querySelector only returns the first one,
+    // leaving the second stale and potentially conflicting.
+    const color = isDark ? '#1a1a2e' : '#ffffff'
+    document.querySelectorAll('meta[name="theme-color"]').forEach(meta => {
+      meta.setAttribute('content', color)
+    })
   }, [isDark])
+
+  // Cross-tab sync — when another tab changes darkMode in localStorage,
+  // update this tab to match. The storage event only fires in OTHER tabs
+  // (not the one that wrote), so there's no infinite loop risk.
+  // Both next-themes and use-dark-mode include this; without it, two tabs
+  // show different themes until the stale tab is refreshed.
+  useEffect(() => {
+    const handleStorage = (e) => {
+      if (e.key === 'darkMode' && e.newValue !== null) {
+        setIsDark(e.newValue === 'true')
+      }
+    }
+    window.addEventListener('storage', handleStorage)
+    return () => window.removeEventListener('storage', handleStorage)
+  }, [])
 
   // Track OS preference changes — only when user hasn't made an explicit choice
   useEffect(() => {
@@ -1482,6 +1511,8 @@ export function useDarkMode() {
 - **System preference is a fallback, not an override**: Once the user toggles manually, their choice is stored and system changes are ignored. Overriding a manual choice with OS preference changes is disorienting.
 - **`.dark` on `document.documentElement`**: Applying to `<html>` rather than `<body>` ensures `:root`-level styles and pseudo-elements also switch.
 - **No CSS transition on theme switch**: Instant switches are the industry standard (GitHub, Discord, VS Code). Transitions cause visual inconsistency — different elements change at different rates. If transitions are ever wanted, use the inject-remove-stylesheet pattern to disable them during programmatic switches.
+- **Cross-tab sync via `storage` event**: The `storage` event only fires in *other* tabs (not the one that wrote to localStorage), so there's no infinite loop risk. Without this, two tabs show different themes until the stale tab is refreshed. Both `next-themes` and `use-dark-mode` include this feature.
+- **Dynamic meta theme-color update**: The two `<meta name="theme-color">` tags with `media` queries only respond to *system* preference changes. When the user toggles in-app, the hook updates *all* matching meta tags via `querySelectorAll` — not `querySelector`, which only returns the first match and leaves the second tag stale. Both tags get the same resolved color so Android Chrome's address bar syncs. Adapt the hex values (`#1a1a2e` / `#ffffff`) to match your project's `--color-surface` tokens.
 
 #### Flash Prevention (`index.html`)
 
@@ -1658,18 +1689,37 @@ function RootLayoutInner({ fontsLoaded }: { fontsLoaded: boolean }) {
 
 **Content themes vs app dark mode**: App theme (dark/light) controls the application chrome. Content themes (templates, canvas styles, color schemes) are independent — a user may want a light content theme while using the app in dark mode. Do not conflate these two concepts.
 
+**Debug pill in separate React root**: The debug pill renders in its own React root (survives App crashes) and cannot access `useDarkMode` or `AppThemeProvider`. On web, read the `.dark` class from `document.documentElement` directly to determine theme. Do not attempt to share React context across separate roots.
+
 #### Key Lessons
+
+**Foundations:**
 
 1. **System preference is a fallback, not an override.** Once the user toggles manually, their choice persists. Overriding a manual choice with OS preference changes is disorienting.
 2. **Flash prevention requires an inline `<script>` in `<head>`.** The React hook runs after mount — too late. The script must be classic (not `type="module"`), duplicate the localStorage/matchMedia logic, and run before any `<link>` tags.
-3. **Two `<meta name="theme-color">` tags with `media` queries.** One for light, one for dark. A single tag can't adapt before JS loads. Firefox ignores `theme-color` entirely — graceful no-op.
-4. **`.dark` class on `<html>`, not `<body>`.** Tailwind's `dark:` variant targets descendants of `.dark`. Placing it on `<html>` ensures `:root`-level styles and pseudo-elements also switch.
-5. **Semantic token names, not color names.** `text-default`, `surface`, `border` — not `gray-800`, `white`, `zinc-700`. Swapping the entire palette is a single-file change.
-6. **Use raw hex values in CSS, not `theme()`.** The `theme()` function is deprecated in Tailwind v4. Hex values work in both v3 and v4. V4 projects can optionally reference auto-generated `var(--color-zinc-800)` variables instead.
-7. **Tailwind v3 uses `darkMode: 'class'` in config. Tailwind v4 uses `@custom-variant dark` in CSS.** Both target `.dark` on `<html>`. See the Burger Menu Key Lessons for the full v4 directive.
-8. **`color-scheme: dark` on `html.dark` is required.** Without it, native form inputs, select dropdowns, and default scrollbars remain light-themed even in dark mode.
-9. **Wrap all localStorage access in try/catch.** Sandboxed iframes, disabled storage, and enterprise policies throw `SecurityError`. Fall back to system preference when storage is unavailable.
-10. **Hold the splash screen until theme is hydrated.** On React Native, `usePersistedState` loads asynchronously from AsyncStorage. Hiding the splash before the stored preference resolves causes a visible flash. Wait for both fonts and theme hydration.
-11. **No CSS transitions on theme switch.** Instant switches are the industry standard (GitHub, Discord, VS Code). Transitions cause visual inconsistency — different elements change at different rates. If transitions are ever wanted, use the inject-remove-stylesheet pattern to disable them during programmatic switches.
-12. **In Android PWA standalone mode, the manifest `theme_color` overrides meta tags.** If dynamic theme-color is needed in standalone, update the meta tag's `content` attribute via JS. On iOS, the meta tag approach works correctly in standalone.
-13. **Strict CSP blocks the flash prevention inline script.** For static hosting, precompute the script's SHA-256 hash and add `'sha256-<hash>'` to the CSP `script-src` directive. For SSR, use a per-request nonce. Most deployments don't set strict CSP — document as a caveat, not a blocker.
+3. **`.dark` class on `<html>`, not `<body>`.** Tailwind's `dark:` variant targets descendants of `.dark`. Placing it on `<html>` ensures `:root`-level styles and pseudo-elements also switch.
+4. **No CSS transitions on theme switch.** Instant switches are the industry standard (GitHub, Discord, VS Code). Transitions cause visual inconsistency — different elements change at different rates. If transitions are ever wanted, use the inject-remove-stylesheet pattern to disable them during programmatic switches.
+
+**HTML & browser chrome:**
+
+5. **Two `<meta name="theme-color">` tags with `media` queries.** One for light, one for dark. A single tag can't adapt before JS loads. Firefox ignores `theme-color` entirely — graceful no-op.
+6. **Dynamic meta theme-color update is needed for manual toggles.** The two-tag `media` query approach only responds to system preference. When the user toggles in-app, use `querySelectorAll('meta[name="theme-color"]')` — not `querySelector` — to update *all* matching tags. `querySelector` only returns the first DOM match, leaving the second tag stale with its original content and media attribute, which can conflict. On iOS standalone PWAs, use `apple-mobile-web-app-status-bar-style: black-translucent` — it shows the page background through the status bar and is the only option that adapts to dark mode. iOS status bar text is always white with `black-translucent` (platform limitation).
+7. **In Android PWA standalone mode, the manifest `theme_color` overrides meta tags.** If dynamic theme-color is needed in standalone, update the meta tag's `content` attribute via JS. On iOS, the meta tag approach works correctly in standalone.
+8. **Strict CSP blocks the flash prevention inline script.** For static hosting, precompute the script's SHA-256 hash and add `'sha256-<hash>'` to the CSP `script-src` directive. For SSR, use a per-request nonce. Most deployments don't set strict CSP — document as a caveat, not a blocker.
+
+**CSS & Tailwind:**
+
+9. **Semantic token names, not color names.** `text-default`, `surface`, `border` — not `gray-800`, `white`, `zinc-700`. Swapping the entire palette is a single-file change.
+10. **Use raw hex values in CSS, not `theme()`.** The `theme()` function is deprecated in Tailwind v4. Hex values work in both v3 and v4. V4 projects can optionally reference auto-generated `var(--color-zinc-800)` variables instead.
+11. **Tailwind v3 uses `darkMode: 'class'` in config. Tailwind v4 uses `@custom-variant dark` in CSS.** Both target `.dark` on `<html>`. See the Burger Menu Key Lessons for the full v4 directive.
+12. **`color-scheme: dark` on `html.dark` is required.** Without it, native form inputs, select dropdowns, and default scrollbars remain light-themed even in dark mode.
+13. **Some Tailwind utilities still need `dark:` prefixes even with semantic tokens.** The `ui.*` token classes auto-switch for text, background, and border colors. But hover states (`hover:bg-zinc-100 dark:hover:bg-zinc-700`), placeholder text, dividers, and focus rings may still need explicit `dark:` variants because they reference non-semantic Tailwind colors.
+
+**Storage & sync:**
+
+14. **Wrap all localStorage access in try/catch.** Sandboxed iframes, disabled storage, and enterprise policies throw `SecurityError`. Fall back to system preference when storage is unavailable.
+15. **Cross-tab sync requires the `storage` event listener.** The `storage` event only fires in other tabs (not the one that wrote), so there is no infinite loop. Without it, toggling dark mode in one tab leaves other tabs on the old theme until refresh. This is a standard feature in `next-themes` and `use-dark-mode`.
+
+**React Native:**
+
+16. **Hold the splash screen until theme is hydrated.** On React Native, `usePersistedState` loads asynchronously from AsyncStorage. Hiding the splash before the stored preference resolves causes a visible flash. Wait for both fonts and theme hydration.
