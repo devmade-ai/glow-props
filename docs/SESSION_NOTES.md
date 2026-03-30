@@ -1,23 +1,20 @@
 # Session Notes
 
 ## Worked on
-Strengthening the Theme & Dark Mode suggested implementation in CLAUDE.md — fixing a querySelector bug, adding cross-tab sync, improving cross-section references, and reorganizing Key Lessons.
+Removing the meta theme-color suggested implementation from CLAUDE.md — it caused status bar visibility issues and should not be suggested to consuming projects.
 
 ## Accomplished
-- Added `storage` event listener to `useDarkMode.js` hook for cross-tab theme sync
-- Added dynamic meta theme-color update using `querySelectorAll` (not `querySelector`)
-- Fixed querySelector bug: `querySelector` only returns the first of two meta theme-color tags, leaving the second stale — switched to `querySelectorAll` with `.forEach`
-- Added debug pill theme detection note to Related Patterns
-- Added clarification that `ui.*` semantic tokens eliminate most `dark:` prefixes
-- Added PWA System cross-reference note linking manifest `theme_color` to dynamic meta updates in Theme section
-- Reorganized 16 Key Lessons into 5 logical groups: Foundations, HTML & browser chrome, CSS & Tailwind, Storage & sync, React Native
-- Updated all documentation bullets and comments to reflect querySelectorAll fix
+- Removed the entire "Meta Theme-Color" section (HTML meta tags, media queries, documentation)
+- Removed dynamic meta theme-color update from `useDarkMode` hook
+- Removed Key Lessons #5-7 about theme-color (renumbered remaining lessons)
+- Removed theme-color references from hook description and code comments
+- Simplified `theme_color` manifest bullet to a one-liner (it's just a config field, not a pattern to follow)
 
 ## Current state
-- CLAUDE.md Theme & Dark Mode section is complete and internally consistent
-- All cross-section references verified (PWA System, Burger Menu, Debug System)
-- All changes are documentation/reference code only (glow-props has no runtime theme implementation)
+- CLAUDE.md no longer suggests any meta theme-color implementation
+- The `useDarkMode` hook only handles `.dark` class toggling, localStorage, and cross-tab sync
+- The manifest `theme_color` field is documented as a static config value, nothing more
 
 ## Key context
-- glow-props is a static file host — the `useDarkMode.js` hook in CLAUDE.md is a suggested implementation template for consuming projects, not running code
-- The CLAUDE.md file size issue was not addressed this session — would require moving Suggested Implementations to a separate file
+- glow-props is a static file host — CLAUDE.md contains suggested implementation templates for consuming projects
+- The removed suggestion told projects to dynamically switch theme-color between background colors, which caused invisible status bar text when the OS color scheme opposed the app theme

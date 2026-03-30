@@ -1,5 +1,13 @@
 # History
 
+## 2026-03-30
+
+### Theme & Dark Mode - Remove meta theme-color suggestion
+- Removed entire "Meta Theme-Color" section from suggested implementation (HTML meta tags, media queries, docs)
+- Removed dynamic meta theme-color update from `useDarkMode` hook
+- Removed Key Lessons #5-7 about theme-color, renumbered remaining lessons
+- The suggestion caused invisible status bar text when the OS color scheme opposed the app theme
+
 ## 2026-03-29
 
 ### Theme & Dark Mode - Suggested Implementation Updates
