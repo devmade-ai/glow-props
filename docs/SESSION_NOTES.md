@@ -1,21 +1,20 @@
 # Session Notes
 
 ## Worked on
-Fixing PWA status bar color in CLAUDE.md suggested implementation — brand color was replaced with generic background colors during dark mode implementation, causing visibility issues.
+Removing the meta theme-color suggested implementation from CLAUDE.md — it caused status bar visibility issues and should not be suggested to consuming projects.
 
 ## Accomplished
-- Changed meta theme-color from background colors (`#ffffff`/`#1a1a2e`) to brand color (`#10b981`) in HTML template
-- Simplified from two media-query meta tags to one constant brand color tag
-- Removed dynamic meta theme-color update from `useDarkMode` hook entirely (brand color is constant, no JS update needed)
-- Updated manifest `theme_color` documentation to explain branding intent
-- Rewrote Key Lessons #5-7 to document the status-bar-as-branding-surface principle
+- Removed the entire "Meta Theme-Color" section (HTML meta tags, media queries, documentation)
+- Removed dynamic meta theme-color update from `useDarkMode` hook
+- Removed Key Lessons #5-7 about theme-color (renumbered remaining lessons)
+- Removed theme-color references from hook description and code comments
+- Simplified `theme_color` manifest bullet to a one-liner (it's just a config field, not a pattern to follow)
 
 ## Current state
-- CLAUDE.md Theme & Dark Mode section consistently uses brand color for status bar
-- All three affected areas updated: HTML meta tags, JS constants, documentation
-- Status bar visibility issue resolved — mid-tone brand color works in both OS modes
+- CLAUDE.md no longer suggests any meta theme-color implementation
+- The `useDarkMode` hook only handles `.dark` class toggling, localStorage, and cross-tab sync
+- The manifest `theme_color` field is documented as a static config value, nothing more
 
 ## Key context
-- glow-props is a static file host — these are suggested implementation templates, not running code
-- The core insight: status bar is a branding surface, not a content surface — it should never match page background colors
-- The visibility bug: switching to background colors means OS-opposite color scheme makes status bar text invisible
+- glow-props is a static file host — CLAUDE.md contains suggested implementation templates for consuming projects
+- The removed suggestion told projects to dynamically switch theme-color between background colors, which caused invisible status bar text when the OS color scheme opposed the app theme

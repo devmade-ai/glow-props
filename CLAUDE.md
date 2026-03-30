@@ -366,7 +366,7 @@ VitePWA({
 - **`id`**: Stable app identity. Without it, Chrome derives from `start_url` — breaks on config changes or redeployments.
 - **`prefer_related_applications: false`**: Without this, Chrome may skip `beforeinstallprompt` if it thinks a native app exists.
 - **Separate icon purposes**: `any` for standard display (192, 512), `maskable` for full-bleed (1024). Never combine `"any maskable"` — browsers pick the wrong one. Use a dedicated 1024x1024 for maskable.
-- **`theme_color` is a branding surface**: The status bar carries your brand color, not the page background. A mid-tone brand color (like `#10b981`) provides enough contrast for status bar text (white or black) in both light and dark OS modes. Switching theme-color between light/dark background colors causes visibility issues — if the OS is set to the opposite scheme from the app, status bar text becomes invisible (light-on-light or dark-on-dark). The manifest value overrides meta tags in Android PWA standalone mode.
+- **`theme_color`**: Static fallback for the browser chrome. Overrides meta tags in Android PWA standalone mode.
 
 #### Install Prompt Race Condition (`index.html`)
 
@@ -1425,14 +1425,14 @@ Both look for a `.dark` class on `<html>`. The hook below manages that class.
 
 #### React Web (`useDarkMode.js`)
 
-Hook with localStorage persistence, system preference fallback, cross-tab sync, dynamic meta theme-color, and safe storage access.
+Hook with localStorage persistence, system preference fallback, cross-tab sync, and safe storage access.
 
 ```js
 import { useState, useEffect } from 'react'
 
 // Requirement: User-controlled dark/light mode with system fallback and cross-tab sync
 // Approach: localStorage persistence, .dark class on <html>, matchMedia listener,
-//   storage event for cross-tab sync, dynamic meta theme-color update
+//   storage event for cross-tab sync
 // Alternatives:
 //   - CSS-only prefers-color-scheme: Rejected — no user override possible
 //   - React Context: Rejected — overkill for web (DOM class is the source of truth)
@@ -1527,19 +1527,6 @@ Place before any `<link>` or `<script type="module">` tags. Executes synchronous
 - **Same logic as the hook**: Duplicates the localStorage/matchMedia check. If you change the storage key in the hook, update it here too.
 - **try/catch**: Handles environments where localStorage is unavailable. Falls back to system preference via matchMedia.
 - **CSP note**: Strict Content Security Policy without `unsafe-inline` blocks inline scripts. For static hosting, precompute the script's SHA-256 hash and add it to the CSP: `script-src 'self' 'sha256-<hash>'`. For server-rendered pages, use a per-request nonce.
-
-#### Meta Theme-Color
-
-A single tag with the brand color. The status bar is a branding surface — it carries the brand color, not the page background:
-
-```html
-<meta name="theme-color" content="#10b981" />
-```
-
-- **Use the brand color, not background colors**: Switching between `#ffffff` (light) and `#1a1a2e` (dark) causes visibility problems — if the phone's OS is set to the opposite color scheme from the app, status bar text (time, battery, wifi) becomes invisible (light text on light background, or dark text on dark background). A mid-tone brand color provides enough contrast for status bar text in both OS modes.
-- **One tag, not two**: Since the brand color is the same regardless of color scheme, media queries are unnecessary. The brand color is constant.
-- **Firefox ignores `theme-color` entirely**: This is a graceful no-op — the browser chrome stays its default color.
-- **Android PWA override**: In standalone mode, the manifest's `theme_color` overrides meta tags.
 
 #### Print Override
 
@@ -1690,24 +1677,21 @@ function RootLayoutInner({ fontsLoaded }: { fontsLoaded: boolean }) {
 
 **HTML & browser chrome:**
 
-5. **The status bar is a branding surface, not a content surface.** Use your brand color (e.g., `#10b981`), not the page background color. Switching between light (`#ffffff`) and dark (`#1a1a2e`) background colors causes visibility problems — if the phone's OS is set to the opposite color scheme from the app, status bar text (time, battery, wifi icons) becomes invisible. A mid-tone brand color provides enough contrast for status bar text in both light and dark OS modes.
-6. **One `<meta name="theme-color">` tag with the brand color.** Since the brand color is constant regardless of light/dark mode, media queries are unnecessary. No dynamic JS update needed — the HTML tag is the source of truth. On iOS standalone PWAs, use `apple-mobile-web-app-status-bar-style: black-translucent` — it shows the page background through the status bar. iOS status bar text is always white with `black-translucent` (platform limitation).
-7. **In Android PWA standalone mode, the manifest `theme_color` overrides meta tags.** The manifest value should also be the brand color. On iOS, the meta tag approach works correctly in standalone.
-8. **Strict CSP blocks the flash prevention inline script.** For static hosting, precompute the script's SHA-256 hash and add `'sha256-<hash>'` to the CSP `script-src` directive. For SSR, use a per-request nonce. Most deployments don't set strict CSP — document as a caveat, not a blocker.
+5. **Strict CSP blocks the flash prevention inline script.** For static hosting, precompute the script's SHA-256 hash and add `'sha256-<hash>'` to the CSP `script-src` directive. For SSR, use a per-request nonce. Most deployments don't set strict CSP — document as a caveat, not a blocker.
 
 **CSS & Tailwind:**
 
-9. **Semantic token names, not color names.** `text-default`, `surface`, `border` — not `gray-800`, `white`, `zinc-700`. Swapping the entire palette is a single-file change.
-10. **Use raw hex values in CSS, not `theme()`.** The `theme()` function is deprecated in Tailwind v4. Hex values work in both v3 and v4. V4 projects can optionally reference auto-generated `var(--color-zinc-800)` variables instead.
-11. **Tailwind v3 uses `darkMode: 'class'` in config. Tailwind v4 uses `@custom-variant dark` in CSS.** Both target `.dark` on `<html>`. See the Burger Menu Key Lessons for the full v4 directive.
-12. **`color-scheme: dark` on `html.dark` is required.** Without it, native form inputs, select dropdowns, and default scrollbars remain light-themed even in dark mode.
-13. **Some Tailwind utilities still need `dark:` prefixes even with semantic tokens.** The `ui.*` token classes auto-switch for text, background, and border colors. But hover states (`hover:bg-zinc-100 dark:hover:bg-zinc-700`), placeholder text, dividers, and focus rings may still need explicit `dark:` variants because they reference non-semantic Tailwind colors.
+6. **Semantic token names, not color names.** `text-default`, `surface`, `border` — not `gray-800`, `white`, `zinc-700`. Swapping the entire palette is a single-file change.
+7. **Use raw hex values in CSS, not `theme()`.** The `theme()` function is deprecated in Tailwind v4. Hex values work in both v3 and v4. V4 projects can optionally reference auto-generated `var(--color-zinc-800)` variables instead.
+8. **Tailwind v3 uses `darkMode: 'class'` in config. Tailwind v4 uses `@custom-variant dark` in CSS.** Both target `.dark` on `<html>`. See the Burger Menu Key Lessons for the full v4 directive.
+9. **`color-scheme: dark` on `html.dark` is required.** Without it, native form inputs, select dropdowns, and default scrollbars remain light-themed even in dark mode.
+10. **Some Tailwind utilities still need `dark:` prefixes even with semantic tokens.** The `ui.*` token classes auto-switch for text, background, and border colors. But hover states (`hover:bg-zinc-100 dark:hover:bg-zinc-700`), placeholder text, dividers, and focus rings may still need explicit `dark:` variants because they reference non-semantic Tailwind colors.
 
 **Storage & sync:**
 
-14. **Wrap all localStorage access in try/catch.** Sandboxed iframes, disabled storage, and enterprise policies throw `SecurityError`. Fall back to system preference when storage is unavailable.
-15. **Cross-tab sync requires the `storage` event listener.** The `storage` event only fires in other tabs (not the one that wrote), so there is no infinite loop. Without it, toggling dark mode in one tab leaves other tabs on the old theme until refresh. This is a standard feature in `next-themes` and `use-dark-mode`.
+11. **Wrap all localStorage access in try/catch.** Sandboxed iframes, disabled storage, and enterprise policies throw `SecurityError`. Fall back to system preference when storage is unavailable.
+12. **Cross-tab sync requires the `storage` event listener.** The `storage` event only fires in other tabs (not the one that wrote), so there is no infinite loop. Without it, toggling dark mode in one tab leaves other tabs on the old theme until refresh. This is a standard feature in `next-themes` and `use-dark-mode`.
 
 **React Native:**
 
-16. **Hold the splash screen until theme is hydrated.** On React Native, `usePersistedState` loads asynchronously from AsyncStorage. Hiding the splash before the stored preference resolves causes a visible flash. Wait for both fonts and theme hydration.
+13. **Hold the splash screen until theme is hydrated.** On React Native, `usePersistedState` loads asynchronously from AsyncStorage. Hiding the splash before the stored preference resolves causes a visible flash. Wait for both fonts and theme hydration.
