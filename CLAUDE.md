@@ -366,7 +366,7 @@ VitePWA({
 - **`id`**: Stable app identity. Without it, Chrome derives from `start_url` — breaks on config changes or redeployments.
 - **`prefer_related_applications: false`**: Without this, Chrome may skip `beforeinstallprompt` if it thinks a native app exists.
 - **Separate icon purposes**: `any` for standard display (192, 512), `maskable` for full-bleed (1024). Never combine `"any maskable"` — browsers pick the wrong one. Use a dedicated 1024x1024 for maskable.
-- **`theme_color` is a static fallback**: The manifest value applies before JS loads and overrides meta tags in Android PWA standalone mode. For apps with dark mode, the `useDarkMode` hook dynamically updates `<meta name="theme-color">` tags on manual toggles — see the Theme & Dark Mode section. The manifest value should match your default (light) theme.
+- **`theme_color` is a branding surface**: The status bar carries your brand color, not the page background. A mid-tone brand color (like `#10b981`) provides enough contrast for status bar text (white or black) in both light and dark OS modes. Switching theme-color between light/dark background colors causes visibility issues — if the OS is set to the opposite scheme from the app, status bar text becomes invisible (light-on-light or dark-on-dark). The manifest value overrides meta tags in Android PWA standalone mode.
 
 #### Install Prompt Race Condition (`index.html`)
 
@@ -1464,15 +1464,13 @@ export function useDarkMode() {
     }
     safeStorageSet('darkMode', isDark)
 
-    // Dynamically update ALL meta theme-color tags so Android Chrome address bar
-    // syncs with manual toggles, not just system preference changes.
-    // The two-tag media-query approach in HTML only handles pre-JS system preference.
-    // querySelectorAll (not querySelector) is required because the HTML has two tags
-    // with different media attributes — querySelector only returns the first one,
-    // leaving the second stale and potentially conflicting.
-    const color = isDark ? '#1a1a2e' : '#ffffff'
+    // Status bar uses the brand color, not the page background.
+    // A mid-tone brand color provides contrast for status bar text in both
+    // light and dark OS modes. Switching to background colors (#ffffff/#1a1a2e)
+    // causes visibility issues when the OS scheme opposes the app theme.
+    const brandColor = '#10b981'
     document.querySelectorAll('meta[name="theme-color"]').forEach(meta => {
-      meta.setAttribute('content', color)
+      meta.setAttribute('content', brandColor)
     })
   }, [isDark])
 
@@ -1512,7 +1510,7 @@ export function useDarkMode() {
 - **`.dark` on `document.documentElement`**: Applying to `<html>` rather than `<body>` ensures `:root`-level styles and pseudo-elements also switch.
 - **No CSS transition on theme switch**: Instant switches are the industry standard (GitHub, Discord, VS Code). Transitions cause visual inconsistency — different elements change at different rates. If transitions are ever wanted, use the inject-remove-stylesheet pattern to disable them during programmatic switches.
 - **Cross-tab sync via `storage` event**: The `storage` event only fires in *other* tabs (not the one that wrote to localStorage), so there's no infinite loop risk. Without this, two tabs show different themes until the stale tab is refreshed. Both `next-themes` and `use-dark-mode` include this feature.
-- **Dynamic meta theme-color update**: The two `<meta name="theme-color">` tags with `media` queries only respond to *system* preference changes. When the user toggles in-app, the hook updates *all* matching meta tags via `querySelectorAll` — not `querySelector`, which only returns the first match and leaves the second tag stale. Both tags get the same resolved color so Android Chrome's address bar syncs. Adapt the hex values (`#1a1a2e` / `#ffffff`) to match your project's `--color-surface` tokens.
+- **Meta theme-color uses the brand color**: The status bar is a branding surface — it carries the brand color (`#10b981`), not the page background. The hook reinforces this on mount via `querySelectorAll` (not `querySelector`, which only returns the first match if multiple tags exist). Do not switch between light/dark background colors — this causes status bar text visibility issues when the OS color scheme opposes the app theme.
 
 #### Flash Prevention (`index.html`)
 
@@ -1541,17 +1539,16 @@ Place before any `<link>` or `<script type="module">` tags. Executes synchronous
 
 #### Meta Theme-Color
 
-Two tags with media queries cover both OS preferences before JS loads:
+A single tag with the brand color. The status bar is a branding surface — it carries the brand color, not the page background:
 
 ```html
-<meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)" />
-<meta name="theme-color" content="#1a1a2e" media="(prefers-color-scheme: dark)" />
+<meta name="theme-color" content="#10b981" />
 ```
 
-- **Two tags, not one**: A single tag can't adapt before JS loads. Two tags with `media` queries work immediately.
-- **Values should match your palette**: Light = your light `--color-surface`, dark = your dark `--color-surface`.
+- **Use the brand color, not background colors**: Switching between `#ffffff` (light) and `#1a1a2e` (dark) causes visibility problems — if the phone's OS is set to the opposite color scheme from the app, status bar text (time, battery, wifi) becomes invisible (light text on light background, or dark text on dark background). A mid-tone brand color provides enough contrast for status bar text in both OS modes.
+- **One tag, not two**: Since the brand color is the same regardless of color scheme, media queries are unnecessary. The brand color is constant.
 - **Firefox ignores `theme-color` entirely**: This is a graceful no-op — the browser chrome stays its default color.
-- **Android PWA override**: In standalone mode, the manifest's `theme_color` overrides meta tags. If dynamic theming is needed in standalone, update the meta tag's `content` attribute via JS in the hook's `useEffect`.
+- **Android PWA override**: In standalone mode, the manifest's `theme_color` overrides meta tags.
 
 #### Print Override
 
@@ -1702,9 +1699,9 @@ function RootLayoutInner({ fontsLoaded }: { fontsLoaded: boolean }) {
 
 **HTML & browser chrome:**
 
-5. **Two `<meta name="theme-color">` tags with `media` queries.** One for light, one for dark. A single tag can't adapt before JS loads. Firefox ignores `theme-color` entirely — graceful no-op.
-6. **Dynamic meta theme-color update is needed for manual toggles.** The two-tag `media` query approach only responds to system preference. When the user toggles in-app, use `querySelectorAll('meta[name="theme-color"]')` — not `querySelector` — to update *all* matching tags. `querySelector` only returns the first DOM match, leaving the second tag stale with its original content and media attribute, which can conflict. On iOS standalone PWAs, use `apple-mobile-web-app-status-bar-style: black-translucent` — it shows the page background through the status bar and is the only option that adapts to dark mode. iOS status bar text is always white with `black-translucent` (platform limitation).
-7. **In Android PWA standalone mode, the manifest `theme_color` overrides meta tags.** If dynamic theme-color is needed in standalone, update the meta tag's `content` attribute via JS. On iOS, the meta tag approach works correctly in standalone.
+5. **The status bar is a branding surface, not a content surface.** Use your brand color (e.g., `#10b981`), not the page background color. Switching between light (`#ffffff`) and dark (`#1a1a2e`) background colors causes visibility problems — if the phone's OS is set to the opposite color scheme from the app, status bar text (time, battery, wifi icons) becomes invisible. A mid-tone brand color provides enough contrast for status bar text in both light and dark OS modes.
+6. **One `<meta name="theme-color">` tag with the brand color.** Since the brand color is constant regardless of light/dark mode, media queries are unnecessary. The hook's `useEffect` reinforces the brand color on mount. Use `querySelectorAll('meta[name="theme-color"]')` — not `querySelector` — in case multiple tags exist. On iOS standalone PWAs, use `apple-mobile-web-app-status-bar-style: black-translucent` — it shows the page background through the status bar. iOS status bar text is always white with `black-translucent` (platform limitation).
+7. **In Android PWA standalone mode, the manifest `theme_color` overrides meta tags.** The manifest value should also be the brand color. On iOS, the meta tag approach works correctly in standalone.
 8. **Strict CSP blocks the flash prevention inline script.** For static hosting, precompute the script's SHA-256 hash and add `'sha256-<hash>'` to the CSP `script-src` directive. For SSR, use a per-request nonce. Most deployments don't set strict CSP — document as a caveat, not a blocker.
 
 **CSS & Tailwind:**

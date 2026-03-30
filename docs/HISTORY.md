@@ -1,5 +1,14 @@
 # History
 
+## 2026-03-30
+
+### Theme & Dark Mode - Fix PWA Status Bar Color
+- Changed meta theme-color from page background colors (`#ffffff`/`#1a1a2e`) to brand color (`#10b981`)
+- Simplified from two media-query meta tags to one constant brand color tag
+- Updated `useDarkMode` hook to reinforce brand color instead of toggling between background colors
+- Rewrote Key Lessons and documentation to establish status-bar-as-branding-surface principle
+- Fixed visibility issue: background colors caused invisible status bar text when OS scheme opposed app theme
+
 ## 2026-03-29
 
 ### Theme & Dark Mode - Suggested Implementation Updates
