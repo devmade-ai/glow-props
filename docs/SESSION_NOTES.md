@@ -6,10 +6,9 @@ Fixing PWA status bar color in CLAUDE.md suggested implementation — brand colo
 ## Accomplished
 - Changed meta theme-color from background colors (`#ffffff`/`#1a1a2e`) to brand color (`#10b981`) in HTML template
 - Simplified from two media-query meta tags to one constant brand color tag
-- Updated `useDarkMode` hook to reinforce brand color instead of switching background colors
+- Removed dynamic meta theme-color update from `useDarkMode` hook entirely (brand color is constant, no JS update needed)
 - Updated manifest `theme_color` documentation to explain branding intent
 - Rewrote Key Lessons #5-7 to document the status-bar-as-branding-surface principle
-- Updated hook explanation bullet to match new approach
 
 ## Current state
 - CLAUDE.md Theme & Dark Mode section consistently uses brand color for status bar

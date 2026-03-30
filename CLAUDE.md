@@ -1454,7 +1454,7 @@ export function useDarkMode() {
     return window.matchMedia('(prefers-color-scheme: dark)').matches
   })
 
-  // Apply .dark class to <html>, persist, and update meta theme-color
+  // Apply .dark class to <html> and persist choice
   useEffect(() => {
     const root = document.documentElement
     if (isDark) {
@@ -1463,15 +1463,6 @@ export function useDarkMode() {
       root.classList.remove('dark')
     }
     safeStorageSet('darkMode', isDark)
-
-    // Status bar uses the brand color, not the page background.
-    // A mid-tone brand color provides contrast for status bar text in both
-    // light and dark OS modes. Switching to background colors (#ffffff/#1a1a2e)
-    // causes visibility issues when the OS scheme opposes the app theme.
-    const brandColor = '#10b981'
-    document.querySelectorAll('meta[name="theme-color"]').forEach(meta => {
-      meta.setAttribute('content', brandColor)
-    })
   }, [isDark])
 
   // Cross-tab sync — when another tab changes darkMode in localStorage,
@@ -1510,7 +1501,7 @@ export function useDarkMode() {
 - **`.dark` on `document.documentElement`**: Applying to `<html>` rather than `<body>` ensures `:root`-level styles and pseudo-elements also switch.
 - **No CSS transition on theme switch**: Instant switches are the industry standard (GitHub, Discord, VS Code). Transitions cause visual inconsistency — different elements change at different rates. If transitions are ever wanted, use the inject-remove-stylesheet pattern to disable them during programmatic switches.
 - **Cross-tab sync via `storage` event**: The `storage` event only fires in *other* tabs (not the one that wrote to localStorage), so there's no infinite loop risk. Without this, two tabs show different themes until the stale tab is refreshed. Both `next-themes` and `use-dark-mode` include this feature.
-- **Meta theme-color uses the brand color**: The status bar is a branding surface — it carries the brand color (`#10b981`), not the page background. The hook reinforces this on mount via `querySelectorAll` (not `querySelector`, which only returns the first match if multiple tags exist). Do not switch between light/dark background colors — this causes status bar text visibility issues when the OS color scheme opposes the app theme.
+
 
 #### Flash Prevention (`index.html`)
 
@@ -1700,7 +1691,7 @@ function RootLayoutInner({ fontsLoaded }: { fontsLoaded: boolean }) {
 **HTML & browser chrome:**
 
 5. **The status bar is a branding surface, not a content surface.** Use your brand color (e.g., `#10b981`), not the page background color. Switching between light (`#ffffff`) and dark (`#1a1a2e`) background colors causes visibility problems — if the phone's OS is set to the opposite color scheme from the app, status bar text (time, battery, wifi icons) becomes invisible. A mid-tone brand color provides enough contrast for status bar text in both light and dark OS modes.
-6. **One `<meta name="theme-color">` tag with the brand color.** Since the brand color is constant regardless of light/dark mode, media queries are unnecessary. The hook's `useEffect` reinforces the brand color on mount. Use `querySelectorAll('meta[name="theme-color"]')` — not `querySelector` — in case multiple tags exist. On iOS standalone PWAs, use `apple-mobile-web-app-status-bar-style: black-translucent` — it shows the page background through the status bar. iOS status bar text is always white with `black-translucent` (platform limitation).
+6. **One `<meta name="theme-color">` tag with the brand color.** Since the brand color is constant regardless of light/dark mode, media queries are unnecessary. No dynamic JS update needed — the HTML tag is the source of truth. On iOS standalone PWAs, use `apple-mobile-web-app-status-bar-style: black-translucent` — it shows the page background through the status bar. iOS status bar text is always white with `black-translucent` (platform limitation).
 7. **In Android PWA standalone mode, the manifest `theme_color` overrides meta tags.** The manifest value should also be the brand color. On iOS, the meta tag approach works correctly in standalone.
 8. **Strict CSP blocks the flash prevention inline script.** For static hosting, precompute the script's SHA-256 hash and add `'sha256-<hash>'` to the CSP `script-src` directive. For SSR, use a per-request nonce. Most deployments don't set strict CSP — document as a caveat, not a blocker.
 
