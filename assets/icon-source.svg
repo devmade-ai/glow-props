@@ -1,18 +1,18 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024" shape-rendering="geometricPrecision">
-  <!-- Requirement: "dm" lettermark icon for devmade-ai portfolio
-       Approach: Hand-drawn filled paths — no font dependencies, renders identically
-       in all environments (Sharp, browsers, social card crawlers).
-       Transparent background works in both light and dark mode headers.
-       Alternative: SVG <text> element — rejected, Sharp may not have the font installed -->
+  <!-- Requirement: Geometric icon for devmade-ai portfolio
+       Approach: Hexagon outline with dot grid inside — tech/network/node feel,
+       references the project portfolio. Built from basic shapes (polygon + circles),
+       no font dependencies, renders crisply at all sizes.
+       Alternative: Lettermark "dm" — rejected, hand-drawn text paths were unreliable -->
 
   <defs>
     <filter id="glow" x="-30%" y="-30%" width="160%" height="160%">
-      <feGaussianBlur in="SourceGraphic" stdDeviation="20" result="blur"/>
+      <feGaussianBlur in="SourceGraphic" stdDeviation="18" result="blur"/>
       <feColorMatrix in="blur" type="matrix"
         values="0 0 0 0 0.02
                 0 0 0 0 0.71
                 0 0 0 0 0.83
-                0 0 0 0.3 0" result="colored"/>
+                0 0 0 0.4 0" result="colored"/>
       <feMerge>
         <feMergeNode in="colored"/>
         <feMergeNode in="SourceGraphic"/>
@@ -20,55 +20,56 @@
     </filter>
   </defs>
 
-  <!-- "dm" lettermark — bold geometric filled paths, no font dependency
-       d: stem on RIGHT side (not left — that's "b"), bowl opens left
-       m: two humps with three vertical stems -->
-  <g filter="url(#glow)" fill="#06b6d4">
+  <g filter="url(#glow)">
+    <!-- Hexagon outline — centered at 512,512, radius ~400 -->
+    <polygon
+      points="512,112 858,312 858,712 512,912 166,712 166,312"
+      fill="none"
+      stroke="#06b6d4"
+      stroke-width="48"
+      stroke-linejoin="round"
+    />
 
-    <!-- "d" — stem on RIGHT + bowl opening LEFT, with counter cutout -->
-    <path fill-rule="evenodd" d="
-      M 395 160
-      L 475 160
-      L 475 740
-      L 395 740
-      L 395 690
-      C 360 730, 310 750, 250 750
-      A 220 220 0 0 1 30 530
-      A 220 220 0 0 1 250 310
-      C 310 310, 360 330, 395 370
-      Z
-      M 395 530
-      A 140 140 0 0 0 255 390
-      A 140 140 0 0 0 115 530
-      A 140 140 0 0 0 255 670
-      A 140 140 0 0 0 395 530
-      Z
-    "/>
+    <!-- Dot grid — 3x3 arrangement, evenly spaced inside hexagon
+         Dots are large enough to read at 48px favicon -->
+    <!-- Row 1 (y=340) -->
+    <circle cx="352" cy="340" r="36" fill="#06b6d4"/>
+    <circle cx="512" cy="340" r="36" fill="#06b6d4"/>
+    <circle cx="672" cy="340" r="36" fill="#06b6d4"/>
 
-    <!-- "m" — three stems + two arched humps -->
-    <path d="
-      M 520 320
-      L 600 320
-      L 600 400
-      C 630 350, 675 320, 730 320
-      C 790 320, 825 350, 845 400
-      C 875 350, 920 320, 975 320
-      C 1040 320, 1070 370, 1070 450
-      L 1070 740
-      L 990 740
-      L 990 470
-      C 990 410, 975 395, 945 395
-      C 910 395, 890 420, 890 470
-      L 890 740
-      L 810 740
-      L 810 470
-      C 810 410, 795 395, 765 395
-      C 730 395, 710 420, 710 470
-      L 710 740
-      L 600 740
-      L 600 400
-      L 520 400
-      Z
-    "/>
+    <!-- Row 2 (y=512) -->
+    <circle cx="352" cy="512" r="36" fill="#06b6d4"/>
+    <circle cx="512" cy="512" r="44" fill="#06b6d4"/>
+    <circle cx="672" cy="512" r="36" fill="#06b6d4"/>
+
+    <!-- Row 3 (y=684) -->
+    <circle cx="352" cy="684" r="36" fill="#06b6d4"/>
+    <circle cx="512" cy="684" r="36" fill="#06b6d4"/>
+    <circle cx="672" cy="684" r="36" fill="#06b6d4"/>
+
+    <!-- Connecting lines between dots — subtle network effect -->
+    <g stroke="#06b6d4" stroke-width="12" opacity="0.35">
+      <!-- Horizontal connections -->
+      <line x1="388" y1="340" x2="476" y2="340"/>
+      <line x1="548" y1="340" x2="636" y2="340"/>
+      <line x1="388" y1="512" x2="468" y2="512"/>
+      <line x1="556" y1="512" x2="636" y2="512"/>
+      <line x1="388" y1="684" x2="476" y2="684"/>
+      <line x1="548" y1="684" x2="636" y2="684"/>
+
+      <!-- Vertical connections -->
+      <line x1="352" y1="376" x2="352" y2="476"/>
+      <line x1="512" y1="376" x2="512" y2="468"/>
+      <line x1="672" y1="376" x2="672" y2="476"/>
+      <line x1="352" y1="548" x2="352" y2="648"/>
+      <line x1="512" y1="556" x2="512" y2="648"/>
+      <line x1="672" y1="548" x2="672" y2="648"/>
+
+      <!-- Diagonal connections from center -->
+      <line x1="475" y1="475" x2="389" y2="377"/>
+      <line x1="549" y1="475" x2="635" y2="377"/>
+      <line x1="475" y1="549" x2="389" y2="647"/>
+      <line x1="549" y1="549" x2="635" y2="647"/>
+    </g>
   </g>
 </svg>
