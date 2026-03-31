@@ -69,26 +69,6 @@ body > footer {
   flex-shrink: 0;
 }
 
-/* ===== Nav Layout Fix ===== */
-/* Requirement: Prevent header items from wrapping on narrow screens
-   Approach: Hide brand text on small screens, keep icon. Nav links stay visible.
-   Alternative: Shrink font — rejected, becomes illegible before it stops wrapping */
-@media (max-width: 480px) {
-  .logo strong {
-    display: none;
-  }
-}
-
-/* Requirement: Nav links must be readable on dark backgrounds
-   Approach: Use primary-inverse contrast for nav text, primary on hover
-   Alternative: Keep --pico-muted-color — rejected, grey on dark is low contrast */
-body > nav a:not(.logo):not([role]) {
-  color: var(--pico-color);
-}
-
-body > nav a:not(.logo):not([role]):hover {
-  color: var(--pico-primary);
-}
 
 /* ===== Icon Buttons (theme toggle, PDF download) ===== */
 /* Requirement: Minimal icon buttons in nav, 44px minimum touch target (Apple HIG)
@@ -122,11 +102,93 @@ body > nav a:not(.logo):not([role]):hover {
   opacity: 0.7;
 }
 
-/* Show sun in dark mode, moon in light mode */
-.icon-sun { display: none; }
-.icon-moon { display: block; }
-[data-theme="dark"] .icon-sun { display: block; }
-[data-theme="dark"] .icon-moon { display: none; }
+/* Show correct theme label based on current theme */
+.theme-label-dark { display: none; }
+.theme-label-light { display: inline; }
+[data-theme="dark"] .theme-label-dark { display: inline; }
+[data-theme="dark"] .theme-label-light { display: none; }
+
+/* ===== Burger Menu ===== */
+/* Requirement: Disclosure-pattern dropdown menu for nav actions
+   Approach: Vanilla JS toggle with backdrop, aria-expanded, Escape key close.
+   Uses disclosure pattern (not role="menu") per WAI-ARIA — this is navigation,
+   not an application menu (File/Edit/View).
+   Alternative: Inline nav links — rejected, clutters header on narrow screens */
+.burger-wrapper {
+  position: relative;
+}
+
+.burger-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  cursor: pointer;
+}
+
+.burger-dropdown {
+  position: absolute;
+  right: 0;
+  top: 100%;
+  margin-top: 0.5rem;
+  z-index: 50;
+  width: 14rem;
+  max-width: calc(100vw - 2rem);
+  border-radius: var(--pico-border-radius);
+  background: var(--pico-background-color);
+  border: 1px solid var(--pico-muted-border-color);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+  padding: 0.25rem 0;
+  overscroll-behavior: contain;
+}
+
+.burger-dropdown ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.burger-dropdown li {
+  margin: 0;
+  padding: 0;
+}
+
+.burger-separator {
+  height: 1px;
+  margin: 0.25rem 0;
+  background: var(--pico-muted-border-color);
+}
+
+/* Requirement: Menu items must be 44px minimum touch target (Apple HIG)
+   Approach: Padding creates the target, full-width block for easy tap */
+.burger-item {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 0.625rem 1rem;
+  min-height: 2.75rem;
+  font-size: 0.9rem;
+  font-family: inherit;
+  color: var(--pico-color);
+  background: none;
+  border: none;
+  cursor: pointer;
+  text-decoration: none;
+  transition: background-color 0.15s;
+}
+
+.burger-item:hover {
+  background-color: var(--pico-muted-border-color);
+  color: var(--pico-color);
+}
+
+.burger-item:focus-visible {
+  outline: 2px solid var(--pico-primary);
+  outline-offset: -2px;
+}
+
+.burger-item:active {
+  opacity: 0.7;
+}
 
 /* ===== Hero ===== */
 .hero {
