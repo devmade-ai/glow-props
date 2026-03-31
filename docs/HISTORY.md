@@ -1,5 +1,16 @@
 # History
 
+## 2026-03-31
+
+### Portfolio site — transform from file host to project hub
+- Built portfolio landing page with Projects, Tools, and Patterns sections
+- Added dark mode: CSS variable tokens, localStorage persistence, cross-tab sync, flash prevention via inline script
+- Added print-friendly CSS with `no-print` class and `break-inside: avoid`
+- Removed dead SessionStart hook (`.claude/` directory) — was only in this repo, redundant with local CLAUDE.md
+- Removed `public/texts/hello.txt` sample file
+- Updated README to reflect new purpose (portfolio, tools directory, pattern library)
+- Project classification: 7 user-facing apps, 4 internal tools, 2 discontinued (excluded)
+
 ## 2026-03-30
 
 ### Theme & Dark Mode - Remove meta theme-color suggestion

@@ -1,20 +1,27 @@
 # Session Notes
 
 ## Worked on
-Removing the meta theme-color suggested implementation from CLAUDE.md — it caused status bar visibility issues and should not be suggested to consuming projects.
+Transforming glow-props from a bare CLAUDE.md file host into a portfolio and resource hub.
 
 ## Accomplished
-- Removed the entire "Meta Theme-Color" section (HTML meta tags, media queries, documentation)
-- Removed dynamic meta theme-color update from `useDarkMode` hook
-- Removed Key Lessons #5-7 about theme-color (renumbered remaining lessons)
-- Removed theme-color references from hook description and code comments
-- Simplified `theme_color` manifest bullet to a one-liner (it's just a config field, not a pattern to follow)
+- Removed dead code: SessionStart hook (`.claude/` directory), `public/texts/hello.txt`
+- Built portfolio landing page with three sections: Projects (7 user-facing), Tools (4 internal), Patterns (7 engineering patterns)
+- Added dark mode with localStorage persistence, cross-tab sync, OS preference fallback, and flash prevention
+- Added print-friendly CSS (`@media print`, `no-print` class, `break-inside: avoid`)
+- Created `styles.css` with CSS variable theming (light/dark tokens)
+- Created `public/theme.js` for toggle, cross-tab sync, and OS preference tracking
+- Updated README to reflect new purpose (portfolio, tools directory, pattern library)
+- Updated all docs (SESSION_NOTES, HISTORY)
 
 ## Current state
-- CLAUDE.md no longer suggests any meta theme-color implementation
-- The `useDarkMode` hook only handles `.dark` class toggling, localStorage, and cross-tab sync
-- The manifest `theme_color` field is documented as a static config value, nothing more
+- Site builds cleanly with Vite, deploys to GitHub Pages
+- Three sections: user-facing projects, internal tools, engineering patterns
+- Dark mode works with persistence and flash prevention
+- CLAUDE.md still served at `/glow-props/CLAUDE.md` for direct access
+- Dead code removed (hook, sample text file)
 
 ## Key context
-- glow-props is a static file host — CLAUDE.md contains suggested implementation templates for consuming projects
-- The removed suggestion told projects to dynamically switch theme-color between background colors, which caused invisible status bar text when the OS color scheme opposed the app theme
+- Project classification: 7 user-facing, 4 internal (repo-tor, tool-till-tees, glow-props, canva-grid-assets), 2 discontinued (plant-fur, coin-zapp — excluded)
+- `theme.js` lives in `public/` (not root) so Vite copies it as-is without bundling — it's a classic script, not a module
+- The Vite `copyRootFiles` plugin still copies `CLAUDE.md` from root to `dist/`
+- repo-tor's `projects.json` has the canonical project listing with live URLs
