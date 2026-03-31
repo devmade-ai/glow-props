@@ -19,6 +19,7 @@
 - Scrubbed private repo docs (graphiki, few-lap, synctone, tool-till-tees) to remove env vars, database details, local URLs
 - Created `meta.json` per project: audience, use cases, data/privacy, tech stack, status, repo visibility
 - Extracted TutorialModal content as `TUTORIAL.md` for budgy-ting, canva-grid, graphiki, few-lap, synctone
+- Added sun-sea-o (Sancio) — private, README scrubbed, User Guide and Testing Guide copied
 - Created `docs/PROJECT_DOCS_STATUS.md` — tracks doc coverage and outstanding work
 - Created `docs/DOCS_UPDATE_GUIDE.md` — process for fetching, scrubbing, and updating mirrored docs
 - Configured Vite for multi-page build (index.html + project.html)

@@ -20,13 +20,14 @@ Also hosts `CLAUDE.md` — a comprehensive AI assistant ruleset used as a refere
 
 | Project | Description | Stack |
 |---------|-------------|-------|
-| [budgy-ting](https://devmade-ai.github.io/budgy-ting/) | Household cashflow tracker | JS, Vite, IndexedDB |
+| [budgy-ting](https://devmade-ai.github.io/budgy-ting/) | Household cashflow tracker | JS, Vue 3, Vite, IndexedDB |
 | [canva-grid](https://devmade-ai.github.io/canva-grid/) | Visual design tool | JS, Vite, Tailwind |
 | [graphiki](https://devmade-ai.github.io/graphiki/) | Graph-based knowledge workspace | TS, Cytoscape.js |
 | [model-pear](https://devmade-ai.github.io/model-pear/) | B2B software pricing tool | TS, React, Vite |
 | [see-veo](https://devmade-ai.github.io/see-veo/) | Personal CV/resume as PWA | TS, React, Tailwind |
 | [few-lap](https://few-lap.vercel.app) | Fuel station finder (SA) | TS, Expo, Supabase, Mapbox |
-| [synctone](https://synctone.vercel.app) | Anonymous tone-tagged messaging | TS, React, Supabase |
+| [synctone](https://synctone.vercel.app) | Anonymous tone-tagged messaging | TS, Expo, Supabase |
+| [sun-sea-o](https://sun-sea-o.vercel.app) | Module-based agreement builder | TS, React, Supabase |
 
 ### Internal Tools
 
@@ -58,11 +59,19 @@ glow-props/
   CLAUDE.md                     # AI assistant ruleset (reference for all projects)
   README.md                     # This file
   package.json                  # Vite + Sharp (devDependencies)
-  vite.config.js                # Build config + plugin to copy CLAUDE.md to dist/
+  vite.config.js                # Build config (multi-page, copies CLAUDE.md to dist/)
   index.html                    # Portfolio landing page
+  project.html                  # Project detail page (markdown viewer)
   styles.css                    # Site styles with dark mode and print support
   public/
     theme.js                    # Dark mode toggle with persistence and cross-tab sync
+    projects/                   # Mirrored docs per project
+      {name}/
+        meta.json               # Metadata (audience, use cases, privacy, status)
+        README.md               # Project overview
+        USER_GUIDE.md           # How to use (if available)
+        TESTING_GUIDE.md        # Test scenarios (if available)
+        TUTORIAL.md             # In-app tutorial steps (if available)
     assets/
       images/                   # Generated PNGs (from icon-source.svg)
   assets/
@@ -75,6 +84,8 @@ glow-props/
     TODO.md                     # Pending items
     AI_MISTAKES.md              # Learnings from past AI errors
     USER_ACTIONS.md             # Manual tasks requiring user intervention
+    PROJECT_DOCS_STATUS.md      # Doc coverage tracker per project
+    DOCS_UPDATE_GUIDE.md        # Process for updating mirrored docs
   .github/
     workflows/
       deploy.yml                # GitHub Pages deployment on push to main

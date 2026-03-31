@@ -15,7 +15,7 @@ Updated by AI assistants when docs are added or reviewed.
 |---------|------|--------|------------|---------------|----------|-------|
 | budgy-ting | public | Yes | Yes | Yes | Yes | All docs complete |
 | canva-grid | public | Yes | Yes | Yes | Yes | All docs complete |
-| graphiki | private | Yes | Yes | Yes | Yes | README copied as-is (no secrets) |
+| graphiki | private | Scrubbed | Yes | Yes | Yes | README: removed git clone URL, Getting Started, dev commands, project structure, configuration, internal doc links. |
 | model-pear | public | Yes | **No** | **No** | **No** | Missing user guide, testing guide, tutorial |
 | see-veo | public | Yes | **No** | **No** | **No** | Missing user guide, testing guide, tutorial |
 | few-lap | private | Scrubbed | Yes | Scrubbed | Yes | README: removed env vars, local URLs, project structure. Testing guide: removed SQL queries, database setup. |

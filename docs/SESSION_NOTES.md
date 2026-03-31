@@ -17,14 +17,14 @@ Transforming glow-props into a portfolio and resource hub with project detail pa
 
 ## Current state
 - Site builds cleanly, deploys to GitHub Pages
-- 10 projects with detail pages: 7 user-facing, 3 internal (+ canva-grid-assets)
+- 11 projects with detail pages: 8 user-facing (including sun-sea-o), 3 internal (+ canva-grid-assets)
 - Each project has: meta.json, README, and available docs (User Guide, Testing Guide, Tutorial)
 - Private repos have scrubbed docs — no env vars, database strings, or infrastructure details exposed
 - CLAUDE.md still served at `/glow-props/CLAUDE.md`
 
 ## Key context
 - Private repos: graphiki, few-lap, synctone, tool-till-tees
-- Missing docs: model-pear (no User Guide, Testing Guide, Tutorial), see-veo (same)
+- Missing docs: model-pear (no User Guide, Testing Guide, Tutorial), see-veo (same), sun-sea-o (no Tutorial)
 - `project.html` uses a custom markdown renderer (no external dependencies)
 - `theme.js` in `public/` — classic script, not a module (Vite copies as-is)
 - `docs/DOCS_UPDATE_GUIDE.md` has the full process for updating mirrored docs

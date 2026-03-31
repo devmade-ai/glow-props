@@ -202,6 +202,7 @@
       margin: 0.75rem 0;
       color: var(--color-text-subtle);
     }
+    .md-render .nested-list { margin: 0.25rem 0 0.25rem 1rem; }
     .md-render a { color: var(--color-accent); text-decoration: none; }
     .md-render a:hover { text-decoration: underline; }
     .md-render hr { border: none; border-top: 1px solid var(--color-border); margin: 1.5rem 0; }
@@ -266,6 +267,18 @@
     @media (max-width: 640px) {
       .doc-content { padding: 1rem; }
       .meta-grid { grid-template-columns: 1fr; }
+    }
+
+    @media print {
+      .doc-tabs, .doc-actions, .back-link { display: none !important; }
+      .meta-card, .doc-content {
+        break-inside: avoid;
+        page-break-inside: avoid;
+        border-color: #ccc !important;
+        box-shadow: none !important;
+      }
+      .meta-card { background: white !important; }
+      .doc-content { background: white !important; }
     }
   </style>
 </head>
@@ -360,10 +373,13 @@
           // Checkbox lists
           .replace(/^- \[x\] (.+)$/gm, '<li><input type="checkbox" checked disabled> $1</li>')
           .replace(/^- \[ \] (.+)$/gm, '<li><input type="checkbox" disabled> $1</li>')
-          // Unordered lists
+          // Unordered lists (indented and top-level)
+          .replace(/^  - (.+)$/gm, '<li class="nested">$1</li>')
           .replace(/^- (.+)$/gm, '<li>$1</li>')
           // Ordered lists
           .replace(/^\d+\. (.+)$/gm, '<li>$1</li>')
+          // Wrap consecutive nested <li> in nested <ul>
+          .replace(/((?:<li class="nested">.*<\/li>\s*)+)/g, '<ul class="nested-list">$1</ul>')
           // Wrap consecutive <li> in <ul>
           .replace(/((?:<li>.*<\/li>\s*)+)/g, '<ul>$1</ul>')
           // Paragraphs (lines not already tagged)

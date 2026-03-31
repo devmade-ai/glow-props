@@ -29,84 +29,13 @@ Graphiki runs entirely in your browser as a Progressive Web App. No server, no a
 | Layer | Technology |
 |-------|-----------|
 | Language | TypeScript |
-| Framework | React 19 + Vite 7 |
+| Framework | React + Vite |
 | Graph visualization | Cytoscape.js |
 | Storage | IndexedDB via Dexie.js |
 | Markdown | react-markdown + remark-gfm |
-| ML/Embeddings | @huggingface/transformers (all-MiniLM-L6-v2 via ONNX Web Worker) |
-| ML/Label suggestions | @huggingface/transformers (xtremedistil-l6-h256 via ONNX Web Worker) |
+| ML/Embeddings | Hugging Face Transformers (all-MiniLM-L6-v2 via ONNX Web Worker) |
+| ML/Label suggestions | Hugging Face Transformers (xtremedistil-l6-h256 via ONNX Web Worker) |
 | PWA | vite-plugin-pwa (Workbox) |
-| Testing | Vitest |
-
-## Getting Started
-
-### Prerequisites
-
-- Node.js 18+
-- npm 9+
-
-### Install and Run
-
-```bash
-git clone https://github.com/devmade-ai/graphiki.git
-cd graphiki
-npm install
-npm run dev
-```
-
-Open `http://localhost:5173` in your browser. On first visit, a Demo workspace with sample data is automatically created.
-
-### Commands
-
-| Command | Description |
-|---------|-------------|
-| `npm run dev` | Start development server |
-| `npm run build` | Type-check and build for production |
-| `npm run lint` | Run ESLint |
-| `npm run test` | Run tests (single run) |
-| `npm run test:watch` | Run tests in watch mode |
-| `npm run preview` | Preview production build locally |
-
-## Project Structure
-
-```
-src/
-├── types/            # TypeScript interfaces (GraphNode, Arc, Workspace, Views)
-├── db/               # Dexie.js database setup (IndexedDB)
-├── config.ts         # App configuration with runtime overrides
-├── data/             # Static seed and convention data
-├── services/         # Business logic (CRUD, query engine, analysis, import/export, embeddings)
-├── hooks/            # React hooks (graph data, workspaces, selection, PWA, embeddings)
-├── utils/            # Factories, event bus, helpers
-├── workers/          # Web Workers (embedding inference, label suggestion inference)
-├── components/
-│   ├── graph/        # Cytoscape.js integration
-│   ├── analysis/     # Graph algorithm UI
-│   ├── conventions/  # Import convention reference
-│   ├── panels/       # Detail panel (node/arc editing, bulk edit)
-│   ├── query/        # Interactive query builder (search + connect modes)
-│   ├── views/        # View switcher, timeline
-│   ├── importExport/ # Import/export with semantic merge review
-│   ├── duplicates/   # Standalone duplicate detection scanner
-│   ├── workspaces/   # Workspace manager (landing page)
-│   ├── layout/       # Detail drawer overlay (bottom sheet mobile, side panel desktop)
-│   ├── pwa/          # Install prompts and instructions
-│   ├── debug/        # Alpha-phase debug overlay
-│   └── ui/           # Context menu, modals, toast notifications, tutorial
-├── App.tsx           # Main app shell
-└── main.tsx          # Entry point
-docs/
-├── CODEBASE_DOCUMENTATION.md  # Comprehensive codebase guide (concepts, user flows, pitfalls)
-├── graph-wiki-discovery.md    # Architecture and design decisions
-├── TESTING_GUIDE.md           # Manual test scenarios
-└── working/                   # Historical plans and notes
-```
-
-## Documentation
-
-- **[Codebase Documentation](docs/CODEBASE_DOCUMENTATION.md)** — Comprehensive guide covering core concepts, user flows, feature reference, and architecture.
-- **[Discovery Document](docs/graph-wiki-discovery.md)** — Architecture, data model, technology decisions, and feature inventory.
-- **[Testing Guide](docs/TESTING_GUIDE.md)** — Manual test scenarios for cross-browser QA.
 
 ## Data Model
 
@@ -120,29 +49,8 @@ Graphiki uses a property graph model where both nodes and arcs (edges) are first
 
 No schema layer. Classification is driven entirely by labels.
 
-## Configuration
+## Documentation
 
-Graphiki supports runtime configuration for custom deployments. Set `window.__GRAPHIKI_CONFIG__` before the app loads:
-
-```html
-<script>
-  window.__GRAPHIKI_CONFIG__ = {
-    appTitle: 'My Knowledge Base',
-    enableImportExport: true,
-    enableAnalysis: true,
-    largeGraphThreshold: 500,
-    enableSemanticDuplicates: true,
-    semanticThreshold: 0.85,
-    autoComputeEmbeddings: false,
-    enableLabelSuggestions: true
-  };
-</script>
-```
-
-See [`src/config.ts`](src/config.ts) for all available options and defaults.
-
-## License
-
-[GNU General Public License v3.0](LICENSE)
-
-Copyright (c) devmade-ai
+- [User Guide](USER_GUIDE.md)
+- [Testing Guide](TESTING_GUIDE.md)
+- [Tutorial](TUTORIAL.md)
