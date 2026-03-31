@@ -6,15 +6,22 @@
   "badge": "PWA",
   "status": "active",
   "repo": "private",
-  "liveUrl": "https://devmade-ai.github.io/graphiki/",
-  "tech": ["TypeScript", "React", "Cytoscape.js", "Dexie.js", "IndexedDB", "Hugging Face Transformers"],
-  "audience": "Researchers, analysts, knowledge workers, and anyone who thinks in connections — people who need to map relationships between ideas, people, companies, or concepts.",
+  "liveUrl": "https://graphiki.vercel.app/",
+  "tech": [
+    "TypeScript",
+    "React",
+    "Cytoscape.js",
+    "Dexie.js",
+    "IndexedDB",
+    "Hugging Face Transformers"
+  ],
+  "audience": "Researchers, analysts, knowledge workers, and anyone who thinks in connections \u2014 people who need to map relationships between ideas, people, companies, or concepts.",
   "useCases": [
     "Build knowledge graphs with nodes, relationships, and properties",
     "Explore networks visually with interactive force-directed graphs",
     "Query your data with visual boolean logic (AND/OR/NOT) and relationship traversal",
     "Detect semantic duplicates using ML embeddings (all-MiniLM-L6-v2)",
-    "Run graph analysis — PageRank, centrality, shortest path, clustering",
+    "Run graph analysis \u2014 PageRank, centrality, shortest path, clustering",
     "Switch between graph and timeline views",
     "Import/export data as JSON with smart matching"
   ],

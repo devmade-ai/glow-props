@@ -1,15 +1,20 @@
 {
   "name": "canva-grid",
   "title": "Visual Design Tool",
-  "description": "Create visual designs — social posts, ads, presentations, stories, and more.",
+  "description": "Create visual designs \u2014 social posts, ads, presentations, stories, and more.",
   "category": "user-facing",
   "badge": "Design",
   "status": "active",
   "repo": "public",
-  "liveUrl": "https://devmade-ai.github.io/canva-grid/",
+  "liveUrl": "https://canva-grid.vercel.app/",
   "repoUrl": "https://github.com/devmade-ai/canva-grid",
-  "tech": ["JavaScript", "React", "Vite", "Tailwind CSS"],
-  "audience": "Anyone who needs to create visual content — social media managers, small business owners, students, or anyone who wants a quick design tool without signing up for a service.",
+  "tech": [
+    "JavaScript",
+    "React",
+    "Vite",
+    "Tailwind CSS"
+  ],
+  "audience": "Anyone who needs to create visual content \u2014 social media managers, small business owners, students, or anyone who wants a quick design tool without signing up for a service.",
   "useCases": [
     "Create social media posts with images, text, and custom layouts",
     "Design multi-page documents (slide decks, stories, booklets)",

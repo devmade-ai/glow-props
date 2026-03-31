@@ -6,10 +6,14 @@
   "badge": "Finance",
   "status": "active",
   "repo": "public",
-  "liveUrl": "https://devmade-ai.github.io/model-pear/",
+  "liveUrl": "https://model-pear-web.vercel.app/",
   "repoUrl": "https://github.com/devmade-ai/model-pear",
-  "tech": ["TypeScript", "React", "Vite"],
-  "audience": "South African B2B software companies looking to structure deals — founders, sales teams, and finance professionals who need to find the right pricing model.",
+  "tech": [
+    "TypeScript",
+    "React",
+    "Vite"
+  ],
+  "audience": "South African B2B software companies looking to structure deals \u2014 founders, sales teams, and finance professionals who need to find the right pricing model.",
   "useCases": [
     "Find the price where you hit your margin AND your client sees ROI",
     "Compare 6 transaction models with 47 variants side by side",

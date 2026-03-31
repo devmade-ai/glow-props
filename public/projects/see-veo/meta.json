@@ -6,10 +6,15 @@
   "badge": "PWA",
   "status": "active",
   "repo": "public",
-  "liveUrl": "https://devmade-ai.github.io/see-veo/",
+  "liveUrl": "https://see-veo.vercel.app/",
   "repoUrl": "https://github.com/devmade-ai/see-veo",
-  "tech": ["TypeScript", "React", "Vite", "Tailwind CSS"],
-  "audience": "The developer/owner — this is a personal CV site. Visitors are potential employers, clients, and collaborators.",
+  "tech": [
+    "TypeScript",
+    "React",
+    "Vite",
+    "Tailwind CSS"
+  ],
+  "audience": "The developer/owner \u2014 this is a personal CV site. Visitors are potential employers, clients, and collaborators.",
   "useCases": [
     "Showcase skills, projects, and activity to potential employers",
     "Download CV as PDF via browser print dialog",

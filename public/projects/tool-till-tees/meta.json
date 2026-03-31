@@ -6,8 +6,15 @@
   "badge": "API",
   "status": "active",
   "repo": "private",
-  "tech": ["TypeScript", "Vercel", "Supabase", "Nodemailer", "React", "Vite"],
-  "audience": "Internal infrastructure — provides backend services consumed by see-veo (contact form) and other frontends (form builder, Sancio agreement management).",
+  "tech": [
+    "TypeScript",
+    "Vercel",
+    "Supabase",
+    "Nodemailer",
+    "React",
+    "Vite"
+  ],
+  "audience": "Internal infrastructure \u2014 provides backend services consumed by see-veo (contact form) and other frontends (form builder, Sancio agreement management).",
   "useCases": [
     "Receive and deliver contact form submissions via SMTP",
     "Build and publish custom forms with conditional fields and validation",
@@ -25,5 +32,6 @@
     "userGuide": true,
     "testingGuide": true,
     "tutorial": false
-  }
+  },
+  "liveUrl": "https://tool-till-tees.vercel.app/"
 }

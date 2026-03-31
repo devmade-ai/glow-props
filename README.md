@@ -20,14 +20,15 @@ Also hosts `CLAUDE.md` — a comprehensive AI assistant ruleset used as a refere
 
 | Project | Description | Stack |
 |---------|-------------|-------|
-| [budgy-ting](https://devmade-ai.github.io/budgy-ting/) | Household cashflow tracker | JS, Vue 3, Vite, IndexedDB |
-| [canva-grid](https://devmade-ai.github.io/canva-grid/) | Visual design tool | JS, Vite, Tailwind |
-| [graphiki](https://devmade-ai.github.io/graphiki/) | Graph-based knowledge workspace | TS, Cytoscape.js |
-| [model-pear](https://devmade-ai.github.io/model-pear/) | B2B software pricing tool | TS, React, Vite |
-| [see-veo](https://devmade-ai.github.io/see-veo/) | Personal CV/resume as PWA | TS, React, Tailwind |
+| [budgy-ting](https://budgy-ting.vercel.app/) | Household cashflow tracker | JS, Vue 3, Vite, IndexedDB |
+| [canva-grid](https://canva-grid.vercel.app/) | Visual design tool | JS, Vite, Tailwind |
+| [graphiki](https://graphiki.vercel.app/) | Graph-based knowledge workspace | TS, Cytoscape.js |
+| [model-pear](https://model-pear-web.vercel.app/) | B2B software pricing tool | TS, React, Vite |
+| [see-veo](https://see-veo.vercel.app/) | Personal CV/resume as PWA | TS, React, Tailwind |
 | [few-lap](https://few-lap.vercel.app) | Fuel station finder (SA) | TS, Expo, Supabase, Mapbox |
 | [synctone](https://synctone.vercel.app) | Anonymous tone-tagged messaging | TS, Expo, Supabase |
 | [sun-sea-o](https://sun-sea-o.vercel.app) | Module-based agreement builder | TS, React, Supabase |
+| [four-ems](https://four-ems.vercel.app/) | Self-hosted form builder | TS, React, Supabase |
 
 ### Internal Tools
 
