@@ -10,6 +10,7 @@
     "generate-icons": "node scripts/generate-icons.mjs"
   },
   "devDependencies": {
+    "@picocss/pico": "^2.1.1",
     "sharp": "^0.34.5",
     "vite": "^7.3.1"
   }
