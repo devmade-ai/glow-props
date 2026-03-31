@@ -1,81 +1,34 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024" shape-rendering="geometricPrecision">
-  <!-- Background: deep navy -->
-  <rect width="1024" height="1024" rx="0" fill="#0f172a"/>
+  <!-- Requirement: "dm" lettermark icon for devmade-ai portfolio
+       Approach: Bold filled "dm" using a web font rendered as text element.
+       Transparent background works in both light/dark mode headers.
+       Alternative: Path-drawn letters — rejected, hard to get legible geometry -->
 
   <defs>
-    <!-- Outer glow around document -->
-    <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
-      <feGaussianBlur in="SourceGraphic" stdDeviation="40" result="blur"/>
+    <filter id="glow" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur in="SourceGraphic" stdDeviation="20" result="blur"/>
       <feColorMatrix in="blur" type="matrix"
-        values="0 0 0 0 0.35
-                0 0 0 0 0.65
-                0 0 0 0 1
-                0 0 0 0.6 0" result="colored"/>
+        values="0 0 0 0 0.02
+                0 0 0 0 0.71
+                0 0 0 0 0.83
+                0 0 0 0.3 0" result="colored"/>
       <feMerge>
         <feMergeNode in="colored"/>
         <feMergeNode in="SourceGraphic"/>
       </feMerge>
     </filter>
-
-    <!-- Subtle inner radial glow on background -->
-    <radialGradient id="bgGlow" cx="50%" cy="50%" r="50%">
-      <stop offset="0%" stop-color="#1e3a5f" stop-opacity="0.5"/>
-      <stop offset="100%" stop-color="#0f172a" stop-opacity="0"/>
-    </radialGradient>
-
-    <!-- Document face gradient -->
-    <linearGradient id="docFace" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0%" stop-color="#f8fafc"/>
-      <stop offset="100%" stop-color="#e2e8f0"/>
-    </linearGradient>
-
-    <!-- Folded corner gradient -->
-    <linearGradient id="foldGrad" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0%" stop-color="#cbd5e1"/>
-      <stop offset="100%" stop-color="#94a3b8"/>
-    </linearGradient>
   </defs>
 
-  <!-- Background radial glow -->
-  <rect width="1024" height="1024" fill="url(#bgGlow)"/>
-
-  <!-- Document group — centered in safe zone -->
-  <!-- Safe zone: 102-922 (820x820). Document: ~460x580, centered -->
-  <g filter="url(#glow)">
-    <!-- Document body with folded corner -->
-    <!-- Top-left: 282,192  Bottom-right: 742,832 -->
-    <!-- Fold: top-right corner, 120px fold -->
-    <path d="
-      M 312 212
-      L 622 212
-      L 742 332
-      L 742 812
-      Q 742 832, 722 832
-      L 332 832
-      Q 312 832, 312 812
-      Z
-    " fill="url(#docFace)"/>
-
-    <!-- Folded corner triangle -->
-    <path d="
-      M 622 212
-      L 622 332
-      Q 622 342, 632 342
-      L 742 342
-      L 742 332
-      Z
-    " fill="url(#foldGrad)"/>
-
-    <!-- Text lines on document — bold for small-size legibility -->
-    <!-- Line 1: wide -->
-    <rect x="382" y="420" width="280" height="28" rx="14" fill="#60a5fa" opacity="0.85"/>
-    <!-- Line 2: medium -->
-    <rect x="382" y="490" width="220" height="28" rx="14" fill="#60a5fa" opacity="0.55"/>
-    <!-- Line 3: wide -->
-    <rect x="382" y="560" width="260" height="28" rx="14" fill="#60a5fa" opacity="0.55"/>
-    <!-- Line 4: short -->
-    <rect x="382" y="630" width="160" height="28" rx="14" fill="#60a5fa" opacity="0.35"/>
-    <!-- Line 5: medium -->
-    <rect x="382" y="700" width="200" height="28" rx="14" fill="#60a5fa" opacity="0.35"/>
-  </g>
+  <!-- "dm" text — bold, geometric sans-serif, centered -->
+  <text
+    x="512" y="580"
+    text-anchor="middle"
+    dominant-baseline="central"
+    font-family="'Arial Black', 'Helvetica Neue', Arial, sans-serif"
+    font-weight="900"
+    font-size="520"
+    letter-spacing="-20"
+    fill="#06b6d4"
+    filter="url(#glow)"
+  >dm</text>
 </svg>
