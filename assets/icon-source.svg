@@ -1,8 +1,9 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024" shape-rendering="geometricPrecision">
   <!-- Requirement: "dm" lettermark icon for devmade-ai portfolio
-       Approach: Bold filled "dm" using a web font rendered as text element.
-       Transparent background works in both light/dark mode headers.
-       Alternative: Path-drawn letters — rejected, hard to get legible geometry -->
+       Approach: Hand-drawn filled paths — no font dependencies, renders identically
+       in all environments (Sharp, browsers, social card crawlers).
+       Transparent background works in both light and dark mode headers.
+       Alternative: SVG <text> element — rejected, Sharp may not have the font installed -->
 
   <defs>
     <filter id="glow" x="-30%" y="-30%" width="160%" height="160%">
@@ -19,16 +20,55 @@
     </filter>
   </defs>
 
-  <!-- "dm" text — bold, geometric sans-serif, centered -->
-  <text
-    x="512" y="580"
-    text-anchor="middle"
-    dominant-baseline="central"
-    font-family="'Arial Black', 'Helvetica Neue', Arial, sans-serif"
-    font-weight="900"
-    font-size="520"
-    letter-spacing="-20"
-    fill="#06b6d4"
-    filter="url(#glow)"
-  >dm</text>
+  <!-- "dm" lettermark — bold geometric filled paths, no font dependency
+       d: stem on RIGHT side (not left — that's "b"), bowl opens left
+       m: two humps with three vertical stems -->
+  <g filter="url(#glow)" fill="#06b6d4">
+
+    <!-- "d" — stem on RIGHT + bowl opening LEFT, with counter cutout -->
+    <path fill-rule="evenodd" d="
+      M 395 160
+      L 475 160
+      L 475 740
+      L 395 740
+      L 395 690
+      C 360 730, 310 750, 250 750
+      A 220 220 0 0 1 30 530
+      A 220 220 0 0 1 250 310
+      C 310 310, 360 330, 395 370
+      Z
+      M 395 530
+      A 140 140 0 0 0 255 390
+      A 140 140 0 0 0 115 530
+      A 140 140 0 0 0 255 670
+      A 140 140 0 0 0 395 530
+      Z
+    "/>
+
+    <!-- "m" — three stems + two arched humps -->
+    <path d="
+      M 520 320
+      L 600 320
+      L 600 400
+      C 630 350, 675 320, 730 320
+      C 790 320, 825 350, 845 400
+      C 875 350, 920 320, 975 320
+      C 1040 320, 1070 370, 1070 450
+      L 1070 740
+      L 990 740
+      L 990 470
+      C 990 410, 975 395, 945 395
+      C 910 395, 890 420, 890 470
+      L 890 740
+      L 810 740
+      L 810 470
+      C 810 410, 795 395, 765 395
+      C 730 395, 710 420, 710 470
+      L 710 740
+      L 600 740
+      L 600 400
+      L 520 400
+      Z
+    "/>
+  </g>
 </svg>
