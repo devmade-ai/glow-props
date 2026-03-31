@@ -3,6 +3,8 @@
 Tracks which documentation exists per project and what's outstanding.
 Updated by AI assistants when docs are added or reviewed.
 
+**Last mirrored:** 2026-03-31
+
 ## Status Key
 
 - Yes = doc exists and is mirrored in `public/projects/{name}/`
@@ -48,6 +50,9 @@ When updating mirrored docs from private repos, always remove:
 - Database schema details (CREATE TABLE, migrations, RLS policy SQL)
 - Deployment commands and infrastructure details
 - Supabase Studio URLs and SQL editor references
+- Git clone URLs to private repos
+- Project structure / file trees
+- Internal documentation links (BACKEND_SPEC, MIGRATION_GUIDE, etc.)
 
 Keep:
 - Feature descriptions and user-facing behavior
@@ -55,3 +60,16 @@ Keep:
 - Data/privacy information
 - API endpoint documentation (paths and descriptions, not auth implementation details)
 - UI test scenarios and regression checklists
+
+## Places to Update When Changing a Project
+
+When adding, removing, or modifying a project, update ALL of:
+
+1. `public/projects/{name}/meta.json` — metadata, liveUrl, docs flags
+2. `public/projects/{name}/*.md` — mirrored docs
+3. `index.html` — project card in the appropriate section
+4. `README.md` — project table in "Projects Featured"
+5. `docs/PROJECT_DOCS_STATUS.md` — this file
+6. `docs/SESSION_NOTES.md` — if relevant to the current session
+
+See `docs/DOCS_UPDATE_GUIDE.md` for the full step-by-step process.
