@@ -20,6 +20,7 @@ Updated by AI assistants when docs are added or reviewed.
 | see-veo | public | Yes | **No** | **No** | **No** | Missing user guide, testing guide, tutorial |
 | few-lap | private | Scrubbed | Yes | Scrubbed | Yes | README: removed env vars, local URLs, project structure. Testing guide: removed SQL queries, database setup. |
 | synctone | private | Scrubbed | Yes | Yes | Yes | README: removed database schema, local URLs, setup commands, RLS details. |
+| sun-sea-o | private | Scrubbed | Yes | Yes | **No** | README: removed env vars, localhost, setup commands, project structure, internal doc refs. No TutorialModal in source. |
 
 ## Internal Tools
 
