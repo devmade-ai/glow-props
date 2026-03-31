@@ -1,8 +1,6 @@
 /* Requirement: Custom overrides layered on top of Pico CSS Jade theme
    Approach: Only override what Pico doesn't handle — card grids, badges,
      tool items, pattern cards, hero sizing, and print styles
-   Alternative: Replace Pico entirely with custom CSS — rejected, Pico handles
-     typography, colors, dark mode, nav, article cards, tables, code, focus states
 
    Pico handles:
    - Typography (font sizes, line heights, spacing)
@@ -13,15 +11,14 @@
    - Tables, code blocks, blockquotes
    - Focus-visible outlines
    - Responsive container widths
+   - Section and block spacing
 
    We handle:
    - Font families (Space Grotesk headings, Inter body)
    - Card grid layout (multi-column)
-   - Badges
-   - Tool item compact cards
-   - Pattern card compact cards
+   - Badges (Pico has no badge component)
    - Hero section sizing
-   - Icon buttons (theme toggle, PDF)
+   - Icon buttons (override Pico's full-width button default)
    - Print overrides
 */
 
@@ -51,25 +48,27 @@ h1, h2, h3, h4, h5, h6 {
 
 /* ===== Icon Buttons (theme toggle, PDF download) ===== */
 /* Requirement: Minimal icon buttons in nav that don't look like Pico form buttons
-   Approach: Reset Pico's button styling for icon-only buttons
-   Alternative: Use <a> tags — rejected, buttons are semantically correct for actions */
+   Approach: Override Pico's button defaults (width: 100%, padding, background)
+   for icon-only buttons. !important needed because Pico uses high-specificity
+   selectors on button elements. */
 .icon-btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 2.25rem;
+  width: 2.25rem !important;
   height: 2.25rem;
-  padding: 0;
-  border: none;
+  padding: 0 !important;
+  margin: 0 !important;
+  border: none !important;
   border-radius: var(--pico-border-radius);
-  background: transparent;
+  background: transparent !important;
   color: var(--pico-muted-color);
   cursor: pointer;
   transition: background-color 0.15s, color 0.15s;
 }
 
 .icon-btn:hover {
-  background-color: var(--pico-muted-border-color);
+  background-color: var(--pico-muted-border-color) !important;
   color: var(--pico-color);
 }
 
@@ -82,7 +81,6 @@ h1, h2, h3, h4, h5, h6 {
 /* ===== Hero ===== */
 .hero {
   padding: 2rem 0 1rem;
-  margin-bottom: 0;
 }
 
 .hero h1 {
@@ -97,11 +95,7 @@ h1, h2, h3, h4, h5, h6 {
   max-width: 560px;
 }
 
-/* ===== Sections ===== */
-section {
-  margin-bottom: 1rem;
-}
-
+/* ===== Section Subtitles ===== */
 .section-subtitle {
   color: var(--pico-muted-color);
   margin-bottom: 1.5rem;
@@ -126,35 +120,30 @@ section {
   grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
 }
 
-/* Override Pico's article margin to work inside grid */
+/* Override Pico's article margin-bottom to work inside grid layout */
 .card-grid > article {
   margin: 0;
+  display: flex;
+  flex-direction: column;
 }
 
 .card-grid > article > p {
   flex: 1;
 }
 
-.card-grid > article {
-  display: flex;
-  flex-direction: column;
-}
-
-/* Card footer styling */
 .card-grid > article > footer {
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
 }
 
-.tech {
-  color: var(--pico-muted-color);
-}
-
+/* ===== Card Links ===== */
+/* Requirement: Action links at the bottom of cards (Details, Live app, Source)
+   Approach: Plain <div> with flex layout — NOT <nav>, which would get Pico's
+   nav styling (padding, spacing) applied incorrectly */
 .card-links {
   display: flex;
   gap: 1rem;
-  padding: 0;
 }
 
 .card-links a {
@@ -162,7 +151,12 @@ section {
   font-weight: 600;
 }
 
+.tech {
+  color: var(--pico-muted-color);
+}
+
 /* ===== Badges ===== */
+/* Pico has no badge component — fully custom */
 .badge {
   display: inline-block;
   padding: 0.1rem 0.5rem;
@@ -183,8 +177,6 @@ section {
 }
 
 /* ===== Tool Items (compact list cards) ===== */
-/* Requirement: Internal tools section uses a compact list instead of a card grid
-   Approach: Override Pico article padding and margin for dense layout */
 .tool-item {
   margin-bottom: 0.75rem;
 }
@@ -197,18 +189,14 @@ section {
   margin-bottom: 0.5rem;
 }
 
-.tool-item .card-links {
-  margin-bottom: 0;
-}
-
 /* ===== Pattern Cards ===== */
-.pattern-card > p {
-  flex: 1;
-}
-
 .pattern-card {
   display: flex;
   flex-direction: column;
+}
+
+.pattern-card > p {
+  flex: 1;
 }
 
 .pattern-card > footer {
@@ -222,7 +210,6 @@ section {
 /* ===== Footer ===== */
 body > footer {
   text-align: center;
-  padding: 2rem 0;
 }
 
 /* ===== Responsive ===== */
@@ -252,13 +239,5 @@ body > footer {
     break-inside: avoid;
     page-break-inside: avoid;
     box-shadow: none !important;
-  }
-
-  .hero {
-    padding: 0.5rem 0;
-  }
-
-  section {
-    padding: 0.5rem 0;
   }
 }
