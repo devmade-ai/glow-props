@@ -1,0 +1,38 @@
+{
+  "name": "budgy-ting",
+  "title": "Household Cashflow Tracker",
+  "description": "Track spending, detect recurring patterns, forecast cashflow with statistical models.",
+  "category": "user-facing",
+  "badge": "PWA",
+  "status": "active",
+  "repo": "public",
+  "liveUrl": "https://budgy-ting.vercel.app/",
+  "repoUrl": "https://github.com/devmade-ai/budgy-ting",
+  "tech": [
+    "JavaScript",
+    "Vue 3",
+    "Vite",
+    "Dexie.js",
+    "IndexedDB"
+  ],
+  "audience": "Individuals and households who want to understand and forecast their spending without sharing data with a cloud service.",
+  "useCases": [
+    "Import bank statements (CSV/JSON) and categorize transactions",
+    "Detect recurring spending patterns (rent, subscriptions, salary)",
+    "Forecast future cashflow using statistical models (Holt's exponential smoothing)",
+    "Track cash runway \u2014 how long your money will last",
+    "Compare spending across time periods with custom workspaces"
+  ],
+  "dataPrivacy": {
+    "storage": "All data stored locally on-device using IndexedDB. No server, no cloud.",
+    "authentication": "None required. No accounts.",
+    "export": "Full data exportable as JSON for backup or re-import.",
+    "thirdParty": "No data sent to any external service."
+  },
+  "docs": {
+    "readme": true,
+    "userGuide": true,
+    "testingGuide": true,
+    "tutorial": true
+  }
+}

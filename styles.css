@@ -1,0 +1,292 @@
+/* Requirement: Custom overrides layered on top of Pico CSS Jade theme
+   Approach: Only override what Pico doesn't handle — card grids, badges,
+     tool items, pattern cards, hero sizing, and print styles
+
+   Pico handles:
+   - Typography (font sizes, line heights, spacing)
+   - Colors and dark mode (via data-theme attribute)
+   - <article> card styling (background, border, shadow, padding)
+   - <nav> header layout
+   - <footer> styling
+   - Tables, code blocks, blockquotes
+   - Focus-visible outlines
+   - Responsive container widths
+   - Section and block spacing
+   - Smooth scrolling for anchor links
+
+   We handle:
+   - Font families (Space Grotesk headings, Inter body)
+   - Card grid layout (multi-column)
+   - Card link touch targets
+   - Badges (Pico has no badge component)
+   - Hero section sizing
+   - Icon buttons (override Pico's full-width button default)
+   - Safe area insets for notch devices
+   - Print overrides
+*/
+
+/* ===== Fonts ===== */
+/* Requirement: Distinctive heading font + clean body font
+   Approach: Space Grotesk (headings) + Inter (body) via Google Fonts
+   Alternative: System font stack — rejected, looks generic for a portfolio */
+:root {
+  --pico-font-family: 'Inter', system-ui, -apple-system, sans-serif;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: 'Space Grotesk', system-ui, -apple-system, sans-serif;
+}
+
+/* ===== Safe Area Insets ===== */
+/* Requirement: Content must not overlap with iPhone notch/Dynamic Island
+   Approach: env(safe-area-inset-*) on body and nav
+   Alternative: Fixed padding — rejected, wastes space on non-notch devices */
+body {
+  padding-left: env(safe-area-inset-left);
+  padding-right: env(safe-area-inset-right);
+}
+
+body > nav {
+  padding-top: env(safe-area-inset-top);
+}
+
+body > footer {
+  text-align: center;
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+/* ===== Logo ===== */
+.logo {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  text-decoration: none;
+}
+
+.logo-icon {
+  border-radius: var(--pico-border-radius);
+}
+
+/* ===== Icon Buttons (theme toggle, PDF download) ===== */
+/* Requirement: Minimal icon buttons in nav, 44px minimum touch target (Apple HIG)
+   Approach: Override Pico's button defaults (width: 100%, padding, background)
+   for icon-only buttons. !important needed because Pico uses high-specificity
+   selectors on button elements.
+   Alternative: Use <a> tags — rejected, buttons are semantically correct for actions */
+.icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.75rem !important;
+  height: 2.75rem;
+  padding: 0 !important;
+  margin: 0 !important;
+  border: none !important;
+  border-radius: var(--pico-border-radius);
+  background: transparent !important;
+  color: var(--pico-muted-color);
+  cursor: pointer;
+  transition: background-color 0.15s, color 0.15s;
+}
+
+.icon-btn:hover {
+  background-color: var(--pico-muted-border-color) !important;
+  color: var(--pico-color);
+}
+
+/* Provide touch feedback — hover doesn't fire on mobile, :active does */
+.icon-btn:active {
+  opacity: 0.7;
+}
+
+/* Show sun in dark mode, moon in light mode */
+.icon-sun { display: none; }
+.icon-moon { display: block; }
+[data-theme="dark"] .icon-sun { display: block; }
+[data-theme="dark"] .icon-moon { display: none; }
+
+/* ===== Hero ===== */
+.hero {
+  padding: 2rem 0 1rem;
+}
+
+.hero h1 {
+  font-size: 2.25rem;
+  letter-spacing: -0.02em;
+  max-width: 640px;
+  margin-bottom: 0.5rem;
+}
+
+.hero p {
+  color: var(--pico-muted-color);
+  max-width: 560px;
+}
+
+/* ===== Section Subtitles ===== */
+.section-subtitle {
+  color: var(--pico-muted-color);
+  margin-bottom: 1.5rem;
+  max-width: 560px;
+}
+
+.section-subtitle a {
+  color: var(--pico-primary);
+}
+
+/* ===== Card Grid ===== */
+/* Requirement: Multi-column card layout for projects and patterns
+   Approach: CSS Grid with auto-fill and minmax for responsive columns.
+     minmax set to 280px (not 300px) to avoid overflow on screens between
+     576-640px where Pico's container leaves ~560px available — two 280px
+     columns fit, but two 300px columns would overflow.
+   Alternative: Flexbox wrap — rejected, uneven last row without explicit sizing */
+.card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 1.25rem;
+}
+
+.card-grid-sm {
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+}
+
+/* Override Pico's article margin-bottom to work inside grid layout */
+.card-grid > article {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.card-grid > article > p {
+  flex: 1;
+}
+
+.card-grid > article > footer {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+/* Provide touch feedback on card tap — hover doesn't fire on mobile */
+.card-grid > article:active,
+.tool-item:active,
+.pattern-card:active {
+  opacity: 0.85;
+  transition: opacity 0.1s;
+}
+
+/* ===== Card Links ===== */
+/* Requirement: Action links at the bottom of cards (Details, Live app, Source)
+   must be tappable on mobile (44px minimum touch target per Apple HIG).
+   Approach: Padding creates the touch target, negative margin keeps visual
+   alignment. Plain <div> — NOT <nav>, which would get Pico's nav styling.
+   Alternative: Larger font size — rejected, looks out of proportion */
+.card-links {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.card-links a {
+  font-size: 0.85rem;
+  font-weight: 600;
+  padding: 0.5rem 0.5rem;
+  margin: -0.5rem 0;
+  border-radius: var(--pico-border-radius);
+  transition: background-color 0.15s;
+}
+
+.card-links a:focus-visible {
+  outline: 2px solid var(--pico-primary);
+  outline-offset: 2px;
+}
+
+.card-links a:active {
+  opacity: 0.7;
+}
+
+.tech {
+  color: var(--pico-muted-color);
+}
+
+/* ===== Badges ===== */
+/* Pico has no badge component — fully custom */
+.badge {
+  display: inline-block;
+  padding: 0.1rem 0.5rem;
+  font-size: 0.65rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  border-radius: 9999px;
+  background-color: var(--pico-primary);
+  color: var(--pico-primary-inverse);
+  vertical-align: middle;
+  margin-left: 0.5rem;
+}
+
+.badge-subtle {
+  background-color: var(--pico-muted-border-color);
+  color: var(--pico-muted-color);
+}
+
+/* ===== Tool Items (compact list cards) ===== */
+.tool-item {
+  margin-bottom: 0.75rem;
+}
+
+.tool-item h4 {
+  margin-bottom: 0.25rem;
+}
+
+.tool-item p {
+  margin-bottom: 0.5rem;
+}
+
+/* ===== Pattern Cards ===== */
+.pattern-card {
+  display: flex;
+  flex-direction: column;
+}
+
+.pattern-card > p {
+  flex: 1;
+}
+
+.pattern-card > footer {
+  margin-top: auto;
+}
+
+.pattern-card h4 {
+  margin-bottom: 0.25rem;
+}
+
+/* ===== Responsive ===== */
+@media (max-width: 640px) {
+  .hero h1 { font-size: 1.75rem; }
+  .card-grid { grid-template-columns: 1fr; }
+  .card-grid-sm { grid-template-columns: 1fr; }
+}
+
+/* ===== Print ===== */
+@media print {
+  .no-print {
+    display: none !important;
+  }
+
+  body {
+    background: white !important;
+    color: black !important;
+  }
+
+  a {
+    color: black !important;
+    text-decoration: underline !important;
+  }
+
+  article {
+    break-inside: avoid;
+    page-break-inside: avoid;
+    box-shadow: none !important;
+  }
+}

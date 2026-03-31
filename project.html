@@ -1,0 +1,542 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="color-scheme" content="light dark">
+  <title>Loading... — devmade-ai</title>
+  <link rel="icon" type="image/png" href="assets/images/favicon.png">
+
+  <!-- Requirement: Prevent dark mode flash (same pattern as index.html)
+       Approach: Inline classic script sets data-theme before first paint -->
+  <script>
+    (function() {
+      try {
+        var stored = localStorage.getItem('darkMode');
+        var isDark = stored !== null
+          ? stored === 'true'
+          : window.matchMedia('(prefers-color-scheme: dark)').matches;
+        if (isDark) document.documentElement.setAttribute('data-theme', 'dark');
+        else document.documentElement.setAttribute('data-theme', 'light');
+      } catch(e) {}
+    })();
+  </script>
+
+  <!-- Fonts: Space Grotesk for headings, Inter for body -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Space+Grotesk:wght@700&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="pico-jade.css">
+  <link rel="stylesheet" href="styles.css">
+  <style>
+    /* Requirement: Project detail page layout — metadata grid, tabbed doc viewer
+       Approach: CSS Grid for metadata cards, custom tab buttons, Pico article for doc content
+       Alternative: Single scrollable page — rejected, too much content without organization */
+
+    /* ===== Meta Grid ===== */
+    .meta-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 1.25rem;
+      margin-bottom: 2rem;
+    }
+
+    /* Use Pico's <article> for meta cards — just override margin for grid */
+    .meta-grid > article {
+      margin: 0;
+    }
+
+    .meta-grid > article > header {
+      padding-bottom: 0.5rem;
+    }
+
+    .meta-grid > article > header > h3 {
+      font-size: 0.8rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--pico-muted-color);
+      margin-bottom: 0;
+    }
+
+    .meta-grid > article p,
+    .meta-grid > article li {
+      font-size: 0.9rem;
+      color: var(--pico-muted-color);
+    }
+
+    .privacy-item { margin-bottom: 0.5rem; }
+    .privacy-label { font-weight: 600; color: var(--pico-color); font-size: 0.85rem; }
+    .privacy-value { color: var(--pico-muted-color); font-size: 0.85rem; }
+
+    /* ===== Doc Tabs ===== */
+    .doc-tabs {
+      display: flex;
+      gap: 0.25rem;
+      border-bottom: 1px solid var(--pico-muted-border-color);
+      margin-bottom: 1.5rem;
+      overflow-x: auto;
+    }
+
+    /* Requirement: Tab buttons must meet 44px minimum touch target (Apple HIG) */
+    .doc-tab {
+      padding: 0.75rem 1rem;
+      min-height: 2.75rem;
+      font-size: 0.85rem;
+      font-weight: 500;
+      font-family: 'Inter', system-ui, sans-serif;
+      color: var(--pico-muted-color);
+      background: none;
+      border: none;
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+      white-space: nowrap;
+      transition: color 0.15s, border-color 0.15s;
+    }
+
+    .doc-tab:hover { color: var(--pico-color); }
+    .doc-tab:focus-visible {
+      outline: 2px solid var(--pico-primary);
+      outline-offset: -2px;
+    }
+    .doc-tab.active {
+      color: var(--pico-primary);
+      border-bottom-color: var(--pico-primary);
+    }
+
+    .doc-tab.disabled {
+      color: var(--pico-muted-color);
+      opacity: 0.4;
+      cursor: default;
+    }
+
+    /* ===== Doc Content (rendered markdown) ===== */
+    /* Uses Pico's <article> styling — no custom background/border needed */
+    .doc-content {
+      min-height: 200px;
+    }
+
+    .doc-content > article {
+      margin: 0;
+    }
+
+    .doc-actions {
+      display: flex;
+      gap: 0.75rem;
+      margin-bottom: 1rem;
+    }
+
+    /* Requirement: Action buttons must meet 44px minimum touch target (Apple HIG) */
+    .doc-action-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      padding: 0.5rem 0.75rem;
+      min-height: 2.75rem;
+      font-size: 0.8rem;
+      font-weight: 500;
+      border: 1px solid var(--pico-muted-border-color);
+      border-radius: var(--pico-border-radius);
+      background: var(--pico-background-color);
+      color: var(--pico-muted-color);
+      cursor: pointer;
+      text-decoration: none;
+      transition: border-color 0.15s, color 0.15s;
+    }
+
+    .doc-action-btn:focus-visible {
+      outline: 2px solid var(--pico-primary);
+      outline-offset: 2px;
+    }
+
+    .doc-action-btn:active {
+      opacity: 0.7;
+    }
+
+    .doc-action-btn:hover {
+      border-color: var(--pico-primary);
+      color: var(--pico-primary);
+    }
+
+    /* Rendered markdown — Pico handles most typography, we just add spacing */
+    .md-render h1 { margin: 1.5rem 0 0.75rem; }
+    .md-render h2 { margin: 1.5rem 0 0.5rem; border-bottom: 1px solid var(--pico-muted-border-color); padding-bottom: 0.35rem; }
+    .md-render h3 { margin: 1.25rem 0 0.5rem; }
+    .md-render h4 { margin: 1rem 0 0.35rem; }
+    .md-render .nested-list { margin: 0.25rem 0 0.25rem 1rem; }
+
+    .coming-soon {
+      text-align: center;
+      padding: 3rem;
+      color: var(--pico-muted-color);
+      font-style: italic;
+    }
+
+    /* ===== Loading State ===== */
+    .loading-state {
+      text-align: center;
+      padding: 4rem 0;
+      color: var(--pico-muted-color);
+    }
+
+    /* ===== Project Hero ===== */
+    .project-hero {
+      margin-bottom: 1rem;
+    }
+
+    .project-title-row {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      flex-wrap: wrap;
+    }
+
+    .project-title-row h1 {
+      margin-bottom: 0;
+    }
+
+    .project-description {
+      color: var(--pico-muted-color);
+    }
+
+    .project-actions {
+      margin-top: 0.5rem;
+    }
+
+    /* Private repo badge in project hero */
+    .private-label {
+      cursor: default;
+      opacity: 0.5;
+    }
+
+    /* ===== Status Badge ===== */
+    .status-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      font-size: 0.8rem;
+      font-weight: 500;
+    }
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--pico-primary);
+    }
+    .status-dot.unknown { background: var(--pico-muted-color); }
+
+    /* ===== Tech Tags ===== */
+    .tag-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.4rem;
+      margin-top: 0.75rem;
+    }
+    .tag {
+      font-size: 0.75rem;
+      font-weight: 500;
+      color: var(--pico-muted-color);
+      background: var(--pico-muted-border-color);
+      padding: 0.15rem 0.5rem;
+      border-radius: 4px;
+    }
+
+    /* ===== Error State ===== */
+    .error-state {
+      text-align: center;
+      padding: 4rem 1rem;
+    }
+    .error-state h1 { font-size: 1.5rem; margin-bottom: 0.5rem; }
+    .error-state p { color: var(--pico-muted-color); }
+
+    /* ===== Responsive ===== */
+    @media (max-width: 640px) {
+      .meta-grid { grid-template-columns: 1fr; }
+    }
+
+    /* ===== Print ===== */
+    @media print {
+      .doc-tabs, .doc-actions { display: none !important; }
+      article, table, pre {
+        break-inside: avoid;
+        page-break-inside: avoid;
+        box-shadow: none !important;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Header — Pico <nav> -->
+  <nav class="no-print">
+    <ul>
+      <li>
+        <a href="./" class="logo" aria-label="devmade-ai home">
+          <img src="assets/images/icon-192.png" alt="" width="28" height="28" class="logo-icon">
+          <strong>devmade-ai</strong>
+        </a>
+      </li>
+    </ul>
+    <ul>
+      <li><a href="./#projects">Projects</a></li>
+      <li><a href="./#tools">Tools</a></li>
+      <li><a href="./#patterns">Patterns</a></li>
+      <li>
+        <button type="button" class="icon-btn" aria-label="Save as PDF" onclick="window.print()">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
+          </svg>
+        </button>
+      </li>
+      <li>
+        <button type="button" class="icon-btn" id="theme-toggle" aria-label="Toggle dark mode">
+          <svg class="icon-sun" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+          </svg>
+          <svg class="icon-moon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+          </svg>
+        </button>
+      </li>
+    </ul>
+  </nav>
+
+  <main class="container">
+    <div id="app">
+      <p class="loading-state">Loading...</p>
+    </div>
+  </main>
+
+  <footer class="container">
+    <p><small><a href="https://github.com/devmade-ai" target="_blank" rel="noopener">github.com/devmade-ai</a></small></p>
+  </footer>
+
+  <script src="theme.js"></script>
+  <!-- Requirement: Render markdown docs client-side without a build step
+       Approach: Lightweight custom parser for common markdown (headings, lists, code, tables, links)
+       Alternative: marked.js from CDN — rejected, adds external dependency and ~40KB download -->
+  <script>
+    (function () {
+      var app = document.getElementById('app');
+      var params = new URLSearchParams(window.location.search);
+      var projectName = params.get('name');
+
+      if (!projectName) {
+        app.innerHTML = '<div class="error-state"><h1>No project specified</h1><p><a href="./">Back to portfolio</a></p></div>';
+        return;
+      }
+
+      var basePath = 'projects/' + encodeURIComponent(projectName) + '/';
+      var meta = null;
+      var docs = {};
+      var currentTab = 'readme';
+
+      function renderMarkdown(md) {
+        if (!md) return '';
+        var html = md
+          .replace(/```(\w*)\n([\s\S]*?)```/g, function (_, lang, code) {
+            return '<pre><code>' + escapeHtml(code.trim()) + '</code></pre>';
+          })
+          .replace(/^\|(.+)\|\s*\n\|[\s\-:|]+\|\s*\n((?:\|.+\|\s*\n?)*)/gm, function (_, header, body) {
+            var ths = header.split('|').map(function (h) { return '<th>' + escapeHtml(h.trim()) + '</th>'; }).join('');
+            var rows = body.trim().split('\n').map(function (row) {
+              var tds = row.replace(/^\||\|$/g, '').split('|').map(function (d) { return '<td>' + inlineMarkdown(d.trim()) + '</td>'; }).join('');
+              return '<tr>' + tds + '</tr>';
+            }).join('');
+            return '<table><thead><tr>' + ths + '</tr></thead><tbody>' + rows + '</tbody></table>';
+          })
+          .replace(/^#### (.+)$/gm, '<h4>$1</h4>')
+          .replace(/^### (.+)$/gm, '<h3>$1</h3>')
+          .replace(/^## (.+)$/gm, '<h2>$1</h2>')
+          .replace(/^# (.+)$/gm, '<h1>$1</h1>')
+          .replace(/^---+$/gm, '<hr>')
+          .replace(/^> (.+)$/gm, '<blockquote>$1</blockquote>')
+          .replace(/^- \[x\] (.+)$/gm, '<li><input type="checkbox" checked disabled> $1</li>')
+          .replace(/^- \[ \] (.+)$/gm, '<li><input type="checkbox" disabled> $1</li>')
+          .replace(/^  - (.+)$/gm, '<li class="nested">$1</li>')
+          .replace(/^- (.+)$/gm, '<li>$1</li>')
+          .replace(/^\d+\. (.+)$/gm, '<li>$1</li>')
+          .replace(/((?:<li class="nested">.*<\/li>\s*)+)/g, '<ul class="nested-list">$1</ul>')
+          .replace(/((?:<li>.*<\/li>\s*)+)/g, '<ul>$1</ul>')
+          .replace(/^(?!<[a-z])((?!<).+)$/gm, '<p>$1</p>');
+
+        html = html.replace(/>([^<]+)</g, function (m, content) {
+          return '>' + inlineMarkdown(content) + '<';
+        });
+
+        return html;
+      }
+
+      function inlineMarkdown(text) {
+        return text
+          .replace(/`([^`]+)`/g, '<code>$1</code>')
+          .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
+          .replace(/\*([^*]+)\*/g, '<em>$1</em>')
+          .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2">$1</a>');
+      }
+
+      function escapeHtml(str) {
+        return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+      }
+
+      fetch(basePath + 'meta.json')
+        .then(function (r) {
+          if (!r.ok) throw new Error('Not found');
+          return r.json();
+        })
+        .then(function (data) {
+          meta = data;
+          document.title = meta.title + ' — devmade-ai';
+          // Set meta description dynamically for SEO when sharing project links
+          var metaDesc = document.querySelector('meta[name="description"]');
+          if (!metaDesc) {
+            metaDesc = document.createElement('meta');
+            metaDesc.setAttribute('name', 'description');
+            document.head.appendChild(metaDesc);
+          }
+          metaDesc.setAttribute('content', meta.description);
+          render();
+          var docFiles = [
+            { key: 'readme', file: 'README.md', label: 'Overview' },
+            { key: 'userGuide', file: 'USER_GUIDE.md', label: 'User Guide' },
+            { key: 'testingGuide', file: 'TESTING_GUIDE.md', label: 'Testing Guide' },
+            { key: 'tutorial', file: 'TUTORIAL.md', label: 'Tutorial' }
+          ];
+          docFiles.forEach(function (doc) {
+            if (meta.docs[doc.key]) {
+              fetch(basePath + doc.file)
+                .then(function (r) { return r.ok ? r.text() : null; })
+                .then(function (text) {
+                  if (text) {
+                    docs[doc.key] = text;
+                    render();
+                  }
+                });
+            }
+          });
+        })
+        .catch(function () {
+          app.innerHTML = '<div class="error-state"><h1>Project not found</h1><p>"' + escapeHtml(projectName) + '" does not exist.</p><p><a href="./">Back to portfolio</a></p></div>';
+        });
+
+      function render() {
+        if (!meta) return;
+
+        var statusClass = meta.liveUrl ? '' : ' unknown';
+        var statusLabel = meta.liveUrl ? 'Live' : 'No live URL';
+
+        var linksHtml = '';
+        if (meta.liveUrl) {
+          linksHtml += '<a href="' + escapeHtml(meta.liveUrl) + '" target="_blank" rel="noopener" class="doc-action-btn">Visit app</a>';
+        }
+        if (meta.repoUrl) {
+          linksHtml += '<a href="' + escapeHtml(meta.repoUrl) + '" target="_blank" rel="noopener" class="doc-action-btn">Source code</a>';
+        }
+        if (!meta.repoUrl && meta.repo === 'private') {
+          linksHtml += '<span class="doc-action-btn private-label">Private repository</span>';
+        }
+
+        var techHtml = meta.tech ? meta.tech.map(function (t) { return '<span class="tag">' + t + '</span>'; }).join('') : '';
+        var useCasesHtml = meta.useCases ? meta.useCases.map(function (u) { return '<li>' + escapeHtml(u) + '</li>'; }).join('') : '<p>Coming soon.</p>';
+
+        var privacyHtml = '';
+        if (meta.dataPrivacy) {
+          Object.keys(meta.dataPrivacy).forEach(function (key) {
+            var label = key.charAt(0).toUpperCase() + key.slice(1).replace(/([A-Z])/g, ' $1');
+            privacyHtml += '<div class="privacy-item"><span class="privacy-label">' + escapeHtml(label) + ':</span> <span class="privacy-value">' + escapeHtml(meta.dataPrivacy[key]) + '</span></div>';
+          });
+        }
+
+        var tabDefs = [
+          { key: 'readme', label: 'Overview', available: meta.docs.readme },
+          { key: 'userGuide', label: 'User Guide', available: meta.docs.userGuide },
+          { key: 'testingGuide', label: 'Testing Guide', available: meta.docs.testingGuide },
+          { key: 'tutorial', label: 'Tutorial', available: meta.docs.tutorial }
+        ];
+
+        var tabsHtml = tabDefs.map(function (tab) {
+          if (!tab.available) {
+            return '<button class="doc-tab disabled" disabled>' + tab.label + '</button>';
+          }
+          var activeClass = tab.key === currentTab ? ' active' : '';
+          return '<button class="doc-tab' + activeClass + '" data-tab="' + tab.key + '">' + tab.label + '</button>';
+        }).join('');
+
+        var docContent = '';
+        var fileMap = { readme: 'README.md', userGuide: 'USER_GUIDE.md', testingGuide: 'TESTING_GUIDE.md', tutorial: 'TUTORIAL.md' };
+        if (docs[currentTab]) {
+          var rawUrl = basePath + fileMap[currentTab];
+          docContent = '<article><div class="doc-actions">' +
+            '<button id="copy-btn" class="doc-action-btn" onclick="copyDoc()">Copy markdown</button>' +
+            '<a href="' + rawUrl + '" class="doc-action-btn" target="_blank">Raw file</a>' +
+            '</div>' +
+            '<div class="md-render">' + renderMarkdown(docs[currentTab]) + '</div></article>';
+        } else if (tabDefs.find(function (t) { return t.key === currentTab; }).available) {
+          docContent = '<article aria-busy="true"><p class="loading-state">Loading...</p></article>';
+        } else {
+          docContent = '<article><div class="coming-soon">Coming soon.</div></article>';
+        }
+
+        app.innerHTML =
+          '<p><a href="./">&larr; All projects</a></p>' +
+          '<header class="project-hero">' +
+            '<div class="project-title-row">' +
+              '<h1>' + escapeHtml(meta.title) + '</h1>' +
+              '<span class="badge">' + escapeHtml(meta.badge) + '</span>' +
+              '<span class="badge badge-subtle">' + escapeHtml(meta.repo) + '</span>' +
+              '<span class="status-badge"><span class="status-dot' + statusClass + '"></span>' + statusLabel + '</span>' +
+            '</div>' +
+            '<p class="project-description">' + escapeHtml(meta.description) + '</p>' +
+            '<div class="project-actions">' + linksHtml + '</div>' +
+            '<div class="tag-list">' + techHtml + '</div>' +
+          '</header>' +
+
+          '<div class="meta-grid">' +
+            '<article><header><h3>Who it\'s for</h3></header><p>' + escapeHtml(meta.audience) + '</p></article>' +
+            '<article><header><h3>Use cases</h3></header><ul>' + useCasesHtml + '</ul></article>' +
+            '<article><header><h3>Data &amp; Privacy</h3></header>' + privacyHtml + '</article>' +
+          '</div>' +
+
+          '<div class="doc-tabs no-print" id="doc-tabs">' + tabsHtml + '</div>' +
+          '<div class="doc-content" id="doc-content">' + docContent + '</div>';
+
+      }
+
+      // Requirement: Tab switching without accumulating event listeners
+      // Approach: Event delegation on document — one listener handles all tabs
+      // Alternative: Add/remove listeners in render() — rejected, causes
+      //   listener accumulation (each render adds new handlers without removing old)
+      document.addEventListener('click', function (e) {
+        var tab = e.target.closest('.doc-tab:not(.disabled)');
+        if (tab && tab.getAttribute('data-tab')) {
+          currentTab = tab.getAttribute('data-tab');
+          render();
+        }
+      });
+
+      window.copyDoc = function () {
+        var text = docs[currentTab];
+        if (!text) return;
+        if (navigator.clipboard) {
+          navigator.clipboard.writeText(text);
+        } else {
+          var ta = document.createElement('textarea');
+          ta.value = text;
+          ta.style.position = 'fixed';
+          ta.style.opacity = '0';
+          document.body.appendChild(ta);
+          ta.select();
+          document.execCommand('copy');
+          document.body.removeChild(ta);
+        }
+        var btn = document.getElementById('copy-btn');
+        if (btn) {
+          btn.textContent = 'Copied!';
+          setTimeout(function () { btn.textContent = 'Copy markdown'; }, 1500);
+        }
+      };
+    })();
+  </script>
+</body>
+</html>

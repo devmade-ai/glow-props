@@ -1,5 +1,13 @@
 # AI Mistakes
 
+## 2026-03-31: Used stale secondary source instead of the authoritative API
+
+**What went wrong:** Built the portfolio project list from repo-tor's `projects.json` file, which was incomplete (missing four-ems, sun-sea-o). Used the GitHub API's public-repos-only endpoint to cross-check, which hid private repos. Missed two projects entirely — sun-sea-o was caught by the user, four-ems was caught when the user provided the actual live URLs. Also used GitHub Pages URLs from the stale projects.json instead of the current Vercel URLs for 5 projects.
+
+**Why it happened:** Trusted a secondary source (repo-tor's projects.json) as the canonical list instead of using `GITHUB_ALL_REPO_TOKEN` — which was available the entire time and documented in CLAUDE.md — to query `api.github.com/user/repos?per_page=100` and get ALL repos including private ones. One API call would have returned the complete list of 15 repos.
+
+**How to prevent it:** When building a list of all repos, always use the `GITHUB_ALL_REPO_TOKEN` to query the authenticated `/user/repos` endpoint first. This returns all repos including private ones. Never rely on a secondary source (projects.json, memory, partial lists) as the single source of truth. Cross-check live URLs against actual deployments, not cached project manifests.
+
 ## 2026-03-30: Suggested an implementation that caused a bug in consuming projects
 
 **What went wrong:** The Meta Theme-Color section in CLAUDE.md's suggested implementations confidently prescribed switching `theme-color` between background colors (`#ffffff`/`#1a1a2e`) on dark mode toggle. This pattern caused invisible status bar text when the OS color scheme opposed the app theme — a bug shipped to real users because a consuming project followed the suggestion.

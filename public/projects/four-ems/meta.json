@@ -1,0 +1,32 @@
+{
+  "name": "four-ems",
+  "title": "Self-Hosted Form Builder",
+  "description": "Create multi-page forms with conditional logic, collect responses, and embed forms in external sites.",
+  "category": "user-facing",
+  "badge": "Forms",
+  "status": "active",
+  "repo": "private",
+  "liveUrl": "https://four-ems.vercel.app/",
+  "tech": ["TypeScript", "React", "Vite", "Tailwind CSS", "Zustand", "dnd-kit", "Supabase"],
+  "audience": "Anyone who needs to build and publish custom forms — small businesses, freelancers, or teams who want form building without third-party SaaS.",
+  "useCases": [
+    "Build multi-page forms with a drag-and-drop visual editor",
+    "Add conditional logic to show/hide fields based on answers",
+    "Publish forms and share via link or embed in external sites",
+    "View and manage submissions with sortable/filterable dashboard",
+    "Export submissions as CSV",
+    "Import form structures from AI-generated JSON"
+  ],
+  "dataPrivacy": {
+    "storage": "Form definitions and submissions stored in Supabase cloud database with row-level security.",
+    "authentication": "Supabase Auth. Form owners only see their own forms and submissions.",
+    "embedding": "Published forms can be embedded in external sites via iframe.",
+    "thirdParty": "Supabase for database. tool-till-tees API for email notifications."
+  },
+  "docs": {
+    "readme": true,
+    "userGuide": true,
+    "testingGuide": true,
+    "tutorial": false
+  }
+}

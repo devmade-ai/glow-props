@@ -1,0 +1,40 @@
+{
+  "name": "synctone",
+  "title": "Anonymous Tone-Tagged Messaging",
+  "description": "Anonymous messaging where senders tag the intended tone of each message. Tones are revealed when the receiver opens the chat.",
+  "category": "user-facing",
+  "badge": "Messaging",
+  "status": "active",
+  "repo": "private",
+  "liveUrl": "https://synctone.vercel.app/",
+  "tech": [
+    "TypeScript",
+    "Expo",
+    "React Native",
+    "Supabase",
+    "NativeWind",
+    "Zustand"
+  ],
+  "audience": "Anyone who wants to communicate with more clarity. Useful for sensitive conversations, remote teams, or situations where tone is easily misread in text.",
+  "useCases": [
+    "Create anonymous chats with human-readable codes (e.g., 'happy-tiger')",
+    "Share chat links via SMS, WhatsApp, email, or any app",
+    "Tag messages with up to 2 tones (happy, sad, serious, joking, sarcastic, sincere, or custom)",
+    "Tones revealed automatically when the receiver opens the chat",
+    "React with emojis, reply to messages, edit within 15 minutes",
+    "Push notifications across iOS, Android, and web"
+  ],
+  "dataPrivacy": {
+    "storage": "Messages stored in cloud database for delivery. Identity is a random device ID \u2014 no email, phone, or account.",
+    "authentication": "Anonymous. Random UUID generated on first launch, stored securely on device.",
+    "deletion": "Uninstalling the app permanently deletes your identity. No recovery, no backdoors.",
+    "security": "Row-level security policies. Anti-spam rate limiting and auto-flagging. Anonymous reporting for moderation.",
+    "thirdParty": "Supabase for database and realtime. OneSignal for web push notifications."
+  },
+  "docs": {
+    "readme": true,
+    "userGuide": true,
+    "testingGuide": true,
+    "tutorial": true
+  }
+}

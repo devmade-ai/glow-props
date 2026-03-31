@@ -1,0 +1,41 @@
+{
+  "name": "sun-sea-o",
+  "title": "Module-Based Agreement Builder",
+  "description": "Agreements assembled from individual text modules, each independently authored, negotiated, and signed. The full agreement emerges over time.",
+  "category": "user-facing",
+  "badge": "Legal",
+  "status": "active",
+  "repo": "private",
+  "liveUrl": "https://sun-sea-o.vercel.app/",
+  "tech": [
+    "TypeScript",
+    "React",
+    "Vite",
+    "Tailwind CSS",
+    "Supabase",
+    "React Router"
+  ],
+  "audience": "Two parties entering into agreements \u2014 freelancers and clients, business partners, or any situation where a contract is negotiated incrementally rather than signed all at once.",
+  "useCases": [
+    "Create projects and invite a counterparty via email with passphrase verification",
+    "Build agreements from individual text modules (6 starter templates available)",
+    "Negotiate module content via proposals (accept, reject, counter)",
+    "Sign modules independently \u2014 auto-lock when both parties agree",
+    "Split modules into separate agreements as negotiations evolve",
+    "Track version history and signature log with timestamps",
+    "Generate PDF previews with SHA-256 verification codes",
+    "Receive in-app notifications for all agreement activity"
+  ],
+  "dataPrivacy": {
+    "storage": "All data stored in Supabase cloud database with row-level security.",
+    "authentication": "Google OAuth via Supabase Auth. Each user only sees their own projects and agreements.",
+    "signatures": "Signing actions recorded with IP, user agent, and timestamp for audit trail.",
+    "realtime": "Live updates via Supabase realtime subscriptions between both parties."
+  },
+  "docs": {
+    "readme": true,
+    "userGuide": true,
+    "testingGuide": true,
+    "tutorial": false
+  }
+}
