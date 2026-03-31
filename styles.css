@@ -64,7 +64,7 @@ body > footer {
 }
 
 .logo-icon {
-  border-radius: 6px;
+  border-radius: var(--pico-border-radius);
 }
 
 /* ===== Icon Buttons (theme toggle, PDF download) ===== */
@@ -194,6 +194,11 @@ body > footer {
   margin: -0.5rem 0;
   border-radius: var(--pico-border-radius);
   transition: background-color 0.15s;
+}
+
+.card-links a:focus-visible {
+  outline: 2px solid var(--pico-primary);
+  outline-offset: 2px;
 }
 
 .card-links a:active {

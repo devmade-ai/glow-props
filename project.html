@@ -96,6 +96,10 @@
     }
 
     .doc-tab:hover { color: var(--pico-color); }
+    .doc-tab:focus-visible {
+      outline: 2px solid var(--pico-primary);
+      outline-offset: -2px;
+    }
     .doc-tab.active {
       color: var(--pico-primary);
       border-bottom-color: var(--pico-primary);
@@ -139,6 +143,11 @@
       cursor: pointer;
       text-decoration: none;
       transition: border-color 0.15s, color 0.15s;
+    }
+
+    .doc-action-btn:focus-visible {
+      outline: 2px solid var(--pico-primary);
+      outline-offset: 2px;
     }
 
     .doc-action-btn:active {
@@ -213,9 +222,9 @@
       width: 8px;
       height: 8px;
       border-radius: 50%;
-      background: #22c55e;
+      background: var(--pico-primary);
     }
-    .status-dot.unknown { background: #a1a1aa; }
+    .status-dot.unknown { background: var(--pico-muted-color); }
 
     /* ===== Tech Tags ===== */
     .tag-list {
@@ -249,7 +258,7 @@
     /* ===== Print ===== */
     @media print {
       .doc-tabs, .doc-actions { display: none !important; }
-      article {
+      article, table, pre {
         break-inside: avoid;
         page-break-inside: avoid;
         box-shadow: none !important;
@@ -368,7 +377,7 @@
       }
 
       function escapeHtml(str) {
-        return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
       }
 
       fetch(basePath + 'meta.json')
@@ -459,7 +468,7 @@
         if (docs[currentTab]) {
           var rawUrl = basePath + fileMap[currentTab];
           docContent = '<article><div class="doc-actions">' +
-            '<button class="doc-action-btn" onclick="copyDoc()">Copy markdown</button>' +
+            '<button id="copy-btn" class="doc-action-btn" onclick="copyDoc()">Copy markdown</button>' +
             '<a href="' + rawUrl + '" class="doc-action-btn" target="_blank">Raw file</a>' +
             '</div>' +
             '<div class="md-render">' + renderMarkdown(docs[currentTab]) + '</div></article>';
@@ -492,13 +501,19 @@
           '<div class="doc-tabs no-print" id="doc-tabs">' + tabsHtml + '</div>' +
           '<div class="doc-content" id="doc-content">' + docContent + '</div>';
 
-        document.querySelectorAll('.doc-tab:not(.disabled)').forEach(function (btn) {
-          btn.addEventListener('click', function () {
-            currentTab = this.getAttribute('data-tab');
-            render();
-          });
-        });
       }
+
+      // Requirement: Tab switching without accumulating event listeners
+      // Approach: Event delegation on document — one listener handles all tabs
+      // Alternative: Add/remove listeners in render() — rejected, causes
+      //   listener accumulation (each render adds new handlers without removing old)
+      document.addEventListener('click', function (e) {
+        var tab = e.target.closest('.doc-tab:not(.disabled)');
+        if (tab && tab.getAttribute('data-tab')) {
+          currentTab = tab.getAttribute('data-tab');
+          render();
+        }
+      });
 
       window.copyDoc = function () {
         var text = docs[currentTab];
@@ -515,11 +530,10 @@
           document.execCommand('copy');
           document.body.removeChild(ta);
         }
-        var btn = document.querySelector('.doc-action-btn');
+        var btn = document.getElementById('copy-btn');
         if (btn) {
-          var original = btn.textContent;
           btn.textContent = 'Copied!';
-          setTimeout(function () { btn.textContent = original; }, 1500);
+          setTimeout(function () { btn.textContent = 'Copy markdown'; }, 1500);
         }
       };
     })();
