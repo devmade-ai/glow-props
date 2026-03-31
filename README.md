@@ -86,8 +86,7 @@ glow-props/
     TODO.md                     # Pending items
     AI_MISTAKES.md              # Learnings from past AI errors
     USER_ACTIONS.md             # Manual tasks requiring user intervention
-    PROJECT_DOCS_STATUS.md      # Doc coverage tracker per project
-    DOCS_UPDATE_GUIDE.md        # Process for updating mirrored docs
+    PROJECT_DOCS.md             # Status tracker and update guide for mirrored docs
   .github/
     workflows/
       deploy.yml                # GitHub Pages deployment on push to main

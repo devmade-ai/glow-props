@@ -44,8 +44,7 @@
 - Updated package.json description
 
 **Documentation:**
-- Created `docs/PROJECT_DOCS_STATUS.md` — doc coverage tracker with "last mirrored" date
-- Created `docs/DOCS_UPDATE_GUIDE.md` — step-by-step process for future updates
+- Created `docs/PROJECT_DOCS.md` — combined status tracker and update guide for mirrored docs
 - Logged AI mistake: used stale secondary source instead of GITHUB_ALL_REPO_TOKEN API
 - Updated README with Pico CSS tech stack, project structure, and correct URLs
 

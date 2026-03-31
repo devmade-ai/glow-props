@@ -19,7 +19,7 @@ Transforming glow-props from a bare CLAUDE.md file host into a portfolio and res
 - Removed all inline styles from project.html
 - Updated CI Node version 20 -> 22 (Vite 7 requires ^20.19.0 || >=22.12.0)
 - Resolved npm audit vulnerability (picomatch)
-- Strengthened DOCS_UPDATE_GUIDE and PROJECT_DOCS_STATUS for future maintenance
+- Created PROJECT_DOCS.md — consolidated update guide and status tracker into one doc
 
 ## Current state
 - Site builds cleanly (58 files, 1.1MB), deploys to GitHub Pages via GitHub Actions
@@ -34,6 +34,5 @@ Transforming glow-props from a bare CLAUDE.md file host into a portfolio and res
 - Private repos: graphiki, few-lap, synctone, tool-till-tees, sun-sea-o, four-ems
 - Missing docs: model-pear (no User Guide, Testing Guide, Tutorial), see-veo (same)
 - All apps deployed on Vercel except glow-props (GitHub Pages)
-- `docs/DOCS_UPDATE_GUIDE.md` has the full process for updating mirrored docs
-- `docs/PROJECT_DOCS_STATUS.md` tracks what's scrubbed and outstanding (last mirrored: 2026-03-31)
+- `docs/PROJECT_DOCS.md` has the full process for updating mirrored docs AND the status tracker
 - Always list repos via `GITHUB_ALL_REPO_TOKEN` API, never rely on cached lists
