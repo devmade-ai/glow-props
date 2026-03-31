@@ -2,7 +2,7 @@
   "name": "glow-props",
   "version": "1.0.0",
   "private": true,
-  "description": "Static file host for shared Claude Code configuration, deployed via GitHub Pages.",
+  "description": "Portfolio and resource hub for devmade-ai projects, deployed via GitHub Pages.",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
