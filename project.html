@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <meta name="color-scheme" content="light dark">
   <title>Loading... — devmade-ai</title>
   <link rel="icon" type="image/png" href="assets/images/favicon.png">
@@ -79,8 +79,10 @@
       overflow-x: auto;
     }
 
+    /* Requirement: Tab buttons must meet 44px minimum touch target (Apple HIG) */
     .doc-tab {
-      padding: 0.6rem 1rem;
+      padding: 0.75rem 1rem;
+      min-height: 2.75rem;
       font-size: 0.85rem;
       font-weight: 500;
       font-family: 'Inter', system-ui, sans-serif;
@@ -121,11 +123,13 @@
       margin-bottom: 1rem;
     }
 
+    /* Requirement: Action buttons must meet 44px minimum touch target (Apple HIG) */
     .doc-action-btn {
       display: inline-flex;
       align-items: center;
       gap: 0.35rem;
-      padding: 0.35rem 0.75rem;
+      padding: 0.5rem 0.75rem;
+      min-height: 2.75rem;
       font-size: 0.8rem;
       font-weight: 500;
       border: 1px solid var(--pico-muted-border-color);
@@ -135,6 +139,10 @@
       cursor: pointer;
       text-decoration: none;
       transition: border-color 0.15s, color 0.15s;
+    }
+
+    .doc-action-btn:active {
+      opacity: 0.7;
     }
 
     .doc-action-btn:hover {
@@ -334,6 +342,14 @@
         .then(function (data) {
           meta = data;
           document.title = meta.title + ' — devmade-ai';
+          // Set meta description dynamically for SEO when sharing project links
+          var metaDesc = document.querySelector('meta[name="description"]');
+          if (!metaDesc) {
+            metaDesc = document.createElement('meta');
+            metaDesc.setAttribute('name', 'description');
+            document.head.appendChild(metaDesc);
+          }
+          metaDesc.setAttribute('content', meta.description);
           render();
           var docFiles = [
             { key: 'readme', file: 'README.md', label: 'Overview' },
