@@ -2,37 +2,52 @@
 
 ## 2026-03-31
 
-### Pico CSS Jade theme + custom fonts
+### Portfolio site — complete rebuild
+
+**Landing page + project detail pages:**
+- Built portfolio landing page with Projects (9 user-facing), Tools (4 internal), Patterns (7) sections
+- Built project detail page (`project.html`) with tabbed doc viewer, markdown renderer, copy/raw buttons
+- Fetched and mirrored docs from all 12 active repos (README, User Guide, Testing Guide, Tutorial)
+- Scrubbed 6 private repo docs (graphiki, few-lap, synctone, tool-till-tees, sun-sea-o, four-ems)
+- Created meta.json per project with audience, use cases, data/privacy, tech stack, status
+- Extracted TutorialModal content as TUTORIAL.md for 5 projects
+- Removed dead SessionStart hook and sample text file
+
+**Design + theming:**
 - Integrated Pico CSS v2 Jade theme (imported via Vite from node_modules)
 - Added Google Fonts: Space Grotesk (headings), Inter (body)
 - Switched dark mode from `.dark` class to `data-theme` attribute (Pico convention)
-- Updated flash prevention scripts, theme.js, and CSS icon toggles for data-theme
-- Rewrote styles.css as a Pico override layer — removed all base typography, color, and focus styling (Pico handles these)
-- Restructured HTML to use Pico's semantic conventions: `<nav>` for header, `<article>` for cards, `<header>`/`<footer>` within articles
-- Added `pico-jade.css` as the Pico import entry point
-- Added `<meta name="color-scheme" content="light dark">` for browser chrome
+- Restructured HTML to Pico's semantic conventions (`<nav>`, `<article>`, `<header>`/`<footer>`)
+- Rewrote styles.css as Pico override layer
+- Added Save as PDF button via `window.print()`
 
-### Portfolio site — transform from file host to project hub
-- Built portfolio landing page with Projects, Tools, and Patterns sections
-- Added dark mode: CSS variable tokens, localStorage persistence, cross-tab sync, flash prevention via inline script
-- Added print-friendly CSS with `no-print` class and `break-inside: avoid`
-- Removed dead SessionStart hook (`.claude/` directory) — was only in this repo, redundant with local CLAUDE.md
-- Removed `public/texts/hello.txt` sample file
-- Updated README to reflect new purpose (portfolio, tools directory, pattern library)
-- Project classification: 7 user-facing apps, 4 internal tools, 2 discontinued (excluded)
+**Bug fixes + security:**
+- Fixed 5 wrong live URLs (GitHub Pages -> Vercel) based on user-provided correct URLs
+- Fixed XSS: all dynamic meta.json values escaped via `escapeHtml()` (badge, repo, privacy, use cases, URLs, table headers)
+- Fixed JS event listener accumulation — switched tab handlers to event delegation
+- Fixed copy button targeting wrong element — uses `getElementById` now
+- Added `&quot;` escaping to `escapeHtml()`
+- Replaced `<nav class="card-links">` with `<div>` to avoid Pico nav styling conflicts
+- Removed all inline styles from project.html — replaced with CSS classes
 
-### Project detail pages with mirrored docs
-- Built `project.html` with tabbed doc viewer (Overview, User Guide, Testing Guide, Tutorial)
-- Custom markdown renderer — handles headings, lists, code blocks, tables, inline formatting
-- Copy and raw-file buttons for each doc tab
-- Fetched and mirrored docs from all 10 active repos
-- Scrubbed private repo docs (graphiki, few-lap, synctone, tool-till-tees) to remove env vars, database details, local URLs
-- Created `meta.json` per project: audience, use cases, data/privacy, tech stack, status, repo visibility
-- Extracted TutorialModal content as `TUTORIAL.md` for budgy-ting, canva-grid, graphiki, few-lap, synctone
-- Added sun-sea-o (Sancio) — private, README scrubbed, User Guide and Testing Guide copied
-- Created `docs/PROJECT_DOCS_STATUS.md` — tracks doc coverage and outstanding work
-- Created `docs/DOCS_UPDATE_GUIDE.md` — process for fetching, scrubbing, and updating mirrored docs
-- Configured Vite for multi-page build (index.html + project.html)
+**Mobile + accessibility:**
+- Touch targets: icon buttons (44px), card links (padded), doc tabs and action buttons (min-height 2.75rem)
+- Safe area insets: `viewport-fit=cover` + `env(safe-area-inset-*)` on body, nav, footer
+- Card grid overflow fix: lowered minmax from 300px to 280px
+- `:active` feedback on cards, links, and buttons for touch
+- `:focus-visible` outlines on card links, doc tabs, doc action buttons
+- Dynamic meta description on project detail page
+
+**CI + infrastructure:**
+- Updated CI Node version 20 -> 22 (Vite 7 requires ^20.19.0 || >=22.12.0)
+- Resolved npm audit vulnerability (picomatch, transitive dep of Vite)
+- Updated package.json description
+
+**Documentation:**
+- Created `docs/PROJECT_DOCS_STATUS.md` — doc coverage tracker with "last mirrored" date
+- Created `docs/DOCS_UPDATE_GUIDE.md` — step-by-step process for future updates
+- Logged AI mistake: used stale secondary source instead of GITHUB_ALL_REPO_TOKEN API
+- Updated README with Pico CSS tech stack, project structure, and correct URLs
 
 ## 2026-03-30
 
