@@ -1,0 +1,6 @@
+/* Requirement: Import Pico CSS Cyan theme via Vite build pipeline
+   Approach: CSS @import from node_modules, Vite resolves and bundles it
+   Alternative: CDN link in HTML — rejected, adds external runtime dependency
+   Change: Switched from jade (green) to cyan (teal/aqua) — jade read as
+     plain green, not the intended aqua-blue brand color */
+@import "@picocss/pico/css/pico.cyan.min.css";

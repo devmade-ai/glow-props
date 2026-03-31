@@ -61,10 +61,33 @@ body > footer {
   align-items: center;
   gap: 0.5rem;
   text-decoration: none;
+  white-space: nowrap;
 }
 
 .logo-icon {
   border-radius: var(--pico-border-radius);
+  flex-shrink: 0;
+}
+
+/* ===== Nav Layout Fix ===== */
+/* Requirement: Prevent header items from wrapping on narrow screens
+   Approach: Hide brand text on small screens, keep icon. Nav links stay visible.
+   Alternative: Shrink font — rejected, becomes illegible before it stops wrapping */
+@media (max-width: 480px) {
+  .logo strong {
+    display: none;
+  }
+}
+
+/* Requirement: Nav links must be readable on dark backgrounds
+   Approach: Use primary-inverse contrast for nav text, primary on hover
+   Alternative: Keep --pico-muted-color — rejected, grey on dark is low contrast */
+body > nav a:not(.logo):not([role]) {
+  color: var(--pico-color);
+}
+
+body > nav a:not(.logo):not([role]):hover {
+  color: var(--pico-primary);
 }
 
 /* ===== Icon Buttons (theme toggle, PDF download) ===== */
