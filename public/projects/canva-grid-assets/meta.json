@@ -1,0 +1,26 @@
+{
+  "name": "canva-grid-assets",
+  "title": "CDN Assets for CanvaGrid",
+  "description": "Hosts sample images and media files served to the canva-grid design tool.",
+  "category": "internal",
+  "badge": "CDN",
+  "status": "active",
+  "repo": "public",
+  "repoUrl": "https://github.com/devmade-ai/canva-grid-assets",
+  "tech": ["Static assets", "GitHub Pages"],
+  "audience": "Internal — serves sample images to canva-grid via GitHub Pages CDN.",
+  "useCases": [
+    "Host categorized sample images for the canva-grid design tool",
+    "Serve media files via GitHub Pages as a free CDN"
+  ],
+  "dataPrivacy": {
+    "storage": "Static image files only. No user data.",
+    "thirdParty": "Images served via GitHub Pages."
+  },
+  "docs": {
+    "readme": true,
+    "userGuide": false,
+    "testingGuide": false,
+    "tutorial": false
+  }
+}

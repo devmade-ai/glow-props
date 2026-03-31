@@ -19,7 +19,18 @@ function copyRootFiles() {
   };
 }
 
+// Requirement: Multi-page site (index.html + project.html)
+// Approach: Vite build.rollupOptions.input for multiple HTML entry points
+// Alternative: Single-page with client-side routing — rejected, unnecessary complexity
 export default defineConfig({
   base: '/glow-props/',
   plugins: [copyRootFiles()],
+  build: {
+    rollupOptions: {
+      input: {
+        main: resolve(__dirname, 'index.html'),
+        project: resolve(__dirname, 'project.html'),
+      },
+    },
+  },
 });

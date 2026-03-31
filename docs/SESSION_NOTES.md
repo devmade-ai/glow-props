@@ -1,27 +1,31 @@
 # Session Notes
 
 ## Worked on
-Transforming glow-props from a bare CLAUDE.md file host into a portfolio and resource hub.
+Transforming glow-props into a portfolio and resource hub with project detail pages, mirrored docs from all repos, and reference documentation for future updates.
 
 ## Accomplished
-- Removed dead code: SessionStart hook (`.claude/` directory), `public/texts/hello.txt`
-- Built portfolio landing page with three sections: Projects (7 user-facing), Tools (4 internal), Patterns (7 engineering patterns)
-- Added dark mode with localStorage persistence, cross-tab sync, OS preference fallback, and flash prevention
-- Added print-friendly CSS (`@media print`, `no-print` class, `break-inside: avoid`)
-- Created `styles.css` with CSS variable theming (light/dark tokens)
-- Created `public/theme.js` for toggle, cross-tab sync, and OS preference tracking
-- Updated README to reflect new purpose (portfolio, tools directory, pattern library)
-- Updated all docs (SESSION_NOTES, HISTORY)
+- Removed dead code: SessionStart hook, sample text file
+- Built portfolio landing page (Projects, Tools, Patterns sections) with dark mode
+- Built project detail page (`project.html`) with tabbed doc viewer, markdown rendering, copy/raw-file buttons
+- Fetched and mirrored docs from all 10 active repos (README, User Guide, Testing Guide, Tutorial)
+- Scrubbed private repo docs (graphiki, few-lap, synctone, tool-till-tees) to remove env vars, database details, local URLs
+- Created `meta.json` per project with audience, use cases, data/privacy, status, repo visibility
+- Extracted TutorialModal content as `TUTORIAL.md` for 5 projects
+- Created `docs/PROJECT_DOCS_STATUS.md` — tracks which docs exist per repo and what's outstanding
+- Created `docs/DOCS_UPDATE_GUIDE.md` — process for fetching, scrubbing, and updating mirrored docs
+- Updated Vite config for multi-page build (index.html + project.html)
 
 ## Current state
-- Site builds cleanly with Vite, deploys to GitHub Pages
-- Three sections: user-facing projects, internal tools, engineering patterns
-- Dark mode works with persistence and flash prevention
-- CLAUDE.md still served at `/glow-props/CLAUDE.md` for direct access
-- Dead code removed (hook, sample text file)
+- Site builds cleanly, deploys to GitHub Pages
+- 10 projects with detail pages: 7 user-facing, 3 internal (+ canva-grid-assets)
+- Each project has: meta.json, README, and available docs (User Guide, Testing Guide, Tutorial)
+- Private repos have scrubbed docs — no env vars, database strings, or infrastructure details exposed
+- CLAUDE.md still served at `/glow-props/CLAUDE.md`
 
 ## Key context
-- Project classification: 7 user-facing, 4 internal (repo-tor, tool-till-tees, glow-props, canva-grid-assets), 2 discontinued (plant-fur, coin-zapp — excluded)
-- `theme.js` lives in `public/` (not root) so Vite copies it as-is without bundling — it's a classic script, not a module
-- The Vite `copyRootFiles` plugin still copies `CLAUDE.md` from root to `dist/`
-- repo-tor's `projects.json` has the canonical project listing with live URLs
+- Private repos: graphiki, few-lap, synctone, tool-till-tees
+- Missing docs: model-pear (no User Guide, Testing Guide, Tutorial), see-veo (same)
+- `project.html` uses a custom markdown renderer (no external dependencies)
+- `theme.js` in `public/` — classic script, not a module (Vite copies as-is)
+- `docs/DOCS_UPDATE_GUIDE.md` has the full process for updating mirrored docs
+- `docs/PROJECT_DOCS_STATUS.md` tracks what's scrubbed and what's outstanding

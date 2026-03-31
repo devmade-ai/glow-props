@@ -11,6 +11,18 @@
 - Updated README to reflect new purpose (portfolio, tools directory, pattern library)
 - Project classification: 7 user-facing apps, 4 internal tools, 2 discontinued (excluded)
 
+### Project detail pages with mirrored docs
+- Built `project.html` with tabbed doc viewer (Overview, User Guide, Testing Guide, Tutorial)
+- Custom markdown renderer — handles headings, lists, code blocks, tables, inline formatting
+- Copy and raw-file buttons for each doc tab
+- Fetched and mirrored docs from all 10 active repos
+- Scrubbed private repo docs (graphiki, few-lap, synctone, tool-till-tees) to remove env vars, database details, local URLs
+- Created `meta.json` per project: audience, use cases, data/privacy, tech stack, status, repo visibility
+- Extracted TutorialModal content as `TUTORIAL.md` for budgy-ting, canva-grid, graphiki, few-lap, synctone
+- Created `docs/PROJECT_DOCS_STATUS.md` — tracks doc coverage and outstanding work
+- Created `docs/DOCS_UPDATE_GUIDE.md` — process for fetching, scrubbing, and updating mirrored docs
+- Configured Vite for multi-page build (index.html + project.html)
+
 ## 2026-03-30
 
 ### Theme & Dark Mode - Remove meta theme-color suggestion

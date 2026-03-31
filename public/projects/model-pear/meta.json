@@ -1,0 +1,29 @@
+{
+  "name": "model-pear",
+  "title": "Software Transaction Structuring Tool",
+  "description": "Find optimal pricing and compare transaction structures for South African B2B software companies.",
+  "category": "user-facing",
+  "badge": "Finance",
+  "status": "active",
+  "repo": "public",
+  "liveUrl": "https://devmade-ai.github.io/model-pear/",
+  "repoUrl": "https://github.com/devmade-ai/model-pear",
+  "tech": ["TypeScript", "React", "Vite"],
+  "audience": "South African B2B software companies looking to structure deals — founders, sales teams, and finance professionals who need to find the right pricing model.",
+  "useCases": [
+    "Find the price where you hit your margin AND your client sees ROI",
+    "Compare 6 transaction models with 47 variants side by side",
+    "Model different deal structures to find the best fit for both parties"
+  ],
+  "dataPrivacy": {
+    "storage": "All calculations run in the browser. No data is stored or sent anywhere.",
+    "authentication": "None required.",
+    "thirdParty": "No external services used."
+  },
+  "docs": {
+    "readme": true,
+    "userGuide": false,
+    "testingGuide": false,
+    "tutorial": false
+  }
+}

@@ -1,0 +1,32 @@
+{
+  "name": "few-lap",
+  "title": "Fuel Station Finder",
+  "description": "Find the cheapest fuel near you in South Africa. Search by location, filter by fuel type, get directions.",
+  "category": "user-facing",
+  "badge": "Mobile",
+  "status": "active",
+  "repo": "private",
+  "liveUrl": "https://few-lap.vercel.app",
+  "tech": ["TypeScript", "Expo", "React Native", "Supabase", "Mapbox GL", "PostGIS"],
+  "audience": "South African drivers looking for the cheapest fuel nearby. Works on iOS, Android, and web.",
+  "useCases": [
+    "Search for fuel stations by address or GPS location",
+    "Filter by fuel type (ULP 95, Diesel, etc.) and search radius",
+    "Compare prices across stations sorted by cheapest or nearest",
+    "View 30-day price history and trend indicators per station",
+    "Get directions to any station via Apple Maps or Google Maps",
+    "Manage stations via admin panel"
+  ],
+  "dataPrivacy": {
+    "storage": "Station data stored in cloud database. User preferences (theme, filters) stored locally on device.",
+    "authentication": "Not required for browsing. Admin features require sign-in.",
+    "location": "GPS location used only for finding nearby stations. Not stored server-side.",
+    "thirdParty": "Mapbox for maps and geocoding. Supabase for station data."
+  },
+  "docs": {
+    "readme": true,
+    "userGuide": true,
+    "testingGuide": true,
+    "tutorial": true
+  }
+}

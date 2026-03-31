@@ -1,0 +1,31 @@
+{
+  "name": "repo-tor",
+  "title": "Git Analytics Dashboard",
+  "description": "Extract and visualize commit history from any git repository. Generate insights on progress, contributors, and code quality.",
+  "category": "internal",
+  "badge": "Analytics",
+  "status": "active",
+  "repo": "public",
+  "liveUrl": "https://repo-tor.vercel.app/",
+  "repoUrl": "https://github.com/devmade-ai/repo-tor",
+  "tech": ["JavaScript", "React", "Vite", "Chart.js", "Tailwind CSS"],
+  "audience": "Developers and managers who want to understand commit patterns, contributor activity, and code health across repositories.",
+  "useCases": [
+    "Visualize commit activity across repositories with 6 dashboard tabs",
+    "Switch between Executive, Management, and Developer detail levels",
+    "Extract git history from local repos or via GitHub API",
+    "Aggregate data across multiple repositories",
+    "Embed individual charts via iframe with customizable colors"
+  ],
+  "dataPrivacy": {
+    "storage": "Dashboard data loaded from static JSON files. No user data collected.",
+    "authentication": "None required.",
+    "thirdParty": "GitHub API used for extraction scripts (optional)."
+  },
+  "docs": {
+    "readme": true,
+    "userGuide": true,
+    "testingGuide": true,
+    "tutorial": false
+  }
+}

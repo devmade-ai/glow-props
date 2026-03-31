@@ -1,0 +1,29 @@
+{
+  "name": "tool-till-tees",
+  "title": "Utilities API",
+  "description": "Contact form endpoint, multi-tenant form builder, and agreement management backend. All backed by Supabase.",
+  "category": "internal",
+  "badge": "API",
+  "status": "active",
+  "repo": "private",
+  "tech": ["TypeScript", "Vercel", "Supabase", "Nodemailer", "React", "Vite"],
+  "audience": "Internal infrastructure — provides backend services consumed by see-veo (contact form) and other frontends (form builder, Sancio agreement management).",
+  "useCases": [
+    "Receive and deliver contact form submissions via SMTP",
+    "Build and publish custom forms with conditional fields and validation",
+    "Collect and manage form submissions with status tracking",
+    "Manage two-party agreements with proposals, signatures, and notifications (Sancio)",
+    "Generate PDF verifications for signed agreements"
+  ],
+  "dataPrivacy": {
+    "storage": "All data stored in Supabase (PostgreSQL) with row-level security.",
+    "authentication": "JWT-based anonymous auth. Users can only access their own data.",
+    "security": "CORS allowlist, input validation, HTML escaping, honeypot fields, security headers."
+  },
+  "docs": {
+    "readme": true,
+    "userGuide": true,
+    "testingGuide": true,
+    "tutorial": false
+  }
+}
