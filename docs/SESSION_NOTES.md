@@ -1,31 +1,30 @@
 # Session Notes
 
 ## Worked on
-Transforming glow-props into a portfolio and resource hub with project detail pages, mirrored docs from all repos, and reference documentation for future updates.
+Transforming glow-props into a portfolio and resource hub, then restyling with Pico CSS Jade theme and custom fonts.
 
 ## Accomplished
-- Removed dead code: SessionStart hook, sample text file
-- Built portfolio landing page (Projects, Tools, Patterns sections) with dark mode
-- Built project detail page (`project.html`) with tabbed doc viewer, markdown rendering, copy/raw-file buttons
-- Fetched and mirrored docs from all 10 active repos (README, User Guide, Testing Guide, Tutorial)
-- Scrubbed private repo docs (graphiki, few-lap, synctone, tool-till-tees) to remove env vars, database details, local URLs
-- Created `meta.json` per project with audience, use cases, data/privacy, status, repo visibility
-- Extracted TutorialModal content as `TUTORIAL.md` for 5 projects
-- Created `docs/PROJECT_DOCS_STATUS.md` — tracks which docs exist per repo and what's outstanding
-- Created `docs/DOCS_UPDATE_GUIDE.md` — process for fetching, scrubbing, and updating mirrored docs
-- Updated Vite config for multi-page build (index.html + project.html)
+- Built portfolio landing page (Projects, Tools, Patterns) and project detail pages
+- Fetched and mirrored docs from all 11 active repos, scrubbed private repo content
+- Created meta.json per project (audience, use cases, data/privacy, status)
+- Integrated Pico CSS v2 Jade theme — replaced all custom CSS with Pico base + overrides
+- Added Google Fonts (Space Grotesk headings, Inter body)
+- Switched dark mode from `.dark` class to `data-theme` attribute (Pico convention)
+- Flash prevention, cross-tab sync, and OS preference fallback all use `data-theme`
+- 12-point review caught and fixed: graphiki README exposing private repo URL, missing Vue 3 in budgy-ting tech, nested list rendering, print styles on project.html, focus-visible styles, doc inconsistencies
 
 ## Current state
-- Site builds cleanly, deploys to GitHub Pages
-- 11 projects with detail pages: 8 user-facing (including sun-sea-o), 3 internal (+ canva-grid-assets)
-- Each project has: meta.json, README, and available docs (User Guide, Testing Guide, Tutorial)
-- Private repos have scrubbed docs — no env vars, database strings, or infrastructure details exposed
-- CLAUDE.md still served at `/glow-props/CLAUDE.md`
+- Site builds cleanly with Pico CSS Jade theme bundled via Vite
+- 11 project directories with detail pages, tabbed doc viewer, copy/raw buttons
+- Dark mode: Pico handles colors via `[data-theme="dark"]`, flash prevention via inline script
+- Fonts: Space Grotesk (headings), Inter (body) via Google Fonts
+- Private repos scrubbed — no env vars, database strings, or infrastructure exposed
+- All docs consistent (README, SESSION_NOTES, HISTORY, PROJECT_DOCS_STATUS)
 
 ## Key context
-- Private repos: graphiki, few-lap, synctone, tool-till-tees
+- Pico CSS imported via `pico-jade.css` which `@import`s from node_modules — Vite bundles it
+- Dark mode uses `data-theme` attribute (Pico convention), NOT `.dark` class
+- Private repos: graphiki, few-lap, synctone, tool-till-tees, sun-sea-o
 - Missing docs: model-pear (no User Guide, Testing Guide, Tutorial), see-veo (same), sun-sea-o (no Tutorial)
-- `project.html` uses a custom markdown renderer (no external dependencies)
-- `theme.js` in `public/` — classic script, not a module (Vite copies as-is)
 - `docs/DOCS_UPDATE_GUIDE.md` has the full process for updating mirrored docs
-- `docs/PROJECT_DOCS_STATUS.md` tracks what's scrubbed and what's outstanding
+- `docs/PROJECT_DOCS_STATUS.md` tracks what's scrubbed and outstanding

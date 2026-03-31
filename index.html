@@ -3,13 +3,14 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="color-scheme" content="light dark">
   <title>devmade-ai</title>
   <meta name="description" content="Software projects, internal tools, and reusable engineering patterns by devmade-ai.">
   <link rel="icon" type="image/png" href="assets/images/favicon.png">
 
   <!-- Requirement: Prevent dark mode flash on page load
-       Approach: Inline classic script reads localStorage before first paint
-       Alternative: CSS-only prefers-color-scheme — rejected, no user override -->
+       Approach: Inline classic script reads localStorage and sets data-theme before first paint
+       Alternative: Let Pico auto-detect via prefers-color-scheme — rejected, no manual toggle persistence -->
   <script>
     (function() {
       try {
@@ -17,32 +18,48 @@
         var isDark = stored !== null
           ? stored === 'true'
           : window.matchMedia('(prefers-color-scheme: dark)').matches;
-        if (isDark) document.documentElement.classList.add('dark');
+        if (isDark) document.documentElement.setAttribute('data-theme', 'dark');
+        else document.documentElement.setAttribute('data-theme', 'light');
       } catch(e) {}
     })();
   </script>
 
+  <!-- Fonts: Space Grotesk for headings, Inter for body -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Space+Grotesk:wght@700&display=swap" rel="stylesheet">
+
+  <!-- Requirement: Pico CSS Jade theme for base styling + dark mode
+       Approach: Import from node_modules via Vite, layer custom overrides on top
+       Alternative: CDN link — rejected, adds external runtime dependency -->
+  <link rel="stylesheet" href="pico-jade.css">
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
 
-  <!-- Header -->
-  <header class="header no-print">
-    <div class="container header-inner">
-      <a href="#" class="logo" aria-label="devmade-ai home">
-        <img src="assets/images/icon-192.png" alt="" width="32" height="32" class="logo-icon">
-        <span class="logo-text">devmade-ai</span>
-      </a>
-      <nav class="header-nav" aria-label="Main navigation">
-        <a href="#projects">Projects</a>
-        <a href="#tools">Tools</a>
-        <a href="#patterns">Patterns</a>
-        <button type="button" class="theme-toggle" aria-label="Save as PDF" onclick="window.print()">
+  <!-- Header — Pico <nav> provides sticky header styling -->
+  <nav class="no-print">
+    <ul>
+      <li>
+        <a href="#" class="logo" aria-label="devmade-ai home">
+          <img src="assets/images/icon-192.png" alt="" width="28" height="28" class="logo-icon">
+          <strong>devmade-ai</strong>
+        </a>
+      </li>
+    </ul>
+    <ul>
+      <li><a href="#projects">Projects</a></li>
+      <li><a href="#tools">Tools</a></li>
+      <li><a href="#patterns">Patterns</a></li>
+      <li>
+        <button type="button" class="icon-btn" aria-label="Save as PDF" onclick="window.print()">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
             <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
           </svg>
         </button>
-        <button type="button" id="theme-toggle" class="theme-toggle" aria-label="Toggle dark mode">
+      </li>
+      <li>
+        <button type="button" class="icon-btn" id="theme-toggle" aria-label="Toggle dark mode">
           <svg class="icon-sun" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
             <circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
           </svg>
@@ -50,284 +67,253 @@
             <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
           </svg>
         </button>
-      </nav>
-    </div>
-  </header>
+      </li>
+    </ul>
+  </nav>
 
-  <main>
+  <main class="container">
     <!-- Hero -->
-    <section class="hero">
-      <div class="container">
-        <h1>Software projects &amp; engineering patterns</h1>
-        <p class="hero-subtitle">User-facing apps, internal tools, and reusable implementation patterns. Built with React, TypeScript, and modern web standards.</p>
-      </div>
-    </section>
+    <header class="hero">
+      <h1>Software projects &amp; engineering patterns</h1>
+      <p>User-facing apps, internal tools, and reusable implementation patterns. Built with React, TypeScript, and modern web standards.</p>
+    </header>
 
     <!-- Projects (user-facing) -->
-    <section id="projects" class="section">
-      <div class="container">
-        <h2>Projects</h2>
-        <p class="section-subtitle">User-facing applications — each solves a real problem.</p>
-        <div class="card-grid">
+    <section id="projects">
+      <h2>Projects</h2>
+      <p class="section-subtitle">User-facing applications — each solves a real problem.</p>
+      <div class="card-grid">
 
-          <article class="card">
-            <div class="card-header">
-              <h3>budgy-ting</h3>
-              <span class="badge">PWA</span>
-            </div>
-            <p>Household cashflow tracker. Import bank statements, detect recurring patterns, forecast spending with statistical models. All data stays on-device.</p>
-            <div class="card-tech">JavaScript &middot; Vue 3 &middot; Vite &middot; IndexedDB</div>
-            <div class="card-links">
+        <article>
+          <header>
+            <h3>budgy-ting <span class="badge">PWA</span></h3>
+          </header>
+          <p>Household cashflow tracker. Import bank statements, detect recurring patterns, forecast spending with statistical models. All data stays on-device.</p>
+          <footer>
+            <small class="tech">JavaScript &middot; Vue 3 &middot; Vite &middot; IndexedDB</small>
+            <nav class="card-links">
               <a href="project.html?name=budgy-ting">Details</a>
-              <a href="https://devmade-ai.github.io/budgy-ting/" target="_blank" rel="noopener">Live app<span class="external-indicator" aria-hidden="true"></span></a>
+              <a href="https://devmade-ai.github.io/budgy-ting/" target="_blank" rel="noopener">Live app</a>
               <a href="https://github.com/devmade-ai/budgy-ting" target="_blank" rel="noopener">Source</a>
-            </div>
-          </article>
+            </nav>
+          </footer>
+        </article>
 
-          <article class="card">
-            <div class="card-header">
-              <h3>canva-grid</h3>
-              <span class="badge">Design</span>
-            </div>
-            <p>Visual design tool. Upload images, add text overlays, choose layouts and themes, export for social media, web, or print. Multi-page document support.</p>
-            <div class="card-tech">JavaScript &middot; Vite &middot; Tailwind</div>
-            <div class="card-links">
+        <article>
+          <header>
+            <h3>canva-grid <span class="badge">Design</span></h3>
+          </header>
+          <p>Visual design tool. Upload images, add text overlays, choose layouts and themes, export for social media, web, or print. Multi-page document support.</p>
+          <footer>
+            <small class="tech">JavaScript &middot; Vite &middot; Tailwind</small>
+            <nav class="card-links">
               <a href="project.html?name=canva-grid">Details</a>
-              <a href="https://devmade-ai.github.io/canva-grid/" target="_blank" rel="noopener">Live app<span class="external-indicator" aria-hidden="true"></span></a>
+              <a href="https://devmade-ai.github.io/canva-grid/" target="_blank" rel="noopener">Live app</a>
               <a href="https://github.com/devmade-ai/canva-grid" target="_blank" rel="noopener">Source</a>
-            </div>
-          </article>
+            </nav>
+          </footer>
+        </article>
 
-          <article class="card">
-            <div class="card-header">
-              <h3>graphiki</h3>
-              <span class="badge">PWA</span>
-            </div>
-            <p>Graph-based knowledge workspace. Build and explore networks of ideas, people, and concepts with visual queries. Runs entirely in the browser.</p>
-            <div class="card-tech">TypeScript &middot; Cytoscape.js &middot; IndexedDB</div>
-            <div class="card-links">
+        <article>
+          <header>
+            <h3>graphiki <span class="badge">PWA</span></h3>
+          </header>
+          <p>Graph-based knowledge workspace. Build and explore networks of ideas, people, and concepts with visual queries. Runs entirely in the browser.</p>
+          <footer>
+            <small class="tech">TypeScript &middot; Cytoscape.js &middot; IndexedDB</small>
+            <nav class="card-links">
               <a href="project.html?name=graphiki">Details</a>
-              <a href="https://devmade-ai.github.io/graphiki/" target="_blank" rel="noopener">Live app<span class="external-indicator" aria-hidden="true"></span></a>
-            </div>
-          </article>
+              <a href="https://devmade-ai.github.io/graphiki/" target="_blank" rel="noopener">Live app</a>
+            </nav>
+          </footer>
+        </article>
 
-          <article class="card">
-            <div class="card-header">
-              <h3>model-pear</h3>
-              <span class="badge">Finance</span>
-            </div>
-            <p>B2B software pricing tool. Find optimal pricing where you hit your margin and the client sees ROI. Compare 6 transaction models with 47 variants.</p>
-            <div class="card-tech">TypeScript &middot; React &middot; Vite</div>
-            <div class="card-links">
+        <article>
+          <header>
+            <h3>model-pear <span class="badge">Finance</span></h3>
+          </header>
+          <p>B2B software pricing tool. Find optimal pricing where you hit your margin and the client sees ROI. Compare 6 transaction models with 47 variants.</p>
+          <footer>
+            <small class="tech">TypeScript &middot; React &middot; Vite</small>
+            <nav class="card-links">
               <a href="project.html?name=model-pear">Details</a>
-              <a href="https://devmade-ai.github.io/model-pear/" target="_blank" rel="noopener">Live app<span class="external-indicator" aria-hidden="true"></span></a>
+              <a href="https://devmade-ai.github.io/model-pear/" target="_blank" rel="noopener">Live app</a>
               <a href="https://github.com/devmade-ai/model-pear" target="_blank" rel="noopener">Source</a>
-            </div>
-          </article>
+            </nav>
+          </footer>
+        </article>
 
-          <article class="card">
-            <div class="card-header">
-              <h3>see-veo</h3>
-              <span class="badge">PWA</span>
-            </div>
-            <p>Personal CV and resume as an installable web app. Skills, project showcase, activity charts, and PDF export built in.</p>
-            <div class="card-tech">TypeScript &middot; React &middot; Tailwind</div>
-            <div class="card-links">
+        <article>
+          <header>
+            <h3>see-veo <span class="badge">PWA</span></h3>
+          </header>
+          <p>Personal CV and resume as an installable web app. Skills, project showcase, activity charts, and PDF export built in.</p>
+          <footer>
+            <small class="tech">TypeScript &middot; React &middot; Tailwind</small>
+            <nav class="card-links">
               <a href="project.html?name=see-veo">Details</a>
-              <a href="https://devmade-ai.github.io/see-veo/" target="_blank" rel="noopener">Live app<span class="external-indicator" aria-hidden="true"></span></a>
+              <a href="https://devmade-ai.github.io/see-veo/" target="_blank" rel="noopener">Live app</a>
               <a href="https://github.com/devmade-ai/see-veo" target="_blank" rel="noopener">Source</a>
-            </div>
-          </article>
+            </nav>
+          </footer>
+        </article>
 
-          <article class="card">
-            <div class="card-header">
-              <h3>few-lap</h3>
-              <span class="badge">Mobile</span>
-            </div>
-            <p>Fuel station finder for South Africa. Search by location, filter by fuel type, get directions. Full-screen map with Google Maps-style bottom sheet.</p>
-            <div class="card-tech">TypeScript &middot; Expo &middot; Supabase &middot; Mapbox</div>
-            <div class="card-links">
+        <article>
+          <header>
+            <h3>few-lap <span class="badge">Mobile</span></h3>
+          </header>
+          <p>Fuel station finder for South Africa. Search by location, filter by fuel type, get directions. Full-screen map with Google Maps-style bottom sheet.</p>
+          <footer>
+            <small class="tech">TypeScript &middot; Expo &middot; Supabase &middot; Mapbox</small>
+            <nav class="card-links">
               <a href="project.html?name=few-lap">Details</a>
-              <a href="https://few-lap.vercel.app" target="_blank" rel="noopener">Live app<span class="external-indicator" aria-hidden="true"></span></a>
-            </div>
-          </article>
+              <a href="https://few-lap.vercel.app" target="_blank" rel="noopener">Live app</a>
+            </nav>
+          </footer>
+        </article>
 
-          <article class="card">
-            <div class="card-header">
-              <h3>synctone</h3>
-              <span class="badge">Messaging</span>
-            </div>
-            <p>Anonymous messaging with tone tags. Senders tag the intended tone of each message. Tones are revealed when the receiver enters the chat.</p>
-            <div class="card-tech">TypeScript &middot; React &middot; Supabase</div>
-            <div class="card-links">
+        <article>
+          <header>
+            <h3>synctone <span class="badge">Messaging</span></h3>
+          </header>
+          <p>Anonymous messaging with tone tags. Senders tag the intended tone of each message. Tones are revealed when the receiver enters the chat.</p>
+          <footer>
+            <small class="tech">TypeScript &middot; Expo &middot; Supabase</small>
+            <nav class="card-links">
               <a href="project.html?name=synctone">Details</a>
-              <a href="https://synctone.vercel.app" target="_blank" rel="noopener">Live app<span class="external-indicator" aria-hidden="true"></span></a>
-            </div>
-          </article>
+              <a href="https://synctone.vercel.app" target="_blank" rel="noopener">Live app</a>
+            </nav>
+          </footer>
+        </article>
 
-          <article class="card">
-            <div class="card-header">
-              <h3>sun-sea-o</h3>
-              <span class="badge">Legal</span>
-            </div>
-            <p>Module-based agreement builder. Agreements assembled from individually authored, negotiated, and signed text modules. Progressive signing with version history.</p>
-            <div class="card-tech">TypeScript &middot; React &middot; Supabase &middot; Tailwind</div>
-            <div class="card-links">
+        <article>
+          <header>
+            <h3>sun-sea-o <span class="badge">Legal</span></h3>
+          </header>
+          <p>Module-based agreement builder. Agreements assembled from individually authored, negotiated, and signed text modules. Progressive signing with version history.</p>
+          <footer>
+            <small class="tech">TypeScript &middot; React &middot; Supabase &middot; Tailwind</small>
+            <nav class="card-links">
               <a href="project.html?name=sun-sea-o">Details</a>
-              <a href="https://sun-sea-o.vercel.app" target="_blank" rel="noopener">Live app<span class="external-indicator" aria-hidden="true"></span></a>
-            </div>
-          </article>
+              <a href="https://sun-sea-o.vercel.app" target="_blank" rel="noopener">Live app</a>
+            </nav>
+          </footer>
+        </article>
 
-        </div>
       </div>
     </section>
 
     <!-- Internal Tools -->
-    <section id="tools" class="section section-alt">
-      <div class="container">
-        <h2>Internal Tools</h2>
-        <p class="section-subtitle">Infrastructure, analytics, and supporting repositories.</p>
-        <div class="tool-list">
+    <section id="tools">
+      <h2>Internal Tools</h2>
+      <p class="section-subtitle">Infrastructure, analytics, and supporting repositories.</p>
 
-          <article class="tool-item">
-            <div class="tool-header">
-              <h3>repo-tor</h3>
-              <span class="badge badge-subtle">Analytics</span>
-            </div>
-            <p>Git analytics dashboard. Extract commit history from any repo, visualize progress, contributors, and code health. 6 dashboard tabs with role-based views.</p>
-            <div class="card-links">
-              <a href="project.html?name=repo-tor">Details</a>
-              <a href="https://repo-tor.vercel.app/" target="_blank" rel="noopener">Dashboard<span class="external-indicator" aria-hidden="true"></span></a>
-              <a href="https://github.com/devmade-ai/repo-tor" target="_blank" rel="noopener">Source</a>
-            </div>
-          </article>
+      <article class="tool-item">
+        <h4>repo-tor <span class="badge badge-subtle">Analytics</span></h4>
+        <p>Git analytics dashboard. Extract commit history from any repo, visualize progress, contributors, and code health. 6 dashboard tabs with role-based views.</p>
+        <nav class="card-links">
+          <a href="project.html?name=repo-tor">Details</a>
+          <a href="https://repo-tor.vercel.app/" target="_blank" rel="noopener">Dashboard</a>
+          <a href="https://github.com/devmade-ai/repo-tor" target="_blank" rel="noopener">Source</a>
+        </nav>
+      </article>
 
-          <article class="tool-item">
-            <div class="tool-header">
-              <h3>tool-till-tees</h3>
-              <span class="badge badge-subtle">API</span>
-            </div>
-            <p>Utilities API on Vercel. Contact form endpoint, multi-tenant form builder, and agreement management backend. All backed by Supabase.</p>
-            <div class="card-links">
-              <a href="project.html?name=tool-till-tees">Details</a>
-            </div>
-          </article>
+      <article class="tool-item">
+        <h4>tool-till-tees <span class="badge badge-subtle">API</span></h4>
+        <p>Utilities API on Vercel. Contact form endpoint, multi-tenant form builder, and agreement management backend. All backed by Supabase.</p>
+        <nav class="card-links">
+          <a href="project.html?name=tool-till-tees">Details</a>
+        </nav>
+      </article>
 
-          <article class="tool-item">
-            <div class="tool-header">
-              <h3>glow-props</h3>
-              <span class="badge badge-subtle">Config</span>
-            </div>
-            <p>This site. Hosts shared AI assistant rules, engineering patterns, and the project portfolio. Also serves as the canonical CLAUDE.md reference.</p>
-            <div class="card-links">
-              <a href="CLAUDE.md">CLAUDE.md</a>
-              <a href="https://github.com/devmade-ai/glow-props" target="_blank" rel="noopener">Source</a>
-            </div>
-          </article>
+      <article class="tool-item">
+        <h4>glow-props <span class="badge badge-subtle">Config</span></h4>
+        <p>This site. Hosts shared AI assistant rules, engineering patterns, and the project portfolio. Also serves as the canonical CLAUDE.md reference.</p>
+        <nav class="card-links">
+          <a href="CLAUDE.md">CLAUDE.md</a>
+          <a href="https://github.com/devmade-ai/glow-props" target="_blank" rel="noopener">Source</a>
+        </nav>
+      </article>
 
-          <article class="tool-item">
-            <div class="tool-header">
-              <h3>canva-grid-assets</h3>
-              <span class="badge badge-subtle">CDN</span>
-            </div>
-            <p>CDN assets repository for canva-grid. Hosts sample images and media files served to the design tool.</p>
-            <div class="card-links">
-              <a href="project.html?name=canva-grid-assets">Details</a>
-              <a href="https://github.com/devmade-ai/canva-grid-assets" target="_blank" rel="noopener">Source</a>
-            </div>
-          </article>
-
-        </div>
-      </div>
+      <article class="tool-item">
+        <h4>canva-grid-assets <span class="badge badge-subtle">CDN</span></h4>
+        <p>CDN assets repository for canva-grid. Hosts sample images and media files served to the design tool.</p>
+        <nav class="card-links">
+          <a href="project.html?name=canva-grid-assets">Details</a>
+          <a href="https://github.com/devmade-ai/canva-grid-assets" target="_blank" rel="noopener">Source</a>
+        </nav>
+      </article>
     </section>
 
     <!-- Patterns -->
-    <section id="patterns" class="section">
-      <div class="container">
-        <h2>Patterns</h2>
-        <p class="section-subtitle">Reusable implementation patterns extracted from real projects. Each is documented with requirements, approach, alternatives considered, and key lessons. <a href="CLAUDE.md">View full reference</a>.</p>
-        <div class="pattern-grid">
+    <section id="patterns">
+      <h2>Patterns</h2>
+      <p class="section-subtitle">Reusable implementation patterns extracted from real projects. Each is documented with requirements, approach, alternatives considered, and key lessons. <a href="CLAUDE.md">View full reference</a>.</p>
+      <div class="card-grid card-grid-sm">
 
-          <article class="pattern-card">
-            <h3>PWA System</h3>
-            <p>Install prompts, service worker updates, offline support. Handles the <code>beforeinstallprompt</code> race condition and browser-specific install instructions.</p>
-            <ul class="pattern-tech">
-              <li>vite-plugin-pwa</li>
-              <li>React hooks</li>
-              <li>Cross-browser</li>
-            </ul>
-          </article>
+        <article class="pattern-card">
+          <h4>PWA System</h4>
+          <p>Install prompts, service worker updates, offline support. Handles the <code>beforeinstallprompt</code> race condition and browser-specific install instructions.</p>
+          <footer>
+            <small class="tech">vite-plugin-pwa &middot; React hooks &middot; Cross-browser</small>
+          </footer>
+        </article>
 
-          <article class="pattern-card">
-            <h3>Theme &amp; Dark Mode</h3>
-            <p>User-controlled dark/light mode with system preference fallback, localStorage persistence, cross-tab sync, and flash prevention.</p>
-            <ul class="pattern-tech">
-              <li>CSS variables</li>
-              <li>Tailwind v3/v4</li>
-              <li>React + React Native</li>
-            </ul>
-          </article>
+        <article class="pattern-card">
+          <h4>Theme &amp; Dark Mode</h4>
+          <p>User-controlled dark/light mode with system preference fallback, localStorage persistence, cross-tab sync, and flash prevention.</p>
+          <footer>
+            <small class="tech">CSS variables &middot; Tailwind v3/v4 &middot; React + React Native</small>
+          </footer>
+        </article>
 
-          <article class="pattern-card">
-            <h3>Burger Menu</h3>
-            <p>Accessible dropdown navigation using the WAI-ARIA disclosure pattern. iOS Safari backdrop fix, focus management, and z-index scale.</p>
-            <ul class="pattern-tech">
-              <li>Disclosure pattern</li>
-              <li>React + React Native</li>
-              <li>Tailwind</li>
-            </ul>
-          </article>
+        <article class="pattern-card">
+          <h4>Burger Menu</h4>
+          <p>Accessible dropdown navigation using the WAI-ARIA disclosure pattern. iOS Safari backdrop fix, focus management, and z-index scale.</p>
+          <footer>
+            <small class="tech">Disclosure pattern &middot; React + React Native &middot; Tailwind</small>
+          </footer>
+        </article>
 
-          <article class="pattern-card">
-            <h3>App Icons from SVG</h3>
-            <p>Single SVG source file converted to all PNG sizes at 400 DPI using Sharp. One command regenerates everything.</p>
-            <ul class="pattern-tech">
-              <li>Sharp</li>
-              <li>400 DPI rasterization</li>
-              <li>PWA manifest</li>
-            </ul>
-          </article>
+        <article class="pattern-card">
+          <h4>App Icons from SVG</h4>
+          <p>Single SVG source file converted to all PNG sizes at 400 DPI using Sharp. One command regenerates everything.</p>
+          <footer>
+            <small class="tech">Sharp &middot; 400 DPI rasterization &middot; PWA manifest</small>
+          </footer>
+        </article>
 
-          <article class="pattern-card">
-            <h3>Download as PDF</h3>
-            <p>Zero-dependency PDF export using <code>window.print()</code>. Print-friendly CSS overrides, <code>no-print</code> utility class, and page break control.</p>
-            <ul class="pattern-tech">
-              <li>window.print()</li>
-              <li>@media print</li>
-              <li>Zero dependencies</li>
-            </ul>
-          </article>
+        <article class="pattern-card">
+          <h4>Download as PDF</h4>
+          <p>Zero-dependency PDF export using <code>window.print()</code>. Print-friendly CSS overrides, <code>no-print</code> utility class, and page break control.</p>
+          <footer>
+            <small class="tech">window.print() &middot; @media print &middot; Zero dependencies</small>
+          </footer>
+        </article>
 
-          <article class="pattern-card">
-            <h3>HTTPS Proxy Support</h3>
-            <p>Zero-dependency HTTP CONNECT tunnel for Node.js scripts behind proxies. Transparent fallback to direct connections.</p>
-            <ul class="pattern-tech">
-              <li>Node.js stdlib</li>
-              <li>HTTP CONNECT</li>
-              <li>Proxy auth</li>
-            </ul>
-          </article>
+        <article class="pattern-card">
+          <h4>HTTPS Proxy Support</h4>
+          <p>Zero-dependency HTTP CONNECT tunnel for Node.js scripts behind proxies. Transparent fallback to direct connections.</p>
+          <footer>
+            <small class="tech">Node.js stdlib &middot; HTTP CONNECT &middot; Proxy auth</small>
+          </footer>
+        </article>
 
-          <article class="pattern-card">
-            <h3>Debug System</h3>
-            <p>In-memory event store with floating debug pill. Pub/sub circular buffer, severity levels, environment diagnostics. Renders in separate React root.</p>
-            <ul class="pattern-tech">
-              <li>Pub/sub</li>
-              <li>Separate React root</li>
-              <li>Alpha diagnostic</li>
-            </ul>
-          </article>
+        <article class="pattern-card">
+          <h4>Debug System</h4>
+          <p>In-memory event store with floating debug pill. Pub/sub circular buffer, severity levels, environment diagnostics. Renders in separate React root.</p>
+          <footer>
+            <small class="tech">Pub/sub &middot; Separate React root &middot; Alpha diagnostic</small>
+          </footer>
+        </article>
 
-        </div>
       </div>
     </section>
   </main>
 
   <!-- Footer -->
-  <footer class="footer">
-    <div class="container">
-      <p><a href="https://github.com/devmade-ai" target="_blank" rel="noopener">github.com/devmade-ai</a></p>
-    </div>
+  <footer class="container">
+    <p><small><a href="https://github.com/devmade-ai" target="_blank" rel="noopener">github.com/devmade-ai</a></small></p>
   </footer>
 
   <script src="theme.js"></script>

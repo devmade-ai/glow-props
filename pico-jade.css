@@ -1,0 +1,4 @@
+/* Requirement: Import Pico CSS Jade theme via Vite build pipeline
+   Approach: CSS @import from node_modules, Vite resolves and bundles it
+   Alternative: CDN link in HTML — rejected, adds external runtime dependency */
+@import "@picocss/pico/css/pico.jade.min.css";

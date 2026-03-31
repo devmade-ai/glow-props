@@ -2,6 +2,16 @@
 
 ## 2026-03-31
 
+### Pico CSS Jade theme + custom fonts
+- Integrated Pico CSS v2 Jade theme (imported via Vite from node_modules)
+- Added Google Fonts: Space Grotesk (headings), Inter (body)
+- Switched dark mode from `.dark` class to `data-theme` attribute (Pico convention)
+- Updated flash prevention scripts, theme.js, and CSS icon toggles for data-theme
+- Rewrote styles.css as a Pico override layer — removed all base typography, color, and focus styling (Pico handles these)
+- Restructured HTML to use Pico's semantic conventions: `<nav>` for header, `<article>` for cards, `<header>`/`<footer>` within articles
+- Added `pico-jade.css` as the Pico import entry point
+- Added `<meta name="color-scheme" content="light dark">` for browser chrome
+
 ### Portfolio site — transform from file host to project hub
 - Built portfolio landing page with Projects, Tools, and Patterns sections
 - Added dark mode: CSS variable tokens, localStorage persistence, cross-tab sync, flash prevention via inline script

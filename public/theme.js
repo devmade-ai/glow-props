@@ -1,14 +1,14 @@
 // Requirement: User-controlled dark/light mode with persistence and cross-tab sync
-// Approach: Toggle .dark class on <html>, persist to localStorage, listen for
-//   cross-tab changes via storage event and OS preference changes via matchMedia
-// Alternative: CSS-only prefers-color-scheme — rejected, no user override
+// Approach: Toggle data-theme attribute on <html> (Pico CSS convention), persist
+//   to localStorage, listen for cross-tab changes and OS preference changes
+// Alternative: .dark class — rejected, Pico CSS uses [data-theme] for dark mode
 
 (function () {
   var toggle = document.getElementById('theme-toggle');
   if (!toggle) return;
 
   function isDark() {
-    return document.documentElement.classList.contains('dark');
+    return document.documentElement.getAttribute('data-theme') === 'dark';
   }
 
   function safeStorageSet(key, value) {
@@ -20,11 +20,7 @@
   }
 
   function setTheme(dark) {
-    if (dark) {
-      document.documentElement.classList.add('dark');
-    } else {
-      document.documentElement.classList.remove('dark');
-    }
+    document.documentElement.setAttribute('data-theme', dark ? 'dark' : 'light');
     safeStorageSet('darkMode', dark);
   }
 
