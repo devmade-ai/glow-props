@@ -6,8 +6,15 @@
   "badge": "Messaging",
   "status": "active",
   "repo": "private",
-  "liveUrl": "https://synctone.vercel.app",
-  "tech": ["TypeScript", "Expo", "React Native", "Supabase", "NativeWind", "Zustand"],
+  "liveUrl": "https://synctone.vercel.app/",
+  "tech": [
+    "TypeScript",
+    "Expo",
+    "React Native",
+    "Supabase",
+    "NativeWind",
+    "Zustand"
+  ],
   "audience": "Anyone who wants to communicate with more clarity. Useful for sensitive conversations, remote teams, or situations where tone is easily misread in text.",
   "useCases": [
     "Create anonymous chats with human-readable codes (e.g., 'happy-tiger')",
@@ -18,7 +25,7 @@
     "Push notifications across iOS, Android, and web"
   ],
   "dataPrivacy": {
-    "storage": "Messages stored in cloud database for delivery. Identity is a random device ID — no email, phone, or account.",
+    "storage": "Messages stored in cloud database for delivery. Identity is a random device ID \u2014 no email, phone, or account.",
     "authentication": "Anonymous. Random UUID generated on first launch, stored securely on device.",
     "deletion": "Uninstalling the app permanently deletes your identity. No recovery, no backdoors.",
     "security": "Row-level security policies. Anti-spam rate limiting and auto-flagging. Anonymous reporting for moderation.",

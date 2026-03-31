@@ -339,7 +339,7 @@
             return '<pre><code>' + escapeHtml(code.trim()) + '</code></pre>';
           })
           .replace(/^\|(.+)\|\s*\n\|[\s\-:|]+\|\s*\n((?:\|.+\|\s*\n?)*)/gm, function (_, header, body) {
-            var ths = header.split('|').map(function (h) { return '<th>' + h.trim() + '</th>'; }).join('');
+            var ths = header.split('|').map(function (h) { return '<th>' + escapeHtml(h.trim()) + '</th>'; }).join('');
             var rows = body.trim().split('\n').map(function (row) {
               var tds = row.replace(/^\||\|$/g, '').split('|').map(function (d) { return '<td>' + inlineMarkdown(d.trim()) + '</td>'; }).join('');
               return '<tr>' + tds + '</tr>';
@@ -428,23 +428,23 @@
 
         var linksHtml = '';
         if (meta.liveUrl) {
-          linksHtml += '<a href="' + meta.liveUrl + '" target="_blank" rel="noopener" class="doc-action-btn">Visit app</a>';
+          linksHtml += '<a href="' + escapeHtml(meta.liveUrl) + '" target="_blank" rel="noopener" class="doc-action-btn">Visit app</a>';
         }
         if (meta.repoUrl) {
-          linksHtml += '<a href="' + meta.repoUrl + '" target="_blank" rel="noopener" class="doc-action-btn">Source code</a>';
+          linksHtml += '<a href="' + escapeHtml(meta.repoUrl) + '" target="_blank" rel="noopener" class="doc-action-btn">Source code</a>';
         }
         if (!meta.repoUrl && meta.repo === 'private') {
           linksHtml += '<span class="doc-action-btn private-label">Private repository</span>';
         }
 
         var techHtml = meta.tech ? meta.tech.map(function (t) { return '<span class="tag">' + t + '</span>'; }).join('') : '';
-        var useCasesHtml = meta.useCases ? meta.useCases.map(function (u) { return '<li>' + u + '</li>'; }).join('') : '<p>Coming soon.</p>';
+        var useCasesHtml = meta.useCases ? meta.useCases.map(function (u) { return '<li>' + escapeHtml(u) + '</li>'; }).join('') : '<p>Coming soon.</p>';
 
         var privacyHtml = '';
         if (meta.dataPrivacy) {
           Object.keys(meta.dataPrivacy).forEach(function (key) {
             var label = key.charAt(0).toUpperCase() + key.slice(1).replace(/([A-Z])/g, ' $1');
-            privacyHtml += '<div class="privacy-item"><span class="privacy-label">' + label + ':</span> <span class="privacy-value">' + meta.dataPrivacy[key] + '</span></div>';
+            privacyHtml += '<div class="privacy-item"><span class="privacy-label">' + escapeHtml(label) + ':</span> <span class="privacy-value">' + escapeHtml(meta.dataPrivacy[key]) + '</span></div>';
           });
         }
 
@@ -483,8 +483,8 @@
           '<header class="project-hero">' +
             '<div class="project-title-row">' +
               '<h1>' + escapeHtml(meta.title) + '</h1>' +
-              '<span class="badge">' + meta.badge + '</span>' +
-              '<span class="badge badge-subtle">' + meta.repo + '</span>' +
+              '<span class="badge">' + escapeHtml(meta.badge) + '</span>' +
+              '<span class="badge badge-subtle">' + escapeHtml(meta.repo) + '</span>' +
               '<span class="status-badge"><span class="status-dot' + statusClass + '"></span>' + statusLabel + '</span>' +
             '</div>' +
             '<p class="project-description">' + escapeHtml(meta.description) + '</p>' +

@@ -6,8 +6,15 @@
   "badge": "Mobile",
   "status": "active",
   "repo": "private",
-  "liveUrl": "https://few-lap.vercel.app",
-  "tech": ["TypeScript", "Expo", "React Native", "Supabase", "Mapbox GL", "PostGIS"],
+  "liveUrl": "https://few-lap.vercel.app/",
+  "tech": [
+    "TypeScript",
+    "Expo",
+    "React Native",
+    "Supabase",
+    "Mapbox GL",
+    "PostGIS"
+  ],
   "audience": "South African drivers looking for the cheapest fuel nearby. Works on iOS, Android, and web.",
   "useCases": [
     "Search for fuel stations by address or GPS location",
