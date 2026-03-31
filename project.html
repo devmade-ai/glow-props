@@ -164,6 +164,43 @@
       font-style: italic;
     }
 
+    /* ===== Loading State ===== */
+    .loading-state {
+      text-align: center;
+      padding: 4rem 0;
+      color: var(--pico-muted-color);
+    }
+
+    /* ===== Project Hero ===== */
+    .project-hero {
+      margin-bottom: 1rem;
+    }
+
+    .project-title-row {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      flex-wrap: wrap;
+    }
+
+    .project-title-row h1 {
+      margin-bottom: 0;
+    }
+
+    .project-description {
+      color: var(--pico-muted-color);
+    }
+
+    .project-actions {
+      margin-top: 0.5rem;
+    }
+
+    /* Private repo badge in project hero */
+    .private-label {
+      cursor: default;
+      opacity: 0.5;
+    }
+
     /* ===== Status Badge ===== */
     .status-badge {
       display: inline-flex;
@@ -258,7 +295,7 @@
 
   <main class="container">
     <div id="app">
-      <p style="text-align: center; padding: 4rem 0; color: var(--pico-muted-color);">Loading...</p>
+      <p class="loading-state">Loading...</p>
     </div>
   </main>
 
@@ -388,7 +425,7 @@
           linksHtml += '<a href="' + meta.repoUrl + '" target="_blank" rel="noopener" class="doc-action-btn">Source code</a>';
         }
         if (!meta.repoUrl && meta.repo === 'private') {
-          linksHtml += '<span class="doc-action-btn" style="cursor:default;opacity:0.5;">Private repository</span>';
+          linksHtml += '<span class="doc-action-btn private-label">Private repository</span>';
         }
 
         var techHtml = meta.tech ? meta.tech.map(function (t) { return '<span class="tag">' + t + '</span>'; }).join('') : '';
@@ -427,22 +464,22 @@
             '</div>' +
             '<div class="md-render">' + renderMarkdown(docs[currentTab]) + '</div></article>';
         } else if (tabDefs.find(function (t) { return t.key === currentTab; }).available) {
-          docContent = '<article aria-busy="true"><p style="text-align:center;">Loading...</p></article>';
+          docContent = '<article aria-busy="true"><p class="loading-state">Loading...</p></article>';
         } else {
           docContent = '<article><div class="coming-soon">Coming soon.</div></article>';
         }
 
         app.innerHTML =
           '<p><a href="./">&larr; All projects</a></p>' +
-          '<header style="margin-bottom:1rem;">' +
-            '<div style="display:flex;align-items:center;gap:0.75rem;flex-wrap:wrap;">' +
-              '<h1 style="margin-bottom:0;">' + escapeHtml(meta.title) + '</h1>' +
+          '<header class="project-hero">' +
+            '<div class="project-title-row">' +
+              '<h1>' + escapeHtml(meta.title) + '</h1>' +
               '<span class="badge">' + meta.badge + '</span>' +
               '<span class="badge badge-subtle">' + meta.repo + '</span>' +
               '<span class="status-badge"><span class="status-dot' + statusClass + '"></span>' + statusLabel + '</span>' +
             '</div>' +
-            '<p style="color:var(--pico-muted-color);">' + escapeHtml(meta.description) + '</p>' +
-            '<div style="margin-top:0.5rem;">' + linksHtml + '</div>' +
+            '<p class="project-description">' + escapeHtml(meta.description) + '</p>' +
+            '<div class="project-actions">' + linksHtml + '</div>' +
             '<div class="tag-list">' + techHtml + '</div>' +
           '</header>' +
 
