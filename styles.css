@@ -46,8 +46,16 @@ body {
   padding-right: env(safe-area-inset-right);
 }
 
+/* Requirement: Header content must align with <main class="container"> content edges
+   Approach: Match Pico's container padding (--pico-spacing: 1rem) on the nav,
+     then remove padding at breakpoints where the container switches to max-width centering.
+     Pico's nav li negative-margin trick already pulls content flush to these edges.
+   Alternative: Wrap nav internals in a .container div — rejected, breaks Pico's
+     <nav> flexbox layout which expects <ul> direct children */
 body > nav {
   padding-top: env(safe-area-inset-top);
+  padding-left: max(var(--pico-spacing), env(safe-area-inset-left));
+  padding-right: max(var(--pico-spacing), env(safe-area-inset-right));
 }
 
 body > footer {
