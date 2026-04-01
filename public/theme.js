@@ -13,6 +13,20 @@
   var DEFAULT_LIGHT_THEME = 'caramellatte';
   var DEFAULT_DARK_THEME = 'coffee';
 
+  // Requirement: Random theme on load — theme lists must match the picker buttons in HTML
+  // Approach: Arrays of theme names for each mode, used by both the randomizer and
+  //   the inline bootstrap script (which has its own copy for flash prevention).
+  //   Keep these in sync with the data-theme-pick buttons in index.html / project.html.
+  var LIGHT_THEMES = [
+    'caramellatte', 'cupcake', 'pastel', 'lofi', 'nord', 'emerald', 'garden',
+    'autumn', 'valentine', 'fantasy', 'retro', 'corporate', 'silk', 'bumblebee',
+    'aqua', 'lemonade', 'winter', 'cmyk', 'acid', 'cyberpunk', 'wireframe', 'light'
+  ];
+  var DARK_THEMES = [
+    'coffee', 'dim', 'night', 'dracula', 'forest', 'luxury', 'synthwave',
+    'black', 'halloween', 'sunset', 'abyss', 'business', 'dark'
+  ];
+
   // ===== Storage helpers =====
   function safeStorageSet(key, value) {
     try { localStorage.setItem(key, value); } catch (e) { /* sandboxed */ }
@@ -151,6 +165,39 @@
     }
   });
 
+  // ===== Random theme toggle =====
+  // Requirement: Toggle that enables random theme selection on each page load
+  // Approach: Persists 'randomThemeOnLoad' in localStorage ('true'/'false').
+  //   The actual randomization happens in the inline bootstrap script (index.html,
+  //   project.html) before first paint, so there's no flash. This handler just
+  //   toggles the setting and updates the UI indicator.
+  // Alternative: Randomize on toggle click — rejected, the feature is "on load"
+  //   so it should only take effect on next page load/refresh.
+  var randomToggle = document.getElementById('random-theme-toggle');
+  var randomIndicator = document.getElementById('random-theme-indicator');
+
+  function isRandomEnabled() {
+    return safeStorageGet('randomThemeOnLoad') === 'true';
+  }
+
+  function updateRandomIndicator() {
+    if (randomIndicator) {
+      var enabled = isRandomEnabled();
+      randomIndicator.textContent = enabled ? 'On' : 'Off';
+    }
+  }
+
+  // Initialize indicator on page load
+  updateRandomIndicator();
+
+  if (randomToggle) {
+    randomToggle.addEventListener('click', function () {
+      var newState = !isRandomEnabled();
+      safeStorageSet('randomThemeOnLoad', newState);
+      updateRandomIndicator();
+    });
+  }
+
   // ===== Cross-tab sync =====
   // storage event only fires in other tabs — values already written by
   // the originating tab, so skipPersist avoids redundant writes
@@ -159,6 +206,10 @@
       var dark = safeStorageGet('darkMode') === 'true';
       var theme = getStoredTheme(dark);
       applyTheme(dark, theme, true);
+    }
+    // Sync random toggle indicator across tabs
+    if (e.key === 'randomThemeOnLoad') {
+      updateRandomIndicator();
     }
   });
 

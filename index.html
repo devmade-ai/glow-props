@@ -28,6 +28,22 @@
         var theme = isDark
           ? (localStorage.getItem('darkTheme') || 'coffee')
           : (localStorage.getItem('lightTheme') || 'caramellatte');
+
+        // Requirement: Random theme on load when enabled
+        // Approach: Pick a random theme from the current mode's list before first paint.
+        //   Theme lists must stay in sync with theme.js and the picker buttons.
+        //   Persists the chosen theme so the picker indicator matches.
+        if (localStorage.getItem('randomThemeOnLoad') === 'true') {
+          var lt = ['caramellatte','cupcake','pastel','lofi','nord','emerald','garden',
+            'autumn','valentine','fantasy','retro','corporate','silk','bumblebee',
+            'aqua','lemonade','winter','cmyk','acid','cyberpunk','wireframe','light'];
+          var dt = ['coffee','dim','night','dracula','forest','luxury','synthwave',
+            'black','halloween','sunset','abyss','business','dark'];
+          var list = isDark ? dt : lt;
+          theme = list[Math.floor(Math.random() * list.length)];
+          localStorage.setItem(isDark ? 'darkTheme' : 'lightTheme', theme);
+        }
+
         if (isDark) {
           document.documentElement.classList.add('dark');
         } else {
@@ -123,6 +139,21 @@
                                min-h-11 flex items-center">
               <span class="theme-label-dark hidden">Light mode</span>
               <span class="theme-label-light">Dark mode</span>
+            </button></li>
+            <!-- Requirement: Optional random theme on every page load/refresh
+                 Approach: Toggle button with on/off state persisted in localStorage.
+                   Off by default. When on, picks a random theme from the current mode's
+                   list on each page load. Inline bootstrap script handles the actual
+                   randomization before first paint to avoid flash.
+                 Alternative: Always randomize — rejected, most users want a consistent
+                   theme; this should be opt-in -->
+            <li><button type="button" id="random-theme-toggle"
+                        class="w-full text-left px-4 py-2.5 text-sm text-base-content
+                               hover:bg-base-200 transition-colors cursor-pointer
+                               focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-[-2px]
+                               min-h-11 flex items-center justify-between">
+              <span>Random theme on load</span>
+              <span id="random-theme-indicator" class="text-xs text-base-content/40">Off</span>
             </button></li>
             <li><hr class="my-1 border-base-300"></li>
             <!-- Requirement: Per-mode theme picker — shows light or dark themes based on toggle
