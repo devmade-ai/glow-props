@@ -7,7 +7,7 @@
 
 @import "tailwindcss";
 @plugin "daisyui" {
-  themes: light --default, dark --prefersdark;
+  themes: caramellatte --default, coffee --prefersdark;
 }
 
 /* ===== Custom dark mode variant =====

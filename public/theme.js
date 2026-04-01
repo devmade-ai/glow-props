@@ -29,10 +29,10 @@
   function setTheme(dark) {
     if (dark) {
       document.documentElement.classList.add('dark');
-      document.documentElement.setAttribute('data-theme', 'dark');
+      document.documentElement.setAttribute('data-theme', 'coffee');
     } else {
       document.documentElement.classList.remove('dark');
-      document.documentElement.setAttribute('data-theme', 'light');
+      document.documentElement.setAttribute('data-theme', 'caramellatte');
     }
     safeStorageSet('darkMode', dark);
     updateThemeLabels(dark);
