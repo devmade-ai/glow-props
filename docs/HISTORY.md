@@ -2,6 +2,19 @@
 
 ## 2026-04-01
 
+### CSS framework migration — Pico CSS to Tailwind + DaisyUI
+- Replaced Pico CSS v2.1.1 with Tailwind CSS v4.2.2 + DaisyUI v5.5.19
+- Deleted `pico-theme.css` (Pico import) and `styles.css` (420 lines of Pico overrides)
+- Created `main.css` — Tailwind directives, DaisyUI plugin config, custom animations, print styles
+- Migrated `index.html` — all sections rewritten with Tailwind utility classes + DaisyUI components
+- Migrated `project.html` — meta grid, tabs, doc viewer, markdown renderer all use Tailwind/DaisyUI
+- Updated `theme.js` — now sets both `.dark` class (Tailwind) and `data-theme` (DaisyUI) together
+- Updated flash-prevention scripts in both HTML files for dual class/attribute dark mode
+- Configured `@tailwindcss/vite` plugin in `vite.config.js`
+- Added animations: scroll-triggered fade-in-up (Intersection Observer), card hover lift, gradient hero text, sticky glassmorphism navbar
+- All accessibility preserved: disclosure pattern, aria-expanded, focus-visible, 44px touch targets, safe area insets
+- Moved Tailwind/DaisyUI from dependencies to devDependencies (build-time only)
+
 ### Project content rewrite
 - Rewrote audience and use cases for all 12 project meta.json files
 - Use cases changed from feature lists to real-world scenarios ("A [person] needs to [solve problem]")

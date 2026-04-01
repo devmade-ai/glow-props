@@ -1,4 +1,5 @@
 import { defineConfig } from 'vite';
+import tailwindcss from '@tailwindcss/vite';
 import { copyFileSync } from 'fs';
 import { resolve } from 'path';
 
@@ -24,7 +25,7 @@ function copyRootFiles() {
 // Alternative: Single-page with client-side routing — rejected, unnecessary complexity
 export default defineConfig({
   base: '/glow-props/',
-  plugins: [copyRootFiles()],
+  plugins: [tailwindcss(), copyRootFiles()],
   build: {
     rollupOptions: {
       input: {

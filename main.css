@@ -1,0 +1,162 @@
+/* Requirement: Replace Pico CSS with Tailwind v4 + DaisyUI v5 for full styling control
+   Approach: Tailwind CSS-first config (v4), DaisyUI for component classes and theming,
+     custom utilities for animations and portfolio-specific styles
+   Alternative: Tailwind only (no DaisyUI) — rejected, DaisyUI provides polished component
+     classes (card, badge, btn, tabs) that reduce HTML verbosity significantly
+   Alternative: Keep Pico + add Tailwind — rejected, two frameworks fight over base styles */
+
+@import "tailwindcss";
+@plugin "daisyui" {
+  themes: light --default, dark --prefersdark;
+}
+
+/* ===== Custom dark mode variant =====
+   Requirement: Class-based dark mode toggling via .dark on <html>
+   Approach: Tailwind v4 @custom-variant maps dark: prefix to .dark ancestor
+   Why: DaisyUI uses data-theme for component colors; Tailwind dark: prefix
+     is needed for custom utilities (hover states, text opacity, etc.).
+     Both are set together by theme.js for full coverage. */
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* ===== Fonts =====
+   Requirement: Distinctive heading font + clean body font for portfolio
+   Approach: Space Grotesk (headings) + Inter (body) via Google Fonts
+   Alternative: System font stack — rejected, looks generic for a portfolio */
+@theme {
+  --font-heading: 'Space Grotesk', system-ui, -apple-system, sans-serif;
+  --font-body: 'Inter', system-ui, -apple-system, sans-serif;
+}
+
+/* ===== Base layer =====
+   Global resets and defaults layered on top of Tailwind's preflight */
+@layer base {
+  html {
+    font-family: var(--font-body);
+    scroll-behavior: smooth;
+    /* Requirement: Native form inputs match theme in dark mode
+       Without color-scheme, <select>, <input>, scrollbars stay light */
+    color-scheme: light;
+  }
+
+  html.dark {
+    color-scheme: dark;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-heading);
+  }
+
+  /* Requirement: Content must not overlap with iPhone notch/Dynamic Island
+     Approach: env(safe-area-inset-*) on body
+     Alternative: Fixed padding — rejected, wastes space on non-notch devices */
+  body {
+    padding-left: env(safe-area-inset-left);
+    padding-right: env(safe-area-inset-right);
+  }
+}
+
+/* ===== Custom animations =====
+   Requirement: Portfolio should feel polished with tasteful motion
+   Approach: CSS @keyframes for fade-in-up on scroll, plus utility classes.
+     Intersection Observer in JS triggers .animate-in class.
+   Alternative: Framer Motion — rejected, this is vanilla HTML, no React */
+@keyframes fade-in-up {
+  from {
+    opacity: 0;
+    transform: translateY(1.5rem);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@utility animate-fade-in-up {
+  animation: fade-in-up 0.6s ease-out both;
+}
+
+@utility animate-fade-in {
+  animation: fade-in 0.5s ease-out both;
+}
+
+/* Scroll-triggered animation: elements start invisible,
+   animate when .animate-in is added by Intersection Observer */
+@utility scroll-animate {
+  opacity: 0;
+  transform: translateY(1.5rem);
+  transition: opacity 0.6s ease-out, transform 0.6s ease-out;
+}
+
+.scroll-animate.animate-in {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Stagger delays for card grids — applied via data-delay attribute in HTML */
+.scroll-animate[data-delay="1"] { transition-delay: 0.1s; }
+.scroll-animate[data-delay="2"] { transition-delay: 0.2s; }
+.scroll-animate[data-delay="3"] { transition-delay: 0.3s; }
+.scroll-animate[data-delay="4"] { transition-delay: 0.4s; }
+.scroll-animate[data-delay="5"] { transition-delay: 0.5s; }
+
+/* ===== Card hover effects =====
+   Requirement: Interactive feel on project cards
+   Approach: Subtle lift + shadow increase on hover, scale on active
+   Applied via .card-hover utility class */
+@utility card-hover {
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.card-hover:hover {
+  transform: translateY(-4px);
+  box-shadow:
+    0 10px 25px -5px oklch(0 0 0 / 0.1),
+    0 4px 10px -5px oklch(0 0 0 / 0.04);
+}
+
+.card-hover:active {
+  transform: translateY(-2px);
+}
+
+/* ===== Print styles =====
+   Requirement: Clean PDF output via window.print()
+   Approach: Hide interactive elements, force readable colors, prevent page breaks
+   in content blocks. !important justified — must override inline styles and
+   CSS-in-JS (see CLAUDE.md Download as PDF pattern) */
+@media print {
+  .no-print {
+    display: none !important;
+  }
+
+  body {
+    background: white !important;
+    color: black !important;
+  }
+
+  a {
+    color: black !important;
+    text-decoration: underline !important;
+  }
+
+  article, section, .card {
+    break-inside: avoid;
+    page-break-inside: avoid;
+    box-shadow: none !important;
+  }
+}
+
+/* ===== Burger menu z-index layers =====
+   Follows z-index scale from CLAUDE.md:
+   Menu backdrop: z-40, Menu dropdown: z-50, Modals: z-60, Toasts: z-70 */
+@utility z-backdrop {
+  z-index: 40;
+}
+
+@utility z-dropdown {
+  z-index: 50;
+}

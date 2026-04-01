@@ -59,12 +59,11 @@ Full pattern reference: [CLAUDE.md](https://devmade-ai.github.io/glow-props/CLAU
 glow-props/
   CLAUDE.md                     # AI assistant ruleset (reference for all projects)
   README.md                     # This file
-  package.json                  # Vite + Sharp + Pico CSS (devDependencies)
-  vite.config.js                # Build config (multi-page, copies CLAUDE.md to dist/)
+  package.json                  # Vite + Tailwind + DaisyUI + Sharp (devDependencies)
+  vite.config.js                # Build config (multi-page, Tailwind plugin, copies CLAUDE.md)
   index.html                    # Portfolio landing page
   project.html                  # Project detail page (markdown viewer)
-  pico-jade.css                 # Pico CSS Jade theme import (bundled by Vite)
-  styles.css                    # Custom overrides on top of Pico
+  main.css                      # Tailwind directives, DaisyUI config, custom animations
   public/
     theme.js                    # Dark mode toggle with persistence and cross-tab sync
     projects/                   # Mirrored docs per project
@@ -102,10 +101,11 @@ npm run build        # Production build → dist/
 
 ## Tech Stack
 
-- **CSS Framework:** [Pico CSS](https://picocss.com/) v2 (Jade theme) — semantic HTML styling with built-in dark mode
+- **CSS Framework:** [Tailwind CSS](https://tailwindcss.com/) v4 + [DaisyUI](https://daisyui.com/) v5 — utility-first CSS with pre-built component classes
 - **Fonts:** [Space Grotesk](https://fonts.google.com/specimen/Space+Grotesk) (headings) + [Inter](https://fonts.google.com/specimen/Inter) (body) via Google Fonts
-- **Build:** Vite 7
+- **Build:** Vite 7 with `@tailwindcss/vite` plugin
 - **Icons:** Sharp (SVG to PNG at 400 DPI)
+- **Animations:** Scroll-triggered fade-in (Intersection Observer), card hover effects, gradient text
 
 ## Icon Generation
 
