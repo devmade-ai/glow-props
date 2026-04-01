@@ -187,7 +187,7 @@ In-app walkthrough shown on first visit. Access anytime via the menu.
 **User-facing projects** — inside the card grid `<div>` in `#projects`:
 
 ```html
-<div class="card bg-base-200/50 border border-base-300 card-hover scroll-animate" data-delay="1">
+<div class="card bg-base-200/50 border border-base-300 card-interactive scroll-animate" data-delay="1">
   <div class="card-body">
     <h3 class="card-title text-base">
       project-name
@@ -196,10 +196,10 @@ In-app walkthrough shown on first visit. Access anytime via the menu.
     </h3>
     <p class="text-sm text-base-content/70 grow">One-sentence description.</p>
     <div class="mt-auto pt-2">
-      <p class="text-xs text-base-content/40 mb-2">TypeScript &middot; React &middot; Vite</p>
-      <div class="flex flex-wrap gap-2">
-        <a href="project.html?name=project-name" class="link link-primary text-sm font-semibold no-underline hover:underline">Details</a>
-        <a href="https://project-name.vercel.app/" target="_blank" rel="noopener" class="link link-primary text-sm font-semibold no-underline hover:underline">Live app</a>
+      <p class="text-xs text-base-content/40">TypeScript &middot; React &middot; Vite</p>
+      <div class="card-links">
+        <a href="project.html?name=project-name" class="btn btn-xs btn-primary rounded-full" onclick="event.stopPropagation()">Details</a>
+        <a href="https://project-name.vercel.app/" target="_blank" rel="noopener" class="btn btn-xs btn-outline rounded-full" onclick="event.stopPropagation()">Live app</a>
       </div>
     </div>
   </div>
@@ -208,22 +208,22 @@ In-app walkthrough shown on first visit. Access anytime via the menu.
 
 Add a Source link for public repos only:
 ```html
-<a href="https://github.com/devmade-ai/project-name" target="_blank" rel="noopener" class="link link-primary text-sm font-semibold no-underline hover:underline">Source</a>
+<a href="https://github.com/devmade-ai/project-name" target="_blank" rel="noopener" class="btn btn-xs btn-outline rounded-full" onclick="event.stopPropagation()">Source</a>
 ```
 
 **Internal tools** — inside the `#tools` section:
 
 ```html
-<div class="card bg-base-200/50 border border-base-300 card-hover scroll-animate" data-delay="1">
+<div class="card bg-base-200/50 border border-base-300 card-interactive scroll-animate" data-delay="1">
   <div class="card-body py-4">
     <h4 class="font-semibold text-base mb-1">
       project-name
       <span class="badge badge-ghost badge-sm">Badge</span>
     </h4>
-    <p class="text-sm text-base-content/70 mb-2">One-sentence description.</p>
-    <div class="flex flex-wrap gap-2">
-      <a href="project.html?name=project-name" class="link link-primary text-sm font-semibold no-underline hover:underline">Details</a>
-      <a href="https://project-name.vercel.app/" target="_blank" rel="noopener" class="link link-primary text-sm font-semibold no-underline hover:underline">Live</a>
+    <p class="text-sm text-base-content/70">One-sentence description.</p>
+    <div class="card-links">
+      <a href="project.html?name=project-name" class="btn btn-xs btn-primary rounded-full" onclick="event.stopPropagation()">Details</a>
+      <a href="https://project-name.vercel.app/" target="_blank" rel="noopener" class="btn btn-xs btn-outline rounded-full" onclick="event.stopPropagation()">Live</a>
     </div>
   </div>
 </div>
