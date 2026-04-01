@@ -2,7 +2,29 @@
 
 ## 2026-04-01
 
-### Theme combo picker
+### Theme toggle refactor — per-mode individual theme picker
+- Replaced 8 curated theme combos with full DaisyUI catalogue (35 themes: 22 light, 13 dark)
+- Dark/light toggle now controls which theme list is shown in the burger menu picker
+- Each mode stores its own theme independently (`lightTheme`/`darkTheme` in localStorage)
+- Rewrote theme.js: removed combo system, added per-mode storage, theme list visibility toggling
+- Simplified flash prevention scripts in both HTML files — no combo map duplication needed
+- Registered all 35 DaisyUI themes in main.css (up from 16)
+- Added scrollable theme lists (max-h-52 with overflow-y-auto) to handle 22 items
+- Each theme has a mood/style tag (Warm, Cool, Gothic, Minimal, Neon, etc.)
+- Section header dynamically shows "Light themes" or "Dark themes" based on mode
+- Eliminated tech debt: combo map was duplicated in 3 files, now replaced by simple key reads
+- CSS bundle: ~138KB (~24KB gzipped) — up from ~117KB due to 19 additional theme definitions
+- Old `themeCombo` localStorage key ignored — existing users reset to defaults
+
+### Burger menu fixes
+- Fixed project.html burger menu — was using `hidden` attribute but theme.js uses class-based opacity/scale transitions. `hidden` sets `display:none` which overrides all CSS classes, so the menu never opened. Replaced with same class-based pattern as index.html.
+- Fixed tap-outside to close — backdrop overlay was trapped inside navbar due to `backdrop-filter` creating a containing block for `position:fixed`. Replaced backdrop click handler with a document-level click handler that checks if target is outside menu+trigger.
+- Fixed scroll bleed-through on mobile — `overscroll-contain` only prevents chaining on scroll containers. Taps on non-scrollable menu areas chained to body. Added `document.body.style.overflow = 'hidden'` on open, restored on close.
+- Removed backdrop overlay element from both HTML files — it only covered the navbar area (not the viewport) and served no functional purpose after the document click handler replaced it. Moving it outside the navbar would cover the menu too (z-index stacking conflict).
+- Removed dead `z-backdrop` CSS utility from main.css
+- Fixed stale comment in theme.js that said "Toggle hidden attribute" when code uses opacity+scale transitions
+
+### Theme combo picker (superseded by per-mode refactor above)
 - Added 8 curated DaisyUI light/dark theme pairs selectable from burger menu
 - Combos: Caramel & Coffee (default), Nord & Night, Emerald & Forest, Autumn & Dim, Cupcake & Dracula, Lofi & Black, Garden & Luxury, Pastel & Synthwave
 - Registered 16 DaisyUI themes in main.css (up from 2)

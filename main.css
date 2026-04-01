@@ -6,20 +6,19 @@
    Alternative: Keep Pico + add Tailwind — rejected, two frameworks fight over base styles */
 
 @import "tailwindcss";
-/* Requirement: Multiple theme combos selectable from burger menu
-   Approach: Register all DaisyUI themes used by the combo picker.
-     caramellatte/coffee is the default pair. Additional pairs offer
-     different vibes (cool, earthy, bold, minimal, playful, elegant).
-   Alternative: Only load two themes — rejected, user wants to explore combos */
+/* Requirement: Per-mode individual theme picker from burger menu
+   Approach: Register all 35 DaisyUI built-in themes so users can pick any
+     light theme independently of their dark theme choice. Dark/light toggle
+     controls which theme list is shown; each mode stores its own selection.
+   Alternative: Only register paired themes — rejected, users want full
+     DaisyUI catalogue without artificial pairing constraints */
 @plugin "daisyui" {
   themes: caramellatte --default, coffee --prefersdark,
-          nord, night,
-          emerald, forest,
-          autumn, dim,
-          cupcake, dracula,
-          lofi, black,
-          garden, luxury,
-          pastel, synthwave;
+          light, cupcake, bumblebee, emerald, corporate, retro,
+          cyberpunk, valentine, garden, lofi, pastel, fantasy,
+          cmyk, autumn, acid, lemonade, winter, nord, silk, aqua, wireframe,
+          dark, synthwave, halloween, forest, black, luxury,
+          dracula, night, dim, sunset, abyss, business;
 }
 
 /* ===== Custom dark mode variant =====
@@ -197,13 +196,12 @@
   }
 }
 
-/* ===== Burger menu z-index layers =====
+/* ===== Burger menu z-index layer =====
    Follows z-index scale from CLAUDE.md:
-   Menu backdrop: z-40, Menu dropdown: z-50, Modals: z-60, Toasts: z-70 */
-@utility z-backdrop {
-  z-index: 40;
-}
-
+   Menu dropdown: z-50, Modals: z-60, Toasts: z-70
+   Note: No backdrop layer (z-40) — the navbar's backdrop-filter creates a
+   containing block that traps position:fixed children. Click-outside uses
+   a document handler instead. See theme.js burger menu comments. */
 @utility z-dropdown {
   z-index: 50;
 }

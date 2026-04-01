@@ -12,31 +12,22 @@
   <script>
     (function() {
       try {
-        // Requirement: Prevent flash using stored combo + dark/light preference
-        // Combo map duplicated here because this script runs before theme.js loads.
-        // Must stay in sync with COMBOS array in theme.js.
-        var combos = {
-          'caramel-coffee':   { light: 'caramellatte', dark: 'coffee' },
-          'nord-night':       { light: 'nord',         dark: 'night' },
-          'emerald-forest':   { light: 'emerald',      dark: 'forest' },
-          'autumn-dim':       { light: 'autumn',       dark: 'dim' },
-          'cupcake-dracula':  { light: 'cupcake',      dark: 'dracula' },
-          'lofi-black':       { light: 'lofi',         dark: 'black' },
-          'garden-luxury':    { light: 'garden',       dark: 'luxury' },
-          'pastel-synthwave': { light: 'pastel',       dark: 'synthwave' }
-        };
-        var comboKey = localStorage.getItem('themeCombo') || 'caramel-coffee';
-        var combo = combos[comboKey] || combos['caramel-coffee'];
+        // Requirement: Prevent flash using stored per-mode theme + dark/light preference
+        // Reads lightTheme/darkTheme directly — no combo map needed.
+        // Defaults must stay in sync with theme.js constants.
         var stored = localStorage.getItem('darkMode');
         var isDark = stored !== null
           ? stored === 'true'
           : window.matchMedia('(prefers-color-scheme: dark)').matches;
+        var theme = isDark
+          ? (localStorage.getItem('darkTheme') || 'coffee')
+          : (localStorage.getItem('lightTheme') || 'caramellatte');
         if (isDark) {
           document.documentElement.classList.add('dark');
         } else {
           document.documentElement.classList.remove('dark');
         }
-        document.documentElement.setAttribute('data-theme', isDark ? combo.dark : combo.light);
+        document.documentElement.setAttribute('data-theme', theme);
       } catch(e) {}
     })();
   </script>
@@ -71,14 +62,22 @@
             <path d="M4 6h16M4 12h16M4 18h16"/>
           </svg>
         </button>
-        <div class="fixed inset-0 z-backdrop cursor-pointer" id="burger-backdrop" hidden></div>
+        <!-- Requirement: Smooth open/close with scale+opacity transition
+             Approach: CSS opacity+scale transition, toggled via class swaps.
+               pointer-events-none when closed prevents interaction with invisible menu.
+             Alternative: hidden attribute — rejected, no transition possible
+             Note: No backdrop overlay — the navbar's backdrop-filter creates a containing
+               block that traps position:fixed children. A backdrop inside the navbar only
+               covers the navbar area; moving it outside would cover the menu too (z-index
+               stacking). Click-outside uses a document handler, scroll uses body lock. -->
         <div class="absolute right-0 top-full mt-2 z-dropdown w-56 max-w-[calc(100vw-2rem)]
                     rounded-xl shadow-lg bg-base-100 border border-base-300
-                    py-1 overscroll-contain"
+                    py-1 overscroll-contain origin-top-right
+                    transition-[opacity,transform] duration-200 ease-out
+                    pointer-events-none opacity-0 scale-95"
              id="burger-menu"
              role="navigation"
-             aria-label="Main navigation"
-             hidden>
+             aria-label="Main navigation">
           <ul class="list-none m-0 p-0 flex flex-col">
             <li><a href="./#projects" class="block w-full text-left px-4 py-2.5 text-sm text-base-content
                      hover:bg-base-200 transition-colors cursor-pointer no-underline
@@ -102,79 +101,338 @@
               <span class="theme-label-light">Dark mode</span>
             </button></li>
             <li><hr class="my-1 border-base-300"></li>
-            <li class="px-4 pt-2 pb-1"><span class="text-xs font-semibold uppercase tracking-wider text-base-content/40">Theme</span></li>
-            <li><button type="button" data-combo="caramel-coffee"
-                        class="w-full text-left px-4 py-2.5 text-sm text-base-content
-                               hover:bg-base-200 transition-colors cursor-pointer
-                               focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-[-2px]
-                               min-h-11 flex items-center gap-2 rounded-lg">
-              <span class="combo-check invisible text-primary text-xs">&#10003;</span>
-              <span>Caramel & Coffee</span>
-              <span class="ml-auto text-xs text-base-content/40">Warm</span>
-            </button></li>
-            <li><button type="button" data-combo="nord-night"
-                        class="w-full text-left px-4 py-2.5 text-sm text-base-content
-                               hover:bg-base-200 transition-colors cursor-pointer
-                               focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-[-2px]
-                               min-h-11 flex items-center gap-2 rounded-lg">
-              <span class="combo-check invisible text-primary text-xs">&#10003;</span>
-              <span>Nord & Night</span>
-              <span class="ml-auto text-xs text-base-content/40">Cool</span>
-            </button></li>
-            <li><button type="button" data-combo="emerald-forest"
-                        class="w-full text-left px-4 py-2.5 text-sm text-base-content
-                               hover:bg-base-200 transition-colors cursor-pointer
-                               focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-[-2px]
-                               min-h-11 flex items-center gap-2 rounded-lg">
-              <span class="combo-check invisible text-primary text-xs">&#10003;</span>
-              <span>Emerald & Forest</span>
-              <span class="ml-auto text-xs text-base-content/40">Fresh</span>
-            </button></li>
-            <li><button type="button" data-combo="autumn-dim"
-                        class="w-full text-left px-4 py-2.5 text-sm text-base-content
-                               hover:bg-base-200 transition-colors cursor-pointer
-                               focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-[-2px]
-                               min-h-11 flex items-center gap-2 rounded-lg">
-              <span class="combo-check invisible text-primary text-xs">&#10003;</span>
-              <span>Autumn & Dim</span>
-              <span class="ml-auto text-xs text-base-content/40">Earthy</span>
-            </button></li>
-            <li><button type="button" data-combo="cupcake-dracula"
-                        class="w-full text-left px-4 py-2.5 text-sm text-base-content
-                               hover:bg-base-200 transition-colors cursor-pointer
-                               focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-[-2px]
-                               min-h-11 flex items-center gap-2 rounded-lg">
-              <span class="combo-check invisible text-primary text-xs">&#10003;</span>
-              <span>Cupcake & Dracula</span>
-              <span class="ml-auto text-xs text-base-content/40">Bold</span>
-            </button></li>
-            <li><button type="button" data-combo="lofi-black"
-                        class="w-full text-left px-4 py-2.5 text-sm text-base-content
-                               hover:bg-base-200 transition-colors cursor-pointer
-                               focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-[-2px]
-                               min-h-11 flex items-center gap-2 rounded-lg">
-              <span class="combo-check invisible text-primary text-xs">&#10003;</span>
-              <span>Lofi & Black</span>
-              <span class="ml-auto text-xs text-base-content/40">Minimal</span>
-            </button></li>
-            <li><button type="button" data-combo="garden-luxury"
-                        class="w-full text-left px-4 py-2.5 text-sm text-base-content
-                               hover:bg-base-200 transition-colors cursor-pointer
-                               focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-[-2px]
-                               min-h-11 flex items-center gap-2 rounded-lg">
-              <span class="combo-check invisible text-primary text-xs">&#10003;</span>
-              <span>Garden & Luxury</span>
-              <span class="ml-auto text-xs text-base-content/40">Elegant</span>
-            </button></li>
-            <li><button type="button" data-combo="pastel-synthwave"
-                        class="w-full text-left px-4 py-2.5 text-sm text-base-content
-                               hover:bg-base-200 transition-colors cursor-pointer
-                               focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-[-2px]
-                               min-h-11 flex items-center gap-2 rounded-lg">
-              <span class="combo-check invisible text-primary text-xs">&#10003;</span>
-              <span>Pastel & Synthwave</span>
-              <span class="ml-auto text-xs text-base-content/40">Neon</span>
-            </button></li>
+            <!-- Per-mode theme picker — same structure as index.html -->
+            <li class="px-4 pt-2 pb-1">
+              <span class="text-xs font-semibold uppercase tracking-wider text-base-content/40">
+                <span class="theme-section-label-light">Light themes</span>
+                <span class="theme-section-label-dark hidden">Dark themes</span>
+              </span>
+            </li>
+            <!-- Light themes (visible when in light mode) -->
+            <li class="theme-list-light">
+              <ul class="list-none m-0 p-0 max-h-52 overflow-y-auto overscroll-contain">
+                <li><button type="button" data-theme-pick="caramellatte"
+                            class="w-full text-left px-4 py-2.5 text-sm text-base-content
+                                   hover:bg-base-200 transition-colors cursor-pointer
+                                   focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-[-2px]
+                                   min-h-11 flex items-center gap-2 rounded-lg">
+                  <span class="theme-check invisible text-primary text-xs">&#10003;</span>
+                  <span>Caramellatte</span>
+                  <span class="ml-auto text-xs text-base-content/40">Warm</span>
+                </button></li>
+                <li><button type="button" data-theme-pick="cupcake"
+                            class="w-full text-left px-4 py-2.5 text-sm text-base-content
+                                   hover:bg-base-200 transition-colors cursor-pointer
+                                   focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-[-2px]
+                                   min-h-11 flex items-center gap-2 rounded-lg">
+                  <span class="theme-check invisible text-primary text-xs">&#10003;</span>
+                  <span>Cupcake</span>
+                  <span class="ml-auto text-xs text-base-content/40">Sweet</span>
+                </button></li>
+                <li><button type="button" data-theme-pick="pastel"
+                            class="w-full text-left px-4 py-2.5 text-sm text-base-content
+                                   hover:bg-base-200 transition-colors cursor-pointer
+                                   focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-[-2px]
+                                   min-h-11 flex items-center gap-2 rounded-lg">
+                  <span class="theme-check invisible text-primary text-xs">&#10003;</span>
+                  <span>Pastel</span>
+                  <span class="ml-auto text-xs text-base-content/40">Soft</span>
+                </button></li>
+                <li><button type="button" data-theme-pick="lofi"
+                            class="w-full text-left px-4 py-2.5 text-sm text-base-content
+                                   hover:bg-base-200 transition-colors cursor-pointer
+                                   focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-[-2px]
+                                   min-h-11 flex items-center gap-2 rounded-lg">
+                  <span class="theme-check invisible text-primary text-xs">&#10003;</span>
+                  <span>Lofi</span>
+                  <span class="ml-auto text-xs text-base-content/40">Minimal</span>
+                </button></li>
+                <li><button type="button" data-theme-pick="nord"
+                            class="w-full text-left px-4 py-2.5 text-sm text-base-content
+                                   hover:bg-base-200 transition-colors cursor-pointer
+                                   focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-[-2px]
+                                   min-h-11 flex items-center gap-2 rounded-lg">
+                  <span class="theme-check invisible text-primary text-xs">&#10003;</span>
+                  <span>Nord</span>
+                  <span class="ml-auto text-xs text-base-content/40">Cool</span>
+                </button></li>
+                <li><button type="button" data-theme-pick="emerald"
+                            class="w-full text-left px-4 py-2.5 text-sm text-base-content
+                                   hover:bg-base-200 transition-colors cursor-pointer
+                                   focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-[-2px]
+                                   min-h-11 flex items-center gap-2 rounded-lg">
+                  <span class="theme-check invisible text-primary text-xs">&#10003;</span>
+                  <span>Emerald</span>
+                  <span class="ml-auto text-xs text-base-content/40">Fresh</span>
+                </button></li>
+                <li><button type="button" data-theme-pick="garden"
+                            class="w-full text-left px-4 py-2.5 text-sm text-base-content
+                                   hover:bg-base-200 transition-colors cursor-pointer
+                                   focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-[-2px]
+                                   min-h-11 flex items-center gap-2 rounded-lg">
+                  <span class="theme-check invisible text-primary text-xs">&#10003;</span>
+                  <span>Garden</span>
+                  <span class="ml-auto text-xs text-base-content/40">Natural</span>
+                </button></li>
+                <li><button type="button" data-theme-pick="autumn"
+                            class="w-full text-left px-4 py-2.5 text-sm text-base-content
+                                   hover:bg-base-200 transition-colors cursor-pointer
+                                   focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-[-2px]
+                                   min-h-11 flex items-center gap-2 rounded-lg">
+                  <span class="theme-check invisible text-primary text-xs">&#10003;</span>
+                  <span>Autumn</span>
+                  <span class="ml-auto text-xs text-base-content/40">Earthy</span>
+                </button></li>
+                <li><button type="button" data-theme-pick="valentine"
+                            class="w-full text-left px-4 py-2.5 text-sm text-base-content
+                                   hover:bg-base-200 transition-colors cursor-pointer
+                                   focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-[-2px]
+                                   min-h-11 flex items-center gap-2 rounded-lg">
+                  <span class="theme-check invisible text-primary text-xs">&#10003;</span>
+                  <span>Valentine</span>
+                  <span class="ml-auto text-xs text-base-content/40">Pink</span>
+                </button></li>
+                <li><button type="button" data-theme-pick="fantasy"
+                            class="w-full text-left px-4 py-2.5 text-sm text-base-content
+                                   hover:bg-base-200 transition-colors cursor-pointer
+                                   focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-[-2px]
+                                   min-h-11 flex items-center gap-2 rounded-lg">
+                  <span class="theme-check invisible text-primary text-xs">&#10003;</span>
+                  <span>Fantasy</span>
+                  <span class="ml-auto text-xs text-base-content/40">Vivid</span>
+                </button></li>
+                <li><button type="button" data-theme-pick="retro"
+                            class="w-full text-left px-4 py-2.5 text-sm text-base-content
+                                   hover:bg-base-200 transition-colors cursor-pointer
+                                   focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-[-2px]
+                                   min-h-11 flex items-center gap-2 rounded-lg">
+                  <span class="theme-check invisible text-primary text-xs">&#10003;</span>
+                  <span>Retro</span>
+                  <span class="ml-auto text-xs text-base-content/40">Vintage</span>
+                </button></li>
+                <li><button type="button" data-theme-pick="corporate"
+                            class="w-full text-left px-4 py-2.5 text-sm text-base-content
+                                   hover:bg-base-200 transition-colors cursor-pointer
+                                   focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-[-2px]
+                                   min-h-11 flex items-center gap-2 rounded-lg">
+                  <span class="theme-check invisible text-primary text-xs">&#10003;</span>
+                  <span>Corporate</span>
+                  <span class="ml-auto text-xs text-base-content/40">Clean</span>
+                </button></li>
+                <li><button type="button" data-theme-pick="silk"
+                            class="w-full text-left px-4 py-2.5 text-sm text-base-content
+                                   hover:bg-base-200 transition-colors cursor-pointer
+                                   focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-[-2px]
+                                   min-h-11 flex items-center gap-2 rounded-lg">
+                  <span class="theme-check invisible text-primary text-xs">&#10003;</span>
+                  <span>Silk</span>
+                  <span class="ml-auto text-xs text-base-content/40">Sleek</span>
+                </button></li>
+                <li><button type="button" data-theme-pick="bumblebee"
+                            class="w-full text-left px-4 py-2.5 text-sm text-base-content
+                                   hover:bg-base-200 transition-colors cursor-pointer
+                                   focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-[-2px]
+                                   min-h-11 flex items-center gap-2 rounded-lg">
+                  <span class="theme-check invisible text-primary text-xs">&#10003;</span>
+                  <span>Bumblebee</span>
+                  <span class="ml-auto text-xs text-base-content/40">Bright</span>
+                </button></li>
+                <li><button type="button" data-theme-pick="aqua"
+                            class="w-full text-left px-4 py-2.5 text-sm text-base-content
+                                   hover:bg-base-200 transition-colors cursor-pointer
+                                   focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-[-2px]
+                                   min-h-11 flex items-center gap-2 rounded-lg">
+                  <span class="theme-check invisible text-primary text-xs">&#10003;</span>
+                  <span>Aqua</span>
+                  <span class="ml-auto text-xs text-base-content/40">Ocean</span>
+                </button></li>
+                <li><button type="button" data-theme-pick="lemonade"
+                            class="w-full text-left px-4 py-2.5 text-sm text-base-content
+                                   hover:bg-base-200 transition-colors cursor-pointer
+                                   focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-[-2px]
+                                   min-h-11 flex items-center gap-2 rounded-lg">
+                  <span class="theme-check invisible text-primary text-xs">&#10003;</span>
+                  <span>Lemonade</span>
+                  <span class="ml-auto text-xs text-base-content/40">Citrus</span>
+                </button></li>
+                <li><button type="button" data-theme-pick="winter"
+                            class="w-full text-left px-4 py-2.5 text-sm text-base-content
+                                   hover:bg-base-200 transition-colors cursor-pointer
+                                   focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-[-2px]
+                                   min-h-11 flex items-center gap-2 rounded-lg">
+                  <span class="theme-check invisible text-primary text-xs">&#10003;</span>
+                  <span>Winter</span>
+                  <span class="ml-auto text-xs text-base-content/40">Frosty</span>
+                </button></li>
+                <li><button type="button" data-theme-pick="cmyk"
+                            class="w-full text-left px-4 py-2.5 text-sm text-base-content
+                                   hover:bg-base-200 transition-colors cursor-pointer
+                                   focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-[-2px]
+                                   min-h-11 flex items-center gap-2 rounded-lg">
+                  <span class="theme-check invisible text-primary text-xs">&#10003;</span>
+                  <span>CMYK</span>
+                  <span class="ml-auto text-xs text-base-content/40">Print</span>
+                </button></li>
+                <li><button type="button" data-theme-pick="acid"
+                            class="w-full text-left px-4 py-2.5 text-sm text-base-content
+                                   hover:bg-base-200 transition-colors cursor-pointer
+                                   focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-[-2px]
+                                   min-h-11 flex items-center gap-2 rounded-lg">
+                  <span class="theme-check invisible text-primary text-xs">&#10003;</span>
+                  <span>Acid</span>
+                  <span class="ml-auto text-xs text-base-content/40">Neon</span>
+                </button></li>
+                <li><button type="button" data-theme-pick="cyberpunk"
+                            class="w-full text-left px-4 py-2.5 text-sm text-base-content
+                                   hover:bg-base-200 transition-colors cursor-pointer
+                                   focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-[-2px]
+                                   min-h-11 flex items-center gap-2 rounded-lg">
+                  <span class="theme-check invisible text-primary text-xs">&#10003;</span>
+                  <span>Cyberpunk</span>
+                  <span class="ml-auto text-xs text-base-content/40">Cyber</span>
+                </button></li>
+                <li><button type="button" data-theme-pick="wireframe"
+                            class="w-full text-left px-4 py-2.5 text-sm text-base-content
+                                   hover:bg-base-200 transition-colors cursor-pointer
+                                   focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-[-2px]
+                                   min-h-11 flex items-center gap-2 rounded-lg">
+                  <span class="theme-check invisible text-primary text-xs">&#10003;</span>
+                  <span>Wireframe</span>
+                  <span class="ml-auto text-xs text-base-content/40">Sketch</span>
+                </button></li>
+                <li><button type="button" data-theme-pick="light"
+                            class="w-full text-left px-4 py-2.5 text-sm text-base-content
+                                   hover:bg-base-200 transition-colors cursor-pointer
+                                   focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-[-2px]
+                                   min-h-11 flex items-center gap-2 rounded-lg">
+                  <span class="theme-check invisible text-primary text-xs">&#10003;</span>
+                  <span>Light</span>
+                  <span class="ml-auto text-xs text-base-content/40">Default</span>
+                </button></li>
+              </ul>
+            </li>
+            <!-- Dark themes (visible when in dark mode) -->
+            <li class="theme-list-dark hidden">
+              <ul class="list-none m-0 p-0 max-h-52 overflow-y-auto overscroll-contain">
+                <li><button type="button" data-theme-pick="coffee"
+                            class="w-full text-left px-4 py-2.5 text-sm text-base-content
+                                   hover:bg-base-200 transition-colors cursor-pointer
+                                   focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-[-2px]
+                                   min-h-11 flex items-center gap-2 rounded-lg">
+                  <span class="theme-check invisible text-primary text-xs">&#10003;</span>
+                  <span>Coffee</span>
+                  <span class="ml-auto text-xs text-base-content/40">Warm</span>
+                </button></li>
+                <li><button type="button" data-theme-pick="dim"
+                            class="w-full text-left px-4 py-2.5 text-sm text-base-content
+                                   hover:bg-base-200 transition-colors cursor-pointer
+                                   focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-[-2px]
+                                   min-h-11 flex items-center gap-2 rounded-lg">
+                  <span class="theme-check invisible text-primary text-xs">&#10003;</span>
+                  <span>Dim</span>
+                  <span class="ml-auto text-xs text-base-content/40">Muted</span>
+                </button></li>
+                <li><button type="button" data-theme-pick="night"
+                            class="w-full text-left px-4 py-2.5 text-sm text-base-content
+                                   hover:bg-base-200 transition-colors cursor-pointer
+                                   focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-[-2px]
+                                   min-h-11 flex items-center gap-2 rounded-lg">
+                  <span class="theme-check invisible text-primary text-xs">&#10003;</span>
+                  <span>Night</span>
+                  <span class="ml-auto text-xs text-base-content/40">Cool</span>
+                </button></li>
+                <li><button type="button" data-theme-pick="dracula"
+                            class="w-full text-left px-4 py-2.5 text-sm text-base-content
+                                   hover:bg-base-200 transition-colors cursor-pointer
+                                   focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-[-2px]
+                                   min-h-11 flex items-center gap-2 rounded-lg">
+                  <span class="theme-check invisible text-primary text-xs">&#10003;</span>
+                  <span>Dracula</span>
+                  <span class="ml-auto text-xs text-base-content/40">Gothic</span>
+                </button></li>
+                <li><button type="button" data-theme-pick="forest"
+                            class="w-full text-left px-4 py-2.5 text-sm text-base-content
+                                   hover:bg-base-200 transition-colors cursor-pointer
+                                   focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-[-2px]
+                                   min-h-11 flex items-center gap-2 rounded-lg">
+                  <span class="theme-check invisible text-primary text-xs">&#10003;</span>
+                  <span>Forest</span>
+                  <span class="ml-auto text-xs text-base-content/40">Deep</span>
+                </button></li>
+                <li><button type="button" data-theme-pick="luxury"
+                            class="w-full text-left px-4 py-2.5 text-sm text-base-content
+                                   hover:bg-base-200 transition-colors cursor-pointer
+                                   focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-[-2px]
+                                   min-h-11 flex items-center gap-2 rounded-lg">
+                  <span class="theme-check invisible text-primary text-xs">&#10003;</span>
+                  <span>Luxury</span>
+                  <span class="ml-auto text-xs text-base-content/40">Gold</span>
+                </button></li>
+                <li><button type="button" data-theme-pick="synthwave"
+                            class="w-full text-left px-4 py-2.5 text-sm text-base-content
+                                   hover:bg-base-200 transition-colors cursor-pointer
+                                   focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-[-2px]
+                                   min-h-11 flex items-center gap-2 rounded-lg">
+                  <span class="theme-check invisible text-primary text-xs">&#10003;</span>
+                  <span>Synthwave</span>
+                  <span class="ml-auto text-xs text-base-content/40">Retro</span>
+                </button></li>
+                <li><button type="button" data-theme-pick="black"
+                            class="w-full text-left px-4 py-2.5 text-sm text-base-content
+                                   hover:bg-base-200 transition-colors cursor-pointer
+                                   focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-[-2px]
+                                   min-h-11 flex items-center gap-2 rounded-lg">
+                  <span class="theme-check invisible text-primary text-xs">&#10003;</span>
+                  <span>Black</span>
+                  <span class="ml-auto text-xs text-base-content/40">Stark</span>
+                </button></li>
+                <li><button type="button" data-theme-pick="halloween"
+                            class="w-full text-left px-4 py-2.5 text-sm text-base-content
+                                   hover:bg-base-200 transition-colors cursor-pointer
+                                   focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-[-2px]
+                                   min-h-11 flex items-center gap-2 rounded-lg">
+                  <span class="theme-check invisible text-primary text-xs">&#10003;</span>
+                  <span>Halloween</span>
+                  <span class="ml-auto text-xs text-base-content/40">Spooky</span>
+                </button></li>
+                <li><button type="button" data-theme-pick="sunset"
+                            class="w-full text-left px-4 py-2.5 text-sm text-base-content
+                                   hover:bg-base-200 transition-colors cursor-pointer
+                                   focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-[-2px]
+                                   min-h-11 flex items-center gap-2 rounded-lg">
+                  <span class="theme-check invisible text-primary text-xs">&#10003;</span>
+                  <span>Sunset</span>
+                  <span class="ml-auto text-xs text-base-content/40">Dusk</span>
+                </button></li>
+                <li><button type="button" data-theme-pick="abyss"
+                            class="w-full text-left px-4 py-2.5 text-sm text-base-content
+                                   hover:bg-base-200 transition-colors cursor-pointer
+                                   focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-[-2px]
+                                   min-h-11 flex items-center gap-2 rounded-lg">
+                  <span class="theme-check invisible text-primary text-xs">&#10003;</span>
+                  <span>Abyss</span>
+                  <span class="ml-auto text-xs text-base-content/40">Void</span>
+                </button></li>
+                <li><button type="button" data-theme-pick="business"
+                            class="w-full text-left px-4 py-2.5 text-sm text-base-content
+                                   hover:bg-base-200 transition-colors cursor-pointer
+                                   focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-[-2px]
+                                   min-h-11 flex items-center gap-2 rounded-lg">
+                  <span class="theme-check invisible text-primary text-xs">&#10003;</span>
+                  <span>Business</span>
+                  <span class="ml-auto text-xs text-base-content/40">Pro</span>
+                </button></li>
+                <li><button type="button" data-theme-pick="dark"
+                            class="w-full text-left px-4 py-2.5 text-sm text-base-content
+                                   hover:bg-base-200 transition-colors cursor-pointer
+                                   focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-[-2px]
+                                   min-h-11 flex items-center gap-2 rounded-lg">
+                  <span class="theme-check invisible text-primary text-xs">&#10003;</span>
+                  <span>Dark</span>
+                  <span class="ml-auto text-xs text-base-content/40">Default</span>
+                </button></li>
+              </ul>
+            </li>
             <li><hr class="my-1 border-base-300"></li>
             <li><button type="button"
                         class="block w-full text-left px-4 py-2.5 text-sm text-base-content
