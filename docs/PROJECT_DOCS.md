@@ -184,40 +184,49 @@ In-app walkthrough shown on first visit. Access anytime via the menu.
 
 ### 4. Add card to index.html
 
-**User-facing projects** — inside `<div class="card-grid">` in `#projects`:
+**User-facing projects** — inside the card grid `<div>` in `#projects`:
 
 ```html
-<article>
-  <header>
-    <h3>project-name <span class="badge">Badge</span></h3>
-  </header>
-  <p>One-sentence description.</p>
-  <footer>
-    <small class="tech">TypeScript &middot; React &middot; Vite</small>
-    <div class="card-links">
-      <a href="project.html?name=project-name">Details</a>
-      <a href="https://project-name.vercel.app/" target="_blank" rel="noopener">Live app</a>
+<div class="card bg-base-200/50 border border-base-300 card-hover scroll-animate" data-delay="1">
+  <div class="card-body">
+    <h3 class="card-title text-base">
+      project-name
+      <span class="badge badge-primary badge-sm">Badge</span>
+      <span class="badge badge-ghost badge-sm">On-device</span>
+    </h3>
+    <p class="text-sm text-base-content/70 grow">One-sentence description.</p>
+    <div class="mt-auto pt-2">
+      <p class="text-xs text-base-content/40 mb-2">TypeScript &middot; React &middot; Vite</p>
+      <div class="flex flex-wrap gap-2">
+        <a href="project.html?name=project-name" class="link link-primary text-sm font-semibold no-underline hover:underline">Details</a>
+        <a href="https://project-name.vercel.app/" target="_blank" rel="noopener" class="link link-primary text-sm font-semibold no-underline hover:underline">Live app</a>
+      </div>
     </div>
-  </footer>
-</article>
+  </div>
+</div>
 ```
 
 Add a Source link for public repos only:
 ```html
-<a href="https://github.com/devmade-ai/project-name" target="_blank" rel="noopener">Source</a>
+<a href="https://github.com/devmade-ai/project-name" target="_blank" rel="noopener" class="link link-primary text-sm font-semibold no-underline hover:underline">Source</a>
 ```
 
-**Internal tools** — inside `#tools`:
+**Internal tools** — inside the `#tools` section:
 
 ```html
-<article class="tool-item">
-  <h4>project-name <span class="badge badge-subtle">Badge</span></h4>
-  <p>One-sentence description.</p>
-  <div class="card-links">
-    <a href="project.html?name=project-name">Details</a>
-    <a href="https://project-name.vercel.app/" target="_blank" rel="noopener">Live</a>
+<div class="card bg-base-200/50 border border-base-300 card-hover scroll-animate" data-delay="1">
+  <div class="card-body py-4">
+    <h4 class="font-semibold text-base mb-1">
+      project-name
+      <span class="badge badge-ghost badge-sm">Badge</span>
+    </h4>
+    <p class="text-sm text-base-content/70 mb-2">One-sentence description.</p>
+    <div class="flex flex-wrap gap-2">
+      <a href="project.html?name=project-name" class="link link-primary text-sm font-semibold no-underline hover:underline">Details</a>
+      <a href="https://project-name.vercel.app/" target="_blank" rel="noopener" class="link link-primary text-sm font-semibold no-underline hover:underline">Live</a>
+    </div>
   </div>
-</article>
+</div>
 ```
 
 ### 5. Update all related files

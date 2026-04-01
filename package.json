@@ -10,8 +10,10 @@
     "generate-icons": "node scripts/generate-icons.mjs"
   },
   "devDependencies": {
-    "@picocss/pico": "^2.1.1",
+    "@tailwindcss/vite": "^4.2.2",
+    "daisyui": "^5.5.19",
     "sharp": "^0.34.5",
+    "tailwindcss": "^4.2.2",
     "vite": "^7.3.1"
   }
 }

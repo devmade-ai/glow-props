@@ -1,6 +1,8 @@
 // Requirement: Theme toggle + burger menu behavior for vanilla HTML pages
 // Approach: Single IIFE handles both concerns — theme persistence/sync and
-//   burger menu open/close with backdrop, Escape key, and focus management
+//   burger menu open/close with backdrop, Escape key, and focus management.
+//   Theme uses both .dark class (Tailwind dark: variant) and data-theme
+//   attribute (DaisyUI component colors) — both must be set together.
 // Alternative: Separate scripts — rejected, both need to bind to the same DOM
 
 (function () {
@@ -8,7 +10,7 @@
   var toggle = document.getElementById('theme-toggle');
 
   function isDark() {
-    return document.documentElement.getAttribute('data-theme') === 'dark';
+    return document.documentElement.classList.contains('dark');
   }
 
   function safeStorageSet(key, value) {
@@ -19,10 +21,42 @@
     try { return localStorage.getItem(key); } catch (e) { return null; }
   }
 
+  // Requirement: Both .dark class and data-theme must be set together
+  // Why: Tailwind dark: variant reads .dark class on <html>;
+  //   DaisyUI component colors read data-theme attribute.
+  //   If only one is set, custom dark: utilities and DaisyUI components
+  //   fall out of sync — e.g. dark: hover states on light DaisyUI bg.
   function setTheme(dark) {
-    document.documentElement.setAttribute('data-theme', dark ? 'dark' : 'light');
+    if (dark) {
+      document.documentElement.classList.add('dark');
+      document.documentElement.setAttribute('data-theme', 'coffee');
+    } else {
+      document.documentElement.classList.remove('dark');
+      document.documentElement.setAttribute('data-theme', 'caramellatte');
+    }
     safeStorageSet('darkMode', dark);
+    updateThemeLabels(dark);
   }
+
+  // Requirement: Show correct theme label based on current theme
+  // Approach: Toggle hidden class on label spans via JS
+  // Why: Previously used CSS [data-theme="dark"] selectors from Pico —
+  //   now handled in JS since the toggle controls both class and attribute
+  function updateThemeLabels(dark) {
+    var darkLabels = document.querySelectorAll('.theme-label-dark');
+    var lightLabels = document.querySelectorAll('.theme-label-light');
+    darkLabels.forEach(function (el) {
+      if (dark) el.classList.remove('hidden');
+      else el.classList.add('hidden');
+    });
+    lightLabels.forEach(function (el) {
+      if (dark) el.classList.add('hidden');
+      else el.classList.remove('hidden');
+    });
+  }
+
+  // Set initial label state from current theme
+  updateThemeLabels(isDark());
 
   if (toggle) {
     toggle.addEventListener('click', function () {
