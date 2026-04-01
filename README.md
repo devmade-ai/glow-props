@@ -101,7 +101,7 @@ npm run build        # Production build → dist/
 
 ## Tech Stack
 
-- **CSS Framework:** [Tailwind CSS](https://tailwindcss.com/) v4 + [DaisyUI](https://daisyui.com/) v5 — utility-first CSS with pre-built component classes
+- **CSS Framework:** [Tailwind CSS](https://tailwindcss.com/) v4 + [DaisyUI](https://daisyui.com/) v5 — utility-first CSS with pre-built component classes (caramellatte/coffee themes)
 - **Fonts:** [Space Grotesk](https://fonts.google.com/specimen/Space+Grotesk) (headings) + [Inter](https://fonts.google.com/specimen/Inter) (body) via Google Fonts
 - **Build:** Vite 7 with `@tailwindcss/vite` plugin
 - **Icons:** Sharp (SVG to PNG at 400 DPI)
