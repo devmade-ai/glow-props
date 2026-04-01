@@ -14,12 +14,12 @@
     "Vite",
     "Tailwind CSS"
   ],
-  "audience": "The developer/owner \u2014 this is a personal CV site. Visitors are potential employers, clients, and collaborators.",
+  "audience": "Potential employers, clients, and collaborators reviewing the developer\u2019s work \u2014 anyone who wants a quick, clear picture of skills and output without asking for a PDF.",
   "useCases": [
-    "Showcase skills, projects, and activity to potential employers",
-    "Download CV as PDF via browser print dialog",
-    "Install as a PWA for quick offline access",
-    "View commit activity charts embedded from repo-tor"
+    "A recruiter receives a link in an application \u2014 sees skills, projects, and live commit activity in one page without downloading anything",
+    "A potential client wants proof of consistent output \u2014 checks the embedded activity charts showing commit history across real projects",
+    "An interviewer needs a printable CV for a panel review \u2014 saves the page as PDF directly from the browser",
+    "A collaborator bookmarks the site as a PWA \u2014 can pull it up offline during a meeting to reference project details"
   ],
   "dataPrivacy": {
     "storage": "Static site with no user data collection.",

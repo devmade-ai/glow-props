@@ -15,15 +15,12 @@
     "IndexedDB",
     "Hugging Face Transformers"
   ],
-  "audience": "Researchers, analysts, knowledge workers, and anyone who thinks in connections \u2014 people who need to map relationships between ideas, people, companies, or concepts.",
+  "audience": "Researchers, journalists, analysts, students, and anyone who needs to see how things connect \u2014 people whose work involves untangling relationships that are hard to hold in a spreadsheet or document.",
   "useCases": [
-    "Build knowledge graphs with nodes, relationships, and properties",
-    "Explore networks visually with interactive force-directed graphs",
-    "Query your data with visual boolean logic (AND/OR/NOT) and relationship traversal",
-    "Detect semantic duplicates using ML embeddings (all-MiniLM-L6-v2)",
-    "Run graph analysis \u2014 PageRank, centrality, shortest path, clustering",
-    "Switch between graph and timeline views",
-    "Import/export data as JSON with smart matching"
+    "A journalist maps the ownership structure of a group of companies \u2014 adds people, businesses, and shareholding relationships, then queries who controls what",
+    "A student organises their thesis research \u2014 links authors to papers to theories, then uses graph analysis to find the most influential sources",
+    "An analyst investigates a supply chain \u2014 builds a network of suppliers and dependencies, runs shortest-path to find single points of failure",
+    "A product manager tracks stakeholders across teams \u2014 maps who owns what, finds clusters of related work, and spots duplicated efforts using semantic similarity"
   ],
   "dataPrivacy": {
     "storage": "All data stored locally in the browser using IndexedDB. No server, no account, no data leaves your device.",

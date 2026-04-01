@@ -14,13 +14,12 @@
     "Vite",
     "Tailwind CSS"
   ],
-  "audience": "Anyone who needs to create visual content \u2014 social media managers, small business owners, students, or anyone who wants a quick design tool without signing up for a service.",
+  "audience": "Social media managers, small business owners, students, side-project founders, and anyone who needs polished visuals without learning professional design software or paying for a subscription.",
   "useCases": [
-    "Create social media posts with images, text, and custom layouts",
-    "Design multi-page documents (slide decks, stories, booklets)",
-    "Apply preset themes and visual styles for quick professional results",
-    "Upload and arrange photos with overlays, filters, and logos",
-    "Export designs as PNG images"
+    "A freelancer needs an Instagram carousel for a client by tomorrow \u2014 picks a layout, drops in product photos, adds text, and exports all pages as PNGs",
+    "A student puts together a group presentation \u2014 creates a multi-page deck with consistent styling without installing PowerPoint",
+    "A small bakery owner makes a weekly specials flyer \u2014 uploads food photos, adds prices and a logo, and downloads it to print or post online",
+    "A side-project founder needs a Product Hunt launch graphic \u2014 starts from a preset theme, swaps in screenshots and copy, and has a polished image in minutes"
   ],
   "dataPrivacy": {
     "storage": "Designs are created in the browser. Images are loaded from a CDN or uploaded locally.",

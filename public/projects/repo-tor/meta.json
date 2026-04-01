@@ -9,13 +9,12 @@
   "liveUrl": "https://repo-tor.vercel.app/",
   "repoUrl": "https://github.com/devmade-ai/repo-tor",
   "tech": ["JavaScript", "React", "Vite", "Chart.js", "Tailwind CSS"],
-  "audience": "Developers and managers who want to understand commit patterns, contributor activity, and code health across repositories.",
+  "audience": "Developers who want to see their own output, team leads tracking contributor patterns, and managers who need a visual summary of engineering progress without reading git logs.",
   "useCases": [
-    "Visualize commit activity across repositories with 6 dashboard tabs",
-    "Switch between Executive, Management, and Developer detail levels",
-    "Extract git history from local repos or via GitHub API",
-    "Aggregate data across multiple repositories",
-    "Embed individual charts via iframe with customizable colors"
+    "A developer preparing for a performance review \u2014 pulls up their commit activity across all repos to show consistent output and areas of focus",
+    "A team lead notices a project is stalling \u2014 checks the dashboard to see if commits have dropped off and which contributors are active",
+    "A manager needs to report engineering progress to stakeholders \u2014 switches to the Executive view for a high-level summary without technical detail",
+    "A developer embeds their personal activity chart on their CV site \u2014 uses the iframe embed with colours matched to their portfolio theme"
   ],
   "dataPrivacy": {
     "storage": "Dashboard data loaded from static JSON files. No user data collected.",

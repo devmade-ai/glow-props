@@ -13,11 +13,12 @@
     "React",
     "Vite"
   ],
-  "audience": "South African B2B software companies looking to structure deals \u2014 founders, sales teams, and finance professionals who need to find the right pricing model.",
+  "audience": "Founders, sales leads, and finance teams at South African B2B software companies who need to price a deal that works for both sides.",
   "useCases": [
-    "Find the price where you hit your margin AND your client sees ROI",
-    "Compare 6 transaction models with 47 variants side by side",
-    "Model different deal structures to find the best fit for both parties"
+    "A founder is quoting a new enterprise client \u2014 models a per-seat vs revenue-share structure to find which one hits 40% margin while keeping the client\u2019s ROI above 2x",
+    "A sales team is losing deals on price \u2014 compares 47 pricing variants side by side to find structures where the headline price is lower but lifetime value is higher",
+    "A finance lead needs to present pricing options to the board \u2014 runs three deal scenarios and shows exactly where each one breaks even",
+    "A startup is negotiating with a large retailer \u2014 models a transaction-fee structure where the client pays nothing upfront and the vendor earns on volume"
   ],
   "dataPrivacy": {
     "storage": "All calculations run in the browser. No data is stored or sent anywhere.",

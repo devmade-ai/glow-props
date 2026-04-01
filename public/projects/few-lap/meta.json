@@ -15,14 +15,12 @@
     "Mapbox GL",
     "PostGIS"
   ],
-  "audience": "South African drivers looking for the cheapest fuel nearby. Works on iOS, Android, and web.",
+  "audience": "South African drivers, fleet managers, and anyone who buys fuel regularly and wants to stop overpaying at the nearest station when a cheaper one is five minutes away.",
   "useCases": [
-    "Search for fuel stations by address or GPS location",
-    "Filter by fuel type (ULP 95, Diesel, etc.) and search radius",
-    "Compare prices across stations sorted by cheapest or nearest",
-    "View 30-day price history and trend indicators per station",
-    "Get directions to any station via Apple Maps or Google Maps",
-    "Manage stations via admin panel"
+    "A driver on an unfamiliar route needs diesel \u2014 opens the app, sees the cheapest station within 5km, and gets turn-by-turn directions",
+    "A fleet manager compares fuel costs across a city \u2014 checks 30-day price trends to decide which stations to assign to drivers",
+    "A commuter notices prices vary by R2/litre between stations on their route \u2014 uses the app to find the cheapest stop on the way to work each morning",
+    "A long-distance traveller plans fuel stops before a road trip \u2014 searches stations along the route by town name and fuel type"
   ],
   "dataPrivacy": {
     "storage": "Station data stored in cloud database. User preferences (theme, filters) stored locally on device.",

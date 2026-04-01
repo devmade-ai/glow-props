@@ -1,5 +1,25 @@
 # History
 
+## 2026-04-01
+
+### Project content rewrite
+- Rewrote audience and use cases for all 12 project meta.json files
+- Use cases changed from feature lists to real-world scenarios ("A [person] needs to [solve problem]")
+- Audiences derived from who would have those problems, not generic user categories
+
+### Icon theming
+- Changed icon colour from #06b6d4 (Tailwind cyan-500) to #0ab1b1 (Pico CSS cyan theme primary)
+- Removed feGaussianBlur glow filter from SVG — clean edges match the Pico UI
+- Regenerated all PNG icons (48, 192, 512)
+
+### Header and page spacing fixes
+- Fixed nav-to-content misalignment — added horizontal padding matching Pico's container spacing (1rem)
+- Reduced hero top padding on index.html from 3rem to 2rem total gap (hero padding 2rem → 1rem + Pico's 1rem)
+- Strengthened section separation on index.html — increased from Pico default 1rem to 2.5rem
+- Unified project.html vertical rhythm — hero, meta-grid, doc-tabs all use 1.5rem bottom margin
+- Fixed footer double bottom spacing — reset last-child margin to prevent Pico padding + p margin stacking
+- Added .back-link class on project.html for visual de-emphasis of back navigation
+
 ## 2026-03-31
 
 ### Portfolio site — complete rebuild
