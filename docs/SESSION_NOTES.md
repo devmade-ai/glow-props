@@ -1,38 +1,34 @@
 # Session Notes
 
 ## Worked on
-Full CSS framework migration from Pico CSS to Tailwind CSS v4 + DaisyUI v5, theme selection, and hero gradient tuning.
+Theme combo picker, icon redesign, and code quality cleanup.
 
 ## Accomplished
-- Replaced Pico CSS v2.1.1 with Tailwind CSS v4.2.2 + DaisyUI v5.5.19
-- Deleted `pico-theme.css` and `styles.css`, replaced with `main.css` (Tailwind entry point)
-- Migrated `index.html` — navbar, hero, project cards, tool items, pattern cards, all sections
-- Migrated `project.html` — meta grid, tabs, doc viewer, markdown renderer, all inline styles
-- Updated `theme.js` to set both `.dark` class (Tailwind) and `data-theme` (DaisyUI) together
-- Updated flash-prevention inline scripts in both HTML files for dual class/attribute approach
-- Added scroll-triggered animations (Intersection Observer + CSS transitions)
-- Added card hover effects (lift + shadow on hover)
-- Added sticky glassmorphism navbar with backdrop blur
-- Configured Vite with `@tailwindcss/vite` plugin
-- Moved Tailwind/DaisyUI from dependencies to devDependencies
-- Fixed missing `.dark` class removal in flash-prevention light mode branch
-- Switched themes from DaisyUI defaults (light/dark) to caramellatte (light) / coffee (dark)
-- Changed hero gradient from theme-dependent (`from-primary to-secondary`) to fixed warm gradient (`from-amber-600 to-rose-500`, `dark:from-amber-400 dark:to-rose-400`)
+- Added theme combo picker to burger menu (8 curated DaisyUI light/dark pairs)
+- Registered 16 DaisyUI themes in main.css (up from 2)
+- Rewrote theme.js: combo storage, cross-tab sync, combo indicator UI, skipPersist for sync handler
+- Updated flash-prevention inline scripts in both HTML files to read stored combo
+- Replaced hexagon icon with multi-color 4-square grid (theme-independent)
+- Removed white background from icon SVG for transparent rendering on any theme
+- Regenerated all PNG icons (48, 192, 512)
+- Switched hero gradient from fixed amber/rose to DaisyUI `from-primary to-accent` tokens
+- Fixed combo button touch targets (added min-h-11 for 44px minimum)
+- Removed unused `label`/`desc` properties from COMBOS array in theme.js
+- Fixed cross-tab sync redundant localStorage writes (added skipPersist flag)
+- Updated SESSION_NOTES, HISTORY, README, TODO documentation
 
 ## Current state
 - Site builds cleanly with `vite build`
-- Both pages fully migrated to Tailwind + DaisyUI
-- Themes: caramellatte (light), coffee (dark)
-- Dark mode works via `.dark` class + `data-theme` attribute
-- Animations: fade-in-up on hero, scroll-triggered on sections/cards with stagger delays
-- All accessibility preserved (disclosure pattern, aria-expanded, focus-visible, 44px touch targets)
-- Branch: claude/evaluate-css-frameworks-xWcmj, pushed to remote
+- 8 theme combos selectable from burger menu, persisted in localStorage
+- Default combo: Caramel & Coffee (caramellatte/coffee)
+- Dark/light toggle works independently within any combo
+- Hero gradient auto-matches active theme via primary/accent tokens
+- Icon is transparent multi-color 4-square grid, theme-independent
+- All touch targets meet 44px minimum
+- Branch: claude/explore-color-combinations-2Rosu, pushed to remote
 
 ## Key context
-- Dark mode requires BOTH `.dark` class on `<html>` (Tailwind dark: variant) AND `data-theme="coffee"` / `data-theme="caramellatte"` (DaisyUI component colors) — set together in theme.js and flash-prevention scripts
-- DaisyUI themes configured as `caramellatte --default, coffee --prefersdark` in main.css @plugin directive
-- Custom animations defined in main.css: `scroll-animate` class + `animate-in` added by Intersection Observer
-- Tailwind v4 uses CSS-first config — no `tailwind.config.js` needed
-- Theme label visibility controlled by JS (theme.js `updateThemeLabels`) instead of CSS selectors
-- Container uses `max-w-6xl mx-auto px-4 sm:px-6 lg:px-8` instead of Pico's `.container` class
-- Hero gradient uses fixed colors (amber/rose) not theme tokens — caramellatte's primary/secondary are both near-black, making theme-dependent gradient invisible
+- Combo map is duplicated in 3 places (theme.js, index.html flash script, project.html flash script) — intentional because flash prevention must run before theme.js loads. Comment in each file flags this.
+- Monochrome themes (lofi, black) have near-identical primary/accent, so the hero gradient degrades to solid text — matches their design intent.
+- CSS bundle increased from ~50KB to ~117KB (gzipped ~20KB) due to 16 DaisyUI themes. Acceptable trade-off for the feature.
+- `themeCombo` localStorage key stores the combo key string; `darkMode` still stores boolean.

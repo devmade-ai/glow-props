@@ -11,15 +11,18 @@
   //   First combo is the default (caramellatte/coffee — warm, current look).
   // Alternative: Let users pick any light + any dark independently — rejected,
   //   untested combos can produce clashing colors. Curated pairs ensure quality.
+  // Properties: key (localStorage ID), light/dark (DaisyUI theme names).
+  // Display labels live in the HTML — this array is the data source for
+  // theme resolution only. HTML is the source of truth for user-facing text.
   var COMBOS = [
-    { key: 'caramel-coffee',   label: 'Caramel & Coffee',   light: 'caramellatte', dark: 'coffee',    desc: 'Warm & cozy' },
-    { key: 'nord-night',       label: 'Nord & Night',       light: 'nord',         dark: 'night',     desc: 'Cool & minimal' },
-    { key: 'emerald-forest',   label: 'Emerald & Forest',   light: 'emerald',      dark: 'forest',    desc: 'Fresh & green' },
-    { key: 'autumn-dim',       label: 'Autumn & Dim',       light: 'autumn',       dark: 'dim',       desc: 'Earthy & muted' },
-    { key: 'cupcake-dracula',  label: 'Cupcake & Dracula',  light: 'cupcake',      dark: 'dracula',   desc: 'Playful & bold' },
-    { key: 'lofi-black',       label: 'Lofi & Black',       light: 'lofi',         dark: 'black',     desc: 'Typographic' },
-    { key: 'garden-luxury',    label: 'Garden & Luxury',    light: 'garden',       dark: 'luxury',    desc: 'Elegant contrast' },
-    { key: 'pastel-synthwave', label: 'Pastel & Synthwave', light: 'pastel',       dark: 'synthwave', desc: 'Soft & neon' },
+    { key: 'caramel-coffee',   light: 'caramellatte', dark: 'coffee' },
+    { key: 'nord-night',       light: 'nord',         dark: 'night' },
+    { key: 'emerald-forest',   light: 'emerald',      dark: 'forest' },
+    { key: 'autumn-dim',       light: 'autumn',       dark: 'dim' },
+    { key: 'cupcake-dracula',  light: 'cupcake',      dark: 'dracula' },
+    { key: 'lofi-black',       light: 'lofi',         dark: 'black' },
+    { key: 'garden-luxury',    light: 'garden',       dark: 'luxury' },
+    { key: 'pastel-synthwave', light: 'pastel',       dark: 'synthwave' },
   ];
 
   var DEFAULT_COMBO_KEY = 'caramel-coffee';
@@ -55,7 +58,10 @@
     return document.documentElement.classList.contains('dark');
   }
 
-  function applyTheme(dark, comboKey) {
+  // skipPersist: when true, skip writing to localStorage.
+  // Used by the cross-tab sync handler — the values already came from
+  // another tab's localStorage write, so writing them back is redundant.
+  function applyTheme(dark, comboKey, skipPersist) {
     var combo = getCombo(comboKey);
     var themeName = dark ? combo.dark : combo.light;
 
@@ -66,8 +72,10 @@
     }
     document.documentElement.setAttribute('data-theme', themeName);
 
-    safeStorageSet('darkMode', dark);
-    safeStorageSet('themeCombo', comboKey);
+    if (!skipPersist) {
+      safeStorageSet('darkMode', dark);
+      safeStorageSet('themeCombo', comboKey);
+    }
     updateThemeLabels(dark);
     updateComboIndicators(comboKey);
   }
@@ -128,12 +136,13 @@
   });
 
   // ===== Cross-tab sync =====
-  // storage event only fires in other tabs
+  // storage event only fires in other tabs — values already written by
+  // the originating tab, so skipPersist avoids redundant writes
   window.addEventListener('storage', function (e) {
     if (e.key === 'darkMode' || e.key === 'themeCombo') {
       var dark = safeStorageGet('darkMode') === 'true';
       var combo = getCurrentComboKey();
-      applyTheme(dark, combo);
+      applyTheme(dark, combo, true);
     }
   });
 
