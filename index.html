@@ -50,15 +50,19 @@
        Approach: DaisyUI navbar component + disclosure-pattern dropdown
          (aria-expanded, not role="menu") per WAI-ARIA
        Alternative: Inline nav links — rejected, clutters header on narrow screens -->
-  <nav class="navbar bg-base-100/80 backdrop-blur-md sticky top-0 z-30 border-b border-base-300 no-print"
-       style="padding-top: env(safe-area-inset-top); padding-left: max(1rem, env(safe-area-inset-left)); padding-right: max(1rem, env(safe-area-inset-right));">
-    <div class="flex-1">
+  <!-- Requirement: Safe-area padding for notched devices (iPhone Dynamic Island)
+       Approach: CSS env() in inline style for top/left/right, Tailwind px-* as baseline.
+         padding-top uses max() so non-notch devices still get 0.5rem (matching navbar default).
+       Alternative: Tailwind only — rejected, env() safe-area values aren't available as utilities -->
+  <nav class="navbar bg-base-100/80 backdrop-blur-md sticky top-0 z-30 border-b border-base-300 no-print px-4"
+       style="padding-top: max(0.5rem, env(safe-area-inset-top)); padding-left: max(1rem, env(safe-area-inset-left)); padding-right: max(1rem, env(safe-area-inset-right));">
+    <div class="navbar-start">
       <a href="./" class="inline-flex items-center gap-2 no-underline hover:opacity-80 transition-opacity" aria-label="devmade-ai home">
         <img src="assets/images/icon-192.png" alt="" width="36" height="36" class="rounded-lg shrink-0">
         <span class="font-bold text-base-content text-lg">devmade-ai</span>
       </a>
     </div>
-    <div class="flex-none">
+    <div class="navbar-end">
       <!-- Requirement: Disclosure-pattern dropdown for nav actions
            Approach: Vanilla JS toggle with backdrop, aria-expanded, Escape key close.
              Uses disclosure pattern (not role="menu") per WAI-ARIA — this is navigation,
