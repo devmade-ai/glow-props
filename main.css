@@ -196,13 +196,12 @@
   }
 }
 
-/* ===== Burger menu z-index layers =====
+/* ===== Burger menu z-index layer =====
    Follows z-index scale from CLAUDE.md:
-   Menu backdrop: z-40, Menu dropdown: z-50, Modals: z-60, Toasts: z-70 */
-@utility z-backdrop {
-  z-index: 40;
-}
-
+   Menu dropdown: z-50, Modals: z-60, Toasts: z-70
+   Note: No backdrop layer (z-40) — the navbar's backdrop-filter creates a
+   containing block that traps position:fixed children. Click-outside uses
+   a document handler instead. See theme.js burger menu comments. */
 @utility z-dropdown {
   z-index: 50;
 }

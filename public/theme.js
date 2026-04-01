@@ -172,28 +172,30 @@
   });
 
   // ===== Burger Menu =====
-  // Requirement: Disclosure-pattern dropdown with backdrop, Escape, focus management
+  // Requirement: Disclosure-pattern dropdown with Escape, focus management, click-outside
   // Approach: CSS opacity+scale transitions toggled via class swaps + aria-expanded.
-  //   Close on backdrop click, Escape key, and [data-close] item clicks.
+  //   Close on click-outside (document handler), Escape key, and [data-close] item clicks.
   //   Focus first item on open, return focus to trigger on close.
-  // Alternative: CSS-only :focus-within — rejected, can't trap Escape or backdrop
+  //   Body scroll locked while open to prevent scroll-through on mobile.
+  // Why no backdrop overlay: The navbar's backdrop-filter (backdrop-blur-md) creates a
+  //   containing block that traps position:fixed children. A backdrop inside the navbar
+  //   only covers the navbar area. Moving it outside would cover the menu too (the menu
+  //   is inside the navbar's stacking context at z-30, so an external backdrop at z-40
+  //   would sit above it). Document click handler is more robust regardless.
+  // Alternative: CSS-only :focus-within — rejected, can't trap Escape or click-outside
 
   var trigger = document.getElementById('burger-trigger');
   var menu = document.getElementById('burger-menu');
-  var backdrop = document.getElementById('burger-backdrop');
 
-  if (trigger && menu && backdrop) {
+  if (trigger && menu) {
     // Requirement: Smooth open/close transitions for burger menu
     // Approach: CSS opacity+scale transitions, toggled via classes.
     //   pointer-events-none when closed prevents interaction with invisible menu.
-    //   Replaces hidden attribute which prevents any transition.
     // Alternative: hidden attribute — rejected, no transition possible
     var menuOpen = false;
 
     function openMenu() {
       menuOpen = true;
-      backdrop.classList.remove('pointer-events-none', 'opacity-0');
-      backdrop.classList.add('pointer-events-auto', 'opacity-100');
       menu.classList.remove('pointer-events-none', 'opacity-0', 'scale-95');
       menu.classList.add('pointer-events-auto', 'opacity-100', 'scale-100');
       trigger.setAttribute('aria-expanded', 'true');
@@ -213,8 +215,6 @@
 
     function closeMenu() {
       menuOpen = false;
-      backdrop.classList.remove('pointer-events-auto', 'opacity-100');
-      backdrop.classList.add('pointer-events-none', 'opacity-0');
       menu.classList.remove('pointer-events-auto', 'opacity-100', 'scale-100');
       menu.classList.add('pointer-events-none', 'opacity-0', 'scale-95');
       trigger.setAttribute('aria-expanded', 'false');
@@ -233,12 +233,6 @@
 
     // Requirement: Tap/click outside menu closes it
     // Approach: Document-level click handler checks if target is outside menu+trigger.
-    // Why not backdrop click: The navbar has backdrop-filter (backdrop-blur-md) which
-    //   creates a containing block. This makes the backdrop's position:fixed relative
-    //   to the navbar instead of the viewport — so it doesn't cover the page content
-    //   area and taps below the navbar never reach it.
-    // Alternative: Move backdrop outside navbar — rejected, requires HTML restructuring
-    //   and the document handler is more robust regardless of DOM position.
     document.addEventListener('click', function (e) {
       if (menuOpen && !menu.contains(e.target) && !trigger.contains(e.target)) {
         closeMenu();
