@@ -1,38 +1,26 @@
 # Session Notes
 
 ## Worked on
-Transforming glow-props from a bare CLAUDE.md file host into a portfolio and resource hub with Pico CSS Jade theme.
+Header and page-wide spacing audit and fixes across both HTML pages.
 
 ## Accomplished
-- Removed dead code (SessionStart hook, sample text file)
-- Built portfolio landing page with 3 sections: Projects (9 user-facing), Tools (4 internal), Patterns (7)
-- Built project detail page with tabbed doc viewer (Overview, User Guide, Testing Guide, Tutorial)
-- Fetched and mirrored docs from all 12 active repos, scrubbed 6 private repos
-- Integrated Pico CSS v2 Jade theme with Space Grotesk + Inter fonts
-- Switched dark mode from `.dark` class to `data-theme` attribute (Pico convention)
-- Added Save as PDF button via `window.print()`
-- Fixed 5 wrong live URLs (GitHub Pages -> Vercel) and added 2 missing projects (sun-sea-o, four-ems)
-- Fixed XSS: all dynamic meta.json values now escaped via `escapeHtml()`
-- Fixed JS bugs: event listener accumulation, copy button selector, quote escaping
-- Mobile UX: 44px touch targets, safe area insets, grid overflow fix, `:active` feedback
-- Replaced `<nav>` card-links with `<div>` to avoid Pico nav conflicts
-- Removed all inline styles from project.html
-- Updated CI Node version 20 -> 22 (Vite 7 requires ^20.19.0 || >=22.12.0)
-- Resolved npm audit vulnerability (picomatch)
-- Created PROJECT_DOCS.md — consolidated update guide and status tracker into one doc
+- Fixed nav-to-content alignment: added horizontal padding matching Pico's container spacing
+- Reduced hero top padding from 3rem to 2rem total (index.html)
+- Strengthened section separation: 2.5rem inter-section gap vs 1.5rem intra-section (index.html)
+- Unified vertical rhythm on project.html: hero, meta-grid, doc-tabs all use 1.5rem bottom margin
+- Fixed footer double bottom spacing: reset last-child margin inside footer
+- Added .back-link class on project.html for visual de-emphasis of navigation
 
 ## Current state
-- Site builds cleanly (58 files, 1.1MB), deploys to GitHub Pages via GitHub Actions
-- 12 project directories with detail pages, all with correct Vercel live URLs
-- Pico CSS Jade theme bundled via Vite, dark mode via `data-theme` attribute
-- Zero inline styles, zero console.log, zero TODO comments, zero npm vulnerabilities
-- All dynamic HTML content escaped, event delegation for tab switching
+- Site builds cleanly, all spacing is consistent and documented
+- Vertical rhythm: 1.5rem between same-level content blocks, 2.5rem between sections
+- Nav aligns with container content via matching horizontal padding
+- Footer has balanced top/bottom spacing (Pico padding only, no doubled margins)
+- Branch: claude/check-header-spacing-TSh6v, pushed to remote
 
 ## Key context
-- Pico CSS imported via `pico-jade.css` which `@import`s from node_modules — Vite bundles it
-- Dark mode uses `data-theme` attribute (Pico convention), NOT `.dark` class
-- Private repos: graphiki, few-lap, synctone, tool-till-tees, sun-sea-o, four-ems
-- Missing docs: model-pear (no User Guide, Testing Guide, Tutorial), see-veo (same)
-- All apps deployed on Vercel except glow-props (GitHub Pages)
-- `docs/PROJECT_DOCS.md` has the full process for updating mirrored docs AND the status tracker
-- Always list repos via `GITHUB_ALL_REPO_TOKEN` API, never rely on cached lists
+- Pico gives `body > main` and `body > footer` `padding-block: 1rem` — all custom spacing stacks on top
+- Pico gives `section` `margin-bottom: 1rem` — overridden to 2.5rem in styles.css
+- Pico gives `<p>` `margin-bottom: 1rem` — footer fix zeroes last-child to prevent doubling
+- Nav horizontal padding uses `max(var(--pico-spacing), env(safe-area-inset))` — picks larger of 1rem or notch inset
+- All spacing decisions documented with Requirement/Approach/Alternative comments per code standards
