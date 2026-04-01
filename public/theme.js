@@ -173,8 +173,9 @@
 
   // ===== Burger Menu =====
   // Requirement: Disclosure-pattern dropdown with backdrop, Escape, focus management
-  // Approach: Toggle hidden attribute + aria-expanded. Close on backdrop click,
-  //   Escape key, and [data-close] item clicks. Focus first item on open.
+  // Approach: CSS opacity+scale transitions toggled via class swaps + aria-expanded.
+  //   Close on backdrop click, Escape key, and [data-close] item clicks.
+  //   Focus first item on open, return focus to trigger on close.
   // Alternative: CSS-only :focus-within — rejected, can't trap Escape or backdrop
 
   var trigger = document.getElementById('burger-trigger');

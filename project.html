@@ -62,14 +62,27 @@
             <path d="M4 6h16M4 12h16M4 18h16"/>
           </svg>
         </button>
-        <div class="fixed inset-0 z-backdrop cursor-pointer" id="burger-backdrop" hidden></div>
+        <!-- Backdrop — z-40 per z-index scale. cursor-pointer required for iOS Safari
+             (empty divs don't receive click events without it).
+             Semi-transparent so users see they can tap outside to dismiss.
+             Transitions opacity for smooth open/close instead of instant hidden toggle. -->
+        <div class="fixed inset-0 z-backdrop cursor-pointer bg-black/20
+                    transition-opacity duration-200 ease-out
+                    pointer-events-none opacity-0"
+             id="burger-backdrop"></div>
+
+        <!-- Requirement: Smooth open/close with scale+opacity transition
+             Approach: CSS opacity+scale transition, toggled via class swaps.
+               pointer-events-none when closed prevents interaction with invisible menu.
+             Alternative: hidden attribute — rejected, no transition possible -->
         <div class="absolute right-0 top-full mt-2 z-dropdown w-56 max-w-[calc(100vw-2rem)]
                     rounded-xl shadow-lg bg-base-100 border border-base-300
-                    py-1 overscroll-contain"
+                    py-1 overscroll-contain origin-top-right
+                    transition-[opacity,transform] duration-200 ease-out
+                    pointer-events-none opacity-0 scale-95"
              id="burger-menu"
              role="navigation"
-             aria-label="Main navigation"
-             hidden>
+             aria-label="Main navigation">
           <ul class="list-none m-0 p-0 flex flex-col">
             <li><a href="./#projects" class="block w-full text-left px-4 py-2.5 text-sm text-base-content
                      hover:bg-base-200 transition-colors cursor-pointer no-underline
