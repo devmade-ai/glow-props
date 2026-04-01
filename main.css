@@ -104,23 +104,52 @@
 .scroll-animate[data-delay="4"] { transition-delay: 0.4s; }
 .scroll-animate[data-delay="5"] { transition-delay: 0.5s; }
 
-/* ===== Card hover effects =====
-   Requirement: Interactive feel on project cards
-   Approach: Subtle lift + shadow increase on hover, scale on active
-   Applied via .card-hover utility class */
-@utility card-hover {
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+/* ===== Card interactive effects =====
+   Requirement: Cards reveal action links when tapped/clicked
+   Approach: card-interactive base with cursor + subtle hover lift.
+     .card-links are visible but muted (low opacity, slight scale-down) by default
+     so users can see actions exist. Active card gets a primary ring highlight
+     and links become fully prominent.
+   Alternative: CSS :target — rejected, changes URL hash and conflicts with
+     section anchors. Flip card — rejected, hides content users scan for. */
+@utility card-interactive {
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
 }
 
-.card-hover:hover {
-  transform: translateY(-4px);
-  box-shadow:
-    0 10px 25px -5px oklch(0 0 0 / 0.1),
-    0 4px 10px -5px oklch(0 0 0 / 0.04);
-}
-
-.card-hover:active {
+.card-interactive:hover {
   transform: translateY(-2px);
+  box-shadow:
+    0 6px 16px -4px oklch(0 0 0 / 0.08),
+    0 2px 6px -2px oklch(0 0 0 / 0.03);
+}
+
+.card-interactive.card-active {
+  border-color: var(--color-primary, oklch(0% 0 0));
+  box-shadow:
+    0 0 0 2px var(--color-primary, oklch(0% 0 0)),
+    0 6px 16px -4px oklch(0 0 0 / 0.08);
+  transform: translateY(-2px);
+}
+
+/* Card links — visible but muted by default, become prominent on active.
+   Default: reduced opacity + smaller scale so links are discoverable but
+   don't compete with the card content for attention.
+   Active: full opacity + normal scale with smooth transition. */
+.card-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.375rem;
+  margin-top: 0.5rem;
+  opacity: 0.4;
+  transform: scale(0.95);
+  transform-origin: left center;
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.card-active .card-links {
+  opacity: 1;
+  transform: scale(1);
 }
 
 /* ===== Print styles =====

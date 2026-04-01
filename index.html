@@ -50,15 +50,19 @@
        Approach: DaisyUI navbar component + disclosure-pattern dropdown
          (aria-expanded, not role="menu") per WAI-ARIA
        Alternative: Inline nav links — rejected, clutters header on narrow screens -->
-  <nav class="navbar bg-base-100/80 backdrop-blur-md sticky top-0 z-30 border-b border-base-300 no-print"
-       style="padding-top: env(safe-area-inset-top); padding-left: max(1rem, env(safe-area-inset-left)); padding-right: max(1rem, env(safe-area-inset-right));">
-    <div class="flex-1">
+  <!-- Requirement: Safe-area padding for notched devices (iPhone Dynamic Island)
+       Approach: CSS env() in inline style for top/left/right, Tailwind px-* as baseline.
+         padding-top uses max() so non-notch devices still get 0.5rem (matching navbar default).
+       Alternative: Tailwind only — rejected, env() safe-area values aren't available as utilities -->
+  <nav class="navbar bg-base-100/80 backdrop-blur-md sticky top-0 z-30 border-b border-base-300 no-print px-4"
+       style="padding-top: max(0.5rem, env(safe-area-inset-top)); padding-left: max(1rem, env(safe-area-inset-left)); padding-right: max(1rem, env(safe-area-inset-right));">
+    <div class="navbar-start">
       <a href="./" class="inline-flex items-center gap-2 no-underline hover:opacity-80 transition-opacity" aria-label="devmade-ai home">
         <img src="assets/images/icon-192.png" alt="" width="36" height="36" class="rounded-lg shrink-0">
         <span class="font-bold text-base-content text-lg">devmade-ai</span>
       </a>
     </div>
-    <div class="flex-none">
+    <div class="navbar-end">
       <!-- Requirement: Disclosure-pattern dropdown for nav actions
            Approach: Vanilla JS toggle with backdrop, aria-expanded, Escape key close.
              Uses disclosure pattern (not role="menu") per WAI-ARIA — this is navigation,
@@ -139,7 +143,7 @@
       <p class="text-base-content/60 mb-6 max-w-xl scroll-animate">User-facing applications — each solves a real problem.</p>
       <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
 
-        <div class="card bg-base-200/50 border border-base-300 card-hover scroll-animate" data-delay="1">
+        <div class="card bg-base-200/50 border border-base-300 card-interactive scroll-animate" data-delay="1">
           <div class="card-body">
             <h3 class="card-title text-base">
               canva-grid
@@ -148,17 +152,17 @@
             </h3>
             <p class="text-sm text-base-content/70 grow">Visual design tool. Upload images, add text overlays, choose layouts and themes, export for social media, web, or print. Multi-page document support.</p>
             <div class="mt-auto pt-2">
-              <p class="text-xs text-base-content/40 mb-2">JavaScript &middot; Vite &middot; Tailwind</p>
-              <div class="flex flex-wrap gap-2">
-                <a href="project.html?name=canva-grid" class="link link-primary text-sm font-semibold no-underline hover:underline">Details</a>
-                <a href="https://canva-grid.vercel.app/" target="_blank" rel="noopener" class="link link-primary text-sm font-semibold no-underline hover:underline">Live app</a>
-                <a href="https://github.com/devmade-ai/canva-grid" target="_blank" rel="noopener" class="link link-primary text-sm font-semibold no-underline hover:underline">Source</a>
+              <p class="text-xs text-base-content/40">JavaScript &middot; Vite &middot; Tailwind</p>
+              <div class="card-links">
+                <a href="project.html?name=canva-grid" class="btn btn-xs btn-primary rounded-full" onclick="event.stopPropagation()">Details</a>
+                <a href="https://canva-grid.vercel.app/" target="_blank" rel="noopener" class="btn btn-xs btn-outline rounded-full" onclick="event.stopPropagation()">Live app</a>
+                <a href="https://github.com/devmade-ai/canva-grid" target="_blank" rel="noopener" class="btn btn-xs btn-outline rounded-full" onclick="event.stopPropagation()">Source</a>
               </div>
             </div>
           </div>
         </div>
 
-        <div class="card bg-base-200/50 border border-base-300 card-hover scroll-animate" data-delay="2">
+        <div class="card bg-base-200/50 border border-base-300 card-interactive scroll-animate" data-delay="2">
           <div class="card-body">
             <h3 class="card-title text-base">
               graphiki
@@ -167,16 +171,16 @@
             </h3>
             <p class="text-sm text-base-content/70 grow">Graph-based knowledge workspace. Build and explore networks of ideas, people, and concepts with visual queries. Runs entirely in the browser.</p>
             <div class="mt-auto pt-2">
-              <p class="text-xs text-base-content/40 mb-2">TypeScript &middot; Cytoscape.js &middot; IndexedDB</p>
-              <div class="flex flex-wrap gap-2">
-                <a href="project.html?name=graphiki" class="link link-primary text-sm font-semibold no-underline hover:underline">Details</a>
-                <a href="https://graphiki.vercel.app/" target="_blank" rel="noopener" class="link link-primary text-sm font-semibold no-underline hover:underline">Live app</a>
+              <p class="text-xs text-base-content/40">TypeScript &middot; Cytoscape.js &middot; IndexedDB</p>
+              <div class="card-links">
+                <a href="project.html?name=graphiki" class="btn btn-xs btn-primary rounded-full" onclick="event.stopPropagation()">Details</a>
+                <a href="https://graphiki.vercel.app/" target="_blank" rel="noopener" class="btn btn-xs btn-outline rounded-full" onclick="event.stopPropagation()">Live app</a>
               </div>
             </div>
           </div>
         </div>
 
-        <div class="card bg-base-200/50 border border-base-300 card-hover scroll-animate" data-delay="3">
+        <div class="card bg-base-200/50 border border-base-300 card-interactive scroll-animate" data-delay="3">
           <div class="card-body">
             <h3 class="card-title text-base">
               few-lap
@@ -185,16 +189,16 @@
             </h3>
             <p class="text-sm text-base-content/70 grow">Fuel station finder for South Africa. Search by location, filter by fuel type, get directions. Full-screen map with Google Maps-style bottom sheet.</p>
             <div class="mt-auto pt-2">
-              <p class="text-xs text-base-content/40 mb-2">TypeScript &middot; Expo &middot; Supabase &middot; Mapbox</p>
-              <div class="flex flex-wrap gap-2">
-                <a href="project.html?name=few-lap" class="link link-primary text-sm font-semibold no-underline hover:underline">Details</a>
-                <a href="https://few-lap.vercel.app/" target="_blank" rel="noopener" class="link link-primary text-sm font-semibold no-underline hover:underline">Live app</a>
+              <p class="text-xs text-base-content/40">TypeScript &middot; Expo &middot; Supabase &middot; Mapbox</p>
+              <div class="card-links">
+                <a href="project.html?name=few-lap" class="btn btn-xs btn-primary rounded-full" onclick="event.stopPropagation()">Details</a>
+                <a href="https://few-lap.vercel.app/" target="_blank" rel="noopener" class="btn btn-xs btn-outline rounded-full" onclick="event.stopPropagation()">Live app</a>
               </div>
             </div>
           </div>
         </div>
 
-        <div class="card bg-base-200/50 border border-base-300 card-hover scroll-animate" data-delay="1">
+        <div class="card bg-base-200/50 border border-base-300 card-interactive scroll-animate" data-delay="1">
           <div class="card-body">
             <h3 class="card-title text-base">
               synctone
@@ -203,16 +207,16 @@
             </h3>
             <p class="text-sm text-base-content/70 grow">Anonymous messaging with tone tags. Senders tag the intended tone of each message. Tones are revealed when the receiver enters the chat.</p>
             <div class="mt-auto pt-2">
-              <p class="text-xs text-base-content/40 mb-2">TypeScript &middot; Expo &middot; Supabase</p>
-              <div class="flex flex-wrap gap-2">
-                <a href="project.html?name=synctone" class="link link-primary text-sm font-semibold no-underline hover:underline">Details</a>
-                <a href="https://synctone.vercel.app/" target="_blank" rel="noopener" class="link link-primary text-sm font-semibold no-underline hover:underline">Live app</a>
+              <p class="text-xs text-base-content/40">TypeScript &middot; Expo &middot; Supabase</p>
+              <div class="card-links">
+                <a href="project.html?name=synctone" class="btn btn-xs btn-primary rounded-full" onclick="event.stopPropagation()">Details</a>
+                <a href="https://synctone.vercel.app/" target="_blank" rel="noopener" class="btn btn-xs btn-outline rounded-full" onclick="event.stopPropagation()">Live app</a>
               </div>
             </div>
           </div>
         </div>
 
-        <div class="card bg-base-200/50 border border-base-300 card-hover scroll-animate" data-delay="2">
+        <div class="card bg-base-200/50 border border-base-300 card-interactive scroll-animate" data-delay="2">
           <div class="card-body">
             <h3 class="card-title text-base">
               sun-sea-o
@@ -221,16 +225,16 @@
             </h3>
             <p class="text-sm text-base-content/70 grow">Module-based agreement builder. Agreements assembled from individually authored, negotiated, and signed text modules. Progressive signing with version history.</p>
             <div class="mt-auto pt-2">
-              <p class="text-xs text-base-content/40 mb-2">TypeScript &middot; React &middot; Supabase &middot; Tailwind</p>
-              <div class="flex flex-wrap gap-2">
-                <a href="project.html?name=sun-sea-o" class="link link-primary text-sm font-semibold no-underline hover:underline">Details</a>
-                <a href="https://sun-sea-o.vercel.app/" target="_blank" rel="noopener" class="link link-primary text-sm font-semibold no-underline hover:underline">Live app</a>
+              <p class="text-xs text-base-content/40">TypeScript &middot; React &middot; Supabase &middot; Tailwind</p>
+              <div class="card-links">
+                <a href="project.html?name=sun-sea-o" class="btn btn-xs btn-primary rounded-full" onclick="event.stopPropagation()">Details</a>
+                <a href="https://sun-sea-o.vercel.app/" target="_blank" rel="noopener" class="btn btn-xs btn-outline rounded-full" onclick="event.stopPropagation()">Live app</a>
               </div>
             </div>
           </div>
         </div>
 
-        <div class="card bg-base-200/50 border border-base-300 card-hover scroll-animate" data-delay="3">
+        <div class="card bg-base-200/50 border border-base-300 card-interactive scroll-animate" data-delay="3">
           <div class="card-body">
             <h3 class="card-title text-base">
               four-ems
@@ -239,16 +243,16 @@
             </h3>
             <p class="text-sm text-base-content/70 grow">Self-hosted form builder. Drag-and-drop editor, multi-page forms, conditional logic, response dashboard, CSV export, and iframe embedding.</p>
             <div class="mt-auto pt-2">
-              <p class="text-xs text-base-content/40 mb-2">TypeScript &middot; React &middot; Tailwind &middot; Supabase</p>
-              <div class="flex flex-wrap gap-2">
-                <a href="project.html?name=four-ems" class="link link-primary text-sm font-semibold no-underline hover:underline">Details</a>
-                <a href="https://four-ems.vercel.app/" target="_blank" rel="noopener" class="link link-primary text-sm font-semibold no-underline hover:underline">Live app</a>
+              <p class="text-xs text-base-content/40">TypeScript &middot; React &middot; Tailwind &middot; Supabase</p>
+              <div class="card-links">
+                <a href="project.html?name=four-ems" class="btn btn-xs btn-primary rounded-full" onclick="event.stopPropagation()">Details</a>
+                <a href="https://four-ems.vercel.app/" target="_blank" rel="noopener" class="btn btn-xs btn-outline rounded-full" onclick="event.stopPropagation()">Live app</a>
               </div>
             </div>
           </div>
         </div>
 
-        <div class="card bg-base-200/50 border border-base-300 card-hover scroll-animate" data-delay="1">
+        <div class="card bg-base-200/50 border border-base-300 card-interactive scroll-animate" data-delay="1">
           <div class="card-body">
             <h3 class="card-title text-base">
               budgy-ting
@@ -257,17 +261,17 @@
             </h3>
             <p class="text-sm text-base-content/70 grow">Household cashflow tracker. Import bank statements, detect recurring patterns, forecast spending with statistical models. All data stays on-device.</p>
             <div class="mt-auto pt-2">
-              <p class="text-xs text-base-content/40 mb-2">JavaScript &middot; Vue 3 &middot; Vite &middot; IndexedDB</p>
-              <div class="flex flex-wrap gap-2">
-                <a href="project.html?name=budgy-ting" class="link link-primary text-sm font-semibold no-underline hover:underline">Details</a>
-                <a href="https://budgy-ting.vercel.app/" target="_blank" rel="noopener" class="link link-primary text-sm font-semibold no-underline hover:underline">Live app</a>
-                <a href="https://github.com/devmade-ai/budgy-ting" target="_blank" rel="noopener" class="link link-primary text-sm font-semibold no-underline hover:underline">Source</a>
+              <p class="text-xs text-base-content/40">JavaScript &middot; Vue 3 &middot; Vite &middot; IndexedDB</p>
+              <div class="card-links">
+                <a href="project.html?name=budgy-ting" class="btn btn-xs btn-primary rounded-full" onclick="event.stopPropagation()">Details</a>
+                <a href="https://budgy-ting.vercel.app/" target="_blank" rel="noopener" class="btn btn-xs btn-outline rounded-full" onclick="event.stopPropagation()">Live app</a>
+                <a href="https://github.com/devmade-ai/budgy-ting" target="_blank" rel="noopener" class="btn btn-xs btn-outline rounded-full" onclick="event.stopPropagation()">Source</a>
               </div>
             </div>
           </div>
         </div>
 
-        <div class="card bg-base-200/50 border border-base-300 card-hover scroll-animate" data-delay="2">
+        <div class="card bg-base-200/50 border border-base-300 card-interactive scroll-animate" data-delay="2">
           <div class="card-body">
             <h3 class="card-title text-base">
               model-pear
@@ -275,17 +279,17 @@
             </h3>
             <p class="text-sm text-base-content/70 grow">B2B software pricing tool. Find optimal pricing where you hit your margin and the client sees ROI. Compare 6 transaction models with 47 variants.</p>
             <div class="mt-auto pt-2">
-              <p class="text-xs text-base-content/40 mb-2">TypeScript &middot; React &middot; Vite</p>
-              <div class="flex flex-wrap gap-2">
-                <a href="project.html?name=model-pear" class="link link-primary text-sm font-semibold no-underline hover:underline">Details</a>
-                <a href="https://model-pear-web.vercel.app/" target="_blank" rel="noopener" class="link link-primary text-sm font-semibold no-underline hover:underline">Live app</a>
-                <a href="https://github.com/devmade-ai/model-pear" target="_blank" rel="noopener" class="link link-primary text-sm font-semibold no-underline hover:underline">Source</a>
+              <p class="text-xs text-base-content/40">TypeScript &middot; React &middot; Vite</p>
+              <div class="card-links">
+                <a href="project.html?name=model-pear" class="btn btn-xs btn-primary rounded-full" onclick="event.stopPropagation()">Details</a>
+                <a href="https://model-pear-web.vercel.app/" target="_blank" rel="noopener" class="btn btn-xs btn-outline rounded-full" onclick="event.stopPropagation()">Live app</a>
+                <a href="https://github.com/devmade-ai/model-pear" target="_blank" rel="noopener" class="btn btn-xs btn-outline rounded-full" onclick="event.stopPropagation()">Source</a>
               </div>
             </div>
           </div>
         </div>
 
-        <div class="card bg-base-200/50 border border-base-300 card-hover scroll-animate" data-delay="3">
+        <div class="card bg-base-200/50 border border-base-300 card-interactive scroll-animate" data-delay="3">
           <div class="card-body">
             <h3 class="card-title text-base">
               see-veo
@@ -294,11 +298,11 @@
             </h3>
             <p class="text-sm text-base-content/70 grow">Personal CV and resume as an installable web app. Skills, project showcase, activity charts, and PDF export built in.</p>
             <div class="mt-auto pt-2">
-              <p class="text-xs text-base-content/40 mb-2">TypeScript &middot; React &middot; Tailwind</p>
-              <div class="flex flex-wrap gap-2">
-                <a href="project.html?name=see-veo" class="link link-primary text-sm font-semibold no-underline hover:underline">Details</a>
-                <a href="https://see-veo.vercel.app/" target="_blank" rel="noopener" class="link link-primary text-sm font-semibold no-underline hover:underline">Live app</a>
-                <a href="https://github.com/devmade-ai/see-veo" target="_blank" rel="noopener" class="link link-primary text-sm font-semibold no-underline hover:underline">Source</a>
+              <p class="text-xs text-base-content/40">TypeScript &middot; React &middot; Tailwind</p>
+              <div class="card-links">
+                <a href="project.html?name=see-veo" class="btn btn-xs btn-primary rounded-full" onclick="event.stopPropagation()">Details</a>
+                <a href="https://see-veo.vercel.app/" target="_blank" rel="noopener" class="btn btn-xs btn-outline rounded-full" onclick="event.stopPropagation()">Live app</a>
+                <a href="https://github.com/devmade-ai/see-veo" target="_blank" rel="noopener" class="btn btn-xs btn-outline rounded-full" onclick="event.stopPropagation()">Source</a>
               </div>
             </div>
           </div>
@@ -313,59 +317,59 @@
       <p class="text-base-content/60 mb-6 max-w-xl scroll-animate">Infrastructure, analytics, and supporting repositories.</p>
 
       <div class="space-y-3">
-        <div class="card bg-base-200/50 border border-base-300 card-hover scroll-animate" data-delay="1">
+        <div class="card bg-base-200/50 border border-base-300 card-interactive scroll-animate" data-delay="1">
           <div class="card-body py-4">
             <h4 class="font-semibold text-base mb-1">
               repo-tor
               <span class="badge badge-ghost badge-sm">Analytics</span>
             </h4>
-            <p class="text-sm text-base-content/70 mb-2">Git analytics dashboard. Extract commit history from any repo, visualize progress, contributors, and code health. 6 dashboard tabs with role-based views.</p>
-            <div class="flex flex-wrap gap-2">
-              <a href="project.html?name=repo-tor" class="link link-primary text-sm font-semibold no-underline hover:underline">Details</a>
-              <a href="https://repo-tor.vercel.app/" target="_blank" rel="noopener" class="link link-primary text-sm font-semibold no-underline hover:underline">Dashboard</a>
-              <a href="https://github.com/devmade-ai/repo-tor" target="_blank" rel="noopener" class="link link-primary text-sm font-semibold no-underline hover:underline">Source</a>
+            <p class="text-sm text-base-content/70">Git analytics dashboard. Extract commit history from any repo, visualize progress, contributors, and code health. 6 dashboard tabs with role-based views.</p>
+            <div class="card-links">
+              <a href="project.html?name=repo-tor" class="btn btn-xs btn-primary rounded-full" onclick="event.stopPropagation()">Details</a>
+              <a href="https://repo-tor.vercel.app/" target="_blank" rel="noopener" class="btn btn-xs btn-outline rounded-full" onclick="event.stopPropagation()">Dashboard</a>
+              <a href="https://github.com/devmade-ai/repo-tor" target="_blank" rel="noopener" class="btn btn-xs btn-outline rounded-full" onclick="event.stopPropagation()">Source</a>
             </div>
           </div>
         </div>
 
-        <div class="card bg-base-200/50 border border-base-300 card-hover scroll-animate" data-delay="2">
+        <div class="card bg-base-200/50 border border-base-300 card-interactive scroll-animate" data-delay="2">
           <div class="card-body py-4">
             <h4 class="font-semibold text-base mb-1">
               tool-till-tees
               <span class="badge badge-ghost badge-sm">API</span>
             </h4>
-            <p class="text-sm text-base-content/70 mb-2">Utilities API on Vercel. Contact form endpoint, multi-tenant form builder, and agreement management backend. All backed by Supabase.</p>
-            <div class="flex flex-wrap gap-2">
-              <a href="project.html?name=tool-till-tees" class="link link-primary text-sm font-semibold no-underline hover:underline">Details</a>
-              <a href="https://tool-till-tees.vercel.app/" target="_blank" rel="noopener" class="link link-primary text-sm font-semibold no-underline hover:underline">Live</a>
+            <p class="text-sm text-base-content/70">Utilities API on Vercel. Contact form endpoint, multi-tenant form builder, and agreement management backend. All backed by Supabase.</p>
+            <div class="card-links">
+              <a href="project.html?name=tool-till-tees" class="btn btn-xs btn-primary rounded-full" onclick="event.stopPropagation()">Details</a>
+              <a href="https://tool-till-tees.vercel.app/" target="_blank" rel="noopener" class="btn btn-xs btn-outline rounded-full" onclick="event.stopPropagation()">Live</a>
             </div>
           </div>
         </div>
 
-        <div class="card bg-base-200/50 border border-base-300 card-hover scroll-animate" data-delay="3">
+        <div class="card bg-base-200/50 border border-base-300 card-interactive scroll-animate" data-delay="3">
           <div class="card-body py-4">
             <h4 class="font-semibold text-base mb-1">
               glow-props
               <span class="badge badge-ghost badge-sm">Config</span>
             </h4>
-            <p class="text-sm text-base-content/70 mb-2">This site. Hosts shared AI assistant rules, engineering patterns, and the project portfolio. Also serves as the canonical CLAUDE.md reference.</p>
-            <div class="flex flex-wrap gap-2">
-              <a href="CLAUDE.md" class="link link-primary text-sm font-semibold no-underline hover:underline">CLAUDE.md</a>
-              <a href="https://github.com/devmade-ai/glow-props" target="_blank" rel="noopener" class="link link-primary text-sm font-semibold no-underline hover:underline">Source</a>
+            <p class="text-sm text-base-content/70">This site. Hosts shared AI assistant rules, engineering patterns, and the project portfolio. Also serves as the canonical CLAUDE.md reference.</p>
+            <div class="card-links">
+              <a href="CLAUDE.md" class="btn btn-xs btn-primary rounded-full" onclick="event.stopPropagation()">CLAUDE.md</a>
+              <a href="https://github.com/devmade-ai/glow-props" target="_blank" rel="noopener" class="btn btn-xs btn-outline rounded-full" onclick="event.stopPropagation()">Source</a>
             </div>
           </div>
         </div>
 
-        <div class="card bg-base-200/50 border border-base-300 card-hover scroll-animate" data-delay="4">
+        <div class="card bg-base-200/50 border border-base-300 card-interactive scroll-animate" data-delay="4">
           <div class="card-body py-4">
             <h4 class="font-semibold text-base mb-1">
               canva-grid-assets
               <span class="badge badge-ghost badge-sm">CDN</span>
             </h4>
-            <p class="text-sm text-base-content/70 mb-2">CDN assets repository for canva-grid. Hosts sample images and media files served to the design tool.</p>
-            <div class="flex flex-wrap gap-2">
-              <a href="project.html?name=canva-grid-assets" class="link link-primary text-sm font-semibold no-underline hover:underline">Details</a>
-              <a href="https://github.com/devmade-ai/canva-grid-assets" target="_blank" rel="noopener" class="link link-primary text-sm font-semibold no-underline hover:underline">Source</a>
+            <p class="text-sm text-base-content/70">CDN assets repository for canva-grid. Hosts sample images and media files served to the design tool.</p>
+            <div class="card-links">
+              <a href="project.html?name=canva-grid-assets" class="btn btn-xs btn-primary rounded-full" onclick="event.stopPropagation()">Details</a>
+              <a href="https://github.com/devmade-ai/canva-grid-assets" target="_blank" rel="noopener" class="btn btn-xs btn-outline rounded-full" onclick="event.stopPropagation()">Source</a>
             </div>
           </div>
         </div>
@@ -378,7 +382,7 @@
       <p class="text-base-content/60 mb-6 max-w-xl scroll-animate">Reusable implementation patterns extracted from real projects. Each is documented with requirements, approach, alternatives considered, and key lessons. <a href="CLAUDE.md" class="link link-primary">View full reference</a>.</p>
       <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
 
-        <div class="card bg-base-200/50 border border-base-300 card-hover scroll-animate" data-delay="1">
+        <div class="card bg-base-200/50 border border-base-300 card-interactive scroll-animate" data-delay="1">
           <div class="card-body">
             <h4 class="font-semibold text-base mb-1">PWA System</h4>
             <p class="text-sm text-base-content/70 grow">Install prompts, service worker updates, offline support. Handles the <code class="text-xs bg-base-300 px-1 rounded">beforeinstallprompt</code> race condition and browser-specific install instructions.</p>
@@ -386,7 +390,7 @@
           </div>
         </div>
 
-        <div class="card bg-base-200/50 border border-base-300 card-hover scroll-animate" data-delay="2">
+        <div class="card bg-base-200/50 border border-base-300 card-interactive scroll-animate" data-delay="2">
           <div class="card-body">
             <h4 class="font-semibold text-base mb-1">Theme &amp; Dark Mode</h4>
             <p class="text-sm text-base-content/70 grow">User-controlled dark/light mode with system preference fallback, localStorage persistence, cross-tab sync, and flash prevention.</p>
@@ -394,7 +398,7 @@
           </div>
         </div>
 
-        <div class="card bg-base-200/50 border border-base-300 card-hover scroll-animate" data-delay="3">
+        <div class="card bg-base-200/50 border border-base-300 card-interactive scroll-animate" data-delay="3">
           <div class="card-body">
             <h4 class="font-semibold text-base mb-1">Burger Menu</h4>
             <p class="text-sm text-base-content/70 grow">Accessible dropdown navigation using the WAI-ARIA disclosure pattern. iOS Safari backdrop fix, focus management, and z-index scale.</p>
@@ -402,7 +406,7 @@
           </div>
         </div>
 
-        <div class="card bg-base-200/50 border border-base-300 card-hover scroll-animate" data-delay="1">
+        <div class="card bg-base-200/50 border border-base-300 card-interactive scroll-animate" data-delay="1">
           <div class="card-body">
             <h4 class="font-semibold text-base mb-1">App Icons from SVG</h4>
             <p class="text-sm text-base-content/70 grow">Single SVG source file converted to all PNG sizes at 400 DPI using Sharp. One command regenerates everything.</p>
@@ -410,7 +414,7 @@
           </div>
         </div>
 
-        <div class="card bg-base-200/50 border border-base-300 card-hover scroll-animate" data-delay="2">
+        <div class="card bg-base-200/50 border border-base-300 card-interactive scroll-animate" data-delay="2">
           <div class="card-body">
             <h4 class="font-semibold text-base mb-1">Download as PDF</h4>
             <p class="text-sm text-base-content/70 grow">Zero-dependency PDF export using <code class="text-xs bg-base-300 px-1 rounded">window.print()</code>. Print-friendly CSS overrides, <code class="text-xs bg-base-300 px-1 rounded">no-print</code> utility class, and page break control.</p>
@@ -418,7 +422,7 @@
           </div>
         </div>
 
-        <div class="card bg-base-200/50 border border-base-300 card-hover scroll-animate" data-delay="3">
+        <div class="card bg-base-200/50 border border-base-300 card-interactive scroll-animate" data-delay="3">
           <div class="card-body">
             <h4 class="font-semibold text-base mb-1">HTTPS Proxy Support</h4>
             <p class="text-sm text-base-content/70 grow">Zero-dependency HTTP CONNECT tunnel for Node.js scripts behind proxies. Transparent fallback to direct connections.</p>
@@ -426,7 +430,7 @@
           </div>
         </div>
 
-        <div class="card bg-base-200/50 border border-base-300 card-hover scroll-animate" data-delay="1">
+        <div class="card bg-base-200/50 border border-base-300 card-interactive scroll-animate" data-delay="1">
           <div class="card-body">
             <h4 class="font-semibold text-base mb-1">Debug System</h4>
             <p class="text-sm text-base-content/70 grow">In-memory event store with floating debug pill. Pub/sub circular buffer, severity levels, environment diagnostics. Renders in separate React root.</p>
@@ -466,6 +470,41 @@
 
       document.querySelectorAll('.scroll-animate').forEach(function (el) {
         observer.observe(el);
+      });
+    })();
+  </script>
+
+  <!-- Requirement: Cards reveal action links when tapped/clicked
+       Approach: Toggle .card-active class on click, one card active at a time.
+         Click same card again or click outside to deactivate.
+       Alternative: CSS :focus-within — rejected, loses state on any click outside
+         and doesn't work with keyboard navigation on the card itself -->
+  <script>
+    (function () {
+      var activeCard = null;
+
+      document.querySelectorAll('.card-interactive').forEach(function (card) {
+        // Only make cards with links interactive
+        if (!card.querySelector('.card-links')) return;
+
+        card.addEventListener('click', function () {
+          if (activeCard === card) {
+            card.classList.remove('card-active');
+            activeCard = null;
+          } else {
+            if (activeCard) activeCard.classList.remove('card-active');
+            card.classList.add('card-active');
+            activeCard = card;
+          }
+        });
+      });
+
+      // Click outside any card deactivates
+      document.addEventListener('click', function (e) {
+        if (activeCard && !activeCard.contains(e.target)) {
+          activeCard.classList.remove('card-active');
+          activeCard = null;
+        }
       });
     })();
   </script>

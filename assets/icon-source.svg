@@ -5,20 +5,21 @@
        no font dependencies, renders crisply at all sizes.
        Alternative: Lettermark "dm" — rejected, hand-drawn text paths were unreliable
 
-       Colour: #0ab1b1 matches Pico CSS cyan theme primary. Previous #06b6d4
-       (Tailwind cyan-500) clashed with the Pico theme on both light and dark.
-       Using the dark-mode primary (#0ab1b1) rather than light-mode (#047878)
-       because it has better contrast on dark backgrounds and remains visually
-       cohesive on light backgrounds at the small sizes this icon is displayed (36px).
+       Colour: #db924c matches DaisyUI coffee theme primary (warm amber/gold).
+       Previous #0ab1b1 (Pico CSS cyan) clashed with the warm caramellatte/coffee
+       palette after migrating to Tailwind v4 + DaisyUI v5.
+       Using the coffee (dark) theme primary because it has good contrast on both
+       the dark coffee background and the light caramellatte background, and remains
+       visually cohesive at the small sizes this icon is displayed (36px).
 
        Glow filter removed — the feGaussianBlur glow effect was adding a soft
-       bloom around shapes that looked out of place in the clean Pico UI. -->
+       bloom around shapes that looked out of place in a clean UI. -->
 
   <!-- Hexagon outline — centered at 512,512, radius ~400 -->
   <polygon
     points="512,112 858,312 858,712 512,912 166,712 166,312"
     fill="none"
-    stroke="#0ab1b1"
+    stroke="#db924c"
     stroke-width="48"
     stroke-linejoin="round"
   />
@@ -26,22 +27,22 @@
   <!-- Dot grid — 3x3 arrangement, evenly spaced inside hexagon
        Dots are large enough to read at 48px favicon -->
   <!-- Row 1 (y=340) -->
-  <circle cx="352" cy="340" r="36" fill="#0ab1b1"/>
-  <circle cx="512" cy="340" r="36" fill="#0ab1b1"/>
-  <circle cx="672" cy="340" r="36" fill="#0ab1b1"/>
+  <circle cx="352" cy="340" r="36" fill="#db924c"/>
+  <circle cx="512" cy="340" r="36" fill="#db924c"/>
+  <circle cx="672" cy="340" r="36" fill="#db924c"/>
 
   <!-- Row 2 (y=512) -->
-  <circle cx="352" cy="512" r="36" fill="#0ab1b1"/>
-  <circle cx="512" cy="512" r="44" fill="#0ab1b1"/>
-  <circle cx="672" cy="512" r="36" fill="#0ab1b1"/>
+  <circle cx="352" cy="512" r="36" fill="#db924c"/>
+  <circle cx="512" cy="512" r="44" fill="#db924c"/>
+  <circle cx="672" cy="512" r="36" fill="#db924c"/>
 
   <!-- Row 3 (y=684) -->
-  <circle cx="352" cy="684" r="36" fill="#0ab1b1"/>
-  <circle cx="512" cy="684" r="36" fill="#0ab1b1"/>
-  <circle cx="672" cy="684" r="36" fill="#0ab1b1"/>
+  <circle cx="352" cy="684" r="36" fill="#db924c"/>
+  <circle cx="512" cy="684" r="36" fill="#db924c"/>
+  <circle cx="672" cy="684" r="36" fill="#db924c"/>
 
   <!-- Connecting lines between dots — subtle network effect -->
-  <g stroke="#0ab1b1" stroke-width="12" opacity="0.35">
+  <g stroke="#db924c" stroke-width="12" opacity="0.35">
     <!-- Horizontal connections -->
     <line x1="388" y1="340" x2="476" y2="340"/>
     <line x1="548" y1="340" x2="636" y2="340"/>
