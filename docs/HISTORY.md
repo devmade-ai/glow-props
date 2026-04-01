@@ -2,7 +2,21 @@
 
 ## 2026-04-01
 
-### Theme combo picker
+### Theme toggle refactor — per-mode individual theme picker
+- Replaced 8 curated theme combos with full DaisyUI catalogue (35 themes: 22 light, 13 dark)
+- Dark/light toggle now controls which theme list is shown in the burger menu picker
+- Each mode stores its own theme independently (`lightTheme`/`darkTheme` in localStorage)
+- Rewrote theme.js: removed combo system, added per-mode storage, theme list visibility toggling
+- Simplified flash prevention scripts in both HTML files — no combo map duplication needed
+- Registered all 35 DaisyUI themes in main.css (up from 16)
+- Added scrollable theme lists (max-h-52 with overflow-y-auto) to handle 22 items
+- Each theme has a mood/style tag (Warm, Cool, Gothic, Minimal, Neon, etc.)
+- Section header dynamically shows "Light themes" or "Dark themes" based on mode
+- Eliminated tech debt: combo map was duplicated in 3 files, now replaced by simple key reads
+- CSS bundle: ~138KB (~24KB gzipped) — up from ~117KB due to 19 additional theme definitions
+- Old `themeCombo` localStorage key ignored — existing users reset to defaults
+
+### Theme combo picker (superseded by per-mode refactor above)
 - Added 8 curated DaisyUI light/dark theme pairs selectable from burger menu
 - Combos: Caramel & Coffee (default), Nord & Night, Emerald & Forest, Autumn & Dim, Cupcake & Dracula, Lofi & Black, Garden & Luxury, Pastel & Synthwave
 - Registered 16 DaisyUI themes in main.css (up from 2)
