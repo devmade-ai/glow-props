@@ -35,11 +35,18 @@
        Alternative: Single scrollable page — rejected, too much content without organization */
 
     /* ===== Meta Grid ===== */
+    /* Requirement: Consistent vertical rhythm between hero, meta grid, and doc tabs
+       Approach: 1.5rem bottom margin on both hero and meta-grid. Previous values
+         (hero: 1rem, meta: 2rem) created uneven spacing — hero-to-meta felt cramped
+         relative to meta-to-tabs. 1.5rem is proportional to the doc-tabs margin-bottom
+         (also 1.5rem), establishing a consistent vertical rhythm across the page.
+       Alternative: Use larger spacing (2rem) for both — rejected, pushes doc content
+         too far down on mobile viewports */
     .meta-grid {
       display: grid;
       grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
       gap: 1.25rem;
-      margin-bottom: 2rem;
+      margin-bottom: 1.5rem;
     }
 
     /* Use Pico's <article> for meta cards — just override margin for grid */
@@ -180,9 +187,22 @@
       color: var(--pico-muted-color);
     }
 
+    /* ===== Back Link ===== */
+    /* Requirement: Back link needs clear visual separation from the hero below
+       Approach: Reduce font size to de-emphasize (it's navigation, not content),
+         and use Pico's default p margin-bottom (1rem) for spacing below.
+         The 1rem from body > main padding-top provides spacing above.
+       Alternative: Add extra margin-bottom — rejected, 1rem gap between back link
+         and hero title is sufficient when the link is visually distinct (smaller, muted) */
+    .back-link {
+      font-size: 0.9rem;
+    }
+
     /* ===== Project Hero ===== */
+    /* Requirement: Even vertical rhythm — hero-to-meta gap should match meta-to-tabs
+       Approach: 1.5rem bottom margin matches meta-grid and doc-tabs spacing */
     .project-hero {
-      margin-bottom: 1rem;
+      margin-bottom: 1.5rem;
     }
 
     .project-title-row {
@@ -480,7 +500,7 @@
         }
 
         app.innerHTML =
-          '<p><a href="./">&larr; All projects</a></p>' +
+          '<p class="back-link"><a href="./">&larr; All projects</a></p>' +
           '<header class="project-hero">' +
             '<div class="project-title-row">' +
               '<h1>' + escapeHtml(meta.title) + '</h1>' +

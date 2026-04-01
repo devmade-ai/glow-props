@@ -58,9 +58,20 @@ body > nav {
   padding-right: max(var(--pico-spacing), env(safe-area-inset-right));
 }
 
+/* Requirement: Footer should have balanced vertical spacing
+   Approach: Remove margin on the last child inside footer. Pico gives
+     body > footer padding-block: 1rem, and also gives <p> margin-bottom: 1rem.
+     Combined, the bottom space is doubled (1rem padding + 1rem margin = 2rem).
+     Zeroing the last child's margin-bottom lets the padding handle spacing evenly.
+   Alternative: Override Pico's body > footer padding — rejected, would fight
+     the framework and could break if Pico updates */
 body > footer {
   text-align: center;
   padding-bottom: env(safe-area-inset-bottom);
+}
+
+body > footer > *:last-child {
+  margin-bottom: 0;
 }
 
 /* ===== Logo ===== */
@@ -199,8 +210,14 @@ body > footer {
 }
 
 /* ===== Hero ===== */
+/* Requirement: Hero section needs vertical breathing room without excessive gap
+   Approach: 1rem top padding here + 1rem from Pico's body > main padding-block = 2rem
+     total gap between nav and hero h1. Previous 2rem + 1rem = 3rem was excessive,
+     especially on mobile where viewport space is scarce.
+   Alternative: Remove Pico's body > main padding — rejected, would affect all
+     pages and require overriding a framework default */
 .hero {
-  padding: 2rem 0 1rem;
+  padding: 1rem 0 1rem;
 }
 
 .hero h1 {
@@ -213,6 +230,18 @@ body > footer {
 .hero p {
   color: var(--pico-muted-color);
   max-width: 560px;
+}
+
+/* ===== Section Spacing ===== */
+/* Requirement: Section boundaries must be visually stronger than intra-section gaps
+   Approach: Override Pico's section margin-bottom (1rem) to 2.5rem. Pico's default
+     creates weaker inter-section gaps (1rem) than the intra-section subtitle-to-content
+     gap (1.5rem), inverting the visual hierarchy. 2.5rem clearly separates sections
+     while staying proportional to the 1.5rem subtitle gap.
+   Alternative: Reduce subtitle gap instead — rejected, subtitle gap at 1.5rem is
+     appropriate for separating the label from its content */
+section {
+  margin-bottom: 2.5rem;
 }
 
 /* ===== Section Subtitles ===== */
