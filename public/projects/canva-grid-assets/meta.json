@@ -8,10 +8,10 @@
   "repo": "public",
   "repoUrl": "https://github.com/devmade-ai/canva-grid-assets",
   "tech": ["Static assets", "GitHub Pages"],
-  "audience": "Internal — serves sample images to canva-grid via GitHub Pages CDN.",
+  "audience": "Internal \u2014 provides the sample image library that canva-grid users browse when they don\u2019t have their own photos to upload.",
   "useCases": [
-    "Host categorized sample images for the canva-grid design tool",
-    "Serve media files via GitHub Pages as a free CDN"
+    "A canva-grid user starts a new design without their own images \u2014 browses categorised sample photos served from this CDN",
+    "The canva-grid app loads quickly on first visit \u2014 images are served from GitHub Pages edge caching instead of a heavy origin server"
   ],
   "dataPrivacy": {
     "storage": "Static image files only. No user data.",

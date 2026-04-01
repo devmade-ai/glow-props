@@ -15,14 +15,12 @@
     "NativeWind",
     "Zustand"
   ],
-  "audience": "Anyone who wants to communicate with more clarity. Useful for sensitive conversations, remote teams, or situations where tone is easily misread in text.",
+  "audience": "Anyone who has been misunderstood in text \u2014 remote workers, couples, friends, managers, or anyone in a situation where a message could land wrong without the right context.",
   "useCases": [
-    "Create anonymous chats with human-readable codes (e.g., 'happy-tiger')",
-    "Share chat links via SMS, WhatsApp, email, or any app",
-    "Tag messages with up to 2 tones (happy, sad, serious, joking, sarcastic, sincere, or custom)",
-    "Tones revealed automatically when the receiver opens the chat",
-    "React with emojis, reply to messages, edit within 15 minutes",
-    "Push notifications across iOS, Android, and web"
+    "A manager sends critical feedback to a remote employee \u2014 tags it as 'supportive' so the receiver knows the intent before reading the words",
+    "Two friends are bantering over text \u2014 one tags a sharp reply as 'joking' so it doesn\u2019t accidentally start a fight",
+    "Someone needs to have a hard conversation but wants anonymity \u2014 creates a chat with a random code and shares the link, no accounts or phone numbers involved",
+    "A couple resolves a disagreement over text \u2014 tone tags prevent the 'are you being sarcastic?' spiral by making intent visible upfront"
   ],
   "dataPrivacy": {
     "storage": "Messages stored in cloud database for delivery. Identity is a random device ID \u2014 no email, phone, or account.",

@@ -15,13 +15,12 @@
     "Dexie.js",
     "IndexedDB"
   ],
-  "audience": "Individuals and households who want to understand and forecast their spending without sharing data with a cloud service.",
+  "audience": "Individuals and households who want honest visibility into where their money goes and how long it will last \u2014 without uploading bank data to a third-party service.",
   "useCases": [
-    "Import bank statements (CSV/JSON) and categorize transactions",
-    "Detect recurring spending patterns (rent, subscriptions, salary)",
-    "Forecast future cashflow using statistical models (Holt's exponential smoothing)",
-    "Track cash runway \u2014 how long your money will last",
-    "Compare spending across time periods with custom workspaces"
+    "A household imports three months of bank statements to find out exactly where R8,000 a month is disappearing to \u2014 discovers forgotten subscriptions and a grocery creep",
+    "Someone between jobs needs to know how long their savings will last \u2014 the cash runway forecast shows they have 4.2 months at current spend, so they cut non-essentials",
+    "A couple compares this month\u2019s spending to last month\u2019s \u2014 side-by-side workspaces show groceries up 15% and transport down 30% after switching to a carpool",
+    "A freelancer with irregular income imports invoices and expenses \u2014 recurring pattern detection separates predictable costs from variable ones to plan around lean months"
   ],
   "dataPrivacy": {
     "storage": "All data stored locally on-device using IndexedDB. No server, no cloud.",

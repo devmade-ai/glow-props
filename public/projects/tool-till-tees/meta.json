@@ -14,13 +14,12 @@
     "React",
     "Vite"
   ],
-  "audience": "Internal infrastructure \u2014 provides backend services consumed by see-veo (contact form) and other frontends (form builder, Sancio agreement management).",
+  "audience": "Internal \u2014 the backend that powers contact forms, the form builder (four-ems), and agreement management (sun-sea-o). Not used directly by end users.",
   "useCases": [
-    "Receive and deliver contact form submissions via SMTP",
-    "Build and publish custom forms with conditional fields and validation",
-    "Collect and manage form submissions with status tracking",
-    "Manage two-party agreements with proposals, signatures, and notifications (Sancio)",
-    "Generate PDF verifications for signed agreements"
+    "A visitor submits a contact form on see-veo \u2014 tool-till-tees receives the data, validates it, and delivers it via email",
+    "A form built in four-ems collects submissions \u2014 tool-till-tees stores them with row-level security and exposes them to the form owner\u2019s dashboard",
+    "Two parties sign an agreement module in sun-sea-o \u2014 tool-till-tees records the signatures, sends notifications, and generates a verifiable PDF",
+    "A new frontend needs a form endpoint \u2014 tool-till-tees provides a multi-tenant API with CORS allowlisting and input validation out of the box"
   ],
   "dataPrivacy": {
     "storage": "All data stored in Supabase (PostgreSQL) with row-level security.",

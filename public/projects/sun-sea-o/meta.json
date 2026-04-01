@@ -15,16 +15,12 @@
     "Supabase",
     "React Router"
   ],
-  "audience": "Two parties entering into agreements \u2014 freelancers and clients, business partners, or any situation where a contract is negotiated incrementally rather than signed all at once.",
+  "audience": "Freelancers and clients, business partners, co-founders, or anyone who needs to negotiate and sign an agreement piece by piece instead of all at once.",
   "useCases": [
-    "Create projects and invite a counterparty via email with passphrase verification",
-    "Build agreements from individual text modules (6 starter templates available)",
-    "Negotiate module content via proposals (accept, reject, counter)",
-    "Sign modules independently \u2014 auto-lock when both parties agree",
-    "Split modules into separate agreements as negotiations evolve",
-    "Track version history and signature log with timestamps",
-    "Generate PDF previews with SHA-256 verification codes",
-    "Receive in-app notifications for all agreement activity"
+    "A freelancer and client agree on scope but not payment terms yet \u2014 they sign the scope module now and negotiate payment separately, without blocking the project",
+    "Two co-founders draft a shareholders\u2019 agreement \u2014 they work through each clause as a separate module, countering and revising until both sides are satisfied",
+    "A supplier and buyer negotiate a service contract \u2014 one party proposes updated delivery terms, the other counters, and both can see the full version history",
+    "A consultant needs proof of what was agreed \u2014 downloads a PDF with SHA-256 verification codes and a timestamped signature log"
   ],
   "dataPrivacy": {
     "storage": "All data stored in Supabase cloud database with row-level security.",
