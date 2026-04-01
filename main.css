@@ -159,9 +159,15 @@
   transition: opacity 0.2s ease, transform 0.2s ease;
 }
 
+/* Requirement: Border highlights first, then links become prominent
+   Approach: transition-delay on links so border-color + box-shadow settle
+     before links animate in. Delay removed on deactivate so links fade
+     out immediately (no lingering after border disappears).
+   Alternative: Stagger via JS setTimeout — rejected, CSS delay is simpler */
 .card-active .card-links {
   opacity: 1;
   transform: scale(1);
+  transition-delay: 0.12s;
 }
 
 /* ===== Print styles =====
