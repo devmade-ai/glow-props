@@ -165,11 +165,21 @@
   var backdrop = document.getElementById('burger-backdrop');
 
   if (trigger && menu && backdrop) {
+    // Requirement: Smooth open/close transitions for burger menu
+    // Approach: CSS opacity+scale transitions, toggled via classes.
+    //   pointer-events-none when closed prevents interaction with invisible menu.
+    //   Replaces hidden attribute which prevents any transition.
+    // Alternative: hidden attribute — rejected, no transition possible
+    var menuOpen = false;
+
     function openMenu() {
-      menu.hidden = false;
-      backdrop.hidden = false;
+      menuOpen = true;
+      backdrop.classList.remove('pointer-events-none', 'opacity-0');
+      backdrop.classList.add('pointer-events-auto', 'opacity-100');
+      menu.classList.remove('pointer-events-none', 'opacity-0', 'scale-95');
+      menu.classList.add('pointer-events-auto', 'opacity-100', 'scale-100');
       trigger.setAttribute('aria-expanded', 'true');
-      // Focus first menu item after DOM update
+      // Focus first menu item after transition starts
       requestAnimationFrame(function () {
         var first = menu.querySelector('a, button');
         if (first) first.focus();
@@ -177,14 +187,17 @@
     }
 
     function closeMenu() {
-      menu.hidden = true;
-      backdrop.hidden = true;
+      menuOpen = false;
+      backdrop.classList.remove('pointer-events-auto', 'opacity-100');
+      backdrop.classList.add('pointer-events-none', 'opacity-0');
+      menu.classList.remove('pointer-events-auto', 'opacity-100', 'scale-100');
+      menu.classList.add('pointer-events-none', 'opacity-0', 'scale-95');
       trigger.setAttribute('aria-expanded', 'false');
       trigger.focus();
     }
 
     function isOpen() {
-      return !menu.hidden;
+      return menuOpen;
     }
 
     trigger.addEventListener('click', function () {
