@@ -12,17 +12,31 @@
   <script>
     (function() {
       try {
+        // Requirement: Prevent flash using stored combo + dark/light preference
+        // Combo map duplicated here because this script runs before theme.js loads.
+        // Must stay in sync with COMBOS array in theme.js.
+        var combos = {
+          'caramel-coffee':   { light: 'caramellatte', dark: 'coffee' },
+          'nord-night':       { light: 'nord',         dark: 'night' },
+          'emerald-forest':   { light: 'emerald',      dark: 'forest' },
+          'autumn-dim':       { light: 'autumn',       dark: 'dim' },
+          'cupcake-dracula':  { light: 'cupcake',      dark: 'dracula' },
+          'lofi-black':       { light: 'lofi',         dark: 'black' },
+          'garden-luxury':    { light: 'garden',       dark: 'luxury' },
+          'pastel-synthwave': { light: 'pastel',       dark: 'synthwave' }
+        };
+        var comboKey = localStorage.getItem('themeCombo') || 'caramel-coffee';
+        var combo = combos[comboKey] || combos['caramel-coffee'];
         var stored = localStorage.getItem('darkMode');
         var isDark = stored !== null
           ? stored === 'true'
           : window.matchMedia('(prefers-color-scheme: dark)').matches;
         if (isDark) {
           document.documentElement.classList.add('dark');
-          document.documentElement.setAttribute('data-theme', 'coffee');
         } else {
           document.documentElement.classList.remove('dark');
-          document.documentElement.setAttribute('data-theme', 'caramellatte');
         }
+        document.documentElement.setAttribute('data-theme', isDark ? combo.dark : combo.light);
       } catch(e) {}
     })();
   </script>
@@ -87,6 +101,81 @@
               <span class="theme-label-dark hidden">Light mode</span>
               <span class="theme-label-light">Dark mode</span>
             </button></li>
+            <li><hr class="my-1 border-base-300"></li>
+            <li class="px-4 pt-2 pb-1"><span class="text-xs font-semibold uppercase tracking-wider text-base-content/40">Theme</span></li>
+            <li><button type="button" data-combo="caramel-coffee"
+                        class="w-full text-left px-4 py-1.5 text-sm text-base-content
+                               hover:bg-base-200 transition-colors cursor-pointer
+                               focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-[-2px]
+                               flex items-center gap-2 rounded-lg">
+              <span class="combo-check invisible text-primary text-xs">&#10003;</span>
+              <span>Caramel & Coffee</span>
+              <span class="ml-auto text-xs text-base-content/40">Warm</span>
+            </button></li>
+            <li><button type="button" data-combo="nord-night"
+                        class="w-full text-left px-4 py-1.5 text-sm text-base-content
+                               hover:bg-base-200 transition-colors cursor-pointer
+                               focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-[-2px]
+                               flex items-center gap-2 rounded-lg">
+              <span class="combo-check invisible text-primary text-xs">&#10003;</span>
+              <span>Nord & Night</span>
+              <span class="ml-auto text-xs text-base-content/40">Cool</span>
+            </button></li>
+            <li><button type="button" data-combo="emerald-forest"
+                        class="w-full text-left px-4 py-1.5 text-sm text-base-content
+                               hover:bg-base-200 transition-colors cursor-pointer
+                               focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-[-2px]
+                               flex items-center gap-2 rounded-lg">
+              <span class="combo-check invisible text-primary text-xs">&#10003;</span>
+              <span>Emerald & Forest</span>
+              <span class="ml-auto text-xs text-base-content/40">Fresh</span>
+            </button></li>
+            <li><button type="button" data-combo="autumn-dim"
+                        class="w-full text-left px-4 py-1.5 text-sm text-base-content
+                               hover:bg-base-200 transition-colors cursor-pointer
+                               focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-[-2px]
+                               flex items-center gap-2 rounded-lg">
+              <span class="combo-check invisible text-primary text-xs">&#10003;</span>
+              <span>Autumn & Dim</span>
+              <span class="ml-auto text-xs text-base-content/40">Earthy</span>
+            </button></li>
+            <li><button type="button" data-combo="cupcake-dracula"
+                        class="w-full text-left px-4 py-1.5 text-sm text-base-content
+                               hover:bg-base-200 transition-colors cursor-pointer
+                               focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-[-2px]
+                               flex items-center gap-2 rounded-lg">
+              <span class="combo-check invisible text-primary text-xs">&#10003;</span>
+              <span>Cupcake & Dracula</span>
+              <span class="ml-auto text-xs text-base-content/40">Bold</span>
+            </button></li>
+            <li><button type="button" data-combo="lofi-black"
+                        class="w-full text-left px-4 py-1.5 text-sm text-base-content
+                               hover:bg-base-200 transition-colors cursor-pointer
+                               focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-[-2px]
+                               flex items-center gap-2 rounded-lg">
+              <span class="combo-check invisible text-primary text-xs">&#10003;</span>
+              <span>Lofi & Black</span>
+              <span class="ml-auto text-xs text-base-content/40">Minimal</span>
+            </button></li>
+            <li><button type="button" data-combo="garden-luxury"
+                        class="w-full text-left px-4 py-1.5 text-sm text-base-content
+                               hover:bg-base-200 transition-colors cursor-pointer
+                               focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-[-2px]
+                               flex items-center gap-2 rounded-lg">
+              <span class="combo-check invisible text-primary text-xs">&#10003;</span>
+              <span>Garden & Luxury</span>
+              <span class="ml-auto text-xs text-base-content/40">Elegant</span>
+            </button></li>
+            <li><button type="button" data-combo="pastel-synthwave"
+                        class="w-full text-left px-4 py-1.5 text-sm text-base-content
+                               hover:bg-base-200 transition-colors cursor-pointer
+                               focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-[-2px]
+                               flex items-center gap-2 rounded-lg">
+              <span class="combo-check invisible text-primary text-xs">&#10003;</span>
+              <span>Pastel & Synthwave</span>
+              <span class="ml-auto text-xs text-base-content/40">Neon</span>
+            </button></li>
+            <li><hr class="my-1 border-base-300"></li>
             <li><button type="button"
                         class="block w-full text-left px-4 py-2.5 text-sm text-base-content
                                hover:bg-base-200 transition-colors cursor-pointer
