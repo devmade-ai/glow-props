@@ -2,6 +2,28 @@
 
 ## 2026-04-01
 
+### Theme combo picker
+- Added 8 curated DaisyUI light/dark theme pairs selectable from burger menu
+- Combos: Caramel & Coffee (default), Nord & Night, Emerald & Forest, Autumn & Dim, Cupcake & Dracula, Lofi & Black, Garden & Luxury, Pastel & Synthwave
+- Registered 16 DaisyUI themes in main.css (up from 2)
+- Rewrote theme.js with combo storage, combo picker event delegation, cross-tab sync, and combo indicator UI
+- Updated flash-prevention scripts in both HTML files to read stored combo key
+- Choice persists in localStorage (`themeCombo` key) and syncs across tabs
+- Menu stays open while switching themes for quick comparison
+
+### Icon redesign — hexagon to multi-color 4-square grid
+- Replaced hexagon-with-dots icon (network/graph feel) with 2x2 grid of colored rounded squares
+- Colors: Blue #3b82f6, Emerald #10b981, Amber #f59e0b, Violet #8b5cf6
+- Multi-color palette is theme-independent — no clash with any DaisyUI combo
+- Transparent background so icon floats cleanly on any theme's bg
+- Regenerated all PNGs (48, 192, 512) via Sharp at 400 DPI
+
+### Code quality fixes
+- Fixed combo button touch targets — added min-h-11 (44px) to all combo picker buttons
+- Switched hero gradient from fixed amber/rose to DaisyUI `from-primary to-accent` tokens — auto-matches active theme
+- Fixed cross-tab sync writing values back redundantly — added skipPersist flag to applyTheme()
+- Removed unused `label` and `desc` properties from COMBOS array in theme.js
+
 ### CSS framework migration — Pico CSS to Tailwind + DaisyUI
 - Replaced Pico CSS v2.1.1 with Tailwind CSS v4.2.2 + DaisyUI v5.5.19
 - Deleted `pico-theme.css` (Pico import) and `styles.css` (420 lines of Pico overrides)

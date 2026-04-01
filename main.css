@@ -6,8 +6,20 @@
    Alternative: Keep Pico + add Tailwind — rejected, two frameworks fight over base styles */
 
 @import "tailwindcss";
+/* Requirement: Multiple theme combos selectable from burger menu
+   Approach: Register all DaisyUI themes used by the combo picker.
+     caramellatte/coffee is the default pair. Additional pairs offer
+     different vibes (cool, earthy, bold, minimal, playful, elegant).
+   Alternative: Only load two themes — rejected, user wants to explore combos */
 @plugin "daisyui" {
-  themes: caramellatte --default, coffee --prefersdark;
+  themes: caramellatte --default, coffee --prefersdark,
+          nord, night,
+          emerald, forest,
+          autumn, dim,
+          cupcake, dracula,
+          lofi, black,
+          garden, luxury,
+          pastel, synthwave;
 }
 
 /* ===== Custom dark mode variant =====
