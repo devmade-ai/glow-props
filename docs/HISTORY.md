@@ -14,6 +14,9 @@
 - Added animations: scroll-triggered fade-in-up (Intersection Observer), card hover lift, gradient hero text, sticky glassmorphism navbar
 - All accessibility preserved: disclosure pattern, aria-expanded, focus-visible, 44px touch targets, safe area insets
 - Moved Tailwind/DaisyUI from dependencies to devDependencies (build-time only)
+- Fixed missing `.dark` class removal in flash-prevention light mode branch
+- Switched DaisyUI themes from defaults (light/dark) to caramellatte (light) / coffee (dark)
+- Changed hero gradient from theme-dependent (`from-primary to-secondary`) to fixed warm gradient — caramellatte's primary/secondary are both near-black, making the gradient invisible
 
 ### Project content rewrite
 - Rewrote audience and use cases for all 12 project meta.json files
