@@ -197,6 +197,13 @@
       menu.classList.remove('pointer-events-none', 'opacity-0', 'scale-95');
       menu.classList.add('pointer-events-auto', 'opacity-100', 'scale-100');
       trigger.setAttribute('aria-expanded', 'true');
+      // Requirement: Prevent body scroll while menu is open
+      // Approach: Lock body overflow. Only one component touches this, so
+      //   no double-lock conflict (see CLAUDE.md overscroll-contain note).
+      // Why not overscroll-contain alone: it only prevents chaining on
+      //   scroll containers. Taps on non-scrollable menu areas (nav links,
+      //   toggle) still chain to the body without this lock.
+      document.body.style.overflow = 'hidden';
       // Focus first menu item after transition starts
       requestAnimationFrame(function () {
         var first = menu.querySelector('a, button');
@@ -211,6 +218,7 @@
       menu.classList.remove('pointer-events-auto', 'opacity-100', 'scale-100');
       menu.classList.add('pointer-events-none', 'opacity-0', 'scale-95');
       trigger.setAttribute('aria-expanded', 'false');
+      document.body.style.overflow = '';
       trigger.focus();
     }
 
@@ -223,8 +231,19 @@
       else openMenu();
     });
 
-    // Close on backdrop click — cursor-pointer in CSS ensures iOS Safari fires this
-    backdrop.addEventListener('click', closeMenu);
+    // Requirement: Tap/click outside menu closes it
+    // Approach: Document-level click handler checks if target is outside menu+trigger.
+    // Why not backdrop click: The navbar has backdrop-filter (backdrop-blur-md) which
+    //   creates a containing block. This makes the backdrop's position:fixed relative
+    //   to the navbar instead of the viewport — so it doesn't cover the page content
+    //   area and taps below the navbar never reach it.
+    // Alternative: Move backdrop outside navbar — rejected, requires HTML restructuring
+    //   and the document handler is more robust regardless of DOM position.
+    document.addEventListener('click', function (e) {
+      if (menuOpen && !menu.contains(e.target) && !trigger.contains(e.target)) {
+        closeMenu();
+      }
+    });
 
     // Close on Escape key
     document.addEventListener('keydown', function (e) {
