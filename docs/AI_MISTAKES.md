@@ -16,6 +16,8 @@
 
 **How to prevent it:** Don't add suggested implementations to CLAUDE.md unless the pattern has been tested in a real project. Suggested implementations are treated as authoritative — if they're wrong, consuming projects ship bugs.
 
+**Resolution (2026-04-02):** Implemented the correct approach from canva-grid: light themes use primary/neutral colors (saturated or dark enough that white text is always legible), dark themes use base-100 (dark background). The key insight is that the status bar color must never be white/light — the OS controls the text color, so only dark or saturated backgrounds are safe. See `THEME_DARK_MODE.md` PWA Meta Theme-Color section for the full pattern.
+
 ## 2026-03-30: Rewrote a flawed suggestion instead of removing it
 
 **What went wrong:** User asked to remove the above suggestion. Instead of deleting it, rewrote it three times — first hardcoding a brand color, then simplifying the code, then finally removing it after the user had to explicitly say so twice.

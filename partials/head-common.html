@@ -51,6 +51,25 @@
         document.documentElement.classList.remove('dark');
       }
       document.documentElement.setAttribute('data-theme', theme);
+
+      // Requirement: Set PWA status bar color before first paint to prevent flash
+      // Approach: Compact color map duplicated from theme.js (inline scripts can't import modules).
+      //   Light themes: primary or neutral hex. Dark themes: base-100 hex.
+      //   All values chosen so white status bar text is always legible.
+      // Must stay in sync with META_COLORS in theme.js.
+      var mc = {
+        caramellatte:'#000000',light:'#422ad5',corporate:'#0082ce',valentine:'#f43098',
+        garden:'#fe0075',lofi:'#0d0d0d',fantasy:'#6d0076',autumn:'#8c0327',
+        lemonade:'#419400',winter:'#0069ff',nord:'#5e81ac',silk:'#1c1c29',acid:'#ff00ff',
+        cupcake:'#262629',bumblebee:'#433f3a',emerald:'#377cfb',retro:'#56524c',
+        cyberpunk:'#111a3b',pastel:'#61738d',cmyk:'#1a1a1a',aqua:'#05176c',wireframe:'#161616',
+        coffee:'#261b25',dark:'#1d232a',synthwave:'#09002f',halloween:'#1b1816',
+        forest:'#1b1717',black:'#000000',luxury:'#09090b',dracula:'#282a36',
+        night:'#0f172a',dim:'#2a303c',sunset:'#121c22',abyss:'#001e29',business:'#202020'
+      };
+      var color = mc[theme] || '#808080';
+      var metas = document.querySelectorAll('meta[name="theme-color"]');
+      for (var i = 0; i < metas.length; i++) metas[i].setAttribute('content', color);
     } catch(e) {
       // Requirement: Never break page render if localStorage is unavailable (sandboxed iframe, private browsing)
       // Approach: Catch all errors and fall back to default theme — better a flash than a broken page.

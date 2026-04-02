@@ -1,25 +1,23 @@
 # Session Notes
 
 ## Worked on
-Full 9-trigger parallel audit sweep — ran all audit triggers (review, audit, docs, mobile, clean, performance, security, debug, improve) simultaneously and applied comprehensive fixes.
+PWA status bar theme-color — dynamic `<meta name="theme-color">` that updates per DaisyUI theme, matching canva-grid's proven pattern.
 
 ## Accomplished
-- Extracted 3 new shared partials (head-common.html, skip-link.html) to eliminate 80+ lines of duplication
-- Added Content Security Policy, canonical URL, projectName validation, isSafeUrl percent-encoding fix, theme validation
-- Added prefers-reduced-motion support (WCAG 2.1), focus management on tab switches, scrollbar-gutter fix
-- Added doc file fetch timeouts, error differentiation (timeout vs 404), copy failure feedback
-- Removed 30+ inline onclick handlers, unused CSS, console.log from build plugin
-- Added build-time meta.json validation Vite plugin
-- Moved markdown renderer inline classes to CSS (.md-render in main.css)
-- Changed Google Fonts to non-render-blocking loading
-- Updated README, HISTORY, TODO, SESSION_NOTES
+- Added `<meta name="theme-color">` with media queries to all 3 HTML files (index, project, pattern)
+- Added META_COLORS map (35 hex values) and `updateMetaThemeColor()` to theme.js
+- Wired into `applyTheme()` and initialization — status bar updates on every theme change
+- Added compact color map to bootstrap script (head-common.html) for flash prevention
+- Updated THEME_DARK_MODE.md with full-catalog pattern, color strategy, bootstrap integration
+- Updated AI_MISTAKES.md with resolution note for the 2026-03-30 invisible status bar bug
+- Updated HISTORY.md
 
 ## Current state
 - Build clean, all features working
-- Branch: claude/run-parallel-audits-SZ7vn
+- Branch: claude/fix-status-bar-theme-FJUEc
 
 ## Key context
+- Color strategy: light themes use primary (if L ≤ ~65%) or neutral (if primary too light), dark themes use base-100. Never white/light colors — causes invisible status bar text.
+- META_COLORS map is duplicated in theme.js and head-common.html bootstrap script (unavoidable — inline scripts can't import modules). Must stay in sync.
+- 9 light themes use neutral/alternative instead of primary: cupcake, bumblebee, emerald (secondary), retro, cyberpunk, pastel, cmyk, aqua, wireframe (base-content)
 - Theme arrays remain intentionally duplicated (head-common.html + theme.js) for flash prevention
-- partials/head-common.html replaces the bootstrap + fonts + CSS sections that were copied between index.html and project.html
-- The htmlPartials Vite plugin now supports 3 comment markers: NAVBAR, HEAD_COMMON, SKIP_LINK
-- Markdown renderer now outputs bare semantic HTML; styling via .md-render CSS classes in main.css

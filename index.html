@@ -4,6 +4,18 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <meta name="color-scheme" content="light dark">
+  <!-- Requirement: PWA status bar color that matches the active DaisyUI theme
+       Approach: Two meta tags with media queries — browser picks the one matching OS preference
+         on initial load. JavaScript overwrites both to the active theme's color on every change.
+         Light themes use primary/neutral (saturated or dark enough for white text),
+         dark themes use base-100 (dark background). No light/pastel colors — white status bar
+         text must always be legible.
+       Alternative: Single meta tag without media — rejected, causes flash on iOS where the
+         browser reads the tag before JS runs and OS preference determines initial text color.
+       Why not background colors for light themes: See docs/AI_MISTAKES.md — using #ffffff
+         caused invisible status bar text when OS color scheme opposed the app theme. -->
+  <meta name="theme-color" content="#000000" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#261b25" media="(prefers-color-scheme: dark)">
   <!-- Requirement: Defense-in-depth against XSS — restrict script/style sources
        Approach: CSP meta tag allowing self, inline scripts (required for flash prevention),
          and Google Fonts. No eval, no external script sources.
