@@ -2,6 +2,12 @@
 
 ## 2026-04-02
 
+### Quick wins from audit — touch feedback, sitemap, navbar deduplication
+- Added `:active` touch feedback on card-interactive (scale 0.98 on tap)
+- Added `robots.txt` and `sitemap.xml` to `public/` for SEO
+- Extracted entire navbar (440 lines) into `partials/navbar.html` — injected at build time by custom `htmlPartials` Vite plugin with `{{NAV_PREFIX}}` token replacement. Eliminates burger menu + theme picker duplication across index.html and project.html.
+- Cleaned up TODO.md — removed 14 intentional-tradeoff items, kept only actionable work
+
 ### Full audit sweep — security, UX, accessibility, and code quality fixes
 - **Security (critical):** Fixed XSS in `inlineMarkdown()` — escape HTML before formatting, sanitize link hrefs via protocol allowlist (`isSafeUrl()`), escape `meta.tech` array
 - **Security (high):** Added URL protocol validation on `meta.liveUrl`/`meta.repoUrl` to reject `javascript:`/`data:` protocols

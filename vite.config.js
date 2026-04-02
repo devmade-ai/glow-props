@@ -1,8 +1,34 @@
 import { defineConfig } from 'vite';
 import tailwindcss from '@tailwindcss/vite';
 import { VitePWA } from 'vite-plugin-pwa';
-import { copyFileSync } from 'fs';
+import { copyFileSync, readFileSync } from 'fs';
 import { resolve } from 'path';
+
+// Requirement: Shared navbar across index.html and project.html without duplication
+// Approach: Custom Vite plugin reads partials/navbar.html and injects it into HTML
+//   files at build time, replacing <!-- NAVBAR:prefix --> comments.
+//   The prefix token ({{NAV_PREFIX}}) becomes "" for same-page anchors (index.html)
+//   or "./" for cross-page anchors (project.html).
+// Alternative: Vite plugin ecosystem (vite-plugin-handlebars, etc.) — rejected,
+//   adds dependency for a single simple replacement. This is 15 lines.
+function htmlPartials() {
+  const navbarPath = resolve(__dirname, 'partials', 'navbar.html');
+  return {
+    name: 'html-partials',
+    transformIndexHtml: {
+      order: 'pre',
+      handler(html) {
+        return html.replace(
+          /<!--\s*NAVBAR:(\S*)\s*-->/g,
+          function (match, prefix) {
+            var navbar = readFileSync(navbarPath, 'utf-8');
+            return navbar.replace(/\{\{NAV_PREFIX\}\}/g, prefix);
+          }
+        );
+      },
+    },
+  };
+}
 
 // Requirement: CLAUDE.md must live at repo root (Claude Code reads it there)
 // but also be served via GitHub Pages at /glow-props/CLAUDE.md.
@@ -27,6 +53,7 @@ function copyRootFiles() {
 export default defineConfig({
   base: '/glow-props/',
   plugins: [
+    htmlPartials(),
     tailwindcss(),
     // Requirement: Installable PWA with offline support and user-controlled updates
     // Approach: vite-plugin-pwa with registerType: 'prompt' so users control when
