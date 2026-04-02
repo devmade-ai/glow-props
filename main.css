@@ -135,6 +135,15 @@
     0 2px 6px -2px oklch(0 0 0 / 0.03);
 }
 
+/* Requirement: Touch feedback for mobile — hover states don't fire on touch devices
+   Approach: :active gives immediate visual response on tap. Scale down slightly
+     instead of translate to avoid layout shift on rapid taps.
+   Alternative: :hover with @media (hover: hover) guard — rejected, :active is
+     simpler and covers both mouse click and touch tap */
+.card-interactive:active {
+  transform: scale(0.98);
+}
+
 .card-interactive.card-active {
   border-color: var(--color-primary, oklch(0% 0 0));
   box-shadow:

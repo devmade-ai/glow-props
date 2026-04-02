@@ -5,7 +5,12 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <meta name="color-scheme" content="light dark">
   <title>Loading... — devmade-ai</title>
+  <meta property="og:title" content="devmade-ai — Project Details">
+  <meta property="og:description" content="Software projects, internal tools, and reusable engineering patterns by devmade-ai.">
+  <meta property="og:image" content="https://devmade-ai.github.io/glow-props/assets/images/icon-512.png">
+  <meta property="og:type" content="website">
   <link rel="icon" type="image/png" href="assets/images/favicon.png">
+  <link rel="apple-touch-icon" href="assets/images/icon-192.png">
 
   <!-- Requirement: Prevent dark mode flash (same pattern as index.html)
        Approach: Inline classic script sets .dark class + data-theme before first paint -->
@@ -45,6 +50,15 @@
     })();
   </script>
 
+  <!-- Requirement: Capture beforeinstallprompt before framework mounts
+       (same pattern as index.html — see comments there) -->
+  <script>
+    window.addEventListener('beforeinstallprompt', function (e) {
+      e.preventDefault();
+      window.__pwaInstallPromptEvent = e;
+    });
+  </script>
+
   <!-- Fonts: Space Grotesk for headings, Inter for body -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -54,423 +68,15 @@
 </head>
 <body class="bg-base-100 text-base-content min-h-screen">
 
-  <!-- Header — Navbar with burger menu (same pattern as index.html) -->
-  <nav class="navbar bg-base-100/80 backdrop-blur-md sticky top-0 z-30 border-b border-base-300 no-print px-4"
-       style="padding-top: max(0.5rem, env(safe-area-inset-top)); padding-left: max(1rem, env(safe-area-inset-left)); padding-right: max(1rem, env(safe-area-inset-right));">
-    <div class="navbar-start">
-      <a href="./" class="inline-flex items-center gap-2 no-underline hover:opacity-80 transition-opacity" aria-label="devmade-ai home">
-        <img src="assets/images/icon-192.png" alt="" width="36" height="36" class="rounded-lg shrink-0">
-        <span class="font-bold text-base-content text-lg">devmade-ai</span>
-      </a>
-    </div>
-    <div class="navbar-end">
-      <div class="relative">
-        <button type="button"
-                class="btn btn-ghost btn-square"
-                id="burger-trigger"
-                aria-expanded="false"
-                aria-controls="burger-menu"
-                aria-label="Menu">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-            <path d="M4 6h16M4 12h16M4 18h16"/>
-          </svg>
-        </button>
-        <!-- Requirement: Smooth open/close with scale+opacity transition
-             Approach: CSS opacity+scale transition, toggled via class swaps.
-               pointer-events-none when closed prevents interaction with invisible menu.
-             Alternative: hidden attribute — rejected, no transition possible
-             Note: No backdrop overlay — the navbar's backdrop-filter creates a containing
-               block that traps position:fixed children. A backdrop inside the navbar only
-               covers the navbar area; moving it outside would cover the menu too (z-index
-               stacking). Click-outside uses a document handler, scroll uses body lock. -->
-        <div class="absolute right-0 top-full mt-2 z-dropdown w-56 max-w-[calc(100vw-2rem)]
-                    rounded-xl shadow-lg bg-base-100 border border-base-300
-                    py-1 overscroll-contain origin-top-right
-                    transition-[opacity,transform] duration-200 ease-out
-                    pointer-events-none opacity-0 scale-95"
-             id="burger-menu"
-             role="navigation"
-             aria-label="Main navigation">
-          <ul class="list-none m-0 p-0 flex flex-col">
-            <li><a href="./#projects" class="block w-full text-left px-4 py-2.5 text-sm text-base-content
-                     hover:bg-base-200 transition-colors cursor-pointer no-underline
-                     focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-[-2px]
-                     min-h-11 flex items-center" data-close>Projects</a></li>
-            <li><a href="./#tools" class="block w-full text-left px-4 py-2.5 text-sm text-base-content
-                     hover:bg-base-200 transition-colors cursor-pointer no-underline
-                     focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-[-2px]
-                     min-h-11 flex items-center" data-close>Tools</a></li>
-            <li><a href="./#patterns" class="block w-full text-left px-4 py-2.5 text-sm text-base-content
-                     hover:bg-base-200 transition-colors cursor-pointer no-underline
-                     focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-[-2px]
-                     min-h-11 flex items-center" data-close>Patterns</a></li>
-            <li><hr class="my-1 border-base-300"></li>
-            <li><button type="button" id="theme-toggle"
-                        class="block w-full text-left px-4 py-2.5 text-sm text-base-content
-                               hover:bg-base-200 transition-colors cursor-pointer
-                               focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-[-2px]
-                               min-h-11 flex items-center">
-              <span class="theme-label-dark hidden">Light mode</span>
-              <span class="theme-label-light">Dark mode</span>
-            </button></li>
-            <!-- Requirement: Optional random theme on every page load/refresh
-                 Approach: Same toggle as index.html — shares localStorage key.
-                   See index.html for full rationale. -->
-            <li><button type="button" id="random-theme-toggle"
-                        class="w-full text-left px-4 py-2.5 text-sm text-base-content
-                               hover:bg-base-200 transition-colors cursor-pointer
-                               focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-[-2px]
-                               min-h-11 flex items-center justify-between">
-              <span>Random theme on load</span>
-              <span id="random-theme-indicator" class="text-xs text-base-content/40">Off</span>
-            </button></li>
-            <li><hr class="my-1 border-base-300"></li>
-            <!-- Per-mode theme picker — same structure as index.html -->
-            <li class="px-4 pt-2 pb-1">
-              <span class="text-xs font-semibold uppercase tracking-wider text-base-content/40">
-                <span class="theme-section-label-light">Light themes</span>
-                <span class="theme-section-label-dark hidden">Dark themes</span>
-              </span>
-            </li>
-            <!-- Light themes (visible when in light mode) -->
-            <li class="theme-list-light">
-              <ul class="list-none m-0 p-0 max-h-52 overflow-y-auto overscroll-contain">
-                <li><button type="button" data-theme-pick="caramellatte"
-                            class="w-full text-left px-4 py-2.5 text-sm text-base-content
-                                   hover:bg-base-200 transition-colors cursor-pointer
-                                   focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-[-2px]
-                                   min-h-11 flex items-center gap-2 rounded-lg">
-                  <span class="theme-check invisible text-primary text-xs">&#10003;</span>
-                  <span>Caramellatte</span>
-                  <span class="ml-auto text-xs text-base-content/40">Warm</span>
-                </button></li>
-                <li><button type="button" data-theme-pick="cupcake"
-                            class="w-full text-left px-4 py-2.5 text-sm text-base-content
-                                   hover:bg-base-200 transition-colors cursor-pointer
-                                   focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-[-2px]
-                                   min-h-11 flex items-center gap-2 rounded-lg">
-                  <span class="theme-check invisible text-primary text-xs">&#10003;</span>
-                  <span>Cupcake</span>
-                  <span class="ml-auto text-xs text-base-content/40">Sweet</span>
-                </button></li>
-                <li><button type="button" data-theme-pick="pastel"
-                            class="w-full text-left px-4 py-2.5 text-sm text-base-content
-                                   hover:bg-base-200 transition-colors cursor-pointer
-                                   focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-[-2px]
-                                   min-h-11 flex items-center gap-2 rounded-lg">
-                  <span class="theme-check invisible text-primary text-xs">&#10003;</span>
-                  <span>Pastel</span>
-                  <span class="ml-auto text-xs text-base-content/40">Soft</span>
-                </button></li>
-                <li><button type="button" data-theme-pick="lofi"
-                            class="w-full text-left px-4 py-2.5 text-sm text-base-content
-                                   hover:bg-base-200 transition-colors cursor-pointer
-                                   focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-[-2px]
-                                   min-h-11 flex items-center gap-2 rounded-lg">
-                  <span class="theme-check invisible text-primary text-xs">&#10003;</span>
-                  <span>Lofi</span>
-                  <span class="ml-auto text-xs text-base-content/40">Minimal</span>
-                </button></li>
-                <li><button type="button" data-theme-pick="nord"
-                            class="w-full text-left px-4 py-2.5 text-sm text-base-content
-                                   hover:bg-base-200 transition-colors cursor-pointer
-                                   focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-[-2px]
-                                   min-h-11 flex items-center gap-2 rounded-lg">
-                  <span class="theme-check invisible text-primary text-xs">&#10003;</span>
-                  <span>Nord</span>
-                  <span class="ml-auto text-xs text-base-content/40">Cool</span>
-                </button></li>
-                <li><button type="button" data-theme-pick="emerald"
-                            class="w-full text-left px-4 py-2.5 text-sm text-base-content
-                                   hover:bg-base-200 transition-colors cursor-pointer
-                                   focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-[-2px]
-                                   min-h-11 flex items-center gap-2 rounded-lg">
-                  <span class="theme-check invisible text-primary text-xs">&#10003;</span>
-                  <span>Emerald</span>
-                  <span class="ml-auto text-xs text-base-content/40">Fresh</span>
-                </button></li>
-                <li><button type="button" data-theme-pick="garden"
-                            class="w-full text-left px-4 py-2.5 text-sm text-base-content
-                                   hover:bg-base-200 transition-colors cursor-pointer
-                                   focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-[-2px]
-                                   min-h-11 flex items-center gap-2 rounded-lg">
-                  <span class="theme-check invisible text-primary text-xs">&#10003;</span>
-                  <span>Garden</span>
-                  <span class="ml-auto text-xs text-base-content/40">Natural</span>
-                </button></li>
-                <li><button type="button" data-theme-pick="autumn"
-                            class="w-full text-left px-4 py-2.5 text-sm text-base-content
-                                   hover:bg-base-200 transition-colors cursor-pointer
-                                   focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-[-2px]
-                                   min-h-11 flex items-center gap-2 rounded-lg">
-                  <span class="theme-check invisible text-primary text-xs">&#10003;</span>
-                  <span>Autumn</span>
-                  <span class="ml-auto text-xs text-base-content/40">Earthy</span>
-                </button></li>
-                <li><button type="button" data-theme-pick="valentine"
-                            class="w-full text-left px-4 py-2.5 text-sm text-base-content
-                                   hover:bg-base-200 transition-colors cursor-pointer
-                                   focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-[-2px]
-                                   min-h-11 flex items-center gap-2 rounded-lg">
-                  <span class="theme-check invisible text-primary text-xs">&#10003;</span>
-                  <span>Valentine</span>
-                  <span class="ml-auto text-xs text-base-content/40">Pink</span>
-                </button></li>
-                <li><button type="button" data-theme-pick="fantasy"
-                            class="w-full text-left px-4 py-2.5 text-sm text-base-content
-                                   hover:bg-base-200 transition-colors cursor-pointer
-                                   focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-[-2px]
-                                   min-h-11 flex items-center gap-2 rounded-lg">
-                  <span class="theme-check invisible text-primary text-xs">&#10003;</span>
-                  <span>Fantasy</span>
-                  <span class="ml-auto text-xs text-base-content/40">Vivid</span>
-                </button></li>
-                <li><button type="button" data-theme-pick="retro"
-                            class="w-full text-left px-4 py-2.5 text-sm text-base-content
-                                   hover:bg-base-200 transition-colors cursor-pointer
-                                   focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-[-2px]
-                                   min-h-11 flex items-center gap-2 rounded-lg">
-                  <span class="theme-check invisible text-primary text-xs">&#10003;</span>
-                  <span>Retro</span>
-                  <span class="ml-auto text-xs text-base-content/40">Vintage</span>
-                </button></li>
-                <li><button type="button" data-theme-pick="corporate"
-                            class="w-full text-left px-4 py-2.5 text-sm text-base-content
-                                   hover:bg-base-200 transition-colors cursor-pointer
-                                   focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-[-2px]
-                                   min-h-11 flex items-center gap-2 rounded-lg">
-                  <span class="theme-check invisible text-primary text-xs">&#10003;</span>
-                  <span>Corporate</span>
-                  <span class="ml-auto text-xs text-base-content/40">Clean</span>
-                </button></li>
-                <li><button type="button" data-theme-pick="silk"
-                            class="w-full text-left px-4 py-2.5 text-sm text-base-content
-                                   hover:bg-base-200 transition-colors cursor-pointer
-                                   focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-[-2px]
-                                   min-h-11 flex items-center gap-2 rounded-lg">
-                  <span class="theme-check invisible text-primary text-xs">&#10003;</span>
-                  <span>Silk</span>
-                  <span class="ml-auto text-xs text-base-content/40">Sleek</span>
-                </button></li>
-                <li><button type="button" data-theme-pick="bumblebee"
-                            class="w-full text-left px-4 py-2.5 text-sm text-base-content
-                                   hover:bg-base-200 transition-colors cursor-pointer
-                                   focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-[-2px]
-                                   min-h-11 flex items-center gap-2 rounded-lg">
-                  <span class="theme-check invisible text-primary text-xs">&#10003;</span>
-                  <span>Bumblebee</span>
-                  <span class="ml-auto text-xs text-base-content/40">Bright</span>
-                </button></li>
-                <li><button type="button" data-theme-pick="aqua"
-                            class="w-full text-left px-4 py-2.5 text-sm text-base-content
-                                   hover:bg-base-200 transition-colors cursor-pointer
-                                   focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-[-2px]
-                                   min-h-11 flex items-center gap-2 rounded-lg">
-                  <span class="theme-check invisible text-primary text-xs">&#10003;</span>
-                  <span>Aqua</span>
-                  <span class="ml-auto text-xs text-base-content/40">Ocean</span>
-                </button></li>
-                <li><button type="button" data-theme-pick="lemonade"
-                            class="w-full text-left px-4 py-2.5 text-sm text-base-content
-                                   hover:bg-base-200 transition-colors cursor-pointer
-                                   focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-[-2px]
-                                   min-h-11 flex items-center gap-2 rounded-lg">
-                  <span class="theme-check invisible text-primary text-xs">&#10003;</span>
-                  <span>Lemonade</span>
-                  <span class="ml-auto text-xs text-base-content/40">Citrus</span>
-                </button></li>
-                <li><button type="button" data-theme-pick="winter"
-                            class="w-full text-left px-4 py-2.5 text-sm text-base-content
-                                   hover:bg-base-200 transition-colors cursor-pointer
-                                   focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-[-2px]
-                                   min-h-11 flex items-center gap-2 rounded-lg">
-                  <span class="theme-check invisible text-primary text-xs">&#10003;</span>
-                  <span>Winter</span>
-                  <span class="ml-auto text-xs text-base-content/40">Frosty</span>
-                </button></li>
-                <li><button type="button" data-theme-pick="cmyk"
-                            class="w-full text-left px-4 py-2.5 text-sm text-base-content
-                                   hover:bg-base-200 transition-colors cursor-pointer
-                                   focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-[-2px]
-                                   min-h-11 flex items-center gap-2 rounded-lg">
-                  <span class="theme-check invisible text-primary text-xs">&#10003;</span>
-                  <span>CMYK</span>
-                  <span class="ml-auto text-xs text-base-content/40">Print</span>
-                </button></li>
-                <li><button type="button" data-theme-pick="acid"
-                            class="w-full text-left px-4 py-2.5 text-sm text-base-content
-                                   hover:bg-base-200 transition-colors cursor-pointer
-                                   focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-[-2px]
-                                   min-h-11 flex items-center gap-2 rounded-lg">
-                  <span class="theme-check invisible text-primary text-xs">&#10003;</span>
-                  <span>Acid</span>
-                  <span class="ml-auto text-xs text-base-content/40">Neon</span>
-                </button></li>
-                <li><button type="button" data-theme-pick="cyberpunk"
-                            class="w-full text-left px-4 py-2.5 text-sm text-base-content
-                                   hover:bg-base-200 transition-colors cursor-pointer
-                                   focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-[-2px]
-                                   min-h-11 flex items-center gap-2 rounded-lg">
-                  <span class="theme-check invisible text-primary text-xs">&#10003;</span>
-                  <span>Cyberpunk</span>
-                  <span class="ml-auto text-xs text-base-content/40">Cyber</span>
-                </button></li>
-                <li><button type="button" data-theme-pick="wireframe"
-                            class="w-full text-left px-4 py-2.5 text-sm text-base-content
-                                   hover:bg-base-200 transition-colors cursor-pointer
-                                   focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-[-2px]
-                                   min-h-11 flex items-center gap-2 rounded-lg">
-                  <span class="theme-check invisible text-primary text-xs">&#10003;</span>
-                  <span>Wireframe</span>
-                  <span class="ml-auto text-xs text-base-content/40">Sketch</span>
-                </button></li>
-                <li><button type="button" data-theme-pick="light"
-                            class="w-full text-left px-4 py-2.5 text-sm text-base-content
-                                   hover:bg-base-200 transition-colors cursor-pointer
-                                   focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-[-2px]
-                                   min-h-11 flex items-center gap-2 rounded-lg">
-                  <span class="theme-check invisible text-primary text-xs">&#10003;</span>
-                  <span>Light</span>
-                  <span class="ml-auto text-xs text-base-content/40">Default</span>
-                </button></li>
-              </ul>
-            </li>
-            <!-- Dark themes (visible when in dark mode) -->
-            <li class="theme-list-dark hidden">
-              <ul class="list-none m-0 p-0 max-h-52 overflow-y-auto overscroll-contain">
-                <li><button type="button" data-theme-pick="coffee"
-                            class="w-full text-left px-4 py-2.5 text-sm text-base-content
-                                   hover:bg-base-200 transition-colors cursor-pointer
-                                   focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-[-2px]
-                                   min-h-11 flex items-center gap-2 rounded-lg">
-                  <span class="theme-check invisible text-primary text-xs">&#10003;</span>
-                  <span>Coffee</span>
-                  <span class="ml-auto text-xs text-base-content/40">Warm</span>
-                </button></li>
-                <li><button type="button" data-theme-pick="dim"
-                            class="w-full text-left px-4 py-2.5 text-sm text-base-content
-                                   hover:bg-base-200 transition-colors cursor-pointer
-                                   focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-[-2px]
-                                   min-h-11 flex items-center gap-2 rounded-lg">
-                  <span class="theme-check invisible text-primary text-xs">&#10003;</span>
-                  <span>Dim</span>
-                  <span class="ml-auto text-xs text-base-content/40">Muted</span>
-                </button></li>
-                <li><button type="button" data-theme-pick="night"
-                            class="w-full text-left px-4 py-2.5 text-sm text-base-content
-                                   hover:bg-base-200 transition-colors cursor-pointer
-                                   focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-[-2px]
-                                   min-h-11 flex items-center gap-2 rounded-lg">
-                  <span class="theme-check invisible text-primary text-xs">&#10003;</span>
-                  <span>Night</span>
-                  <span class="ml-auto text-xs text-base-content/40">Cool</span>
-                </button></li>
-                <li><button type="button" data-theme-pick="dracula"
-                            class="w-full text-left px-4 py-2.5 text-sm text-base-content
-                                   hover:bg-base-200 transition-colors cursor-pointer
-                                   focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-[-2px]
-                                   min-h-11 flex items-center gap-2 rounded-lg">
-                  <span class="theme-check invisible text-primary text-xs">&#10003;</span>
-                  <span>Dracula</span>
-                  <span class="ml-auto text-xs text-base-content/40">Gothic</span>
-                </button></li>
-                <li><button type="button" data-theme-pick="forest"
-                            class="w-full text-left px-4 py-2.5 text-sm text-base-content
-                                   hover:bg-base-200 transition-colors cursor-pointer
-                                   focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-[-2px]
-                                   min-h-11 flex items-center gap-2 rounded-lg">
-                  <span class="theme-check invisible text-primary text-xs">&#10003;</span>
-                  <span>Forest</span>
-                  <span class="ml-auto text-xs text-base-content/40">Deep</span>
-                </button></li>
-                <li><button type="button" data-theme-pick="luxury"
-                            class="w-full text-left px-4 py-2.5 text-sm text-base-content
-                                   hover:bg-base-200 transition-colors cursor-pointer
-                                   focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-[-2px]
-                                   min-h-11 flex items-center gap-2 rounded-lg">
-                  <span class="theme-check invisible text-primary text-xs">&#10003;</span>
-                  <span>Luxury</span>
-                  <span class="ml-auto text-xs text-base-content/40">Gold</span>
-                </button></li>
-                <li><button type="button" data-theme-pick="synthwave"
-                            class="w-full text-left px-4 py-2.5 text-sm text-base-content
-                                   hover:bg-base-200 transition-colors cursor-pointer
-                                   focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-[-2px]
-                                   min-h-11 flex items-center gap-2 rounded-lg">
-                  <span class="theme-check invisible text-primary text-xs">&#10003;</span>
-                  <span>Synthwave</span>
-                  <span class="ml-auto text-xs text-base-content/40">Retro</span>
-                </button></li>
-                <li><button type="button" data-theme-pick="black"
-                            class="w-full text-left px-4 py-2.5 text-sm text-base-content
-                                   hover:bg-base-200 transition-colors cursor-pointer
-                                   focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-[-2px]
-                                   min-h-11 flex items-center gap-2 rounded-lg">
-                  <span class="theme-check invisible text-primary text-xs">&#10003;</span>
-                  <span>Black</span>
-                  <span class="ml-auto text-xs text-base-content/40">Stark</span>
-                </button></li>
-                <li><button type="button" data-theme-pick="halloween"
-                            class="w-full text-left px-4 py-2.5 text-sm text-base-content
-                                   hover:bg-base-200 transition-colors cursor-pointer
-                                   focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-[-2px]
-                                   min-h-11 flex items-center gap-2 rounded-lg">
-                  <span class="theme-check invisible text-primary text-xs">&#10003;</span>
-                  <span>Halloween</span>
-                  <span class="ml-auto text-xs text-base-content/40">Spooky</span>
-                </button></li>
-                <li><button type="button" data-theme-pick="sunset"
-                            class="w-full text-left px-4 py-2.5 text-sm text-base-content
-                                   hover:bg-base-200 transition-colors cursor-pointer
-                                   focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-[-2px]
-                                   min-h-11 flex items-center gap-2 rounded-lg">
-                  <span class="theme-check invisible text-primary text-xs">&#10003;</span>
-                  <span>Sunset</span>
-                  <span class="ml-auto text-xs text-base-content/40">Dusk</span>
-                </button></li>
-                <li><button type="button" data-theme-pick="abyss"
-                            class="w-full text-left px-4 py-2.5 text-sm text-base-content
-                                   hover:bg-base-200 transition-colors cursor-pointer
-                                   focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-[-2px]
-                                   min-h-11 flex items-center gap-2 rounded-lg">
-                  <span class="theme-check invisible text-primary text-xs">&#10003;</span>
-                  <span>Abyss</span>
-                  <span class="ml-auto text-xs text-base-content/40">Void</span>
-                </button></li>
-                <li><button type="button" data-theme-pick="business"
-                            class="w-full text-left px-4 py-2.5 text-sm text-base-content
-                                   hover:bg-base-200 transition-colors cursor-pointer
-                                   focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-[-2px]
-                                   min-h-11 flex items-center gap-2 rounded-lg">
-                  <span class="theme-check invisible text-primary text-xs">&#10003;</span>
-                  <span>Business</span>
-                  <span class="ml-auto text-xs text-base-content/40">Pro</span>
-                </button></li>
-                <li><button type="button" data-theme-pick="dark"
-                            class="w-full text-left px-4 py-2.5 text-sm text-base-content
-                                   hover:bg-base-200 transition-colors cursor-pointer
-                                   focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-[-2px]
-                                   min-h-11 flex items-center gap-2 rounded-lg">
-                  <span class="theme-check invisible text-primary text-xs">&#10003;</span>
-                  <span>Dark</span>
-                  <span class="ml-auto text-xs text-base-content/40">Default</span>
-                </button></li>
-              </ul>
-            </li>
-            <li><hr class="my-1 border-base-300"></li>
-            <li><button type="button"
-                        class="block w-full text-left px-4 py-2.5 text-sm text-base-content
-                               hover:bg-base-200 transition-colors cursor-pointer
-                               focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-[-2px]
-                               min-h-11 flex items-center"
-                        onclick="window.print()" data-close>Save as PDF</button></li>
-          </ul>
-        </div>
-      </div>
-    </div>
-  </nav>
+  <!-- Skip link for keyboard users (same pattern as index.html) -->
+  <a href="#main" class="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-90 focus:btn focus:btn-primary focus:btn-sm">
+    Skip to main content
+  </a>
 
-  <main class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+  <!-- Navbar injected from partials/navbar.html by htmlPartials Vite plugin.
+       NAV_PREFIX is "./" for project.html (cross-page #anchors back to index). -->
+  <!-- NAVBAR:./ -->
+  <main id="main" class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
     <div id="app">
       <p class="text-center py-16 text-base-content/40">Loading...</p>
     </div>
@@ -540,20 +146,45 @@
         return html;
       }
 
+      // Requirement: Inline markdown formatting for project doc content
+      // Approach: Escape HTML entities FIRST to prevent XSS, then apply
+      //   formatting replacements on the escaped text. Link hrefs are
+      //   validated to reject javascript:/data: protocol injection.
+      // Alternative: DOMPurify — rejected, adds dependency for simple case
       function inlineMarkdown(text) {
-        return text
+        var escaped = escapeHtml(text);
+        return escaped
           .replace(/`([^`]+)`/g, '<code class="text-xs bg-base-300/50 px-1.5 py-0.5 rounded">$1</code>')
           .replace(/\*\*([^*]+)\*\*/g, '<strong class="font-semibold">$1</strong>')
           .replace(/\*([^*]+)\*/g, '<em>$1</em>')
-          .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" class="link link-primary">$1</a>');
+          .replace(/\[([^\]]+)\]\(([^)]+)\)/g, function (m, label, href) {
+            if (!isSafeUrl(href)) return label;
+            return '<a href="' + href + '" class="link link-primary">' + label + '</a>';
+          });
+      }
+
+      // Requirement: Prevent javascript:/data: protocol injection in URLs
+      // Approach: Allowlist http(s) and relative URLs only. Reject everything else.
+      function isSafeUrl(url) {
+        var decoded = url.replace(/&amp;/g, '&');
+        if (/^https?:\/\//i.test(decoded)) return true;
+        if (/^[a-z0-9]/i.test(decoded) && !/:/.test(decoded)) return true; // relative path
+        if (decoded.startsWith('/') || decoded.startsWith('#') || decoded.startsWith('.')) return true;
+        return false;
       }
 
       function escapeHtml(str) {
         return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
       }
 
-      fetch(basePath + 'meta.json')
+      // Requirement: Timeout on metadata fetch to avoid indefinite loading on slow/broken networks
+      // Approach: AbortController with 10s timeout — shows error instead of endless spinner
+      var fetchController = new AbortController();
+      var fetchTimeout = setTimeout(function () { fetchController.abort(); }, 10000);
+
+      fetch(basePath + 'meta.json', { signal: fetchController.signal })
         .then(function (r) {
+          clearTimeout(fetchTimeout);
           if (!r.ok) throw new Error('Not found');
           return r.json();
         })
@@ -583,6 +214,9 @@
                     docs[doc.key] = text;
                     render();
                   }
+                })
+                .catch(function () {
+                  // Doc file failed to load — skip silently, project still renders without it
                 });
             }
           });
@@ -598,17 +232,17 @@
         var statusLabel = meta.liveUrl ? 'Live' : 'No live URL';
 
         var linksHtml = '';
-        if (meta.liveUrl) {
+        if (meta.liveUrl && isSafeUrl(meta.liveUrl)) {
           linksHtml += '<a href="' + escapeHtml(meta.liveUrl) + '" target="_blank" rel="noopener" class="btn btn-outline btn-sm gap-1">Visit app</a>';
         }
-        if (meta.repoUrl) {
+        if (meta.repoUrl && isSafeUrl(meta.repoUrl)) {
           linksHtml += '<a href="' + escapeHtml(meta.repoUrl) + '" target="_blank" rel="noopener" class="btn btn-outline btn-sm gap-1">Source code</a>';
         }
         if (!meta.repoUrl && meta.repo === 'private') {
           linksHtml += '<span class="btn btn-outline btn-sm btn-disabled opacity-50">Private repository</span>';
         }
 
-        var techHtml = meta.tech ? meta.tech.map(function (t) { return '<span class="badge badge-ghost badge-sm">' + t + '</span>'; }).join('') : '';
+        var techHtml = meta.tech ? meta.tech.map(function (t) { return '<span class="badge badge-ghost badge-sm">' + escapeHtml(t) + '</span>'; }).join('') : '';
         var useCasesHtml = meta.useCases ? meta.useCases.map(function (u) { return '<li class="text-sm text-base-content/70">' + escapeHtml(u) + '</li>'; }).join('') : '<p class="text-sm text-base-content/40">Coming soon.</p>';
 
         var privacyHtml = '';
@@ -710,5 +344,8 @@
       };
     })();
   </script>
+
+  <!-- PWA: service worker registration, update prompts, install detection -->
+  <script type="module" src="src/pwa.js"></script>
 </body>
 </html>

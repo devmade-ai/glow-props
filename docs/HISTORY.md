@@ -1,5 +1,51 @@
 # History
 
+## 2026-04-02
+
+### Quick wins from audit — touch feedback, sitemap, navbar deduplication
+- Added `:active` touch feedback on card-interactive (scale 0.98 on tap)
+- Added `robots.txt` and `sitemap.xml` to `public/` for SEO
+- Extracted entire navbar (440 lines) into `partials/navbar.html` — injected at build time by custom `htmlPartials` Vite plugin with `{{NAV_PREFIX}}` token replacement. Eliminates burger menu + theme picker duplication across index.html and project.html.
+- Cleaned up TODO.md — removed 14 intentional-tradeoff items, kept only actionable work
+
+### Full audit sweep — security, UX, accessibility, and code quality fixes
+- **Security (critical):** Fixed XSS in `inlineMarkdown()` — escape HTML before formatting, sanitize link hrefs via protocol allowlist (`isSafeUrl()`), escape `meta.tech` array
+- **Security (high):** Added URL protocol validation on `meta.liveUrl`/`meta.repoUrl` to reject `javascript:`/`data:` protocols
+- **Bug fix (critical):** Random theme toggle now stores `String(newState)` instead of boolean — was always reading as "Off"
+- **PWA (high):** Fixed Escape listener leak in install modal — now cleaned up on all close paths (backdrop, buttons, Escape). Added `.catch()` on `deferredPrompt.userChoice`. Removed dead `needsRefresh` variable. Added `data-close` to install menu button.
+- **PWA (medium):** Added `env(safe-area-inset-bottom)` to update banner and modal for iPhone home indicator
+- **Mobile (medium):** Bumped card action buttons from `btn-xs` (24px) to `btn-sm` (32px+) for better touch targets. Bumped PWA modal buttons to standard `btn` size.
+- **Accessibility (medium):** Added skip-to-content link on both pages for keyboard navigation past 30+ burger menu items
+- **SEO (medium):** Added OG meta tags (og:title, og:description, og:image, og:type) on both pages
+- **Reliability (medium):** Added 10s AbortController timeout on project metadata fetch. Added `.catch()` on secondary doc file fetches.
+- **Docs:** Updated README (35 themes, not 8 combos), PWA_SYSTEM.md (version ^1.2.0)
+
+### Organize suggested implementations into standalone files
+- Extracted all 7 suggested implementations from inline CLAUDE.md into `docs/implementations/`
+- Files: PWA_SYSTEM.md, DEBUG_SYSTEM.md, APP_ICONS.md, DOWNLOAD_PDF.md, HTTPS_PROXY.md, BURGER_MENU.md, THEME_DARK_MODE.md
+- Replaced 1,365-line inline section in CLAUDE.md with a reference table linking to each file
+- Content preserved exactly — no changes to non-theme implementation docs
+
+### Implement PWA support
+- Added `vite-plugin-pwa` with `registerType: 'prompt'` for user-controlled updates
+- Created `src/pwa.js` — vanilla JS service worker registration, update banner, offline toast, install prompt, manual install instructions (Safari/Firefox)
+- Generated 1024x1024 maskable icon via Sharp at 400 DPI
+- Added `beforeinstallprompt` early-capture script to both HTML files (prevents lost install prompt on repeat visits)
+- Added "Install app" menu item to burger menu on both pages (hidden when installed/dismissed)
+- Manifest: `id: '/glow-props/'`, `scope: '/glow-props/'`, `display: standalone`, separate icon purposes (any for 192/512, maskable for 1024)
+- Service worker precaches 11 entries (~270KB) for full offline access
+- Added `apple-touch-icon` link to both HTML files for iOS
+- Update banner: fixed bottom bar with "Update" and "Later" buttons, z-70 per z-index scale
+- Offline toast: auto-dismiss after 3s, non-intrusive confirmation
+- Install modal: browser-specific plain-language steps for Safari iOS/macOS and Firefox Android
+
+### Rewrite THEME_DARK_MODE.md for DaisyUI
+- Complete rewrite to reflect actual DaisyUI-based approach used across glow-props, canva-grid, and few-lap
+- Old doc described custom CSS variable semantic tokens and React hooks that no project uses
+- New doc covers: dual-layer theming (`.dark` class + `data-theme` attribute), per-mode theme persistence, curated vs full theme catalogs, theme ID validation, flash prevention with DaisyUI, cross-tab sync, Uniwind for React Native, hex color lookup tables for non-CSS contexts
+- Added project-specific variant documentation: vanilla JS (glow-props), React hooks (canva-grid), Uniwind + named combos (few-lap)
+- Updated CLAUDE.md table description to mention DaisyUI
+
 ## 2026-04-01
 
 ### Theme toggle refactor — per-mode individual theme picker

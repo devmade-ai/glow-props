@@ -193,7 +193,7 @@
   if (randomToggle) {
     randomToggle.addEventListener('click', function () {
       var newState = !isRandomEnabled();
-      safeStorageSet('randomThemeOnLoad', newState);
+      safeStorageSet('randomThemeOnLoad', String(newState));
       updateRandomIndicator();
     });
   }

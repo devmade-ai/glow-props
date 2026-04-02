@@ -6,7 +6,12 @@
   <meta name="color-scheme" content="light dark">
   <title>devmade-ai</title>
   <meta name="description" content="Software projects, internal tools, and reusable engineering patterns by devmade-ai.">
+  <meta property="og:title" content="devmade-ai — Project Portfolio">
+  <meta property="og:description" content="Software projects, internal tools, and reusable engineering patterns by devmade-ai.">
+  <meta property="og:image" content="https://devmade-ai.github.io/glow-props/assets/images/icon-512.png">
+  <meta property="og:type" content="website">
   <link rel="icon" type="image/png" href="assets/images/favicon.png">
+  <link rel="apple-touch-icon" href="assets/images/icon-192.png">
 
   <!-- Requirement: Prevent dark mode flash on page load
        Approach: Inline classic script reads localStorage and sets both .dark class
@@ -54,6 +59,18 @@
     })();
   </script>
 
+  <!-- Requirement: Capture beforeinstallprompt before framework mounts
+       Approach: Stash the event on window for pwa.js to consume later.
+         On repeat visits with a cached SW, the event fires before any module
+         scripts run — if nothing catches it, the install prompt is permanently lost.
+       Alternative: Listen in pwa.js only — rejected, misses the early-fire case -->
+  <script>
+    window.addEventListener('beforeinstallprompt', function (e) {
+      e.preventDefault();
+      window.__pwaInstallPromptEvent = e;
+    });
+  </script>
+
   <!-- Fonts: Space Grotesk for headings, Inter for body -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -66,447 +83,17 @@
 </head>
 <body class="bg-base-100 text-base-content min-h-screen">
 
-  <!-- Header — Navbar with burger menu
-       Requirement: Clean header with logo + title on left, burger menu on right
-       Approach: DaisyUI navbar component + disclosure-pattern dropdown
-         (aria-expanded, not role="menu") per WAI-ARIA
-       Alternative: Inline nav links — rejected, clutters header on narrow screens -->
-  <!-- Requirement: Safe-area padding for notched devices (iPhone Dynamic Island)
-       Approach: CSS env() in inline style for top/left/right, Tailwind px-* as baseline.
-         padding-top uses max() so non-notch devices still get 0.5rem (matching navbar default).
-       Alternative: Tailwind only — rejected, env() safe-area values aren't available as utilities -->
-  <nav class="navbar bg-base-100/80 backdrop-blur-md sticky top-0 z-30 border-b border-base-300 no-print px-4"
-       style="padding-top: max(0.5rem, env(safe-area-inset-top)); padding-left: max(1rem, env(safe-area-inset-left)); padding-right: max(1rem, env(safe-area-inset-right));">
-    <div class="navbar-start">
-      <a href="./" class="inline-flex items-center gap-2 no-underline hover:opacity-80 transition-opacity" aria-label="devmade-ai home">
-        <img src="assets/images/icon-192.png" alt="" width="36" height="36" class="rounded-lg shrink-0">
-        <span class="font-bold text-base-content text-lg">devmade-ai</span>
-      </a>
-    </div>
-    <div class="navbar-end">
-      <!-- Requirement: Disclosure-pattern dropdown for nav actions
-           Approach: Vanilla JS toggle with backdrop, aria-expanded, Escape key close.
-             Uses disclosure pattern (not role="menu") per WAI-ARIA — this is navigation,
-             not an application menu (File/Edit/View).
-           Alternative: DaisyUI dropdown component — rejected, uses role="menu" which
-             causes screen readers to enter forms mode -->
-      <div class="relative">
-        <button type="button"
-                class="btn btn-ghost btn-square"
-                id="burger-trigger"
-                aria-expanded="false"
-                aria-controls="burger-menu"
-                aria-label="Menu">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-            <path d="M4 6h16M4 12h16M4 18h16"/>
-          </svg>
-        </button>
+  <!-- Requirement: Skip link for keyboard users to bypass navbar + burger menu (30+ items)
+       Approach: Visually hidden link that becomes visible on focus. Points to #main. -->
+  <a href="#main" class="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-90 focus:btn focus:btn-primary focus:btn-sm">
+    Skip to main content
+  </a>
 
-        <!-- Requirement: Smooth open/close with scale+opacity transition
-             Approach: CSS opacity+scale transition, toggled via class swaps.
-               pointer-events-none when closed prevents interaction with invisible menu.
-             Alternative: hidden attribute — rejected, no transition possible
-             Note: No backdrop overlay — the navbar's backdrop-filter creates a containing
-               block that traps position:fixed children. A backdrop inside the navbar only
-               covers the navbar area; moving it outside would cover the menu too (z-index
-               stacking). Click-outside uses a document handler, scroll uses body lock. -->
-        <div class="absolute right-0 top-full mt-2 z-dropdown w-56 max-w-[calc(100vw-2rem)]
-                    rounded-xl shadow-lg bg-base-100 border border-base-300
-                    py-1 overscroll-contain origin-top-right
-                    transition-[opacity,transform] duration-200 ease-out
-                    pointer-events-none opacity-0 scale-95"
-             id="burger-menu"
-             role="navigation"
-             aria-label="Main navigation">
-          <ul class="list-none m-0 p-0 flex flex-col">
-            <li><a href="#projects" class="block w-full text-left px-4 py-2.5 text-sm text-base-content
-                     hover:bg-base-200 transition-colors cursor-pointer no-underline
-                     focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-[-2px]
-                     min-h-11 flex items-center" data-close>Projects</a></li>
-            <li><a href="#tools" class="block w-full text-left px-4 py-2.5 text-sm text-base-content
-                     hover:bg-base-200 transition-colors cursor-pointer no-underline
-                     focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-[-2px]
-                     min-h-11 flex items-center" data-close>Tools</a></li>
-            <li><a href="#patterns" class="block w-full text-left px-4 py-2.5 text-sm text-base-content
-                     hover:bg-base-200 transition-colors cursor-pointer no-underline
-                     focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-[-2px]
-                     min-h-11 flex items-center" data-close>Patterns</a></li>
-            <li><hr class="my-1 border-base-300"></li>
-            <li><button type="button" id="theme-toggle"
-                        class="block w-full text-left px-4 py-2.5 text-sm text-base-content
-                               hover:bg-base-200 transition-colors cursor-pointer
-                               focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-[-2px]
-                               min-h-11 flex items-center">
-              <span class="theme-label-dark hidden">Light mode</span>
-              <span class="theme-label-light">Dark mode</span>
-            </button></li>
-            <!-- Requirement: Optional random theme on every page load/refresh
-                 Approach: Toggle button with on/off state persisted in localStorage.
-                   Off by default. When on, picks a random theme from the current mode's
-                   list on each page load. Inline bootstrap script handles the actual
-                   randomization before first paint to avoid flash.
-                 Alternative: Always randomize — rejected, most users want a consistent
-                   theme; this should be opt-in -->
-            <li><button type="button" id="random-theme-toggle"
-                        class="w-full text-left px-4 py-2.5 text-sm text-base-content
-                               hover:bg-base-200 transition-colors cursor-pointer
-                               focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-[-2px]
-                               min-h-11 flex items-center justify-between">
-              <span>Random theme on load</span>
-              <span id="random-theme-indicator" class="text-xs text-base-content/40">Off</span>
-            </button></li>
-            <li><hr class="my-1 border-base-300"></li>
-            <!-- Requirement: Per-mode theme picker — shows light or dark themes based on toggle
-                 Approach: Two nested lists toggled by .theme-list-light / .theme-list-dark.
-                   Section header updates to show which mode's themes are displayed.
-                   max-h-52 with overflow-y-auto prevents menu from exceeding viewport.
-                 Alternative: Single flat list with data attributes — rejected, harder to
-                   read/maintain with 35 items; nested lists are valid HTML and clearer -->
-            <li class="px-4 pt-2 pb-1">
-              <span class="text-xs font-semibold uppercase tracking-wider text-base-content/40">
-                <span class="theme-section-label-light">Light themes</span>
-                <span class="theme-section-label-dark hidden">Dark themes</span>
-              </span>
-            </li>
-            <!-- Light themes (visible when in light mode) -->
-            <li class="theme-list-light">
-              <ul class="list-none m-0 p-0 max-h-52 overflow-y-auto overscroll-contain">
-                <li><button type="button" data-theme-pick="caramellatte"
-                            class="w-full text-left px-4 py-2.5 text-sm text-base-content
-                                   hover:bg-base-200 transition-colors cursor-pointer
-                                   focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-[-2px]
-                                   min-h-11 flex items-center gap-2 rounded-lg">
-                  <span class="theme-check invisible text-primary text-xs">&#10003;</span>
-                  <span>Caramellatte</span>
-                  <span class="ml-auto text-xs text-base-content/40">Warm</span>
-                </button></li>
-                <li><button type="button" data-theme-pick="cupcake"
-                            class="w-full text-left px-4 py-2.5 text-sm text-base-content
-                                   hover:bg-base-200 transition-colors cursor-pointer
-                                   focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-[-2px]
-                                   min-h-11 flex items-center gap-2 rounded-lg">
-                  <span class="theme-check invisible text-primary text-xs">&#10003;</span>
-                  <span>Cupcake</span>
-                  <span class="ml-auto text-xs text-base-content/40">Sweet</span>
-                </button></li>
-                <li><button type="button" data-theme-pick="pastel"
-                            class="w-full text-left px-4 py-2.5 text-sm text-base-content
-                                   hover:bg-base-200 transition-colors cursor-pointer
-                                   focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-[-2px]
-                                   min-h-11 flex items-center gap-2 rounded-lg">
-                  <span class="theme-check invisible text-primary text-xs">&#10003;</span>
-                  <span>Pastel</span>
-                  <span class="ml-auto text-xs text-base-content/40">Soft</span>
-                </button></li>
-                <li><button type="button" data-theme-pick="lofi"
-                            class="w-full text-left px-4 py-2.5 text-sm text-base-content
-                                   hover:bg-base-200 transition-colors cursor-pointer
-                                   focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-[-2px]
-                                   min-h-11 flex items-center gap-2 rounded-lg">
-                  <span class="theme-check invisible text-primary text-xs">&#10003;</span>
-                  <span>Lofi</span>
-                  <span class="ml-auto text-xs text-base-content/40">Minimal</span>
-                </button></li>
-                <li><button type="button" data-theme-pick="nord"
-                            class="w-full text-left px-4 py-2.5 text-sm text-base-content
-                                   hover:bg-base-200 transition-colors cursor-pointer
-                                   focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-[-2px]
-                                   min-h-11 flex items-center gap-2 rounded-lg">
-                  <span class="theme-check invisible text-primary text-xs">&#10003;</span>
-                  <span>Nord</span>
-                  <span class="ml-auto text-xs text-base-content/40">Cool</span>
-                </button></li>
-                <li><button type="button" data-theme-pick="emerald"
-                            class="w-full text-left px-4 py-2.5 text-sm text-base-content
-                                   hover:bg-base-200 transition-colors cursor-pointer
-                                   focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-[-2px]
-                                   min-h-11 flex items-center gap-2 rounded-lg">
-                  <span class="theme-check invisible text-primary text-xs">&#10003;</span>
-                  <span>Emerald</span>
-                  <span class="ml-auto text-xs text-base-content/40">Fresh</span>
-                </button></li>
-                <li><button type="button" data-theme-pick="garden"
-                            class="w-full text-left px-4 py-2.5 text-sm text-base-content
-                                   hover:bg-base-200 transition-colors cursor-pointer
-                                   focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-[-2px]
-                                   min-h-11 flex items-center gap-2 rounded-lg">
-                  <span class="theme-check invisible text-primary text-xs">&#10003;</span>
-                  <span>Garden</span>
-                  <span class="ml-auto text-xs text-base-content/40">Natural</span>
-                </button></li>
-                <li><button type="button" data-theme-pick="autumn"
-                            class="w-full text-left px-4 py-2.5 text-sm text-base-content
-                                   hover:bg-base-200 transition-colors cursor-pointer
-                                   focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-[-2px]
-                                   min-h-11 flex items-center gap-2 rounded-lg">
-                  <span class="theme-check invisible text-primary text-xs">&#10003;</span>
-                  <span>Autumn</span>
-                  <span class="ml-auto text-xs text-base-content/40">Earthy</span>
-                </button></li>
-                <li><button type="button" data-theme-pick="valentine"
-                            class="w-full text-left px-4 py-2.5 text-sm text-base-content
-                                   hover:bg-base-200 transition-colors cursor-pointer
-                                   focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-[-2px]
-                                   min-h-11 flex items-center gap-2 rounded-lg">
-                  <span class="theme-check invisible text-primary text-xs">&#10003;</span>
-                  <span>Valentine</span>
-                  <span class="ml-auto text-xs text-base-content/40">Pink</span>
-                </button></li>
-                <li><button type="button" data-theme-pick="fantasy"
-                            class="w-full text-left px-4 py-2.5 text-sm text-base-content
-                                   hover:bg-base-200 transition-colors cursor-pointer
-                                   focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-[-2px]
-                                   min-h-11 flex items-center gap-2 rounded-lg">
-                  <span class="theme-check invisible text-primary text-xs">&#10003;</span>
-                  <span>Fantasy</span>
-                  <span class="ml-auto text-xs text-base-content/40">Vivid</span>
-                </button></li>
-                <li><button type="button" data-theme-pick="retro"
-                            class="w-full text-left px-4 py-2.5 text-sm text-base-content
-                                   hover:bg-base-200 transition-colors cursor-pointer
-                                   focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-[-2px]
-                                   min-h-11 flex items-center gap-2 rounded-lg">
-                  <span class="theme-check invisible text-primary text-xs">&#10003;</span>
-                  <span>Retro</span>
-                  <span class="ml-auto text-xs text-base-content/40">Vintage</span>
-                </button></li>
-                <li><button type="button" data-theme-pick="corporate"
-                            class="w-full text-left px-4 py-2.5 text-sm text-base-content
-                                   hover:bg-base-200 transition-colors cursor-pointer
-                                   focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-[-2px]
-                                   min-h-11 flex items-center gap-2 rounded-lg">
-                  <span class="theme-check invisible text-primary text-xs">&#10003;</span>
-                  <span>Corporate</span>
-                  <span class="ml-auto text-xs text-base-content/40">Clean</span>
-                </button></li>
-                <li><button type="button" data-theme-pick="silk"
-                            class="w-full text-left px-4 py-2.5 text-sm text-base-content
-                                   hover:bg-base-200 transition-colors cursor-pointer
-                                   focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-[-2px]
-                                   min-h-11 flex items-center gap-2 rounded-lg">
-                  <span class="theme-check invisible text-primary text-xs">&#10003;</span>
-                  <span>Silk</span>
-                  <span class="ml-auto text-xs text-base-content/40">Sleek</span>
-                </button></li>
-                <li><button type="button" data-theme-pick="bumblebee"
-                            class="w-full text-left px-4 py-2.5 text-sm text-base-content
-                                   hover:bg-base-200 transition-colors cursor-pointer
-                                   focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-[-2px]
-                                   min-h-11 flex items-center gap-2 rounded-lg">
-                  <span class="theme-check invisible text-primary text-xs">&#10003;</span>
-                  <span>Bumblebee</span>
-                  <span class="ml-auto text-xs text-base-content/40">Bright</span>
-                </button></li>
-                <li><button type="button" data-theme-pick="aqua"
-                            class="w-full text-left px-4 py-2.5 text-sm text-base-content
-                                   hover:bg-base-200 transition-colors cursor-pointer
-                                   focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-[-2px]
-                                   min-h-11 flex items-center gap-2 rounded-lg">
-                  <span class="theme-check invisible text-primary text-xs">&#10003;</span>
-                  <span>Aqua</span>
-                  <span class="ml-auto text-xs text-base-content/40">Ocean</span>
-                </button></li>
-                <li><button type="button" data-theme-pick="lemonade"
-                            class="w-full text-left px-4 py-2.5 text-sm text-base-content
-                                   hover:bg-base-200 transition-colors cursor-pointer
-                                   focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-[-2px]
-                                   min-h-11 flex items-center gap-2 rounded-lg">
-                  <span class="theme-check invisible text-primary text-xs">&#10003;</span>
-                  <span>Lemonade</span>
-                  <span class="ml-auto text-xs text-base-content/40">Citrus</span>
-                </button></li>
-                <li><button type="button" data-theme-pick="winter"
-                            class="w-full text-left px-4 py-2.5 text-sm text-base-content
-                                   hover:bg-base-200 transition-colors cursor-pointer
-                                   focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-[-2px]
-                                   min-h-11 flex items-center gap-2 rounded-lg">
-                  <span class="theme-check invisible text-primary text-xs">&#10003;</span>
-                  <span>Winter</span>
-                  <span class="ml-auto text-xs text-base-content/40">Frosty</span>
-                </button></li>
-                <li><button type="button" data-theme-pick="cmyk"
-                            class="w-full text-left px-4 py-2.5 text-sm text-base-content
-                                   hover:bg-base-200 transition-colors cursor-pointer
-                                   focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-[-2px]
-                                   min-h-11 flex items-center gap-2 rounded-lg">
-                  <span class="theme-check invisible text-primary text-xs">&#10003;</span>
-                  <span>CMYK</span>
-                  <span class="ml-auto text-xs text-base-content/40">Print</span>
-                </button></li>
-                <li><button type="button" data-theme-pick="acid"
-                            class="w-full text-left px-4 py-2.5 text-sm text-base-content
-                                   hover:bg-base-200 transition-colors cursor-pointer
-                                   focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-[-2px]
-                                   min-h-11 flex items-center gap-2 rounded-lg">
-                  <span class="theme-check invisible text-primary text-xs">&#10003;</span>
-                  <span>Acid</span>
-                  <span class="ml-auto text-xs text-base-content/40">Neon</span>
-                </button></li>
-                <li><button type="button" data-theme-pick="cyberpunk"
-                            class="w-full text-left px-4 py-2.5 text-sm text-base-content
-                                   hover:bg-base-200 transition-colors cursor-pointer
-                                   focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-[-2px]
-                                   min-h-11 flex items-center gap-2 rounded-lg">
-                  <span class="theme-check invisible text-primary text-xs">&#10003;</span>
-                  <span>Cyberpunk</span>
-                  <span class="ml-auto text-xs text-base-content/40">Cyber</span>
-                </button></li>
-                <li><button type="button" data-theme-pick="wireframe"
-                            class="w-full text-left px-4 py-2.5 text-sm text-base-content
-                                   hover:bg-base-200 transition-colors cursor-pointer
-                                   focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-[-2px]
-                                   min-h-11 flex items-center gap-2 rounded-lg">
-                  <span class="theme-check invisible text-primary text-xs">&#10003;</span>
-                  <span>Wireframe</span>
-                  <span class="ml-auto text-xs text-base-content/40">Sketch</span>
-                </button></li>
-                <li><button type="button" data-theme-pick="light"
-                            class="w-full text-left px-4 py-2.5 text-sm text-base-content
-                                   hover:bg-base-200 transition-colors cursor-pointer
-                                   focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-[-2px]
-                                   min-h-11 flex items-center gap-2 rounded-lg">
-                  <span class="theme-check invisible text-primary text-xs">&#10003;</span>
-                  <span>Light</span>
-                  <span class="ml-auto text-xs text-base-content/40">Default</span>
-                </button></li>
-              </ul>
-            </li>
-            <!-- Dark themes (visible when in dark mode) -->
-            <li class="theme-list-dark hidden">
-              <ul class="list-none m-0 p-0 max-h-52 overflow-y-auto overscroll-contain">
-                <li><button type="button" data-theme-pick="coffee"
-                            class="w-full text-left px-4 py-2.5 text-sm text-base-content
-                                   hover:bg-base-200 transition-colors cursor-pointer
-                                   focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-[-2px]
-                                   min-h-11 flex items-center gap-2 rounded-lg">
-                  <span class="theme-check invisible text-primary text-xs">&#10003;</span>
-                  <span>Coffee</span>
-                  <span class="ml-auto text-xs text-base-content/40">Warm</span>
-                </button></li>
-                <li><button type="button" data-theme-pick="dim"
-                            class="w-full text-left px-4 py-2.5 text-sm text-base-content
-                                   hover:bg-base-200 transition-colors cursor-pointer
-                                   focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-[-2px]
-                                   min-h-11 flex items-center gap-2 rounded-lg">
-                  <span class="theme-check invisible text-primary text-xs">&#10003;</span>
-                  <span>Dim</span>
-                  <span class="ml-auto text-xs text-base-content/40">Muted</span>
-                </button></li>
-                <li><button type="button" data-theme-pick="night"
-                            class="w-full text-left px-4 py-2.5 text-sm text-base-content
-                                   hover:bg-base-200 transition-colors cursor-pointer
-                                   focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-[-2px]
-                                   min-h-11 flex items-center gap-2 rounded-lg">
-                  <span class="theme-check invisible text-primary text-xs">&#10003;</span>
-                  <span>Night</span>
-                  <span class="ml-auto text-xs text-base-content/40">Cool</span>
-                </button></li>
-                <li><button type="button" data-theme-pick="dracula"
-                            class="w-full text-left px-4 py-2.5 text-sm text-base-content
-                                   hover:bg-base-200 transition-colors cursor-pointer
-                                   focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-[-2px]
-                                   min-h-11 flex items-center gap-2 rounded-lg">
-                  <span class="theme-check invisible text-primary text-xs">&#10003;</span>
-                  <span>Dracula</span>
-                  <span class="ml-auto text-xs text-base-content/40">Gothic</span>
-                </button></li>
-                <li><button type="button" data-theme-pick="forest"
-                            class="w-full text-left px-4 py-2.5 text-sm text-base-content
-                                   hover:bg-base-200 transition-colors cursor-pointer
-                                   focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-[-2px]
-                                   min-h-11 flex items-center gap-2 rounded-lg">
-                  <span class="theme-check invisible text-primary text-xs">&#10003;</span>
-                  <span>Forest</span>
-                  <span class="ml-auto text-xs text-base-content/40">Deep</span>
-                </button></li>
-                <li><button type="button" data-theme-pick="luxury"
-                            class="w-full text-left px-4 py-2.5 text-sm text-base-content
-                                   hover:bg-base-200 transition-colors cursor-pointer
-                                   focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-[-2px]
-                                   min-h-11 flex items-center gap-2 rounded-lg">
-                  <span class="theme-check invisible text-primary text-xs">&#10003;</span>
-                  <span>Luxury</span>
-                  <span class="ml-auto text-xs text-base-content/40">Gold</span>
-                </button></li>
-                <li><button type="button" data-theme-pick="synthwave"
-                            class="w-full text-left px-4 py-2.5 text-sm text-base-content
-                                   hover:bg-base-200 transition-colors cursor-pointer
-                                   focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-[-2px]
-                                   min-h-11 flex items-center gap-2 rounded-lg">
-                  <span class="theme-check invisible text-primary text-xs">&#10003;</span>
-                  <span>Synthwave</span>
-                  <span class="ml-auto text-xs text-base-content/40">Retro</span>
-                </button></li>
-                <li><button type="button" data-theme-pick="black"
-                            class="w-full text-left px-4 py-2.5 text-sm text-base-content
-                                   hover:bg-base-200 transition-colors cursor-pointer
-                                   focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-[-2px]
-                                   min-h-11 flex items-center gap-2 rounded-lg">
-                  <span class="theme-check invisible text-primary text-xs">&#10003;</span>
-                  <span>Black</span>
-                  <span class="ml-auto text-xs text-base-content/40">Stark</span>
-                </button></li>
-                <li><button type="button" data-theme-pick="halloween"
-                            class="w-full text-left px-4 py-2.5 text-sm text-base-content
-                                   hover:bg-base-200 transition-colors cursor-pointer
-                                   focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-[-2px]
-                                   min-h-11 flex items-center gap-2 rounded-lg">
-                  <span class="theme-check invisible text-primary text-xs">&#10003;</span>
-                  <span>Halloween</span>
-                  <span class="ml-auto text-xs text-base-content/40">Spooky</span>
-                </button></li>
-                <li><button type="button" data-theme-pick="sunset"
-                            class="w-full text-left px-4 py-2.5 text-sm text-base-content
-                                   hover:bg-base-200 transition-colors cursor-pointer
-                                   focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-[-2px]
-                                   min-h-11 flex items-center gap-2 rounded-lg">
-                  <span class="theme-check invisible text-primary text-xs">&#10003;</span>
-                  <span>Sunset</span>
-                  <span class="ml-auto text-xs text-base-content/40">Dusk</span>
-                </button></li>
-                <li><button type="button" data-theme-pick="abyss"
-                            class="w-full text-left px-4 py-2.5 text-sm text-base-content
-                                   hover:bg-base-200 transition-colors cursor-pointer
-                                   focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-[-2px]
-                                   min-h-11 flex items-center gap-2 rounded-lg">
-                  <span class="theme-check invisible text-primary text-xs">&#10003;</span>
-                  <span>Abyss</span>
-                  <span class="ml-auto text-xs text-base-content/40">Void</span>
-                </button></li>
-                <li><button type="button" data-theme-pick="business"
-                            class="w-full text-left px-4 py-2.5 text-sm text-base-content
-                                   hover:bg-base-200 transition-colors cursor-pointer
-                                   focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-[-2px]
-                                   min-h-11 flex items-center gap-2 rounded-lg">
-                  <span class="theme-check invisible text-primary text-xs">&#10003;</span>
-                  <span>Business</span>
-                  <span class="ml-auto text-xs text-base-content/40">Pro</span>
-                </button></li>
-                <li><button type="button" data-theme-pick="dark"
-                            class="w-full text-left px-4 py-2.5 text-sm text-base-content
-                                   hover:bg-base-200 transition-colors cursor-pointer
-                                   focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-[-2px]
-                                   min-h-11 flex items-center gap-2 rounded-lg">
-                  <span class="theme-check invisible text-primary text-xs">&#10003;</span>
-                  <span>Dark</span>
-                  <span class="ml-auto text-xs text-base-content/40">Default</span>
-                </button></li>
-              </ul>
-            </li>
-            <li><hr class="my-1 border-base-300"></li>
-            <li><button type="button"
-                        class="block w-full text-left px-4 py-2.5 text-sm text-base-content
-                               hover:bg-base-200 transition-colors cursor-pointer
-                               focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-[-2px]
-                               min-h-11 flex items-center"
-                        onclick="window.print()" data-close>Save as PDF</button></li>
-          </ul>
-        </div>
-      </div>
-    </div>
-  </nav>
+  <!-- Navbar injected from partials/navbar.html by htmlPartials Vite plugin.
+       NAV_PREFIX is empty for index.html (same-page #anchors). -->
+  <!-- NAVBAR: -->
 
-  <main class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+  <main id="main" class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
     <!-- Hero -->
     <header class="pt-4 pb-6 animate-fade-in-up">
       <!-- Requirement: Hero heading gradient that adapts to any theme combo
@@ -542,9 +129,9 @@
             <div class="mt-auto pt-2">
               <p class="text-xs text-base-content/40">JavaScript &middot; Vite &middot; Tailwind</p>
               <div class="card-links">
-                <a href="project.html?name=canva-grid" class="btn btn-xs btn-primary rounded-full" onclick="event.stopPropagation()">Details</a>
-                <a href="https://canva-grid.vercel.app/" target="_blank" rel="noopener" class="btn btn-xs btn-outline rounded-full" onclick="event.stopPropagation()">Live app</a>
-                <a href="https://github.com/devmade-ai/canva-grid" target="_blank" rel="noopener" class="btn btn-xs btn-outline rounded-full" onclick="event.stopPropagation()">Source</a>
+                <a href="project.html?name=canva-grid" class="btn btn-sm btn-primary rounded-full" onclick="event.stopPropagation()">Details</a>
+                <a href="https://canva-grid.vercel.app/" target="_blank" rel="noopener" class="btn btn-sm btn-outline rounded-full" onclick="event.stopPropagation()">Live app</a>
+                <a href="https://github.com/devmade-ai/canva-grid" target="_blank" rel="noopener" class="btn btn-sm btn-outline rounded-full" onclick="event.stopPropagation()">Source</a>
               </div>
             </div>
           </div>
@@ -561,8 +148,8 @@
             <div class="mt-auto pt-2">
               <p class="text-xs text-base-content/40">TypeScript &middot; Cytoscape.js &middot; IndexedDB</p>
               <div class="card-links">
-                <a href="project.html?name=graphiki" class="btn btn-xs btn-primary rounded-full" onclick="event.stopPropagation()">Details</a>
-                <a href="https://graphiki.vercel.app/" target="_blank" rel="noopener" class="btn btn-xs btn-outline rounded-full" onclick="event.stopPropagation()">Live app</a>
+                <a href="project.html?name=graphiki" class="btn btn-sm btn-primary rounded-full" onclick="event.stopPropagation()">Details</a>
+                <a href="https://graphiki.vercel.app/" target="_blank" rel="noopener" class="btn btn-sm btn-outline rounded-full" onclick="event.stopPropagation()">Live app</a>
               </div>
             </div>
           </div>
@@ -579,8 +166,8 @@
             <div class="mt-auto pt-2">
               <p class="text-xs text-base-content/40">TypeScript &middot; Expo &middot; Supabase &middot; Mapbox</p>
               <div class="card-links">
-                <a href="project.html?name=few-lap" class="btn btn-xs btn-primary rounded-full" onclick="event.stopPropagation()">Details</a>
-                <a href="https://few-lap.vercel.app/" target="_blank" rel="noopener" class="btn btn-xs btn-outline rounded-full" onclick="event.stopPropagation()">Live app</a>
+                <a href="project.html?name=few-lap" class="btn btn-sm btn-primary rounded-full" onclick="event.stopPropagation()">Details</a>
+                <a href="https://few-lap.vercel.app/" target="_blank" rel="noopener" class="btn btn-sm btn-outline rounded-full" onclick="event.stopPropagation()">Live app</a>
               </div>
             </div>
           </div>
@@ -597,8 +184,8 @@
             <div class="mt-auto pt-2">
               <p class="text-xs text-base-content/40">TypeScript &middot; Expo &middot; Supabase</p>
               <div class="card-links">
-                <a href="project.html?name=synctone" class="btn btn-xs btn-primary rounded-full" onclick="event.stopPropagation()">Details</a>
-                <a href="https://synctone.vercel.app/" target="_blank" rel="noopener" class="btn btn-xs btn-outline rounded-full" onclick="event.stopPropagation()">Live app</a>
+                <a href="project.html?name=synctone" class="btn btn-sm btn-primary rounded-full" onclick="event.stopPropagation()">Details</a>
+                <a href="https://synctone.vercel.app/" target="_blank" rel="noopener" class="btn btn-sm btn-outline rounded-full" onclick="event.stopPropagation()">Live app</a>
               </div>
             </div>
           </div>
@@ -615,8 +202,8 @@
             <div class="mt-auto pt-2">
               <p class="text-xs text-base-content/40">TypeScript &middot; React &middot; Supabase &middot; Tailwind</p>
               <div class="card-links">
-                <a href="project.html?name=sun-sea-o" class="btn btn-xs btn-primary rounded-full" onclick="event.stopPropagation()">Details</a>
-                <a href="https://sun-sea-o.vercel.app/" target="_blank" rel="noopener" class="btn btn-xs btn-outline rounded-full" onclick="event.stopPropagation()">Live app</a>
+                <a href="project.html?name=sun-sea-o" class="btn btn-sm btn-primary rounded-full" onclick="event.stopPropagation()">Details</a>
+                <a href="https://sun-sea-o.vercel.app/" target="_blank" rel="noopener" class="btn btn-sm btn-outline rounded-full" onclick="event.stopPropagation()">Live app</a>
               </div>
             </div>
           </div>
@@ -633,8 +220,8 @@
             <div class="mt-auto pt-2">
               <p class="text-xs text-base-content/40">TypeScript &middot; React &middot; Tailwind &middot; Supabase</p>
               <div class="card-links">
-                <a href="project.html?name=four-ems" class="btn btn-xs btn-primary rounded-full" onclick="event.stopPropagation()">Details</a>
-                <a href="https://four-ems.vercel.app/" target="_blank" rel="noopener" class="btn btn-xs btn-outline rounded-full" onclick="event.stopPropagation()">Live app</a>
+                <a href="project.html?name=four-ems" class="btn btn-sm btn-primary rounded-full" onclick="event.stopPropagation()">Details</a>
+                <a href="https://four-ems.vercel.app/" target="_blank" rel="noopener" class="btn btn-sm btn-outline rounded-full" onclick="event.stopPropagation()">Live app</a>
               </div>
             </div>
           </div>
@@ -651,9 +238,9 @@
             <div class="mt-auto pt-2">
               <p class="text-xs text-base-content/40">JavaScript &middot; Vue 3 &middot; Vite &middot; IndexedDB</p>
               <div class="card-links">
-                <a href="project.html?name=budgy-ting" class="btn btn-xs btn-primary rounded-full" onclick="event.stopPropagation()">Details</a>
-                <a href="https://budgy-ting.vercel.app/" target="_blank" rel="noopener" class="btn btn-xs btn-outline rounded-full" onclick="event.stopPropagation()">Live app</a>
-                <a href="https://github.com/devmade-ai/budgy-ting" target="_blank" rel="noopener" class="btn btn-xs btn-outline rounded-full" onclick="event.stopPropagation()">Source</a>
+                <a href="project.html?name=budgy-ting" class="btn btn-sm btn-primary rounded-full" onclick="event.stopPropagation()">Details</a>
+                <a href="https://budgy-ting.vercel.app/" target="_blank" rel="noopener" class="btn btn-sm btn-outline rounded-full" onclick="event.stopPropagation()">Live app</a>
+                <a href="https://github.com/devmade-ai/budgy-ting" target="_blank" rel="noopener" class="btn btn-sm btn-outline rounded-full" onclick="event.stopPropagation()">Source</a>
               </div>
             </div>
           </div>
@@ -669,9 +256,9 @@
             <div class="mt-auto pt-2">
               <p class="text-xs text-base-content/40">TypeScript &middot; React &middot; Vite</p>
               <div class="card-links">
-                <a href="project.html?name=model-pear" class="btn btn-xs btn-primary rounded-full" onclick="event.stopPropagation()">Details</a>
-                <a href="https://model-pear-web.vercel.app/" target="_blank" rel="noopener" class="btn btn-xs btn-outline rounded-full" onclick="event.stopPropagation()">Live app</a>
-                <a href="https://github.com/devmade-ai/model-pear" target="_blank" rel="noopener" class="btn btn-xs btn-outline rounded-full" onclick="event.stopPropagation()">Source</a>
+                <a href="project.html?name=model-pear" class="btn btn-sm btn-primary rounded-full" onclick="event.stopPropagation()">Details</a>
+                <a href="https://model-pear-web.vercel.app/" target="_blank" rel="noopener" class="btn btn-sm btn-outline rounded-full" onclick="event.stopPropagation()">Live app</a>
+                <a href="https://github.com/devmade-ai/model-pear" target="_blank" rel="noopener" class="btn btn-sm btn-outline rounded-full" onclick="event.stopPropagation()">Source</a>
               </div>
             </div>
           </div>
@@ -688,9 +275,9 @@
             <div class="mt-auto pt-2">
               <p class="text-xs text-base-content/40">TypeScript &middot; React &middot; Tailwind</p>
               <div class="card-links">
-                <a href="project.html?name=see-veo" class="btn btn-xs btn-primary rounded-full" onclick="event.stopPropagation()">Details</a>
-                <a href="https://see-veo.vercel.app/" target="_blank" rel="noopener" class="btn btn-xs btn-outline rounded-full" onclick="event.stopPropagation()">Live app</a>
-                <a href="https://github.com/devmade-ai/see-veo" target="_blank" rel="noopener" class="btn btn-xs btn-outline rounded-full" onclick="event.stopPropagation()">Source</a>
+                <a href="project.html?name=see-veo" class="btn btn-sm btn-primary rounded-full" onclick="event.stopPropagation()">Details</a>
+                <a href="https://see-veo.vercel.app/" target="_blank" rel="noopener" class="btn btn-sm btn-outline rounded-full" onclick="event.stopPropagation()">Live app</a>
+                <a href="https://github.com/devmade-ai/see-veo" target="_blank" rel="noopener" class="btn btn-sm btn-outline rounded-full" onclick="event.stopPropagation()">Source</a>
               </div>
             </div>
           </div>
@@ -713,9 +300,9 @@
             </h4>
             <p class="text-sm text-base-content/70">Git analytics dashboard. Extract commit history from any repo, visualize progress, contributors, and code health. 6 dashboard tabs with role-based views.</p>
             <div class="card-links">
-              <a href="project.html?name=repo-tor" class="btn btn-xs btn-primary rounded-full" onclick="event.stopPropagation()">Details</a>
-              <a href="https://repo-tor.vercel.app/" target="_blank" rel="noopener" class="btn btn-xs btn-outline rounded-full" onclick="event.stopPropagation()">Dashboard</a>
-              <a href="https://github.com/devmade-ai/repo-tor" target="_blank" rel="noopener" class="btn btn-xs btn-outline rounded-full" onclick="event.stopPropagation()">Source</a>
+              <a href="project.html?name=repo-tor" class="btn btn-sm btn-primary rounded-full" onclick="event.stopPropagation()">Details</a>
+              <a href="https://repo-tor.vercel.app/" target="_blank" rel="noopener" class="btn btn-sm btn-outline rounded-full" onclick="event.stopPropagation()">Dashboard</a>
+              <a href="https://github.com/devmade-ai/repo-tor" target="_blank" rel="noopener" class="btn btn-sm btn-outline rounded-full" onclick="event.stopPropagation()">Source</a>
             </div>
           </div>
         </div>
@@ -728,8 +315,8 @@
             </h4>
             <p class="text-sm text-base-content/70">Utilities API on Vercel. Contact form endpoint, multi-tenant form builder, and agreement management backend. All backed by Supabase.</p>
             <div class="card-links">
-              <a href="project.html?name=tool-till-tees" class="btn btn-xs btn-primary rounded-full" onclick="event.stopPropagation()">Details</a>
-              <a href="https://tool-till-tees.vercel.app/" target="_blank" rel="noopener" class="btn btn-xs btn-outline rounded-full" onclick="event.stopPropagation()">Live</a>
+              <a href="project.html?name=tool-till-tees" class="btn btn-sm btn-primary rounded-full" onclick="event.stopPropagation()">Details</a>
+              <a href="https://tool-till-tees.vercel.app/" target="_blank" rel="noopener" class="btn btn-sm btn-outline rounded-full" onclick="event.stopPropagation()">Live</a>
             </div>
           </div>
         </div>
@@ -742,8 +329,8 @@
             </h4>
             <p class="text-sm text-base-content/70">This site. Hosts shared AI assistant rules, engineering patterns, and the project portfolio. Also serves as the canonical CLAUDE.md reference.</p>
             <div class="card-links">
-              <a href="CLAUDE.md" class="btn btn-xs btn-primary rounded-full" onclick="event.stopPropagation()">CLAUDE.md</a>
-              <a href="https://github.com/devmade-ai/glow-props" target="_blank" rel="noopener" class="btn btn-xs btn-outline rounded-full" onclick="event.stopPropagation()">Source</a>
+              <a href="CLAUDE.md" class="btn btn-sm btn-primary rounded-full" onclick="event.stopPropagation()">CLAUDE.md</a>
+              <a href="https://github.com/devmade-ai/glow-props" target="_blank" rel="noopener" class="btn btn-sm btn-outline rounded-full" onclick="event.stopPropagation()">Source</a>
             </div>
           </div>
         </div>
@@ -756,8 +343,8 @@
             </h4>
             <p class="text-sm text-base-content/70">CDN assets repository for canva-grid. Hosts sample images and media files served to the design tool.</p>
             <div class="card-links">
-              <a href="project.html?name=canva-grid-assets" class="btn btn-xs btn-primary rounded-full" onclick="event.stopPropagation()">Details</a>
-              <a href="https://github.com/devmade-ai/canva-grid-assets" target="_blank" rel="noopener" class="btn btn-xs btn-outline rounded-full" onclick="event.stopPropagation()">Source</a>
+              <a href="project.html?name=canva-grid-assets" class="btn btn-sm btn-primary rounded-full" onclick="event.stopPropagation()">Details</a>
+              <a href="https://github.com/devmade-ai/canva-grid-assets" target="_blank" rel="noopener" class="btn btn-sm btn-outline rounded-full" onclick="event.stopPropagation()">Source</a>
             </div>
           </div>
         </div>
@@ -896,5 +483,8 @@
       });
     })();
   </script>
+
+  <!-- PWA: service worker registration, update prompts, install detection -->
+  <script type="module" src="src/pwa.js"></script>
 </body>
 </html>
