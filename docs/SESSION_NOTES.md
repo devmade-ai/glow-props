@@ -1,24 +1,23 @@
 # Session Notes
 
 ## Worked on
-Organizing implementations, PWA support, full 9-trigger audit sweep, fixing all findings, then quick-win improvements.
+Improving PWA update system based on research into vite-plugin-pwa best practices.
 
 ## Accomplished
-- Extracted 7 suggested implementations from CLAUDE.md into `docs/implementations/`
-- Rewrote THEME_DARK_MODE.md for actual DaisyUI-based approach (researched all 3 projects)
-- Implemented PWA support (SW, install prompt, update banner, offline toast)
-- Ran all 9 audit triggers in parallel, fixed 19 findings (4 critical, 6 high, 9 medium)
-- Added card `:active` touch feedback and sitemap/robots.txt
-- Extracted 440-line navbar into `partials/navbar.html` with custom Vite plugin
-- Cleaned TODO.md down to only actionable items
+- Added `cleanupOutdatedCaches: true` and `globPatterns` to Workbox config in vite.config.js
+- Updated PWA_SYSTEM.md suggested implementation with research findings:
+  - Added Cache Headers section (no-cache for index.html/sw.js, immutable for hashed assets, GitHub Pages note)
+  - Added ChunkLoadError Prevention section with lazy-load retry wrapper pattern
+  - Added Platform Gotchas section (Safari caching, navigation overlap, Workbox timing heuristic, autoUpdate→prompt danger, Expo Web incompatibility)
+  - Added workbox-window dev dependency note for React projects
+  - Added navigateFallback SPA-only guidance
+  - Added 4 new Key Lessons (cleanupOutdatedCaches, globPatterns, navigateFallback, cache headers)
 
 ## Current state
-- Build clean, all features working
-- Navbar is single-source in `partials/navbar.html` — no more HTML duplication
-- Branch: claude/organize-implementations-folder-DBcuk (6 commits)
+- Build clean (15 precache entries, 297.54 KiB)
+- Branch: claude/improve-pwa-updates-tYFSG
 
 ## Key context
-- `htmlPartials` Vite plugin in vite.config.js reads `partials/navbar.html` and replaces `<!-- NAVBAR:prefix -->` comments. `{{NAV_PREFIX}}` becomes `""` for index.html or `"./"` for project.html.
-- Bootstrap inline scripts (flash prevention, beforeinstallprompt capture) are still duplicated — they MUST be inline classic scripts for synchronous execution. Can't be externalized.
-- Theme lists still duplicated in bootstrap scripts + theme.js for same reason.
-- The partial includes all 35 theme picker buttons, PWA install item, dark/light toggle, random theme toggle, and Save as PDF button.
+- glow-props is a multi-page app (index.html + project.html) — `navigateFallback` must NOT be set
+- PWA implementation is vanilla JS (not React) — uses `virtual:pwa-register` directly
+- GitHub Pages hosting means no control over HTTP cache headers, but SW precache layer handles staleness

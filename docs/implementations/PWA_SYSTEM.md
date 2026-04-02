@@ -2,6 +2,8 @@
 
 Four parts, built on `vite-plugin-pwa` (^1.2.0) with React. Adapt patterns for other frameworks (glow-props uses vanilla JS).
 
+**React dependency note:** React projects using `virtual:pwa-register/react` require `workbox-window` as a dev dependency: `npm install -D workbox-window`. Add `/// <reference types="vite-plugin-pwa/react" />` to your type declarations.
+
 ## Vite Config (`vite.config.ts`)
 
 ```typescript
@@ -11,6 +13,12 @@ import { VitePWA } from 'vite-plugin-pwa'
 VitePWA({
   registerType: 'prompt',
   includeAssets: ['favicon.ico', 'apple-touch-icon.png'],
+  workbox: {
+    cleanupOutdatedCaches: true,
+    globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
+    // SPA only — omit for multi-page apps:
+    // navigateFallback: '/index.html',
+  },
   manifest: {
     name: 'Your App',
     short_name: 'App',
@@ -31,7 +39,10 @@ VitePWA({
 })
 ```
 
-- **`registerType: 'prompt'`**: Users control when updates apply. `autoUpdate` silently refreshes mid-work.
+- **`registerType: 'prompt'`**: Users control when updates apply. `autoUpdate` silently refreshes mid-work. **Never switch from `autoUpdate` to `prompt` in production** — users with the auto-updating SW already installed will never see the prompt-based code because the old SW silently replaces itself before the new registration logic runs.
+- **`workbox.cleanupOutdatedCaches`**: Removes caches from incompatible older Workbox major versions. Without this, stale caches accumulate across deployments.
+- **`workbox.globPatterns`**: Explicit precache patterns. The default may miss font or image types your app uses.
+- **`navigateFallback`**: Only set for SPAs. For multi-page apps (multiple HTML entry points), omit this — it would incorrectly serve `index.html` for all navigation requests.
 - **`id`**: Stable app identity. Without it, Chrome derives from `start_url` — breaks on config changes or redeployments.
 - **`prefer_related_applications: false`**: Without this, Chrome may skip `beforeinstallprompt` if it thinks a native app exists.
 - **Separate icon purposes**: `any` for standard display (192, 512), `maskable` for full-bleed (1024). Never combine `"any maskable"` — browsers pick the wrong one. Use a dedicated 1024x1024 for maskable.
@@ -269,6 +280,83 @@ if (!mountedRef.current) return;
 
 **General rule:** Every `setTimeout`, `setInterval`, `addEventListener`, or `subscribe` call inside a `useEffect` needs a corresponding cleanup in the return function. If callbacks create *new* async operations, those need cleanup too.
 
+## Cache Headers
+
+Three independent caching layers interact: HTTP cache, service worker Cache Storage, and the browser's in-memory cache. Server-side headers form the first line of defense.
+
+**Non-hashed files** (`index.html`, `sw.js`, `manifest.webmanifest`): serve with `Cache-Control: no-cache` (or `max-age=0, must-revalidate`). The browser revalidates on every request, using ETags for 304 efficiency. Never aggressively cache `index.html` — it references hashed asset filenames, so a stale `index.html` pointing to deleted chunks causes `ChunkLoadError` failures.
+
+**Content-hashed assets** (`/assets/*.hash.js`, `/assets/*.hash.css`): serve with `Cache-Control: public, max-age=31536000, immutable`. The filename changes whenever content changes, so year-long caching is safe. The `immutable` directive prevents even revalidation on hard-refresh.
+
+Vite generates content hashes by default. vite-plugin-pwa automatically configures Workbox's `dontCacheBustURLsMatching` to recognize these, so Workbox doesn't append redundant `?__WB_REVISION__` query parameters. For non-hashed files, Workbox generates an MD5 revision:
+
+```js
+// Hashed file — revision is null (hash IS the filename)
+{ url: '/assets/main.a2b3c4.js', revision: null }
+// Non-hashed file — Workbox generates a revision hash
+{ url: '/index.html', revision: '518747aa' }
+```
+
+**NGINX example:**
+```nginx
+# Hashed assets — cache forever
+location /assets/ {
+  add_header Cache-Control "public, max-age=31536000, immutable";
+}
+location /workbox- {
+  add_header Cache-Control "public, max-age=31536000, immutable";
+}
+# Everything else — revalidate every time
+location / {
+  add_header Cache-Control "no-cache";
+}
+```
+
+**GitHub Pages note:** GitHub Pages sets its own cache headers (~10 min max-age). You can't customize them, but the service worker precache layer handles staleness — the SW compares its manifest on each check and re-fetches changed files regardless of HTTP cache state.
+
+## ChunkLoadError Prevention
+
+The most common PWA deployment failure: user loads version A's `index.html` referencing `dashboard.ef45.js`, you deploy version B deleting old chunks, user navigates and gets a 404.
+
+Service worker precaching prevents this — all chunks (including lazy-loaded ones) are downloaded into Cache Storage during the SW install phase. But for the window between deploy and SW update, or if the user has no SW yet, add a lazy-load retry wrapper:
+
+```js
+const lazyRetry = (importFn) => {
+  return new Promise((resolve, reject) => {
+    const hasRefreshed = JSON.parse(
+      sessionStorage.getItem('retry-lazy-refreshed') || 'false'
+    )
+    importFn()
+      .then(resolve)
+      .catch((error) => {
+        if (!hasRefreshed) {
+          sessionStorage.setItem('retry-lazy-refreshed', 'true')
+          window.location.reload()
+        } else {
+          reject(error)
+        }
+      })
+  })
+}
+
+// Usage with React.lazy or dynamic import:
+const Dashboard = lazy(() => lazyRetry(() => import('./Dashboard')))
+```
+
+If self-hosting without a CDN, keep previous build artifacts available for an overlap period after deploy.
+
+## Platform Gotchas
+
+**Safari aggressive caching:** On iOS, backgrounding a PWA doesn't truly close it — the service worker and cached state persist. Users may not see updates for days. The periodic `registration.update()` interval (see Service Worker Updates section) is critical for Safari users.
+
+**Navigation overlap prevents activation:** Even refreshing a page doesn't activate a waiting service worker because the browser keeps the old page alive until response headers arrive for the new navigation. This is why `skipWaiting()` via `postMessage` exists — without it, users would have to close *every tab* before the new SW activates. The `updateServiceWorker(true)` call handles this.
+
+**Workbox timing heuristic:** If you rebuild and re-register the service worker within one minute of the last registration, `workbox-window` treats the update as an "external event" rather than a normal update, potentially showing "offline ready" instead of "update available." Always test with full production builds served from a static file server.
+
+**Never switch `autoUpdate` → `prompt` in production:** Users who already have the auto-updating SW installed will never see the prompt-based code — the old SW silently replaces itself before the new registration logic runs.
+
+**Expo Web incompatibility:** vite-plugin-pwa is not compatible with Expo Web (Expo Router uses Metro, not Vite). For Expo Web PWAs, use `workbox-cli generateSW` as a post-build step and manually wire up SW registration and update detection.
+
 ## Key Lessons
 
 1. **Never combine `"any maskable"` in icon purpose** — use separate entries with a dedicated 1024x1024 for maskable.
@@ -279,3 +367,7 @@ if (!mountedRef.current) return;
 6. **Clean up all timers** — every `setTimeout`/`setInterval` in `useEffect` needs cleanup. Nested timeouts need the array pattern or mounted ref guard.
 7. **400 DPI rasterization** — Sharp renders the SVG at ~5.5x the coordinate space before downscaling, so edges are anti-aliased from high-res source data instead of the default 72 DPI. The 192px PWA icon benefits most.
 8. **`shape-rendering="geometricPrecision"`** — tells the SVG rasterizer to prioritize accurate geometry over rendering speed. Add to the root `<svg>` element.
+9. **`cleanupOutdatedCaches: true`** — removes stale caches from older Workbox major versions. Set this in the workbox config.
+10. **`globPatterns` must match your asset types** — default may miss fonts, images, or other static assets your app uses.
+11. **`navigateFallback` is SPA-only** — for multi-page apps, omit it or navigation to non-index pages will break.
+12. **Cache headers complement the SW** — `no-cache` on `index.html`/`sw.js`, `immutable` on hashed assets. The SW precache layer handles the rest.

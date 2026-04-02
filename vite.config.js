@@ -63,6 +63,15 @@ export default defineConfig({
     VitePWA({
       registerType: 'prompt',
       includeAssets: ['assets/images/favicon.png'],
+      // Requirement: Reliable cache management across Workbox version upgrades
+      // Approach: cleanupOutdatedCaches removes stale caches from older Workbox versions.
+      //   globPatterns ensures all asset types used in the project are precached.
+      // Alternative: Rely on Workbox defaults — rejected, defaults may miss font/image types
+      //   and don't clean up caches from prior Workbox major versions.
+      workbox: {
+        cleanupOutdatedCaches: true,
+        globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
+      },
       manifest: {
         name: 'Glow Props — Project Portfolio',
         short_name: 'Glow Props',
