@@ -1,5 +1,20 @@
 # History
 
+## 2026-04-02
+
+### Organize suggested implementations into standalone files
+- Extracted all 7 suggested implementations from inline CLAUDE.md into `docs/implementations/`
+- Files: PWA_SYSTEM.md, DEBUG_SYSTEM.md, APP_ICONS.md, DOWNLOAD_PDF.md, HTTPS_PROXY.md, BURGER_MENU.md, THEME_DARK_MODE.md
+- Replaced 1,365-line inline section in CLAUDE.md with a reference table linking to each file
+- Content preserved exactly — no changes to non-theme implementation docs
+
+### Rewrite THEME_DARK_MODE.md for DaisyUI
+- Complete rewrite to reflect actual DaisyUI-based approach used across glow-props, canva-grid, and few-lap
+- Old doc described custom CSS variable semantic tokens and React hooks that no project uses
+- New doc covers: dual-layer theming (`.dark` class + `data-theme` attribute), per-mode theme persistence, curated vs full theme catalogs, theme ID validation, flash prevention with DaisyUI, cross-tab sync, Uniwind for React Native, hex color lookup tables for non-CSS contexts
+- Added project-specific variant documentation: vanilla JS (glow-props), React hooks (canva-grid), Uniwind + named combos (few-lap)
+- Updated CLAUDE.md table description to mention DaisyUI
+
 ## 2026-04-01
 
 ### Theme toggle refactor — per-mode individual theme picker

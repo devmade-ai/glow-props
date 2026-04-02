@@ -339,5 +339,5 @@ Each implementation is in its own file under `docs/implementations/`:
 | Download as PDF | [`docs/implementations/DOWNLOAD_PDF.md`](docs/implementations/DOWNLOAD_PDF.md) | Zero-dependency PDF via `window.print()` |
 | HTTPS Proxy | [`docs/implementations/HTTPS_PROXY.md`](docs/implementations/HTTPS_PROXY.md) | Node.js HTTP CONNECT tunnel for proxy environments |
 | Burger Menu | [`docs/implementations/BURGER_MENU.md`](docs/implementations/BURGER_MENU.md) | Disclosure-pattern dropdown (React Web + React Native) |
-| Theme & Dark Mode | [`docs/implementations/THEME_DARK_MODE.md`](docs/implementations/THEME_DARK_MODE.md) | Dark/light mode with persistence, flash prevention, cross-tab sync |
+| Theme & Dark Mode | [`docs/implementations/THEME_DARK_MODE.md`](docs/implementations/THEME_DARK_MODE.md) | DaisyUI dual-layer theming, per-mode theme selection, flash prevention, cross-tab sync |
 

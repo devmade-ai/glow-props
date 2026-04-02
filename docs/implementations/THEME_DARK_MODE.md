@@ -1,92 +1,178 @@
-# Theme & Dark Mode
+# Theme & Dark Mode (DaisyUI)
 
-User-controlled dark/light mode with system preference fallback, persistence, and flash prevention. Two variants: React (Vite + Tailwind) for web-only projects, React Native (Expo) for cross-platform. The burger menu's "Dark / Light mode" toggle item connects to the hook exposed here.
+User-controlled dark/light mode with DaisyUI theme selection, system preference fallback, persistence, flash prevention, and cross-tab sync.
 
-## CSS Variable Palette
+Three project variants demonstrate this pattern:
+- **glow-props**: Vanilla HTML/CSS/JS + Vite, full 35-theme catalog, per-mode independent selection
+- **canva-grid**: React + Vite, curated 8+8 theme catalog with validation, per-mode independent selection
+- **few-lap**: React Native (Expo) + Uniwind, 5 named combos (light/dark pairs), CSS variable themes
 
-Two sets of semantic tokens — `:root` for light, `.dark` for dark. Use raw hex values (not `theme()`) so the palette works in both Tailwind v3 and v4. Components reference tokens via Tailwind's `ui.*` namespace, so they auto-switch when the `.dark` class changes.
+All three use DaisyUI's semantic color system. The old custom CSS variable token approach (`--color-text-default`, `--color-surface`, etc.) is not used in any project.
+
+## Dual-Layer Theming
+
+DaisyUI and Tailwind use different mechanisms for dark mode. Both must be set together on every theme change:
+
+1. **`data-theme` attribute on `<html>`** — DaisyUI reads this to apply component colors (buttons, cards, badges, etc.) via its CSS variables
+2. **`.dark` class on `<html>`** — Tailwind's `dark:` variant reads this for custom utilities (hover states, text opacity, borders, etc.)
+3. **`color-scheme: dark` on `html.dark`** — browser reads this for native form inputs, select dropdowns, scrollbars
+
+If only one layer is set, DaisyUI components and Tailwind utilities fall out of sync — e.g., dark hover states on a light DaisyUI background.
+
+### CSS Setup (Tailwind v4 + DaisyUI v5)
 
 ```css
-/* Semantic color tokens — Light mode (default) */
-:root {
-  --color-text-default: #27272a;   /* zinc-800 */
-  --color-text-muted: #52525b;     /* zinc-600 */
-  --color-text-subtle: #71717a;    /* zinc-500 */
-  --color-surface: #ffffff;
-  --color-surface-elevated: #fafafa; /* zinc-50 */
-  --color-surface-inset: #f4f4f5;  /* zinc-100 */
-  --color-surface-hover: #e4e4e7;  /* zinc-200 */
-  --color-border: #e4e4e7;         /* zinc-200 */
-  --color-border-subtle: #f4f4f5;  /* zinc-100 */
-  --color-border-strong: #d4d4d8;  /* zinc-300 */
+@import "tailwindcss";
+
+/* Register DaisyUI themes — adapt list per project */
+@plugin "daisyui" {
+  themes: caramellatte --default, coffee --prefersdark,
+          lofi, nord, emerald, cupcake, garden, autumn, pastel,
+          night, black, forest, dracula, dim, synthwave, luxury;
 }
 
-/* Semantic color tokens — Dark mode */
-.dark {
-  --color-text-default: #f4f4f5;   /* zinc-100 */
-  --color-text-muted: #d4d4d8;     /* zinc-300 */
-  --color-text-subtle: #a1a1aa;    /* zinc-400 */
-  --color-surface: #1a1a2e;
-  --color-surface-elevated: #16213e;
-  --color-surface-inset: #1e1e3f;
-  --color-surface-hover: #252550;
-  --color-border: #3f3f46;         /* zinc-700 */
-  --color-border-subtle: #27272a;  /* zinc-800 */
-  --color-border-strong: #52525b;  /* zinc-600 */
-}
-
-/* Native form inputs, selects, scrollbars — must match theme */
-html.dark { color-scheme: dark; }
-```
-
-- **Semantic names, not color names**: `text-default`, `surface`, `border` — not `gray-800`, `white`, `zinc-700`. Components never reference raw colors directly.
-- **Raw hex values, not `theme()`**: The Tailwind `theme()` function is deprecated in v4. Hex values work in both v3 and v4 without any build-time resolution.
-- **`color-scheme: dark` on `html.dark`**: Without this, native `<select>`, `<input>`, `<option>` dropdowns, and default scrollbars remain light-themed even when the app is dark.
-- **Adapt the dark palette to your brand**: The hex values above use deep indigo backgrounds; swap for slate, neutral, or any dark hue. Keep the token names unchanged.
-
-Wire the tokens into Tailwind so components use `text-ui-text` instead of hardcoded colors. **Using `ui.*` classes eliminates most `dark:` prefixes** — since the CSS variables resolve differently under `:root` vs `.dark`, `bg-ui-surface` auto-switches without needing `dark:bg-ui-surface`. This is the primary benefit of semantic tokens. However, hover states, placeholder text, dividers, and focus rings that reference non-semantic Tailwind colors (e.g., `hover:bg-zinc-100`) still need explicit `dark:` variants:
-
-```js
-// tailwind.config.js (v3) — in theme.extend.colors:
-ui: {
-  text: { DEFAULT: 'var(--color-text-default)', muted: 'var(--color-text-muted)', subtle: 'var(--color-text-subtle)' },
-  surface: { DEFAULT: 'var(--color-surface)', elevated: 'var(--color-surface-elevated)', inset: 'var(--color-surface-inset)', hover: 'var(--color-surface-hover)' },
-  border: { DEFAULT: 'var(--color-border)', subtle: 'var(--color-border-subtle)', strong: 'var(--color-border-strong)' },
-}
-```
-
-## Tailwind Dark Mode Config
-
-Tailwind v3 and v4 handle class-based dark mode differently:
-
-**Tailwind v3** — `tailwind.config.js`:
-```js
-export default { darkMode: 'class', /* ... */ }
-```
-
-**Tailwind v4** — in your main CSS file:
-```css
+/* Class-based dark mode for Tailwind v4 */
 @custom-variant dark (&:where(.dark, .dark *));
+
+/* Native form inputs must match theme */
+@layer base {
+  html { color-scheme: light; }
+  html.dark { color-scheme: dark; }
+}
 ```
 
-Both look for a `.dark` class on `<html>`. The hook below manages that class.
+- **`--default` / `--prefersdark`**: DaisyUI uses these to set the initial theme before JavaScript runs. `--default` is the light fallback, `--prefersdark` activates when the user's OS prefers dark mode.
+- **`@custom-variant dark`**: Tailwind v4 replacement for `darkMode: 'class'` in v3. Maps the `dark:` prefix to `.dark` ancestor.
+- **`color-scheme`**: Without this, native `<select>`, `<input>`, and scrollbars remain light-themed even when the app is dark.
 
-## React Web (`useDarkMode.js`)
+### Applying Both Layers (JavaScript)
 
-Hook with localStorage persistence, system preference fallback, cross-tab sync, and safe storage access.
+Every theme change must set both layers together:
 
-```js
-import { useState, useEffect } from 'react'
+```javascript
+function applyTheme(dark, themeName, skipPersist) {
+  if (dark) {
+    document.documentElement.classList.add('dark');
+  } else {
+    document.documentElement.classList.remove('dark');
+  }
+  document.documentElement.setAttribute('data-theme', themeName);
 
-// Requirement: User-controlled dark/light mode with system fallback and cross-tab sync
-// Approach: localStorage persistence, .dark class on <html>, matchMedia listener,
-//   storage event for cross-tab sync
-// Alternatives:
-//   - CSS-only prefers-color-scheme: Rejected — no user override possible
-//   - React Context: Rejected — overkill for web (DOM class is the source of truth)
-//   - Zustand/Redux: Rejected — theme is UI-only state, no cross-component actions
-//   - next-themes: Rejected — SSR/multi-theme/forced-page features not needed for SPA
+  if (!skipPersist) {
+    safeStorageSet('darkMode', dark);
+    safeStorageSet(dark ? 'darkTheme' : 'lightTheme', themeName);
+  }
+}
+```
 
+The `skipPersist` parameter is used by the cross-tab sync handler — the values already came from another tab's localStorage write, so writing them back is redundant.
+
+## Per-Mode Theme Persistence
+
+Each mode (light/dark) stores its own DaisyUI theme independently. Three localStorage keys:
+
+| Key | Value | Example |
+|-----|-------|---------|
+| `darkMode` | `'true'` or `'false'` | `'false'` |
+| `lightTheme` | DaisyUI theme name | `'caramellatte'` |
+| `darkTheme` | DaisyUI theme name | `'coffee'` |
+
+When the user toggles dark/light, the system looks up the stored theme for the new mode and applies it. Users can have e.g. "nord" in light mode and "dracula" in dark mode simultaneously.
+
+```javascript
+function getStoredTheme(dark) {
+  if (dark) {
+    return safeStorageGet('darkTheme') || DEFAULT_DARK_THEME;
+  }
+  return safeStorageGet('lightTheme') || DEFAULT_LIGHT_THEME;
+}
+```
+
+### Variant: Named Combos (React Native)
+
+few-lap uses named combos instead of independent per-mode selection, because the mobile UI doesn't have room for a full theme picker. Two storage keys:
+
+| Key | Value | Example |
+|-----|-------|---------|
+| `theme_combo` | Combo key | `'forest'` |
+| `theme_dark` | `true` or `false` | `true` |
+
+```typescript
+export const THEME_COMBOS: Record<ComboKey, ThemeCombo> = {
+  forest: { label: 'Forest', light: 'lemonade', dark: 'abyss' },
+  nordic: { label: 'Nordic', light: 'nord', dark: 'night' },
+  corporate: { label: 'Corporate', light: 'corporate', dark: 'business' },
+  cafe: { label: 'Cafe', light: 'caramellatte', dark: 'coffee' },
+  silk: { label: 'Silk', light: 'silk', dark: 'sunset' },
+};
+```
+
+## Theme Catalog
+
+### Curated vs Full Catalog
+
+Two approaches, choose per project:
+
+**Full catalog** (glow-props): Register all 35 DaisyUI built-in themes. Good for portfolio/personal sites where theme variety is a feature.
+
+**Curated catalog** (canva-grid): Pick 8 light + 8 dark themes that look good with your content. Better for utility apps where novelty themes would look unprofessional.
+
+### Theme Catalog Module (React)
+
+When curating, define themes with metadata for the UI and PWA status bar:
+
+```javascript
+export const lightThemes = [
+  { id: 'nord', name: 'Nord', description: 'Cool blue-gray', metaColor: '#5E81AC' },
+  { id: 'lofi', name: 'Lo-Fi', description: 'Minimal mono', metaColor: '#808080' },
+  { id: 'emerald', name: 'Emerald', description: 'Fresh green', metaColor: '#66CC8A' },
+  // ...
+]
+
+export const darkThemes = [
+  { id: 'night', name: 'Night', description: 'Deep blue', metaColor: '#0F172A' },
+  { id: 'black', name: 'Black', description: 'True OLED', metaColor: '#000000' },
+  { id: 'coffee', name: 'Coffee', description: 'Dark roast', metaColor: '#20161F' },
+  // ...
+]
+
+export const DEFAULT_LIGHT_THEME = 'lofi'
+export const DEFAULT_DARK_THEME = 'black'
+```
+
+### Validation
+
+Always validate stored theme IDs against the catalog. Users may have outdated values from a previous version where a theme was available but has since been removed:
+
+```javascript
+const lightIds = new Set(lightThemes.map(t => t.id))
+const darkIds = new Set(darkThemes.map(t => t.id))
+
+function validLightTheme(id) {
+  return lightIds.has(id) ? id : DEFAULT_LIGHT_THEME
+}
+
+function validDarkTheme(id) {
+  return darkIds.has(id) ? id : DEFAULT_DARK_THEME
+}
+```
+
+### PWA Meta Theme-Color
+
+DaisyUI themes use oklch colors that can't be directly used in `<meta name="theme-color">`. Store hex approximations per theme and update the meta tag on every theme change:
+
+```javascript
+const color = getMetaColor(activeTheme)
+document.querySelectorAll('meta[name="theme-color"]').forEach(meta => {
+  meta.setAttribute('content', color)
+})
+```
+
+## Safe localStorage Wrappers
+
+localStorage throws `SecurityError` in sandboxed iframes, disabled-storage settings, and some enterprise environments. Wrap all access:
+
+```javascript
 function safeStorageGet(key) {
   try { return localStorage.getItem(key) } catch { return null }
 }
@@ -94,66 +180,15 @@ function safeStorageGet(key) {
 function safeStorageSet(key, value) {
   try { localStorage.setItem(key, value) } catch { /* sandboxed iframe, disabled storage */ }
 }
-
-export function useDarkMode() {
-  const [isDark, setIsDark] = useState(() => {
-    const stored = safeStorageGet('darkMode')
-    if (stored !== null) return stored === 'true'
-    return window.matchMedia('(prefers-color-scheme: dark)').matches
-  })
-
-  // Apply .dark class to <html> and persist choice
-  useEffect(() => {
-    const root = document.documentElement
-    if (isDark) {
-      root.classList.add('dark')
-    } else {
-      root.classList.remove('dark')
-    }
-    safeStorageSet('darkMode', isDark)
-  }, [isDark])
-
-  // Cross-tab sync — when another tab changes darkMode in localStorage,
-  // update this tab to match. The storage event only fires in OTHER tabs
-  // (not the one that wrote), so there's no infinite loop risk.
-  // Both next-themes and use-dark-mode include this; without it, two tabs
-  // show different themes until the stale tab is refreshed.
-  useEffect(() => {
-    const handleStorage = (e) => {
-      if (e.key === 'darkMode' && e.newValue !== null) {
-        setIsDark(e.newValue === 'true')
-      }
-    }
-    window.addEventListener('storage', handleStorage)
-    return () => window.removeEventListener('storage', handleStorage)
-  }, [])
-
-  // Track OS preference changes — only when user hasn't made an explicit choice
-  useEffect(() => {
-    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)')
-    const handleChange = (e) => {
-      if (safeStorageGet('darkMode') === null) setIsDark(e.matches)
-    }
-    mediaQuery.addEventListener('change', handleChange)
-    return () => mediaQuery.removeEventListener('change', handleChange)
-  }, [])
-
-  const toggle = () => setIsDark((prev) => !prev)
-
-  return { isDark, toggle }
-}
 ```
 
-- **`safeStorageGet` / `safeStorageSet`**: localStorage throws `SecurityError` in sandboxed iframes, disabled-storage settings, and some enterprise environments. Wrapping both reads and writes in try/catch ensures the hook degrades to system preference instead of crashing.
-- **System preference is a fallback, not an override**: Once the user toggles manually, their choice is stored and system changes are ignored. Overriding a manual choice with OS preference changes is disorienting.
-- **`.dark` on `document.documentElement`**: Applying to `<html>` rather than `<body>` ensures `:root`-level styles and pseudo-elements also switch.
-- **No CSS transition on theme switch**: Instant switches are the industry standard (GitHub, Discord, VS Code). Transitions cause visual inconsistency — different elements change at different rates. If transitions are ever wanted, use the inject-remove-stylesheet pattern to disable them during programmatic switches.
-- **Cross-tab sync via `storage` event**: The `storage` event only fires in *other* tabs (not the one that wrote to localStorage), so there's no infinite loop risk. Without this, two tabs show different themes until the stale tab is refreshed. Both `next-themes` and `use-dark-mode` include this feature.
+When storage is unavailable, the system degrades to OS preference with default themes — no crash, no unstyled page.
 
+## Flash Prevention
 
-## Flash Prevention (`index.html`)
+### Web: Inline Script in `<head>`
 
-The hook runs after React mounts — too late. An inline `<script>` in `<head>` reads localStorage and applies `.dark` before the first paint. Same early-capture pattern as the PWA `beforeinstallprompt` script.
+The theme hook/script runs after mount — too late. An inline classic `<script>` in `<head>` reads localStorage and sets both `.dark` and `data-theme` before the first paint:
 
 ```html
 <script>
@@ -163,7 +198,15 @@ The hook runs after React mounts — too late. An inline `<script>` in `<head>` 
       var isDark = stored !== null
         ? stored === 'true'
         : window.matchMedia('(prefers-color-scheme: dark)').matches;
-      if (isDark) document.documentElement.classList.add('dark');
+      var theme = isDark
+        ? (localStorage.getItem('darkTheme') || 'coffee')
+        : (localStorage.getItem('lightTheme') || 'caramellatte');
+      if (isDark) {
+        document.documentElement.classList.add('dark');
+      } else {
+        document.documentElement.classList.remove('dark');
+      }
+      document.documentElement.setAttribute('data-theme', theme);
     } catch(e) {}
   })();
 </script>
@@ -172,9 +215,235 @@ The hook runs after React mounts — too late. An inline `<script>` in `<head>` 
 Place before any `<link>` or `<script type="module">` tags. Executes synchronously during HTML parse.
 
 - **Must be a classic script, not `type="module"`**: Module scripts are deferred — they run after DOM parse, too late to prevent flash.
-- **Same logic as the hook**: Duplicates the localStorage/matchMedia check. If you change the storage key in the hook, update it here too.
-- **try/catch**: Handles environments where localStorage is unavailable. Falls back to system preference via matchMedia.
-- **CSP note**: Strict Content Security Policy without `unsafe-inline` blocks inline scripts. For static hosting, precompute the script's SHA-256 hash and add it to the CSP: `script-src 'self' 'sha256-<hash>'`. For server-rendered pages, use a per-request nonce.
+- **Defaults must match** the hook/theme script defaults. If you change `DEFAULT_DARK_THEME` in your JS, update it here too.
+- **try/catch**: Handles environments where localStorage is unavailable.
+- **CSP note**: Strict Content Security Policy without `unsafe-inline` blocks inline scripts. For static hosting, precompute the script's SHA-256 hash and add it to the CSP: `script-src 'self' 'sha256-<hash>'`.
+
+### Web: Theme ID Validation in Bootstrap Script
+
+For curated catalogs, validate the stored theme against a hardcoded allowlist in the bootstrap script. This prevents a removed theme from producing an unstyled page on the first paint:
+
+```html
+<script>
+  (function() {
+    try {
+      var stored = localStorage.getItem('darkMode');
+      var isDark = stored !== null
+        ? stored === 'true'
+        : window.matchMedia('(prefers-color-scheme: dark)').matches;
+      var lightAllow = ['nord','lofi','emerald','cupcake','garden','autumn','pastel','caramellatte'];
+      var darkAllow = ['night','black','forest','dracula','dim','synthwave','luxury','coffee'];
+      var raw = isDark
+        ? localStorage.getItem('darkTheme')
+        : localStorage.getItem('lightTheme');
+      var theme = isDark
+        ? (darkAllow.indexOf(raw) !== -1 ? raw : 'black')
+        : (lightAllow.indexOf(raw) !== -1 ? raw : 'lofi');
+      if (isDark) document.documentElement.classList.add('dark');
+      else document.documentElement.classList.remove('dark');
+      document.documentElement.setAttribute('data-theme', theme);
+    } catch(e) {}
+  })();
+</script>
+```
+
+Keep the allowlists in sync with the theme catalog module.
+
+### React Native: Splash Screen Hold
+
+Hold the splash screen until both fonts AND theme preference are hydrated from AsyncStorage:
+
+```typescript
+SplashScreen.preventAutoHideAsync()
+
+export default function RootLayout() {
+  const [fontsLoaded] = useFonts({ /* ... */ })
+
+  return (
+    <AppThemeProvider>
+      <RootLayoutInner fontsLoaded={fontsLoaded} />
+    </AppThemeProvider>
+  )
+}
+
+function RootLayoutInner({ fontsLoaded }) {
+  const { loaded: themeLoaded } = useTheme()
+
+  useEffect(() => {
+    if (fontsLoaded && themeLoaded) SplashScreen.hideAsync()
+  }, [fontsLoaded, themeLoaded])
+
+  if (!fontsLoaded || !themeLoaded) return null
+  return <Stack />
+}
+```
+
+Set `app.json` `backgroundColor` to match the default dark theme. The native splash screen renders this color before any JavaScript runs.
+
+## Cross-Tab Sync
+
+The `storage` event fires in other tabs (not the one that wrote), so there's no infinite loop. Without it, toggling dark mode in one tab leaves other tabs on the old theme until refresh.
+
+### Web (Vanilla JS)
+
+```javascript
+window.addEventListener('storage', function (e) {
+  if (e.key === 'darkMode' || e.key === 'lightTheme' || e.key === 'darkTheme') {
+    var dark = safeStorageGet('darkMode') === 'true';
+    var theme = getStoredTheme(dark);
+    applyTheme(dark, theme, true); // skipPersist — values already in storage
+  }
+});
+```
+
+### Web (React)
+
+```javascript
+useEffect(() => {
+  const handleStorage = (e) => {
+    if (e.key === 'darkMode') {
+      const newDark = e.newValue !== null
+        ? e.newValue === 'true'
+        : window.matchMedia('(prefers-color-scheme: dark)').matches
+      setIsDark(newDark)
+    } else if (e.key === 'lightTheme' && e.newValue) {
+      setLightThemeState(validLightTheme(e.newValue))
+    } else if (e.key === 'darkTheme' && e.newValue) {
+      setDarkThemeState(validDarkTheme(e.newValue))
+    }
+  }
+  window.addEventListener('storage', handleStorage)
+  return () => window.removeEventListener('storage', handleStorage)
+}, [])
+```
+
+Validate incoming values — another tab could have garbage in localStorage.
+
+### React Native (Web Platform Only)
+
+```typescript
+useEffect(() => {
+  if (Platform.OS !== 'web' || typeof window === 'undefined') return;
+  const handleStorage = (e: StorageEvent) => {
+    if (e.key === 'theme_combo' && e.newValue !== null) {
+      try {
+        const parsed = JSON.parse(e.newValue);
+        if (parsed in THEME_COMBOS) setComboRaw(parsed);
+      } catch { /* malformed value */ }
+    }
+    if (e.key === 'theme_dark' && e.newValue !== null) {
+      try { setIsDark(JSON.parse(e.newValue)); } catch { /* malformed */ }
+    }
+  };
+  window.addEventListener('storage', handleStorage);
+  return () => window.removeEventListener('storage', handleStorage);
+}, [setComboRaw, setIsDark]);
+```
+
+JSON.parse because `usePersistedState` stores values as JSON strings.
+
+## System Preference Fallback
+
+On first visit with no stored preference, use `matchMedia`. Once the user toggles manually, their choice persists and OS changes are ignored:
+
+```javascript
+// Initial state
+const stored = safeStorageGet('darkMode')
+const isDark = stored !== null
+  ? stored === 'true'
+  : window.matchMedia('(prefers-color-scheme: dark)').matches
+
+// Track OS changes — only when no explicit user choice
+const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)')
+mediaQuery.addEventListener('change', function (e) {
+  if (safeStorageGet('darkMode') === null) {
+    applyTheme(e.matches, getStoredTheme(e.matches))
+  }
+})
+```
+
+System preference is a **fallback, not an override**. Overriding a manual choice with OS preference changes is disorienting.
+
+## Random Theme on Load (Optional)
+
+glow-props implements an optional "random theme on load" feature. When enabled, the bootstrap script picks a random theme from the current mode's list before first paint:
+
+```html
+<script>
+  // Inside the flash prevention script, after determining isDark and theme:
+  if (localStorage.getItem('randomThemeOnLoad') === 'true') {
+    var lightThemes = ['caramellatte','cupcake','pastel','lofi','nord', /* ... */];
+    var darkThemes = ['coffee','dim','night','dracula', /* ... */];
+    var list = isDark ? darkThemes : lightThemes;
+    theme = list[Math.floor(Math.random() * list.length)];
+    localStorage.setItem(isDark ? 'darkTheme' : 'lightTheme', theme);
+  }
+</script>
+```
+
+The randomization persists the chosen theme so the picker indicator matches. The toggle in the burger menu just flips the `randomThemeOnLoad` localStorage flag — actual randomization only happens on page load.
+
+## Hex Colors for Non-CSS Contexts (React Native)
+
+Mapbox GL, canvas rendering, charts, and other JS contexts need hex color values — they can't read CSS variables or DaisyUI classes. Maintain a static lookup table:
+
+```typescript
+export const THEME_HEX: Record<ThemeName, ThemeColors> = {
+  lemonade: {
+    primary: '#419400',
+    primaryContent: '#010800',
+    secondary: '#BDC000',
+    base100: '#F8FDEF',
+    base200: '#E1E6D9',
+    baseContent: '#151614',
+    // ... all semantic tokens
+  },
+  abyss: {
+    primary: '#6FE744',
+    // ...
+  },
+}
+```
+
+Hex values are manually converted from DaisyUI's oklch source values. When adding a new theme, add its hex mapping here AND its CSS variant definition.
+
+## Uniwind Theme Switching (React Native)
+
+React Native doesn't have `data-theme` or `.dark` classes. Uniwind provides `setTheme()` to swap CSS variables at runtime without React re-renders:
+
+```typescript
+useEffect(() => {
+  if (!loaded) return;
+  Uniwind.setTheme(themeName); // Swaps CSS variables, zero re-renders
+}, [themeName, loaded]);
+```
+
+Theme definitions go in `global.css` as `@variant` blocks with DaisyUI oklch values:
+
+```css
+@layer theme {
+  :root {
+    @variant light {
+      --color-primary: oklch(58.92% 0.199 134.6);
+      --color-base-100: oklch(98.71% 0.02 123.72);
+      /* ... */
+    }
+    @variant dark {
+      --color-primary: oklch(92% 0.2653 125);
+      --color-base-100: oklch(20% 0.08 209);
+      /* ... */
+    }
+    @variant nord { /* ... */ }
+    @variant night { /* ... */ }
+  }
+}
+```
+
+## Content Themes vs App Dark Mode
+
+App theme (dark/light + DaisyUI theme) controls the application chrome — buttons, cards, nav, backgrounds.
+
+Content themes (templates, canvas styles, color palettes) are independent. A user may want a light app theme while their canvas uses a dark color scheme. canva-grid separates these with `src/config/themes.js` (content presets) vs `src/config/daisyuiThemes.js` (app UI themes). Do not conflate these two concepts.
 
 ## Print Override
 
@@ -194,152 +463,44 @@ Force readable output regardless of dark mode:
 }
 ```
 
-Pairs with the "Download as PDF" suggested implementation.
-
-## React Native (`useAppTheme.ts`)
-
-Context-based theme with AsyncStorage persistence. Components consume the full color token object, not just an `isDark` boolean.
-
-```typescript
-import React, { useContext, useMemo, useCallback, createContext } from 'react'
-import { usePersistedState } from './usePersistedState'
-
-// Semantic color tokens — both objects must have identical keys.
-// Brand colors stay constant across themes; only lightness adjusts for contrast.
-export const LightTheme = {
-  text: '#111827', textSecondary: '#6B7280', textTertiary: '#6B7280',
-  background: '#F9FAFB', surface: '#FFFFFF', border: '#E5E7EB', borderLight: '#F3F4F6',
-  primary: '#0D9488', primaryLight: '#14B8A6',
-  error: '#DC2626', errorBg: '#FEE2E2', success: '#16A34A', successBg: '#DCFCE7',
-  warning: '#F59E0B', warningBg: '#FEF3C7',
-}
-
-export const DarkTheme = {
-  text: '#F9FAFB', textSecondary: '#9CA3AF', textTertiary: '#9CA3AF',
-  background: '#111827', surface: '#1F2937', border: '#374151', borderLight: '#1F2937',
-  primary: '#14B8A6', primaryLight: '#2DD4BF',
-  error: '#EF4444', errorBg: '#7F1D1D', success: '#22C55E', successBg: '#14532D',
-  warning: '#FBBF24', warningBg: '#78350F',
-}
-
-export type AppTheme = typeof LightTheme
-
-interface ThemeContextValue {
-  theme: AppTheme
-  isDark: boolean
-  toggleTheme: () => void
-  themeHydrated: boolean
-}
-
-const ThemeContext = createContext<ThemeContextValue | null>(null)
-
-export function AppThemeProvider({ children }: { children: React.ReactNode }) {
-  const [isDark, setIsDark, loaded] = usePersistedState<boolean>('theme_dark', true)
-  const theme = isDark ? DarkTheme : LightTheme
-  const toggleTheme = useCallback(() => setIsDark((prev) => !prev), [setIsDark])
-  const value = useMemo(
-    () => ({ theme, isDark, toggleTheme, themeHydrated: loaded }),
-    [theme, isDark, toggleTheme, loaded]
-  )
-  return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>
-}
-
-export function useAppTheme(): AppTheme {
-  const ctx = useContext(ThemeContext)
-  if (!ctx) throw new Error('useAppTheme must be inside AppThemeProvider')
-  return ctx.theme
-}
-
-export function useThemeMode() {
-  const ctx = useContext(ThemeContext)
-  if (!ctx) throw new Error('useThemeMode must be inside AppThemeProvider')
-  return { isDark: ctx.isDark, toggleTheme: ctx.toggleTheme, themeHydrated: ctx.themeHydrated }
-}
-```
-
-- **`themeHydrated` exposed via context**: The splash screen must wait for this flag before hiding. Without it, users who stored "light" see a dark flash before the stored preference loads.
-- **Both theme objects must have identical keys**: `type AppTheme = typeof LightTheme` enforces this at compile time. Missing a token in one theme causes runtime errors.
-- **`textTertiary` is the same value in both themes**: Tertiary text is decorative — `#6B7280` passes AA on light backgrounds, `#9CA3AF` passes AA on dark backgrounds. Do not swap these accidentally (the original values were reversed, failing WCAG contrast).
-- **Brand colors stay constant across themes**: Primary hue doesn't change — only lightness adjusts for contrast against the background.
-
-## Flash Prevention (React Native)
-
-Hold the splash screen until both fonts AND theme preference are hydrated from AsyncStorage:
-
-```typescript
-// In app/_layout.tsx:
-import * as SplashScreen from 'expo-splash-screen'
-
-SplashScreen.preventAutoHideAsync()
-
-export default function RootLayout() {
-  const [fontsLoaded] = useFonts({ /* ... */ })
-
-  return (
-    <AppThemeProvider>
-      <RootLayoutInner fontsLoaded={fontsLoaded} />
-    </AppThemeProvider>
-  )
-}
-
-function RootLayoutInner({ fontsLoaded }: { fontsLoaded: boolean }) {
-  const { isDark, themeHydrated } = useThemeMode()
-
-  useEffect(() => {
-    if (fontsLoaded && themeHydrated) SplashScreen.hideAsync()
-  }, [fontsLoaded, themeHydrated])
-
-  if (!fontsLoaded || !themeHydrated) return null
-
-  return (
-    <ThemeProvider value={isDark ? CustomDarkTheme : CustomLightTheme}>
-      <Stack />
-      <StatusBar style={isDark ? 'light' : 'dark'} />
-    </ThemeProvider>
-  )
-}
-```
-
-- **Wait for both conditions**: Hiding the splash on font load alone lets the wrong theme flash before AsyncStorage resolves.
-- **`app.json` backgroundColor**: Set to match the default theme (dark). The native splash screen renders this color before any JavaScript runs — prevents white flash even before React mounts.
-- **`StatusBar style`**: Toggle based on `isDark` so the status bar text remains readable against the current background.
-
-## Related Patterns
-
-**SVG icons with `currentColor`**: Icons using `fill="currentColor"` or `stroke="currentColor"` auto-adapt to theme via CSS color inheritance. The burger menu's hamburger icon already uses this pattern. Prefer `currentColor` over hardcoded fill colors for all theme-aware icons.
-
-**Chart/graph colors**: Chart libraries (Chart.js, Recharts, D3) use hardcoded color arrays by default. Pass theme-derived colors to chart config and re-render on theme change. Without this, charts become unreadable on dark backgrounds.
-
-**Content themes vs app dark mode**: App theme (dark/light) controls the application chrome. Content themes (templates, canvas styles, color schemes) are independent — a user may want a light content theme while using the app in dark mode. Do not conflate these two concepts.
-
-**Debug pill in separate React root**: The debug pill renders in its own React root (survives App crashes) and cannot access `useDarkMode` or `AppThemeProvider`. On web, read the `.dark` class from `document.documentElement` directly to determine theme. Do not attempt to share React context across separate roots.
+Pairs with the [Download as PDF](DOWNLOAD_PDF.md) implementation.
 
 ## Key Lessons
 
-**Foundations:**
+**DaisyUI integration:**
 
-1. **System preference is a fallback, not an override.** Once the user toggles manually, their choice persists. Overriding a manual choice with OS preference changes is disorienting.
-2. **Flash prevention requires an inline `<script>` in `<head>`.** The React hook runs after mount — too late. The script must be classic (not `type="module"`), duplicate the localStorage/matchMedia logic, and run before any `<link>` tags.
-3. **`.dark` class on `<html>`, not `<body>`.** Tailwind's `dark:` variant targets descendants of `.dark`. Placing it on `<html>` ensures `:root`-level styles and pseudo-elements also switch.
-4. **No CSS transitions on theme switch.** Instant switches are the industry standard (GitHub, Discord, VS Code). Transitions cause visual inconsistency — different elements change at different rates. If transitions are ever wanted, use the inject-remove-stylesheet pattern to disable them during programmatic switches.
+1. **Dual-layer theming is required.** `.dark` class for Tailwind utilities, `data-theme` for DaisyUI components, `color-scheme` for native form elements. All three must be set together on every theme change. Missing any one produces visual inconsistencies.
+2. **`--default` and `--prefersdark`** in the DaisyUI plugin config set the initial theme before JavaScript runs. Use them as your sensible defaults.
+3. **DaisyUI's semantic classes (`btn`, `bg-base-100`, `text-primary`) auto-switch** when `data-theme` changes. No `dark:` prefix needed for DaisyUI component classes — only for custom Tailwind utilities.
+4. **Some Tailwind utilities still need `dark:` prefixes.** Hover states (`hover:bg-zinc-100 dark:hover:bg-zinc-700`), placeholder text, dividers, and focus rings that reference non-DaisyUI Tailwind colors need explicit `dark:` variants.
 
-**HTML & browser chrome:**
+**Theme catalogs:**
 
-5. **Strict CSP blocks the flash prevention inline script.** For static hosting, precompute the script's SHA-256 hash and add `'sha256-<hash>'` to the CSP `script-src` directive. For SSR, use a per-request nonce. Most deployments don't set strict CSP — document as a caveat, not a blocker.
+5. **Validate stored theme IDs against the catalog.** Users may have outdated values from a previous version. Invalid IDs should silently fall back to defaults — no crash, no unstyled page.
+6. **Curate for quality, not quantity.** All 35 DaisyUI themes is fine for a portfolio, but utility apps should pick 8-10 per mode that look good with the content. Novelty themes (cyberpunk, halloween) can look unprofessional.
+7. **PWA meta theme-color needs hex values.** DaisyUI uses oklch internally. Store approximate hex values per theme for the `<meta name="theme-color">` tag.
 
-**CSS & Tailwind:**
+**Persistence and sync:**
 
-6. **Semantic token names, not color names.** `text-default`, `surface`, `border` — not `gray-800`, `white`, `zinc-700`. Swapping the entire palette is a single-file change.
-7. **Use raw hex values in CSS, not `theme()`.** The `theme()` function is deprecated in Tailwind v4. Hex values work in both v3 and v4. V4 projects can optionally reference auto-generated `var(--color-zinc-800)` variables instead.
-8. **Tailwind v3 uses `darkMode: 'class'` in config. Tailwind v4 uses `@custom-variant dark` in CSS.** Both target `.dark` on `<html>`. See the Burger Menu Key Lessons for the full v4 directive.
-9. **`color-scheme: dark` on `html.dark` is required.** Without it, native form inputs, select dropdowns, and default scrollbars remain light-themed even in dark mode.
-10. **Some Tailwind utilities still need `dark:` prefixes even with semantic tokens.** The `ui.*` token classes auto-switch for text, background, and border colors. But hover states (`hover:bg-zinc-100 dark:hover:bg-zinc-700`), placeholder text, dividers, and focus rings may still need explicit `dark:` variants because they reference non-semantic Tailwind colors.
+8. **System preference is a fallback, not an override.** Once the user toggles manually, their choice persists. Overriding a manual choice with OS preference changes is disorienting.
+9. **Cross-tab sync requires the `storage` event listener.** The `storage` event only fires in other tabs (not the one that wrote), so there is no infinite loop. Without it, toggling dark mode in one tab leaves other tabs on the old theme until refresh.
+10. **Wrap all localStorage access in try/catch.** Sandboxed iframes, disabled storage, and enterprise policies throw `SecurityError`. Fall back to OS preference with default themes when storage is unavailable.
 
-**Storage & sync:**
+**Flash prevention:**
 
-11. **Wrap all localStorage access in try/catch.** Sandboxed iframes, disabled storage, and enterprise policies throw `SecurityError`. Fall back to system preference when storage is unavailable.
-12. **Cross-tab sync requires the `storage` event listener.** The `storage` event only fires in other tabs (not the one that wrote), so there is no infinite loop. Without it, toggling dark mode in one tab leaves other tabs on the old theme until refresh. This is a standard feature in `next-themes` and `use-dark-mode`.
+11. **The inline `<script>` must set both `.dark` AND `data-theme`.** Setting only `.dark` prevents Tailwind flash but leaves DaisyUI on the wrong theme for one frame. Both must be applied before first paint.
+12. **Must be a classic script, not `type="module"`.** Module scripts are deferred — they run after DOM parse, too late.
+13. **Defaults in the bootstrap script must match defaults in the JS.** If you change `DEFAULT_DARK_THEME` in your theme module, update the inline script too. This duplication is unavoidable — the bootstrap runs before any module loads.
+14. **For curated catalogs, validate in the bootstrap script too.** A hardcoded allowlist prevents a removed theme from producing an unstyled first paint.
 
 **React Native:**
 
-13. **Hold the splash screen until theme is hydrated.** On React Native, `usePersistedState` loads asynchronously from AsyncStorage. Hiding the splash before the stored preference resolves causes a visible flash. Wait for both fonts and theme hydration.
+15. **Uniwind's `setTheme()` avoids React re-renders.** CSS variable swaps happen at the native layer. Components don't need to re-render when the theme changes — they read the new CSS variable values automatically.
+16. **Hold the splash screen until theme is hydrated.** `usePersistedState` loads asynchronously from AsyncStorage. Hiding the splash before the stored preference resolves causes a visible flash.
+17. **Static hex lookup table for non-CSS contexts.** Mapbox GL, canvas, and charts need raw hex values. Maintain a `THEME_HEX` record that maps each theme to its full set of semantic colors. Keep it in sync with the CSS variant definitions.
+
+**Architecture:**
+
+18. **No CSS transitions on theme switch.** Instant switches are the industry standard (GitHub, Discord, VS Code). Transitions cause visual inconsistency — different elements change at different rates.
+19. **Content themes and app dark mode are independent.** A user may want a light app with a dark canvas. Keep content color palettes separate from the DaisyUI app theme system.
+20. **Debug pill in separate React root** cannot access theme hooks or context. On web, read the `.dark` class from `document.documentElement` directly. Do not attempt to share React context across separate roots.

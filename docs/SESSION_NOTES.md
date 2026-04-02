@@ -1,31 +1,23 @@
 # Session Notes
 
 ## Worked on
-Theme toggle refactor and burger menu bug fixes.
+Organizing suggested implementations into standalone files and rewriting THEME_DARK_MODE.md.
 
 ## Accomplished
-- Replaced 8 curated theme combos with full DaisyUI catalogue (35 themes: 22 light, 13 dark)
-- Dark/light toggle now controls which theme list is shown in the burger menu
-- Each mode stores its own theme independently (`lightTheme`/`darkTheme` in localStorage)
-- Simplified flash prevention scripts — no combo map needed, just reads two storage keys
-- Eliminated combo map duplication across 3 files (was flagged as tech debt in TODO.md)
-- Fixed project.html burger menu — replaced `hidden` attribute with class-based transitions
-- Fixed tap-outside to close — replaced broken backdrop click with document click handler
-- Fixed scroll bleed-through — added body overflow lock when menu is open
-- Removed backdrop overlay element — navbar's `backdrop-filter` traps `position:fixed` children, making a backdrop inside it useless; moving it outside would cover the menu (z-index stacking)
-- Removed dead `z-backdrop` CSS utility
+- Extracted all 7 suggested implementations from inline CLAUDE.md into `docs/implementations/` as standalone files
+- Replaced CLAUDE.md's 1,365-line Suggested Implementations section with a reference table
+- Rewrote THEME_DARK_MODE.md from scratch to reflect actual DaisyUI-based approach used across all three projects (glow-props, canva-grid, few-lap)
+- Old doc described custom CSS variable semantic tokens (`--color-text-default`, `--color-surface`, etc.) and React hooks — none of which are used in any project
+- New doc covers: dual-layer theming (`.dark` + `data-theme`), per-mode theme persistence, theme catalog patterns, validation, flash prevention with DaisyUI, cross-tab sync, Uniwind for React Native, hex color lookup tables
 
 ## Current state
-- Site builds cleanly with `vite build`
-- 22 light themes and 13 dark themes selectable from burger menu
-- Defaults: caramellatte (light), coffee (dark)
-- Toggle flips mode and swaps theme list; each mode remembers its own last-used theme
-- Burger menu: opens/closes with transitions, closes on tap-outside and Escape, body scroll locked while open
-- Cross-tab sync, OS preference fallback, and flash prevention all work
-- Branch: claude/theme-toggle-refactor-u3XFR
+- All 7 implementation docs live in `docs/implementations/`
+- CLAUDE.md references them via a table with links
+- THEME_DARK_MODE.md accurately reflects the glow-props (vanilla JS, 35 themes), canva-grid (React, curated 8+8), and few-lap (React Native, 5 named combos) approaches
+- Branch: claude/organize-implementations-folder-DBcuk
 
 ## Key context
-- Old `themeCombo` localStorage key is ignored — existing users reset to defaults
-- Flash prevention defaults duplicated in index.html and project.html inline scripts — must stay in sync with `DEFAULT_LIGHT_THEME`/`DEFAULT_DARK_THEME` in theme.js
-- No backdrop overlay — the navbar's `backdrop-filter` creates a containing block that traps `position:fixed` children. This is a CSS spec behavior, not a bug. Document click handler and body overflow lock replace the backdrop's functional roles.
-- Monochrome themes (lofi, black, wireframe) have near-identical primary/accent, so the hero gradient degrades to solid text — matches their design intent
+- The old THEME_DARK_MODE.md was a generic implementation guide that never matched any project's actual code
+- All three projects use DaisyUI's semantic color system — no custom CSS variable tokens
+- glow-props is vanilla HTML/CSS/JS (not React), so the old React hook examples were irrelevant
+- few-lap uses Uniwind (not DaisyUI directly) but with DaisyUI's oklch color values extracted into CSS variants
