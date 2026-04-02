@@ -169,15 +169,16 @@ npm run generate:meta-colors
 
 Reads `daisyui/theme/object.js` and generates all theme-related data across the project:
 
-1. **Light/dark classification** — derived from each theme's `color-scheme` property (no manual lists)
+1. **Light/dark classification** — derived from each theme's `color-scheme` property
 2. **Meta color hex values** — light themes use `--color-primary`, dark themes use `--color-base-100`, converted from oklch to hex
-3. **Updates these files:**
+3. **Navbar theme buttons** — generates the full button list per section from theme names (display name = capitalized theme name)
+4. **Updates these files:**
    - `public/theme.js` — `META_COLORS` object + `LIGHT_THEMES`/`DARK_THEMES` arrays
    - `partials/head-common.html` — compact `mc` color map + `lt`/`dt` arrays for bootstrap
-   - `partials/navbar.html` — redistributes theme picker buttons between light/dark sections
+   - `partials/navbar.html` — light and dark theme picker button lists
    - `index.html` / `project.html` — initial `<meta name="theme-color">` values
 
-Run this after DaisyUI updates. Do not manually edit any of the generated blocks.
+Zero manual config in the script. Run after DaisyUI updates. Do not manually edit any of the generated blocks.
 
 #### HTML Setup
 
