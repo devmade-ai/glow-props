@@ -1,13 +1,10 @@
 #!/usr/bin/env node
 
-// Requirement: Auto-generate theme metadata from DaisyUI theme definitions
-// What: Reads daisyui/theme/object.js, derives light/dark classification from
-//   color-scheme, converts primary (light) or base-100 (dark) oklch → hex.
-// Why: Eliminates manual hex approximations and manual light/dark theme lists.
-//   Single source of truth = DaisyUI's own theme objects.
-// Updates: theme.js (META_COLORS + LIGHT_THEMES/DARK_THEMES arrays),
-//   head-common.html (mc color map + lt/dt arrays), navbar.html (button sections),
-//   index.html/project.html (initial meta tag values).
+// Requirement: Auto-generate all theme metadata from DaisyUI theme definitions
+// What: Single source of truth for theme lists, meta colors, and navbar buttons.
+//   Reads daisyui/theme/object.js → derives light/dark from color-scheme →
+//   converts primary (light) or base-100 (dark) oklch → hex → writes everything.
+// Updates: theme.js, head-common.html, navbar.html, index.html, project.html
 
 import { readFileSync, writeFileSync } from 'fs';
 import { createRequire } from 'module';
@@ -36,49 +33,56 @@ for (const [name, theme] of Object.entries(themes)) {
 
 // ===== oklch → hex conversion =====
 
-function parseOklch(str) {
-  const m = str.match(/oklch\(([0-9.]+)%?\s+([0-9.]+)\s+([0-9.]+)\)/);
+function oklchToHex(oklchStr) {
+  const m = oklchStr.match(/oklch\(([0-9.]+)%?\s+([0-9.]+)\s+([0-9.]+)\)/);
   if (!m) return null;
   let L = parseFloat(m[1]);
   if (L > 1) L /= 100;
-  return { L, C: parseFloat(m[2]), h: parseFloat(m[3]) };
-}
+  const C = parseFloat(m[2]);
+  const hRad = parseFloat(m[3]) * Math.PI / 180;
+  const a = C * Math.cos(hRad);
+  const b = C * Math.sin(hRad);
 
-function oklchToHex(oklchStr) {
-  const p = parseOklch(oklchStr);
-  if (!p) return null;
-  const hRad = p.h * Math.PI / 180;
-  const a = p.C * Math.cos(hRad);
-  const b = p.C * Math.sin(hRad);
+  const l_ = L + 0.3963377774 * a + 0.2158037573 * b;
+  const m_ = L - 0.1055613458 * a - 0.0638541728 * b;
+  const s_ = L - 0.0894841775 * a - 1.2914855480 * b;
 
-  const l_ = p.L + 0.3963377774 * a + 0.2158037573 * b;
-  const m_ = p.L - 0.1055613458 * a - 0.0638541728 * b;
-  const s_ = p.L - 0.0894841775 * a - 1.2914855480 * b;
-
-  const l3 = l_ * l_ * l_;
-  const m3 = m_ * m_ * m_;
-  const s3 = s_ * s_ * s_;
-
-  const r = +4.0767416621 * l3 - 3.3077115913 * m3 + 0.2309699292 * s3;
-  const g = -1.2684380046 * l3 + 2.6097574011 * m3 - 0.3413193965 * s3;
-  const bl = -0.0041960863 * l3 - 0.7034186147 * m3 + 1.7076147010 * s3;
+  const r = +4.0767416621 * l_**3 - 3.3077115913 * m_**3 + 0.2309699292 * s_**3;
+  const g = -1.2684380046 * l_**3 + 2.6097574011 * m_**3 - 0.3413193965 * s_**3;
+  const bl = -0.0041960863 * l_**3 - 0.7034186147 * m_**3 + 1.7076147010 * s_**3;
 
   const gamma = (x) => x >= 0.0031308 ? 1.055 * Math.pow(x, 1 / 2.4) - 0.055 : 12.92 * x;
   const clamp = (v) => Math.round(Math.min(255, Math.max(0, gamma(v) * 255)));
   return '#' + [clamp(r), clamp(g), clamp(bl)].map(v => v.toString(16).padStart(2, '0')).join('');
 }
 
-// ===== Simple extraction: light → primary, dark → base-100 =====
+// ===== Extract meta colors: light → primary, dark → base-100 =====
 
 const metaColors = {};
 for (const name of [...lightThemes, ...darkThemes]) {
   const theme = themes[name];
-  const isDark = darkThemes.includes(name);
-  const colorKey = isDark ? '--color-base-100' : '--color-primary';
+  const colorKey = darkThemes.includes(name) ? '--color-base-100' : '--color-primary';
   metaColors[name] = oklchToHex(theme[colorKey]) || '#000000';
 }
 
-// ===== Generate theme.js blocks =====
+// ===== Output formatters =====
+
+function wrapArray(varName, arr, indent) {
+  const lines = [`${indent}var ${varName} = [`];
+  let current = indent + '  ';
+  for (let i = 0; i < arr.length; i++) {
+    const item = `'${arr[i]}'` + (i < arr.length - 1 ? ', ' : '');
+    if (current.length + item.length > 90) {
+      lines.push(current);
+      current = indent + '  ' + item;
+    } else {
+      current += item;
+    }
+  }
+  lines.push(current);
+  lines.push(`${indent}];`);
+  return lines.join('\n');
+}
 
 function buildMetaColorsBlock() {
   const lines = ['  var META_COLORS = {'];
@@ -91,32 +95,6 @@ function buildMetaColorsBlock() {
   }
   lines.push('  };');
   return lines.join('\n');
-}
-
-function buildThemeArrays() {
-  const fmt = (arr) => arr.map(n => `'${n}'`).join(', ');
-  // Wrap at ~90 chars
-  function wrapArray(varName, arr, indent) {
-    const items = arr.map(n => `'${n}'`);
-    const lines = [`${indent}var ${varName} = [`];
-    let current = indent + '  ';
-    for (let i = 0; i < items.length; i++) {
-      const item = items[i] + (i < items.length - 1 ? ', ' : '');
-      if (current.length + item.length > 90) {
-        lines.push(current);
-        current = indent + '  ' + item;
-      } else {
-        current += item;
-      }
-    }
-    lines.push(current);
-    lines.push(`${indent}];`);
-    return lines.join('\n');
-  }
-  return {
-    themeJs: wrapArray('LIGHT_THEMES', lightThemes, '  ') + '\n' + wrapArray('DARK_THEMES', darkThemes, '  '),
-    bootstrap: wrapArray('lt', lightThemes, '      ') + '\n' + wrapArray('dt', darkThemes, '      '),
-  };
 }
 
 function buildBootstrapMc() {
@@ -138,34 +116,17 @@ function buildBootstrapMc() {
   return lines.join('\n');
 }
 
-// ===== Generate navbar theme buttons =====
-
-function buildNavbarSection(themeList, existingButtons) {
-  const lines = [];
-  for (const name of themeList) {
-    if (existingButtons[name]) {
-      lines.push(existingButtons[name]);
-    }
-  }
-  return lines.join('\n');
-}
-
-function parseNavbarButtons(html) {
-  // Extract all theme buttons as { themeName: fullHtmlLine }
-  const buttons = {};
-  const regex = /^.*data-theme-pick="([^"]+)".*$/gm;
-  let match;
-  while ((match = regex.exec(html)) !== null) {
-    buttons[match[1]] = match[0];
-  }
-  return buttons;
+function buildNavbarButtons(themeList) {
+  const btnClass = 'w-full text-left px-4 py-2.5 text-sm text-base-content hover:bg-base-200 transition-colors cursor-pointer focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-[-2px] min-h-11 flex items-center gap-2 rounded-lg';
+  return themeList.map(name => {
+    const display = name.charAt(0).toUpperCase() + name.slice(1);
+    return `              <li><button type="button" data-theme-pick="${name}" class="${btnClass}"><span class="theme-check invisible text-primary text-xs">&#10003;</span><span>${display}</span></button></li>`;
+  }).join('\n');
 }
 
 // ===== Write files =====
 
-const arrays = buildThemeArrays();
-
-// 1. theme.js — update META_COLORS and theme arrays
+// 1. theme.js
 let themeJs = readFileSync(join(root, 'public/theme.js'), 'utf8');
 themeJs = themeJs.replace(
   /  var META_COLORS = \{[\s\S]*?\};/,
@@ -173,43 +134,36 @@ themeJs = themeJs.replace(
 );
 themeJs = themeJs.replace(
   /  var LIGHT_THEMES = \[[\s\S]*?\];\s*\n\s*var DARK_THEMES = \[[\s\S]*?\];/,
-  arrays.themeJs
+  wrapArray('LIGHT_THEMES', lightThemes, '  ') + '\n' + wrapArray('DARK_THEMES', darkThemes, '  ')
 );
 writeFileSync(join(root, 'public/theme.js'), themeJs);
 console.log('Updated public/theme.js');
 
-// 2. head-common.html — update mc color map and lt/dt arrays
+// 2. head-common.html
 let headHtml = readFileSync(join(root, 'partials/head-common.html'), 'utf8');
-headHtml = headHtml.replace(
-  /      var mc = \{[\s\S]*?\};/,
-  buildBootstrapMc()
-);
+headHtml = headHtml.replace(/      var mc = \{[\s\S]*?\};/, buildBootstrapMc());
 headHtml = headHtml.replace(
   /      var lt = \[[\s\S]*?\];\s*\n\s*var dt = \[[\s\S]*?\];/,
-  arrays.bootstrap
+  wrapArray('lt', lightThemes, '      ') + '\n' + wrapArray('dt', darkThemes, '      ')
 );
 writeFileSync(join(root, 'partials/head-common.html'), headHtml);
 console.log('Updated partials/head-common.html');
 
-// 3. navbar.html — redistribute theme buttons between light/dark sections
+// 3. navbar.html
 let navbarHtml = readFileSync(join(root, 'partials/navbar.html'), 'utf8');
-const existingButtons = parseNavbarButtons(navbarHtml);
-const lightSection = buildNavbarSection(lightThemes, existingButtons);
-const darkSection = buildNavbarSection(darkThemes, existingButtons);
 navbarHtml = navbarHtml.replace(
   /(<!-- Light themes \(visible when in light mode\) -->\s*<li class="theme-list-light">\s*<ul[^>]*>)\n[\s\S]*?(<\/ul>\s*<\/li>\s*<!-- Dark themes \(visible when in dark mode\) -->\s*<li class="theme-list-dark[^"]*">\s*<ul[^>]*>)\n[\s\S]*?(<\/ul>\s*<\/li>)/,
-  `$1\n${lightSection}\n$2\n${darkSection}\n            $3`
+  `$1\n${buildNavbarButtons(lightThemes)}\n$2\n${buildNavbarButtons(darkThemes)}\n            $3`
 );
 writeFileSync(join(root, 'partials/navbar.html'), navbarHtml);
 console.log('Updated partials/navbar.html');
 
-// 4. index.html / project.html — update initial meta tag values
+// 4. index.html / project.html — initial meta tag values
 const defaultLightColor = metaColors['caramellatte'] || '#000000';
 const defaultDarkColor = metaColors['coffee'] || '#261b25';
-
 for (const htmlFile of ['index.html', 'project.html']) {
-  const htmlPath = join(root, htmlFile);
   try {
+    const htmlPath = join(root, htmlFile);
     let html = readFileSync(htmlPath, 'utf8');
     html = html.replace(
       /(<meta name="theme-color" content=")#[0-9a-fA-F]{6}(" media="\(prefers-color-scheme: light\)")/,
@@ -225,10 +179,6 @@ for (const htmlFile of ['index.html', 'project.html']) {
 }
 
 // Summary
-console.log(`\nLight themes (${lightThemes.length}): ${lightThemes.join(', ')}`);
-console.log(`Dark themes (${darkThemes.length}): ${darkThemes.join(', ')}`);
-console.log('\nMeta colors:');
-for (const n of [...lightThemes, ...darkThemes]) {
-  const isDark = darkThemes.includes(n);
-  console.log(`  ${n.padEnd(14)} ${isDark ? 'base-100' : 'primary'} ${metaColors[n]}`);
-}
+console.log(`\nLight (${lightThemes.length}): ${lightThemes.join(', ')}`);
+console.log(`Dark (${darkThemes.length}): ${darkThemes.join(', ')}`);
+
