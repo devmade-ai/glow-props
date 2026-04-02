@@ -2,7 +2,7 @@ import { defineConfig } from 'vite';
 import tailwindcss from '@tailwindcss/vite';
 import { VitePWA } from 'vite-plugin-pwa';
 import { copyFileSync, readFileSync, readdirSync, existsSync, mkdirSync } from 'fs';
-import { resolve } from 'path';
+import { resolve, basename } from 'path';
 
 // Requirement: Shared partials across index.html and project.html without duplication
 // Approach: Custom Vite plugin reads partial files and injects them into HTML at build time.
@@ -61,10 +61,14 @@ function copyRootFiles() {
     name: 'copy-root-files',
     // Requirement: Serve pattern docs during dev so pattern.html works locally
     // Approach: Dev server middleware rewrites /patterns/*.md to docs/implementations/*.md
+    // Requirement: Serve pattern docs during dev so pattern.html works locally
+    // Approach: Dev server middleware rewrites /patterns/*.md to docs/implementations/*.md.
+    //   Uses basename() to prevent path traversal (e.g., /patterns/../../../etc/passwd).
     configureServer(server) {
       server.middlewares.use(function (req, res, next) {
         if (req.url && req.url.startsWith('/patterns/')) {
-          const fileName = req.url.replace('/patterns/', '');
+          const fileName = basename(req.url.replace('/patterns/', ''));
+          if (!fileName.endsWith('.md')) { next(); return; }
           const filePath = resolve(implDir, fileName);
           if (existsSync(filePath)) {
             res.setHeader('Content-Type', 'text/markdown; charset=utf-8');

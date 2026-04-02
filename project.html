@@ -37,8 +37,10 @@
   </footer>
 
   <script src="theme.js"></script>
+  <script src="markdown.js"></script>
   <!-- Requirement: Render markdown docs client-side without a build step
-       Approach: Lightweight custom parser for common markdown (headings, lists, code, tables, links)
+       Approach: Shared markdown.js provides renderMarkdown, escapeHtml, isSafeUrl, copyMarkdown.
+         This script handles project-specific logic: metadata fetch, tabs, doc loading.
        Alternative: marked.js from CDN — rejected, adds external dependency and ~40KB download -->
   <script>
     (function () {
@@ -58,80 +60,10 @@
       var docs = {};
       var currentTab = 'readme';
 
-      // Requirement: Render markdown to HTML with CSS classes from main.css
-      // Approach: Regex-based parser outputs semantic HTML elements. Styling is handled
-      //   by .md-render parent class in main.css — no inline class strings in JS.
-      //   Keeps style changes in CSS where they belong.
-      // Alternative: Inline Tailwind classes in JS — rejected, hard to maintain.
-      function renderMarkdown(md) {
-        if (!md) return '';
-        var html = md
-          .replace(/```(\w*)\n([\s\S]*?)```/g, function (_, lang, code) {
-            return '<pre><code>' + escapeHtml(code.trim()) + '</code></pre>';
-          })
-          .replace(/^\|(.+)\|\s*\n\|[\s\-:|]+\|\s*\n((?:\|.+\|\s*\n?)*)/gm, function (_, header, body) {
-            var ths = header.split('|').map(function (h) { return '<th>' + escapeHtml(h.trim()) + '</th>'; }).join('');
-            var rows = body.trim().split('\n').map(function (row) {
-              var tds = row.replace(/^\||\|$/g, '').split('|').map(function (d) { return '<td>' + inlineMarkdown(d.trim()) + '</td>'; }).join('');
-              return '<tr>' + tds + '</tr>';
-            }).join('');
-            return '<div class="overflow-x-auto"><table><thead><tr>' + ths + '</tr></thead><tbody>' + rows + '</tbody></table></div>';
-          })
-          .replace(/^#### (.+)$/gm, '<h4>$1</h4>')
-          .replace(/^### (.+)$/gm, '<h3>$1</h3>')
-          .replace(/^## (.+)$/gm, '<h2>$1</h2>')
-          .replace(/^# (.+)$/gm, '<h1>$1</h1>')
-          .replace(/^---+$/gm, '<hr>')
-          .replace(/^> (.+)$/gm, '<blockquote>$1</blockquote>')
-          .replace(/^- \[x\] (.+)$/gm, '<li class="flex items-start gap-2"><input type="checkbox" checked disabled class="checkbox checkbox-xs checkbox-primary mt-1"> $1</li>')
-          .replace(/^- \[ \] (.+)$/gm, '<li class="flex items-start gap-2"><input type="checkbox" disabled class="checkbox checkbox-xs mt-1"> $1</li>')
-          .replace(/^  - (.+)$/gm, '<li class="ml-4">$1</li>')
-          .replace(/^- (.+)$/gm, '<li>$1</li>')
-          .replace(/^\d+\. (.+)$/gm, '<li>$1</li>')
-          .replace(/((?:<li class="ml-4">.*<\/li>\s*)+)/g, '<ul>$1</ul>')
-          .replace(/((?:<li>.*<\/li>\s*)+)/g, '<ul>$1</ul>')
-          .replace(/((?:<li class="flex.*<\/li>\s*)+)/g, '<ul class="space-y-1 my-2">$1</ul>')
-          .replace(/^(?!<[a-z])((?!<).+)$/gm, '<p>$1</p>');
-
-        html = html.replace(/>([^<]+)</g, function (m, content) {
-          return '>' + inlineMarkdown(content) + '<';
-        });
-
-        return html;
-      }
-
-      // Requirement: Inline markdown formatting for project doc content
-      // Approach: Escape HTML entities FIRST to prevent XSS, then apply
-      //   formatting replacements on the escaped text. Link hrefs are
-      //   validated to reject javascript:/data: protocol injection.
-      // Alternative: DOMPurify — rejected, adds dependency for simple case
-      function inlineMarkdown(text) {
-        var escaped = escapeHtml(text);
-        return escaped
-          .replace(/`([^`]+)`/g, '<code class="text-xs bg-base-300/50 px-1.5 py-0.5 rounded">$1</code>')
-          .replace(/\*\*([^*]+)\*\*/g, '<strong class="font-semibold">$1</strong>')
-          .replace(/\*([^*]+)\*/g, '<em>$1</em>')
-          .replace(/\[([^\]]+)\]\(([^)]+)\)/g, function (m, label, href) {
-            if (!isSafeUrl(href)) return label;
-            return '<a href="' + href + '" class="link link-primary">' + label + '</a>';
-          });
-      }
-
-      // Requirement: Prevent javascript:/data: protocol injection in URLs
-      // Approach: Decode percent-encoded characters FIRST, then allowlist http(s) and relative URLs.
-      // Alternative: Only check literal colons — rejected, percent-encoded colons (%3A) bypass that check.
-      function isSafeUrl(url) {
-        var decoded;
-        try { decoded = decodeURIComponent(url.replace(/&amp;/g, '&')); } catch (e) { return false; }
-        if (/^https?:\/\//i.test(decoded)) return true;
-        if (/^[a-z0-9]/i.test(decoded) && !/:/.test(decoded)) return true; // relative path
-        if (decoded.charAt(0) === '/' || decoded.charAt(0) === '#' || decoded.charAt(0) === '.') return true;
-        return false;
-      }
-
-      function escapeHtml(str) {
-        return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
-      }
+      // Markdown rendering, escaping, URL validation, and copy provided by shared markdown.js
+      var renderMarkdown = md.renderMarkdown;
+      var escapeHtml = md.escapeHtml;
+      var isSafeUrl = md.isSafeUrl;
 
       // Requirement: Timeout on metadata fetch to avoid indefinite loading on slow/broken networks
       // Approach: AbortController with 10s timeout — shows error instead of endless spinner
@@ -306,14 +238,12 @@
           '<div id="doc-content">' + docContent + '</div>';
       }
 
-      // Requirement: Tab switching without accumulating event listeners
-      // Approach: Event delegation on document — one listener handles all tabs
-      // Alternative: Add/remove listeners in render() — rejected, causes
-      //   listener accumulation (each render adds new handlers without removing old)
       // Requirement: Tab switching with focus management for screen readers
       // Approach: Event delegation on document — one listener handles all tabs.
       //   After render, focus moves to the new content area so screen reader users
       //   hear the updated content without having to navigate back to it.
+      // Alternative: Add/remove listeners in render() — rejected, causes
+      //   listener accumulation (each render adds new handlers without removing old)
       document.addEventListener('click', function (e) {
         var tab = e.target.closest('.tab:not([disabled])');
         if (tab && tab.getAttribute('data-tab')) {
@@ -327,38 +257,8 @@
         }
       });
 
-      // Requirement: Copy markdown with success/failure feedback
-      // Approach: Try Clipboard API first, fall back to deprecated execCommand.
-      //   Show "Copied!" on success, "Copy failed" on error — users always know what happened.
       window.copyDoc = function () {
-        var text = docs[currentTab];
-        if (!text) return;
-        var btn = document.getElementById('copy-btn');
-        function showFeedback(msg) {
-          if (btn) {
-            btn.textContent = msg;
-            setTimeout(function () { btn.textContent = 'Copy markdown'; }, 1500);
-          }
-        }
-        if (navigator.clipboard) {
-          navigator.clipboard.writeText(text)
-            .then(function () { showFeedback('Copied!'); })
-            .catch(function () { showFeedback('Copy failed'); });
-        } else {
-          try {
-            var ta = document.createElement('textarea');
-            ta.value = text;
-            ta.style.position = 'fixed';
-            ta.style.opacity = '0';
-            document.body.appendChild(ta);
-            ta.select();
-            var ok = document.execCommand('copy');
-            document.body.removeChild(ta);
-            showFeedback(ok ? 'Copied!' : 'Copy failed');
-          } catch (e) {
-            showFeedback('Copy failed');
-          }
-        }
+        md.copyMarkdown(docs[currentTab], 'copy-btn');
       };
     })();
   </script>

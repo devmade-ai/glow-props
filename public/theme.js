@@ -72,7 +72,7 @@
     document.documentElement.setAttribute('data-theme', themeName);
 
     if (!skipPersist) {
-      safeStorageSet('darkMode', dark);
+      safeStorageSet('darkMode', String(dark));
       safeStorageSet(dark ? 'darkTheme' : 'lightTheme', themeName);
     }
     updateThemeLabels(dark);

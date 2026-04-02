@@ -21,30 +21,27 @@
         ? (localStorage.getItem('darkTheme') || 'coffee')
         : (localStorage.getItem('lightTheme') || 'caramellatte');
 
+      // Requirement: Theme lists for random picker AND validation
+      // Approach: Single set of arrays used for both random selection and stored theme
+      //   validation. Must stay in sync with theme.js and the picker buttons in navbar.html.
+      var lt = ['caramellatte','cupcake','pastel','lofi','nord','emerald','garden',
+        'autumn','valentine','fantasy','retro','corporate','silk','bumblebee',
+        'aqua','lemonade','winter','cmyk','acid','cyberpunk','wireframe','light'];
+      var dt = ['coffee','dim','night','dracula','forest','luxury','synthwave',
+        'black','halloween','sunset','abyss','business','dark'];
+
       // Requirement: Random theme on load when enabled
       // Approach: Pick a random theme from the current mode's list before first paint.
-      //   Theme lists must stay in sync with theme.js and the picker buttons.
       //   Persists the chosen theme so the picker indicator matches.
       if (localStorage.getItem('randomThemeOnLoad') === 'true') {
-        var lt = ['caramellatte','cupcake','pastel','lofi','nord','emerald','garden',
-          'autumn','valentine','fantasy','retro','corporate','silk','bumblebee',
-          'aqua','lemonade','winter','cmyk','acid','cyberpunk','wireframe','light'];
-        var dt = ['coffee','dim','night','dracula','forest','luxury','synthwave',
-          'black','halloween','sunset','abyss','business','dark'];
         var list = isDark ? dt : lt;
         theme = list[Math.floor(Math.random() * list.length)];
         localStorage.setItem(isDark ? 'darkTheme' : 'lightTheme', theme);
       }
 
       // Requirement: Validate stored theme against known lists to prevent unstyled content
-      // Approach: Check if theme exists in the appropriate list. Fall back to default if corrupted.
-      var allLight = ['caramellatte','cupcake','pastel','lofi','nord','emerald','garden',
-        'autumn','valentine','fantasy','retro','corporate','silk','bumblebee',
-        'aqua','lemonade','winter','cmyk','acid','cyberpunk','wireframe','light'];
-      var allDark = ['coffee','dim','night','dracula','forest','luxury','synthwave',
-        'black','halloween','sunset','abyss','business','dark'];
-      var validList = isDark ? allDark : allLight;
-      if (validList.indexOf(theme) === -1) {
+      // Approach: Reuse lt/dt arrays. Fall back to default if corrupted.
+      if ((isDark ? dt : lt).indexOf(theme) === -1) {
         theme = isDark ? 'coffee' : 'caramellatte';
       }
 

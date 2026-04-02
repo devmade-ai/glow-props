@@ -187,9 +187,9 @@
 }
 
 /* ===== Markdown renderer classes =====
-   Requirement: Markdown-rendered content in project.html should be styled consistently
-   Approach: CSS classes applied by renderMarkdown() in project.html. Defined here so
-     styling changes are visible in CSS, not buried in JS regex replacements.
+   Requirement: Markdown-rendered content (project.html, pattern.html) styled consistently
+   Approach: CSS classes applied by renderMarkdown() in shared markdown.js. Defined here
+     so styling changes are visible in CSS, not buried in JS regex replacements.
    Alternative: Inline Tailwind class strings in JS — rejected, hard to maintain and
      impossible to see in CSS file diffs */
 .md-render h1 { @apply text-2xl font-bold mt-6 mb-3; }

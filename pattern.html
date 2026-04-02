@@ -37,6 +37,7 @@
   </footer>
 
   <script src="theme.js"></script>
+  <script src="markdown.js"></script>
   <!-- Requirement: Pattern detail page — renders a single implementation doc with copy button
        Approach: Fetch markdown file from patterns/ directory, render with same markdown
          parser as project.html. Simpler than project.html — no tabs, no meta.json, just
@@ -127,98 +128,12 @@
           contentHtml;
       }
 
-      // ===== Markdown renderer (same as project.html) =====
-      function renderMarkdown(md) {
-        if (!md) return '';
-        var html = md
-          .replace(/```(\w*)\n([\s\S]*?)```/g, function (_, lang, code) {
-            return '<pre><code>' + escapeHtml(code.trim()) + '</code></pre>';
-          })
-          .replace(/^\|(.+)\|\s*\n\|[\s\-:|]+\|\s*\n((?:\|.+\|\s*\n?)*)/gm, function (_, header, body) {
-            var ths = header.split('|').map(function (h) { return '<th>' + escapeHtml(h.trim()) + '</th>'; }).join('');
-            var rows = body.trim().split('\n').map(function (row) {
-              var tds = row.replace(/^\||\|$/g, '').split('|').map(function (d) { return '<td>' + inlineMarkdown(d.trim()) + '</td>'; }).join('');
-              return '<tr>' + tds + '</tr>';
-            }).join('');
-            return '<div class="overflow-x-auto"><table><thead><tr>' + ths + '</tr></thead><tbody>' + rows + '</tbody></table></div>';
-          })
-          .replace(/^#### (.+)$/gm, '<h4>$1</h4>')
-          .replace(/^### (.+)$/gm, '<h3>$1</h3>')
-          .replace(/^## (.+)$/gm, '<h2>$1</h2>')
-          .replace(/^# (.+)$/gm, '<h1>$1</h1>')
-          .replace(/^---+$/gm, '<hr>')
-          .replace(/^> (.+)$/gm, '<blockquote>$1</blockquote>')
-          .replace(/^- \[x\] (.+)$/gm, '<li class="flex items-start gap-2"><input type="checkbox" checked disabled class="checkbox checkbox-xs checkbox-primary mt-1"> $1</li>')
-          .replace(/^- \[ \] (.+)$/gm, '<li class="flex items-start gap-2"><input type="checkbox" disabled class="checkbox checkbox-xs mt-1"> $1</li>')
-          .replace(/^  - (.+)$/gm, '<li class="ml-4">$1</li>')
-          .replace(/^- (.+)$/gm, '<li>$1</li>')
-          .replace(/^\d+\. (.+)$/gm, '<li>$1</li>')
-          .replace(/((?:<li class="ml-4">.*<\/li>\s*)+)/g, '<ul>$1</ul>')
-          .replace(/((?:<li>.*<\/li>\s*)+)/g, '<ul>$1</ul>')
-          .replace(/((?:<li class="flex.*<\/li>\s*)+)/g, '<ul class="space-y-1 my-2">$1</ul>')
-          .replace(/^(?!<[a-z])((?!<).+)$/gm, '<p>$1</p>');
+      // Markdown rendering, escaping, URL validation, and copy provided by shared markdown.js
+      var renderMarkdown = md.renderMarkdown;
+      var escapeHtml = md.escapeHtml;
 
-        html = html.replace(/>([^<]+)</g, function (m, content) {
-          return '>' + inlineMarkdown(content) + '<';
-        });
-
-        return html;
-      }
-
-      function inlineMarkdown(text) {
-        var escaped = escapeHtml(text);
-        return escaped
-          .replace(/`([^`]+)`/g, '<code class="text-xs bg-base-300/50 px-1.5 py-0.5 rounded">$1</code>')
-          .replace(/\*\*([^*]+)\*\*/g, '<strong class="font-semibold">$1</strong>')
-          .replace(/\*([^*]+)\*/g, '<em>$1</em>')
-          .replace(/\[([^\]]+)\]\(([^)]+)\)/g, function (m, label, href) {
-            if (!isSafeUrl(href)) return label;
-            return '<a href="' + href + '" class="link link-primary">' + label + '</a>';
-          });
-      }
-
-      function isSafeUrl(url) {
-        var decoded;
-        try { decoded = decodeURIComponent(url.replace(/&amp;/g, '&')); } catch (e) { return false; }
-        if (/^https?:\/\//i.test(decoded)) return true;
-        if (/^[a-z0-9]/i.test(decoded) && !/:/.test(decoded)) return true;
-        if (decoded.charAt(0) === '/' || decoded.charAt(0) === '#' || decoded.charAt(0) === '.') return true;
-        return false;
-      }
-
-      function escapeHtml(str) {
-        return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
-      }
-
-      // Requirement: Copy markdown with success/failure feedback
       window.copyPattern = function () {
-        if (!rawMarkdown) return;
-        var btn = document.getElementById('copy-btn');
-        function showFeedback(msg) {
-          if (btn) {
-            btn.textContent = msg;
-            setTimeout(function () { btn.textContent = 'Copy markdown'; }, 1500);
-          }
-        }
-        if (navigator.clipboard) {
-          navigator.clipboard.writeText(rawMarkdown)
-            .then(function () { showFeedback('Copied!'); })
-            .catch(function () { showFeedback('Copy failed'); });
-        } else {
-          try {
-            var ta = document.createElement('textarea');
-            ta.value = rawMarkdown;
-            ta.style.position = 'fixed';
-            ta.style.opacity = '0';
-            document.body.appendChild(ta);
-            ta.select();
-            var ok = document.execCommand('copy');
-            document.body.removeChild(ta);
-            showFeedback(ok ? 'Copied!' : 'Copy failed');
-          } catch (e) {
-            showFeedback('Copy failed');
-          }
-        }
+        md.copyMarkdown(rawMarkdown, 'copy-btn');
       };
     })();
   </script>
