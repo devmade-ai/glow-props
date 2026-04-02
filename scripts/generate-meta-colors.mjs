@@ -141,15 +141,10 @@ function buildBootstrapMc() {
 // ===== Generate navbar theme buttons =====
 
 function buildNavbarSection(themeList, existingButtons) {
-  // Reuse existing button metadata (display name, descriptor) if available
   const lines = [];
   for (const name of themeList) {
     if (existingButtons[name]) {
       lines.push(existingButtons[name]);
-    } else {
-      // New theme not yet in navbar — generate with capitalized name
-      const display = name.charAt(0).toUpperCase() + name.slice(1);
-      lines.push(`              <li><button type="button" data-theme-pick="${name}" class="w-full text-left px-4 py-2.5 text-sm text-base-content hover:bg-base-200 transition-colors cursor-pointer focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-[-2px] min-h-11 flex items-center gap-2 rounded-lg"><span class="theme-check invisible text-primary text-xs">&#10003;</span><span>${display}</span></button></li>`);
     }
   }
   return lines.join('\n');
