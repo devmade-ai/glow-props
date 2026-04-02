@@ -136,11 +136,18 @@
   transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
 }
 
-.card-interactive:hover {
-  transform: translateY(-2px);
-  box-shadow:
-    0 6px 16px -4px oklch(0 0 0 / 0.08),
-    0 2px 6px -2px oklch(0 0 0 / 0.03);
+/* Requirement: Avoid "sticky hover" on touch devices
+   Approach: @media (hover: hover) ensures the lift effect only applies when the device
+     has a real hover pointer (mouse/trackpad). Touch devices skip it and rely on :active.
+   Alternative: No guard — rejected, causes cards to stay lifted after tap on mobile
+     until the user taps elsewhere. */
+@media (hover: hover) {
+  .card-interactive:hover {
+    transform: translateY(-2px);
+    box-shadow:
+      0 6px 16px -4px oklch(0 0 0 / 0.08),
+      0 2px 6px -2px oklch(0 0 0 / 0.03);
+  }
 }
 
 /* Requirement: Touch feedback for mobile — hover states don't fire on touch devices
@@ -201,7 +208,13 @@
 .md-render li { @apply text-sm; }
 .md-render blockquote { @apply border-l-4 border-primary/30 pl-4 py-1 my-2 text-base-content/70 italic; }
 .md-render hr { @apply my-4 border-base-300; }
-.md-render pre { @apply bg-base-300/50 rounded-lg p-4 overflow-x-auto text-sm; }
+/* Requirement: Indicate horizontal scroll on code blocks for mobile users
+   Approach: Fading right edge via mask-image gradient. When content overflows,
+     the fade hints that there's more to scroll. Transparent on non-overflow. */
+.md-render pre {
+  @apply bg-base-300/50 rounded-lg p-4 overflow-x-auto text-sm;
+  -webkit-overflow-scrolling: touch;
+}
 .md-render table { @apply w-full; }
 .md-render th { @apply px-3 py-2 text-left text-sm font-semibold border-b border-base-300; }
 .md-render td { @apply px-3 py-2 text-sm border-b border-base-300/50; }
