@@ -39,12 +39,15 @@
   // ===== Theme resolution =====
   // Requirement: Each mode stores its own theme independently
   // Approach: Two localStorage keys — lightTheme and darkTheme.
-  //   Falls back to defaults if no stored value.
+  //   Falls back to defaults if no stored value or if stored value is invalid.
+  //   Validates against known theme lists to prevent unstyled content from
+  //   corrupted localStorage.
   function getStoredTheme(dark) {
-    if (dark) {
-      return safeStorageGet('darkTheme') || DEFAULT_DARK_THEME;
-    }
-    return safeStorageGet('lightTheme') || DEFAULT_LIGHT_THEME;
+    var stored = dark ? safeStorageGet('darkTheme') : safeStorageGet('lightTheme');
+    var validList = dark ? DARK_THEMES : LIGHT_THEMES;
+    var fallback = dark ? DEFAULT_DARK_THEME : DEFAULT_LIGHT_THEME;
+    if (stored && validList.indexOf(stored) !== -1) return stored;
+    return fallback;
   }
 
   // ===== Theme application =====
@@ -256,6 +259,10 @@
       // Why not overscroll-contain alone: it only prevents chaining on
       //   scroll containers. Taps on non-scrollable menu areas (nav links,
       //   toggle) still chain to the body without this lock.
+      // Requirement: Prevent layout shift when hiding scrollbar
+      // Approach: Set scrollbar-gutter to maintain scrollbar space, then hide overflow.
+      // Alternative: overflow-y: scroll — rejected, leaves visible scrollbar track.
+      document.body.style.scrollbarGutter = 'stable';
       document.body.style.overflow = 'hidden';
       // Focus first menu item after transition starts
       requestAnimationFrame(function () {
@@ -270,6 +277,7 @@
       menu.classList.add('pointer-events-none', 'opacity-0', 'scale-95');
       trigger.setAttribute('aria-expanded', 'false');
       document.body.style.overflow = '';
+      document.body.style.scrollbarGutter = '';
       trigger.focus();
     }
 

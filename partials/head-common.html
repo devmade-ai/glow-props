@@ -1,0 +1,85 @@
+<!-- Requirement: Prevent dark mode flash on page load
+     Approach: Inline classic script reads localStorage and sets both .dark class
+       (for Tailwind dark: variant) and data-theme (for DaisyUI component colors)
+       before first paint. Must be classic script (not type="module") to execute
+       synchronously during HTML parse.
+     Alternative: Let DaisyUI auto-detect via prefers-color-scheme only — rejected,
+       no manual toggle persistence
+     Alternative: External script partial — rejected, must remain inline for
+       synchronous execution before first paint -->
+<script>
+  (function() {
+    try {
+      // Requirement: Prevent flash using stored per-mode theme + dark/light preference
+      // Reads lightTheme/darkTheme directly — no combo map needed.
+      // Defaults must stay in sync with theme.js constants.
+      var stored = localStorage.getItem('darkMode');
+      var isDark = stored !== null
+        ? stored === 'true'
+        : window.matchMedia('(prefers-color-scheme: dark)').matches;
+      var theme = isDark
+        ? (localStorage.getItem('darkTheme') || 'coffee')
+        : (localStorage.getItem('lightTheme') || 'caramellatte');
+
+      // Requirement: Random theme on load when enabled
+      // Approach: Pick a random theme from the current mode's list before first paint.
+      //   Theme lists must stay in sync with theme.js and the picker buttons.
+      //   Persists the chosen theme so the picker indicator matches.
+      if (localStorage.getItem('randomThemeOnLoad') === 'true') {
+        var lt = ['caramellatte','cupcake','pastel','lofi','nord','emerald','garden',
+          'autumn','valentine','fantasy','retro','corporate','silk','bumblebee',
+          'aqua','lemonade','winter','cmyk','acid','cyberpunk','wireframe','light'];
+        var dt = ['coffee','dim','night','dracula','forest','luxury','synthwave',
+          'black','halloween','sunset','abyss','business','dark'];
+        var list = isDark ? dt : lt;
+        theme = list[Math.floor(Math.random() * list.length)];
+        localStorage.setItem(isDark ? 'darkTheme' : 'lightTheme', theme);
+      }
+
+      // Requirement: Validate stored theme against known lists to prevent unstyled content
+      // Approach: Check if theme exists in the appropriate list. Fall back to default if corrupted.
+      var allLight = ['caramellatte','cupcake','pastel','lofi','nord','emerald','garden',
+        'autumn','valentine','fantasy','retro','corporate','silk','bumblebee',
+        'aqua','lemonade','winter','cmyk','acid','cyberpunk','wireframe','light'];
+      var allDark = ['coffee','dim','night','dracula','forest','luxury','synthwave',
+        'black','halloween','sunset','abyss','business','dark'];
+      var validList = isDark ? allDark : allLight;
+      if (validList.indexOf(theme) === -1) {
+        theme = isDark ? 'coffee' : 'caramellatte';
+      }
+
+      if (isDark) {
+        document.documentElement.classList.add('dark');
+      } else {
+        document.documentElement.classList.remove('dark');
+      }
+      document.documentElement.setAttribute('data-theme', theme);
+    } catch(e) {
+      // Requirement: Never break page render if localStorage is unavailable (sandboxed iframe, private browsing)
+      // Approach: Catch all errors and fall back to default theme — better a flash than a broken page.
+      // This intentionally does not log (console may not be available in all environments).
+    }
+  })();
+</script>
+
+<!-- Requirement: Capture beforeinstallprompt before framework mounts
+     Approach: Stash the event on window for pwa.js to consume later.
+       On repeat visits with a cached SW, the event fires before any module
+       scripts run — if nothing catches it, the install prompt is permanently lost.
+     Alternative: Listen in pwa.js only — rejected, misses the early-fire case -->
+<script>
+  window.addEventListener('beforeinstallprompt', function (e) {
+    e.preventDefault();
+    window.__pwaInstallPromptEvent = e;
+  });
+</script>
+
+<!-- Fonts: Space Grotesk for headings, Inter for body -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Space+Grotesk:wght@700&display=swap" media="print" onload="this.media='all'">
+
+<!-- Requirement: Tailwind v4 + DaisyUI v5 for styling
+     Approach: Single CSS entry point with Tailwind directives, processed by Vite plugin
+     Alternative: CDN link — rejected, adds external runtime dependency -->
+<link rel="stylesheet" href="main.css">

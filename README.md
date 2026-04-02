@@ -63,7 +63,11 @@ glow-props/
   vite.config.js                # Build config (multi-page, Tailwind plugin, copies CLAUDE.md)
   index.html                    # Portfolio landing page
   project.html                  # Project detail page (markdown viewer)
-  main.css                      # Tailwind directives, DaisyUI config, custom animations
+  main.css                      # Tailwind directives, DaisyUI config, custom animations, markdown renderer styles
+  partials/
+    head-common.html            # Shared <head> content (bootstrap, fonts, CSS)
+    navbar.html                 # Shared navbar with burger menu, theme picker, PWA install
+    skip-link.html              # Accessibility skip-to-content link
   public/
     theme.js                    # Per-mode theme picker, dark/light toggle, burger menu behavior
     projects/                   # Mirrored docs per project
@@ -86,6 +90,9 @@ glow-props/
     AI_MISTAKES.md              # Learnings from past AI errors
     USER_ACTIONS.md             # Manual tasks requiring user intervention
     PROJECT_DOCS.md             # Status tracker and update guide for mirrored docs
+    implementations/            # Suggested implementation patterns (7 files)
+      PWA_SYSTEM.md, DEBUG_SYSTEM.md, APP_ICONS.md, DOWNLOAD_PDF.md,
+      HTTPS_PROXY.md, BURGER_MENU.md, THEME_DARK_MODE.md
   .github/
     workflows/
       deploy.yml                # GitHub Pages deployment on push to main

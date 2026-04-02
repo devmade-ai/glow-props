@@ -228,7 +228,9 @@ var isStandalone = window.matchMedia('(display-mode: standalone)').matches ||
 var supportsAutoInstall = browser === 'chrome' || browser === 'edge' || browser === 'brave';
 var supportsManualInstall = browser === 'safari' || browser === 'firefox';
 var dismissed = false;
-try { dismissed = localStorage.getItem('pwa-install-dismissed') === 'true'; } catch (e) { /* sandboxed */ }
+try { dismissed = localStorage.getItem('pwa-install-dismissed') === 'true'; } catch (e) {
+  // localStorage unavailable (sandboxed iframe, private browsing) — default to not dismissed
+}
 
 // Consume early-captured event (repeat visits where SW fires before module loads)
 if (window.__pwaInstallPromptEvent) {
@@ -303,8 +305,10 @@ function triggerInstall() {
         deferredPrompt = null;
         updateInstallMenuVisibility();
       })
-      .catch(function () {
-        // Browser rejected the install prompt — clear state to avoid stale prompt
+      .catch(function (err) {
+        // Browser rejected the install prompt — clear state to avoid stale prompt.
+        // Log for debugging — install prompt failures are otherwise invisible.
+        if (typeof console !== 'undefined') console.warn('[PWA] Install prompt error:', err);
         deferredPrompt = null;
         updateInstallMenuVisibility();
       });
@@ -315,7 +319,9 @@ function triggerInstall() {
 
 function dismissInstall() {
   dismissed = true;
-  try { localStorage.setItem('pwa-install-dismissed', 'true'); } catch (e) { /* sandboxed */ }
+  try { localStorage.setItem('pwa-install-dismissed', 'true'); } catch (e) {
+    // localStorage unavailable — dismiss will not persist across reloads
+  }
   updateInstallMenuVisibility();
 }
 

@@ -4,6 +4,12 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <meta name="color-scheme" content="light dark">
+  <!-- Requirement: Defense-in-depth against XSS — restrict script/style sources
+       Approach: CSP meta tag allowing self, inline scripts (required for flash prevention),
+         and Google Fonts. No eval, no external script sources.
+       Alternative: HTTP header — rejected, GitHub Pages doesn't allow custom headers -->
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: https:; connect-src 'self';">
+  <link rel="canonical" href="https://devmade-ai.github.io/glow-props/">
   <title>devmade-ai</title>
   <meta name="description" content="Software projects, internal tools, and reusable engineering patterns by devmade-ai.">
   <meta property="og:title" content="devmade-ai — Project Portfolio">
@@ -13,81 +19,13 @@
   <link rel="icon" type="image/png" href="assets/images/favicon.png">
   <link rel="apple-touch-icon" href="assets/images/icon-192.png">
 
-  <!-- Requirement: Prevent dark mode flash on page load
-       Approach: Inline classic script reads localStorage and sets both .dark class
-         (for Tailwind dark: variant) and data-theme (for DaisyUI component colors)
-         before first paint. Must be classic script (not type="module") to execute
-         synchronously during HTML parse.
-       Alternative: Let DaisyUI auto-detect via prefers-color-scheme only — rejected,
-         no manual toggle persistence -->
-  <script>
-    (function() {
-      try {
-        // Requirement: Prevent flash using stored per-mode theme + dark/light preference
-        // Reads lightTheme/darkTheme directly — no combo map needed.
-        // Defaults must stay in sync with theme.js constants.
-        var stored = localStorage.getItem('darkMode');
-        var isDark = stored !== null
-          ? stored === 'true'
-          : window.matchMedia('(prefers-color-scheme: dark)').matches;
-        var theme = isDark
-          ? (localStorage.getItem('darkTheme') || 'coffee')
-          : (localStorage.getItem('lightTheme') || 'caramellatte');
-
-        // Requirement: Random theme on load when enabled
-        // Approach: Pick a random theme from the current mode's list before first paint.
-        //   Theme lists must stay in sync with theme.js and the picker buttons.
-        //   Persists the chosen theme so the picker indicator matches.
-        if (localStorage.getItem('randomThemeOnLoad') === 'true') {
-          var lt = ['caramellatte','cupcake','pastel','lofi','nord','emerald','garden',
-            'autumn','valentine','fantasy','retro','corporate','silk','bumblebee',
-            'aqua','lemonade','winter','cmyk','acid','cyberpunk','wireframe','light'];
-          var dt = ['coffee','dim','night','dracula','forest','luxury','synthwave',
-            'black','halloween','sunset','abyss','business','dark'];
-          var list = isDark ? dt : lt;
-          theme = list[Math.floor(Math.random() * list.length)];
-          localStorage.setItem(isDark ? 'darkTheme' : 'lightTheme', theme);
-        }
-
-        if (isDark) {
-          document.documentElement.classList.add('dark');
-        } else {
-          document.documentElement.classList.remove('dark');
-        }
-        document.documentElement.setAttribute('data-theme', theme);
-      } catch(e) {}
-    })();
-  </script>
-
-  <!-- Requirement: Capture beforeinstallprompt before framework mounts
-       Approach: Stash the event on window for pwa.js to consume later.
-         On repeat visits with a cached SW, the event fires before any module
-         scripts run — if nothing catches it, the install prompt is permanently lost.
-       Alternative: Listen in pwa.js only — rejected, misses the early-fire case -->
-  <script>
-    window.addEventListener('beforeinstallprompt', function (e) {
-      e.preventDefault();
-      window.__pwaInstallPromptEvent = e;
-    });
-  </script>
-
-  <!-- Fonts: Space Grotesk for headings, Inter for body -->
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Space+Grotesk:wght@700&display=swap" rel="stylesheet">
-
-  <!-- Requirement: Tailwind v4 + DaisyUI v5 for styling
-       Approach: Single CSS entry point with Tailwind directives, processed by Vite plugin
-       Alternative: CDN link — rejected, adds external runtime dependency -->
-  <link rel="stylesheet" href="main.css">
+  <!-- Shared <head> content injected from partials/head-common.html by htmlPartials Vite plugin.
+       Includes: dark mode bootstrap, beforeinstallprompt capture, fonts, main.css -->
+  <!-- HEAD_COMMON -->
 </head>
 <body class="bg-base-100 text-base-content min-h-screen">
 
-  <!-- Requirement: Skip link for keyboard users to bypass navbar + burger menu (30+ items)
-       Approach: Visually hidden link that becomes visible on focus. Points to #main. -->
-  <a href="#main" class="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-90 focus:btn focus:btn-primary focus:btn-sm">
-    Skip to main content
-  </a>
+  <!-- SKIP_LINK -->
 
   <!-- Navbar injected from partials/navbar.html by htmlPartials Vite plugin.
        NAV_PREFIX is empty for index.html (same-page #anchors). -->
@@ -129,9 +67,9 @@
             <div class="mt-auto pt-2">
               <p class="text-xs text-base-content/40">JavaScript &middot; Vite &middot; Tailwind</p>
               <div class="card-links">
-                <a href="project.html?name=canva-grid" class="btn btn-sm btn-primary rounded-full" onclick="event.stopPropagation()">Details</a>
-                <a href="https://canva-grid.vercel.app/" target="_blank" rel="noopener" class="btn btn-sm btn-outline rounded-full" onclick="event.stopPropagation()">Live app</a>
-                <a href="https://github.com/devmade-ai/canva-grid" target="_blank" rel="noopener" class="btn btn-sm btn-outline rounded-full" onclick="event.stopPropagation()">Source</a>
+                <a href="project.html?name=canva-grid" class="btn btn-sm btn-primary rounded-full">Details</a>
+                <a href="https://canva-grid.vercel.app/" target="_blank" rel="noopener" class="btn btn-sm btn-outline rounded-full">Live app</a>
+                <a href="https://github.com/devmade-ai/canva-grid" target="_blank" rel="noopener" class="btn btn-sm btn-outline rounded-full">Source</a>
               </div>
             </div>
           </div>
@@ -148,8 +86,8 @@
             <div class="mt-auto pt-2">
               <p class="text-xs text-base-content/40">TypeScript &middot; Cytoscape.js &middot; IndexedDB</p>
               <div class="card-links">
-                <a href="project.html?name=graphiki" class="btn btn-sm btn-primary rounded-full" onclick="event.stopPropagation()">Details</a>
-                <a href="https://graphiki.vercel.app/" target="_blank" rel="noopener" class="btn btn-sm btn-outline rounded-full" onclick="event.stopPropagation()">Live app</a>
+                <a href="project.html?name=graphiki" class="btn btn-sm btn-primary rounded-full">Details</a>
+                <a href="https://graphiki.vercel.app/" target="_blank" rel="noopener" class="btn btn-sm btn-outline rounded-full">Live app</a>
               </div>
             </div>
           </div>
@@ -166,8 +104,8 @@
             <div class="mt-auto pt-2">
               <p class="text-xs text-base-content/40">TypeScript &middot; Expo &middot; Supabase &middot; Mapbox</p>
               <div class="card-links">
-                <a href="project.html?name=few-lap" class="btn btn-sm btn-primary rounded-full" onclick="event.stopPropagation()">Details</a>
-                <a href="https://few-lap.vercel.app/" target="_blank" rel="noopener" class="btn btn-sm btn-outline rounded-full" onclick="event.stopPropagation()">Live app</a>
+                <a href="project.html?name=few-lap" class="btn btn-sm btn-primary rounded-full">Details</a>
+                <a href="https://few-lap.vercel.app/" target="_blank" rel="noopener" class="btn btn-sm btn-outline rounded-full">Live app</a>
               </div>
             </div>
           </div>
@@ -184,8 +122,8 @@
             <div class="mt-auto pt-2">
               <p class="text-xs text-base-content/40">TypeScript &middot; Expo &middot; Supabase</p>
               <div class="card-links">
-                <a href="project.html?name=synctone" class="btn btn-sm btn-primary rounded-full" onclick="event.stopPropagation()">Details</a>
-                <a href="https://synctone.vercel.app/" target="_blank" rel="noopener" class="btn btn-sm btn-outline rounded-full" onclick="event.stopPropagation()">Live app</a>
+                <a href="project.html?name=synctone" class="btn btn-sm btn-primary rounded-full">Details</a>
+                <a href="https://synctone.vercel.app/" target="_blank" rel="noopener" class="btn btn-sm btn-outline rounded-full">Live app</a>
               </div>
             </div>
           </div>
@@ -202,8 +140,8 @@
             <div class="mt-auto pt-2">
               <p class="text-xs text-base-content/40">TypeScript &middot; React &middot; Supabase &middot; Tailwind</p>
               <div class="card-links">
-                <a href="project.html?name=sun-sea-o" class="btn btn-sm btn-primary rounded-full" onclick="event.stopPropagation()">Details</a>
-                <a href="https://sun-sea-o.vercel.app/" target="_blank" rel="noopener" class="btn btn-sm btn-outline rounded-full" onclick="event.stopPropagation()">Live app</a>
+                <a href="project.html?name=sun-sea-o" class="btn btn-sm btn-primary rounded-full">Details</a>
+                <a href="https://sun-sea-o.vercel.app/" target="_blank" rel="noopener" class="btn btn-sm btn-outline rounded-full">Live app</a>
               </div>
             </div>
           </div>
@@ -220,8 +158,8 @@
             <div class="mt-auto pt-2">
               <p class="text-xs text-base-content/40">TypeScript &middot; React &middot; Tailwind &middot; Supabase</p>
               <div class="card-links">
-                <a href="project.html?name=four-ems" class="btn btn-sm btn-primary rounded-full" onclick="event.stopPropagation()">Details</a>
-                <a href="https://four-ems.vercel.app/" target="_blank" rel="noopener" class="btn btn-sm btn-outline rounded-full" onclick="event.stopPropagation()">Live app</a>
+                <a href="project.html?name=four-ems" class="btn btn-sm btn-primary rounded-full">Details</a>
+                <a href="https://four-ems.vercel.app/" target="_blank" rel="noopener" class="btn btn-sm btn-outline rounded-full">Live app</a>
               </div>
             </div>
           </div>
@@ -238,9 +176,9 @@
             <div class="mt-auto pt-2">
               <p class="text-xs text-base-content/40">JavaScript &middot; Vue 3 &middot; Vite &middot; IndexedDB</p>
               <div class="card-links">
-                <a href="project.html?name=budgy-ting" class="btn btn-sm btn-primary rounded-full" onclick="event.stopPropagation()">Details</a>
-                <a href="https://budgy-ting.vercel.app/" target="_blank" rel="noopener" class="btn btn-sm btn-outline rounded-full" onclick="event.stopPropagation()">Live app</a>
-                <a href="https://github.com/devmade-ai/budgy-ting" target="_blank" rel="noopener" class="btn btn-sm btn-outline rounded-full" onclick="event.stopPropagation()">Source</a>
+                <a href="project.html?name=budgy-ting" class="btn btn-sm btn-primary rounded-full">Details</a>
+                <a href="https://budgy-ting.vercel.app/" target="_blank" rel="noopener" class="btn btn-sm btn-outline rounded-full">Live app</a>
+                <a href="https://github.com/devmade-ai/budgy-ting" target="_blank" rel="noopener" class="btn btn-sm btn-outline rounded-full">Source</a>
               </div>
             </div>
           </div>
@@ -256,9 +194,9 @@
             <div class="mt-auto pt-2">
               <p class="text-xs text-base-content/40">TypeScript &middot; React &middot; Vite</p>
               <div class="card-links">
-                <a href="project.html?name=model-pear" class="btn btn-sm btn-primary rounded-full" onclick="event.stopPropagation()">Details</a>
-                <a href="https://model-pear-web.vercel.app/" target="_blank" rel="noopener" class="btn btn-sm btn-outline rounded-full" onclick="event.stopPropagation()">Live app</a>
-                <a href="https://github.com/devmade-ai/model-pear" target="_blank" rel="noopener" class="btn btn-sm btn-outline rounded-full" onclick="event.stopPropagation()">Source</a>
+                <a href="project.html?name=model-pear" class="btn btn-sm btn-primary rounded-full">Details</a>
+                <a href="https://model-pear-web.vercel.app/" target="_blank" rel="noopener" class="btn btn-sm btn-outline rounded-full">Live app</a>
+                <a href="https://github.com/devmade-ai/model-pear" target="_blank" rel="noopener" class="btn btn-sm btn-outline rounded-full">Source</a>
               </div>
             </div>
           </div>
@@ -275,9 +213,9 @@
             <div class="mt-auto pt-2">
               <p class="text-xs text-base-content/40">TypeScript &middot; React &middot; Tailwind</p>
               <div class="card-links">
-                <a href="project.html?name=see-veo" class="btn btn-sm btn-primary rounded-full" onclick="event.stopPropagation()">Details</a>
-                <a href="https://see-veo.vercel.app/" target="_blank" rel="noopener" class="btn btn-sm btn-outline rounded-full" onclick="event.stopPropagation()">Live app</a>
-                <a href="https://github.com/devmade-ai/see-veo" target="_blank" rel="noopener" class="btn btn-sm btn-outline rounded-full" onclick="event.stopPropagation()">Source</a>
+                <a href="project.html?name=see-veo" class="btn btn-sm btn-primary rounded-full">Details</a>
+                <a href="https://see-veo.vercel.app/" target="_blank" rel="noopener" class="btn btn-sm btn-outline rounded-full">Live app</a>
+                <a href="https://github.com/devmade-ai/see-veo" target="_blank" rel="noopener" class="btn btn-sm btn-outline rounded-full">Source</a>
               </div>
             </div>
           </div>
@@ -300,9 +238,9 @@
             </h4>
             <p class="text-sm text-base-content/70">Git analytics dashboard. Extract commit history from any repo, visualize progress, contributors, and code health. 6 dashboard tabs with role-based views.</p>
             <div class="card-links">
-              <a href="project.html?name=repo-tor" class="btn btn-sm btn-primary rounded-full" onclick="event.stopPropagation()">Details</a>
-              <a href="https://repo-tor.vercel.app/" target="_blank" rel="noopener" class="btn btn-sm btn-outline rounded-full" onclick="event.stopPropagation()">Dashboard</a>
-              <a href="https://github.com/devmade-ai/repo-tor" target="_blank" rel="noopener" class="btn btn-sm btn-outline rounded-full" onclick="event.stopPropagation()">Source</a>
+              <a href="project.html?name=repo-tor" class="btn btn-sm btn-primary rounded-full">Details</a>
+              <a href="https://repo-tor.vercel.app/" target="_blank" rel="noopener" class="btn btn-sm btn-outline rounded-full">Dashboard</a>
+              <a href="https://github.com/devmade-ai/repo-tor" target="_blank" rel="noopener" class="btn btn-sm btn-outline rounded-full">Source</a>
             </div>
           </div>
         </div>
@@ -315,8 +253,8 @@
             </h4>
             <p class="text-sm text-base-content/70">Utilities API on Vercel. Contact form endpoint, multi-tenant form builder, and agreement management backend. All backed by Supabase.</p>
             <div class="card-links">
-              <a href="project.html?name=tool-till-tees" class="btn btn-sm btn-primary rounded-full" onclick="event.stopPropagation()">Details</a>
-              <a href="https://tool-till-tees.vercel.app/" target="_blank" rel="noopener" class="btn btn-sm btn-outline rounded-full" onclick="event.stopPropagation()">Live</a>
+              <a href="project.html?name=tool-till-tees" class="btn btn-sm btn-primary rounded-full">Details</a>
+              <a href="https://tool-till-tees.vercel.app/" target="_blank" rel="noopener" class="btn btn-sm btn-outline rounded-full">Live</a>
             </div>
           </div>
         </div>
@@ -329,8 +267,8 @@
             </h4>
             <p class="text-sm text-base-content/70">This site. Hosts shared AI assistant rules, engineering patterns, and the project portfolio. Also serves as the canonical CLAUDE.md reference.</p>
             <div class="card-links">
-              <a href="CLAUDE.md" class="btn btn-sm btn-primary rounded-full" onclick="event.stopPropagation()">CLAUDE.md</a>
-              <a href="https://github.com/devmade-ai/glow-props" target="_blank" rel="noopener" class="btn btn-sm btn-outline rounded-full" onclick="event.stopPropagation()">Source</a>
+              <a href="CLAUDE.md" class="btn btn-sm btn-primary rounded-full">CLAUDE.md</a>
+              <a href="https://github.com/devmade-ai/glow-props" target="_blank" rel="noopener" class="btn btn-sm btn-outline rounded-full">Source</a>
             </div>
           </div>
         </div>
@@ -343,8 +281,8 @@
             </h4>
             <p class="text-sm text-base-content/70">CDN assets repository for canva-grid. Hosts sample images and media files served to the design tool.</p>
             <div class="card-links">
-              <a href="project.html?name=canva-grid-assets" class="btn btn-sm btn-primary rounded-full" onclick="event.stopPropagation()">Details</a>
-              <a href="https://github.com/devmade-ai/canva-grid-assets" target="_blank" rel="noopener" class="btn btn-sm btn-outline rounded-full" onclick="event.stopPropagation()">Source</a>
+              <a href="project.html?name=canva-grid-assets" class="btn btn-sm btn-primary rounded-full">Details</a>
+              <a href="https://github.com/devmade-ai/canva-grid-assets" target="_blank" rel="noopener" class="btn btn-sm btn-outline rounded-full">Source</a>
             </div>
           </div>
         </div>
@@ -452,6 +390,8 @@
   <!-- Requirement: Cards reveal action links when tapped/clicked
        Approach: Toggle .card-active class on click, one card active at a time.
          Click same card again or click outside to deactivate.
+         Delegated stopPropagation on .card-links a prevents link clicks from
+         toggling the card (replaces 30+ inline onclick handlers).
        Alternative: CSS :focus-within — rejected, loses state on any click outside
          and doesn't work with keyboard navigation on the card itself -->
   <script>
@@ -459,10 +399,13 @@
       var activeCard = null;
 
       document.querySelectorAll('.card-interactive').forEach(function (card) {
-        // Only make cards with links interactive
         if (!card.querySelector('.card-links')) return;
 
-        card.addEventListener('click', function () {
+        card.addEventListener('click', function (e) {
+          // Requirement: Action link clicks should navigate, not toggle the card
+          // Approach: Single delegated check replaces 30+ inline onclick handlers
+          if (e.target.closest('.card-links a')) return;
+
           if (activeCard === card) {
             card.classList.remove('card-active');
             activeCard = null;
@@ -474,7 +417,6 @@
         });
       });
 
-      // Click outside any card deactivates
       document.addEventListener('click', function (e) {
         if (activeCard && !activeCard.contains(e.target)) {
           activeCard.classList.remove('card-active');
