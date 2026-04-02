@@ -1,23 +1,26 @@
 # Session Notes
 
 ## Worked on
-Improving PWA update system based on research into vite-plugin-pwa best practices.
+Standardizing PWA install/update UI patterns across all repos based on cross-repo audit.
 
 ## Accomplished
-- Added `cleanupOutdatedCaches: true` and `globPatterns` to Workbox config in vite.config.js
-- Updated PWA_SYSTEM.md suggested implementation with research findings:
-  - Added Cache Headers section (no-cache for index.html/sw.js, immutable for hashed assets, GitHub Pages note)
-  - Added ChunkLoadError Prevention section with lazy-load retry wrapper pattern
-  - Added Platform Gotchas section (Safari caching, navigation overlap, Workbox timing heuristic, autoUpdate→prompt danger, Expo Web incompatibility)
-  - Added workbox-window dev dependency note for React projects
-  - Added navigateFallback SPA-only guidance
-  - Added 4 new Key Lessons (cleanupOutdatedCaches, globPatterns, navigateFallback, cache headers)
+- Audited PWA implementations across canva-grid, four-ems, sync-tone, and glow-props
+- Rewrote PWA_SYSTEM.md suggested implementation, standardizing on canva-grid's patterns:
+  - **usePWAUpdate**: ref-based interval cleanup (fixes interval leak on remount)
+  - **usePWAInstall**: data-driven `getInstallInstructions()` with iOS/macOS Safari split from four-ems
+  - **Toast system**: new section — context-based ToastProvider + useToast hook (replaces one-off DOM banners)
+  - **InstallInstructionsModal**: data-driven rendering + focus trap + benefits section
+  - **Install & Update UI Patterns**: new section documenting burger menu vs banner vs inline approaches
+  - **Key Lessons**: reorganized into categories (Icons, Install, SW Updates, Caching, UI, General)
+- Added `cleanupOutdatedCaches` and `globPatterns` to vite.config.js Workbox config
+- Added Cache Headers, ChunkLoadError Prevention, and Platform Gotchas sections
 
 ## Current state
-- Build clean (15 precache entries, 297.54 KiB)
+- Build clean (15 precache entries, 301.83 KiB)
 - Branch: claude/improve-pwa-updates-tYFSG
 
 ## Key context
-- glow-props is a multi-page app (index.html + project.html) — `navigateFallback` must NOT be set
-- PWA implementation is vanilla JS (not React) — uses `virtual:pwa-register` directly
-- GitHub Pages hosting means no control over HTTP cache headers, but SW precache layer handles staleness
+- canva-grid is the base pattern — data-driven install instructions, context-based toast, focus-trapped modal
+- four-ems iOS/macOS Safari split merged into canva-grid's `getInstallInstructions()` via UA sniffing
+- sync-tone's module-level singleton pattern was NOT adopted (adds complexity only needed for Expo's frequent remounts)
+- glow-props is vanilla JS — uses `virtual:pwa-register` directly, not the React hooks. The suggested implementation covers the React pattern.
