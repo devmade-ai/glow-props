@@ -159,14 +159,25 @@ function validDarkTheme(id) {
 
 ### PWA Meta Theme-Color
 
-DaisyUI themes use oklch colors that can't be directly used in `<meta name="theme-color">`. A build script (`scripts/generate-meta-colors.mjs`) extracts the exact oklch values from `daisyui/theme/object.js`, converts them to hex, and writes the color map to both `public/theme.js` and `partials/head-common.html`. Run `npm run generate:meta-colors` after DaisyUI updates.
+DaisyUI themes use oklch colors that can't be directly used in `<meta name="theme-color">`. A build script (`scripts/generate-meta-colors.mjs`) handles everything automatically:
 
-**Critical rule: every hex value must produce white status bar text.** The OS controls the text/icon color — the app only controls the background. The script uses these selection strategies:
+```bash
+npm run generate:meta-colors
+```
 
-- **Light themes:** Try primary first. If its relative luminance > 0.2 (too light for white text), fall back to neutral, then base-content, then `#000000`.
-- **Dark themes:** Use base-100 (the dark page background). Always dark enough for white text.
+#### What the script does
 
-**Never use white or near-white colors** (`#ffffff`, `#f5f5f5`, etc.) — this was the original bug that caused invisible status bar text (see Key Lessons).
+Reads `daisyui/theme/object.js` and generates all theme-related data across the project:
+
+1. **Light/dark classification** — derived from each theme's `color-scheme` property (no manual lists)
+2. **Meta color hex values** — light themes use `--color-primary`, dark themes use `--color-base-100`, converted from oklch to hex
+3. **Updates these files:**
+   - `public/theme.js` — `META_COLORS` object + `LIGHT_THEMES`/`DARK_THEMES` arrays
+   - `partials/head-common.html` — compact `mc` color map + `lt`/`dt` arrays for bootstrap
+   - `partials/navbar.html` — redistributes theme picker buttons between light/dark sections
+   - `index.html` / `project.html` — initial `<meta name="theme-color">` values
+
+Run this after DaisyUI updates. Do not manually edit any of the generated blocks.
 
 #### HTML Setup
 
@@ -177,7 +188,7 @@ Two meta tags with media queries ensure the correct initial color before JavaScr
 <meta name="theme-color" content="#261b25" media="(prefers-color-scheme: dark)">
 ```
 
-Initial values match the default themes (caramellatte primary for light, coffee base-100 for dark). These are also updated by the generation script.
+Initial values match the default themes (caramellatte primary for light, coffee base-100 for dark). Updated by the generation script.
 
 #### JavaScript Update
 
@@ -190,15 +201,7 @@ document.querySelectorAll('meta[name="theme-color"]').forEach(meta => {
 })
 ```
 
-#### Auto-Generated Color Map
-
-The `META_COLORS` object in `public/theme.js` and the compact `mc` object in `partials/head-common.html` are both written by `scripts/generate-meta-colors.mjs`. Do not edit them manually — run the script instead:
-
-```bash
-npm run generate:meta-colors
-```
-
-The script reads DaisyUI's theme objects, converts oklch → hex, applies the luminance-based selection heuristic, and writes both files. The duplication between the runtime script and the inline bootstrap script is unavoidable — inline scripts cannot import ES modules.
+The duplication between the runtime script and the inline bootstrap script is unavoidable — inline scripts cannot import ES modules.
 
 ## Safe localStorage Wrappers
 
@@ -510,7 +513,7 @@ Pairs with the [Download as PDF](DOWNLOAD_PDF.md) implementation.
 
 5. **Validate stored theme IDs against the catalog.** Users may have outdated values from a previous version. Invalid IDs should silently fall back to defaults — no crash, no unstyled page.
 6. **Curate for quality, not quantity.** All 35 DaisyUI themes is fine for a portfolio, but utility apps should pick 8-10 per mode that look good with the content. Novelty themes (cyberpunk, halloween) can look unprofessional.
-7. **PWA meta theme-color needs hex values with white-text-safe colors.** DaisyUI uses oklch internally. Run `npm run generate:meta-colors` to auto-extract hex values from DaisyUI's theme objects and write them to `theme.js` and `head-common.html`. The script uses relative luminance to pick primary (if dark enough) or neutral/base-content for light themes, and base-100 for dark themes. **Never use white/light colors** — the OS controls status bar text color, and white backgrounds can produce invisible white-on-white text when the OS color scheme opposes the app theme.
+7. **PWA meta theme-color hex values are auto-generated.** DaisyUI uses oklch internally. Run `npm run generate:meta-colors` to extract primary (light themes) or base-100 (dark themes) as hex, and write them to theme.js, head-common.html, navbar.html, index.html, and project.html. Light/dark classification also comes from DaisyUI's `color-scheme`. No manual lists to maintain.
 
 **Persistence and sync:**
 
