@@ -2,6 +2,22 @@
 
 ## 2026-04-02
 
+### Standardize PWA install/update patterns from cross-repo audit
+- Audited canva-grid, four-ems, sync-tone, and glow-props PWA implementations
+- Rewrote `docs/implementations/PWA_SYSTEM.md` — standardized on canva-grid patterns with four-ems TypeScript types
+- Added new sections: Toast System, Install Instructions Modal (data-driven), Install & Update UI Patterns, Cache Headers, ChunkLoadError Prevention, Platform Gotchas
+- Applied all patterns to `src/pwa.js` (vanilla JS adaptation):
+  - Replaced hardcoded HTML install instructions with data-driven `getInstallInstructions()`
+  - Added benefits section to install modal (works offline, dock, full-screen)
+  - Added `appinstalled` event listener to clean up state on successful install
+  - Added focus trap to install modal for keyboard accessibility
+  - Added reusable `showToast()` with DaisyUI semantic colors, exit animation, safe area
+  - Switched browser detection to coarse types (safari/firefox) with iOS/macOS split inside `getInstallInstructions()`
+  - Added `backdrop-blur-sm` to install modal backdrop
+  - Added 1s timeout for Safari/Firefox manual instruction fallback
+- Added `cleanupOutdatedCaches: true` and `globPatterns` to Workbox config in `vite.config.js`
+- Key Lessons reorganized into categories: Icons & Manifest, Install Prompt, Service Worker Updates, Caching & Deployment, UI Patterns, General
+
 ### Quick wins from audit — touch feedback, sitemap, navbar deduplication
 - Added `:active` touch feedback on card-interactive (scale 0.98 on tap)
 - Added `robots.txt` and `sitemap.xml` to `public/` for SEO

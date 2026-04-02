@@ -1,24 +1,35 @@
 # Session Notes
 
 ## Worked on
-Organizing implementations, PWA support, full 9-trigger audit sweep, fixing all findings, then quick-win improvements.
+Standardizing PWA install/update UI patterns — both the suggested implementation doc and glow-props' actual code.
 
 ## Accomplished
-- Extracted 7 suggested implementations from CLAUDE.md into `docs/implementations/`
-- Rewrote THEME_DARK_MODE.md for actual DaisyUI-based approach (researched all 3 projects)
-- Implemented PWA support (SW, install prompt, update banner, offline toast)
-- Ran all 9 audit triggers in parallel, fixed 19 findings (4 critical, 6 high, 9 medium)
-- Added card `:active` touch feedback and sitemap/robots.txt
-- Extracted 440-line navbar into `partials/navbar.html` with custom Vite plugin
-- Cleaned TODO.md down to only actionable items
+- Audited PWA implementations across canva-grid, four-ems, sync-tone, and glow-props
+- Rewrote PWA_SYSTEM.md suggested implementation, standardizing on canva-grid's patterns:
+  - **usePWAUpdate**: ref-based interval cleanup (fixes interval leak on remount)
+  - **usePWAInstall**: data-driven `getInstallInstructions()` with iOS/macOS Safari split
+  - **Toast system**: context-based ToastProvider + useToast hook (replaces one-off DOM banners)
+  - **InstallInstructionsModal**: data-driven rendering + focus trap + benefits section
+  - **Install & Update UI Patterns**: documents burger menu vs banner vs inline approaches
+  - **Key Lessons**: reorganized into categories (Icons, Install, SW Updates, Caching, UI, General)
+- Applied all patterns to glow-props' actual `src/pwa.js` (vanilla JS adaptation):
+  - Replaced hardcoded HTML install instructions with data-driven `getInstallInstructions()`
+  - Added benefits section to install modal (works offline, dock, full-screen)
+  - Added `appinstalled` event listener to clean up state on successful install
+  - Added focus trap to install modal for keyboard accessibility
+  - Added reusable `showToast()` function with DaisyUI semantic colors + exit animation
+  - Switched browser detection from fine-grained (safari-ios/safari-macos) to coarse (safari) with iOS/macOS split inside `getInstallInstructions()`
+  - Added `backdrop-blur-sm` to install modal backdrop
+  - Added 1s timeout for Safari/Firefox manual instruction fallback
+- Added `cleanupOutdatedCaches` and `globPatterns` to vite.config.js Workbox config
+- Added Cache Headers, ChunkLoadError Prevention, and Platform Gotchas sections to PWA_SYSTEM.md
 
 ## Current state
 - Build clean, all features working
-- Navbar is single-source in `partials/navbar.html` — no more HTML duplication
-- Branch: claude/organize-implementations-folder-DBcuk (6 commits)
+- Branch: claude/improve-pwa-updates-tYFSG
 
 ## Key context
-- `htmlPartials` Vite plugin in vite.config.js reads `partials/navbar.html` and replaces `<!-- NAVBAR:prefix -->` comments. `{{NAV_PREFIX}}` becomes `""` for index.html or `"./"` for project.html.
-- Bootstrap inline scripts (flash prevention, beforeinstallprompt capture) are still duplicated — they MUST be inline classic scripts for synchronous execution. Can't be externalized.
-- Theme lists still duplicated in bootstrap scripts + theme.js for same reason.
-- The partial includes all 35 theme picker buttons, PWA install item, dark/light toggle, random theme toggle, and Save as PDF button.
+- canva-grid is the base pattern — data-driven install instructions, context-based toast, focus-trapped modal
+- glow-props is vanilla JS — adapts the React patterns using plain DOM APIs
+- The `setInterval` in `onRegisteredSW` does NOT leak in vanilla JS (runs once, no remount). The ref-based cleanup pattern is React-specific.
+- `showToast()` replaces the old `showOfflineToast()` — reusable for any notification type
