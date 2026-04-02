@@ -159,50 +159,44 @@ function validDarkTheme(id) {
 
 ### PWA Meta Theme-Color
 
-DaisyUI themes use oklch colors that can't be directly used in `<meta name="theme-color">`. A build script (`scripts/generate-meta-colors.mjs`) handles everything automatically:
+DaisyUI themes use oklch colors that can't be directly used in `<meta name="theme-color">`. Use a build script to extract hex values from DaisyUI's theme definitions (`daisyui/theme/object.js`) so nothing is manually maintained.
 
-```bash
-npm run generate:meta-colors
-```
+#### Build Script Approach
 
-#### What the script does
+Write a Node.js script that reads DaisyUI's theme objects and generates everything:
 
-Reads `daisyui/theme/object.js` and generates all theme-related data across the project:
+1. **Light/dark classification** — read each theme's `color-scheme` property
+2. **oklch → hex conversion** — convert oklch to hex at build time (oklab→LMS→linear sRGB→gamma sRGB)
+3. **Color selection** — light themes use `--color-primary`, dark themes use `--color-base-100`
+4. **Generate all outputs** — theme arrays, hex color maps, navbar button lists, initial meta tag values
 
-1. **Light/dark classification** — derived from each theme's `color-scheme` property
-2. **Meta color hex values** — light themes use `--color-primary`, dark themes use `--color-base-100`, converted from oklch to hex
-3. **Navbar theme buttons** — generates the full button list per section from theme names (display name = capitalized theme name)
-4. **Updates these files:**
-   - `public/theme.js` — `META_COLORS` object + `LIGHT_THEMES`/`DARK_THEMES` arrays
-   - `partials/head-common.html` — compact `mc` color map + `lt`/`dt` arrays for bootstrap
-   - `partials/navbar.html` — light and dark theme picker button lists
-   - `index.html` / `project.html` — initial `<meta name="theme-color">` values
-
-Zero manual config in the script. Run after DaisyUI updates. Do not manually edit any of the generated blocks.
+The script should update every file that contains theme lists or color maps so there is zero manual maintenance. Run it after DaisyUI version updates.
 
 #### HTML Setup
 
-Two meta tags with media queries ensure the correct initial color before JavaScript runs:
+Two meta tags with media queries provide the correct initial color before JavaScript runs:
 
 ```html
-<meta name="theme-color" content="#000000" media="(prefers-color-scheme: light)">
-<meta name="theme-color" content="#261b25" media="(prefers-color-scheme: dark)">
+<meta name="theme-color" content="<default-light-hex>" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="<default-dark-hex>" media="(prefers-color-scheme: dark)">
 ```
 
-Initial values match the default themes (caramellatte primary for light, coffee base-100 for dark). Updated by the generation script.
+These should also be updated by the build script.
 
 #### JavaScript Update
 
 Update **both** meta tags on every theme change — overwriting the media-specific values so the active theme's color always wins regardless of OS preference:
 
 ```javascript
-const color = getMetaColor(activeTheme)
+const color = META_COLORS[activeTheme] || '#808080'
 document.querySelectorAll('meta[name="theme-color"]').forEach(meta => {
   meta.setAttribute('content', color)
 })
 ```
 
-The duplication between the runtime script and the inline bootstrap script is unavoidable — inline scripts cannot import ES modules.
+#### Bootstrap Script
+
+The flash prevention inline script needs its own copy of the color map (inline scripts can't import ES modules). The build script should generate both copies to keep them in sync.
 
 ## Safe localStorage Wrappers
 
@@ -514,7 +508,7 @@ Pairs with the [Download as PDF](DOWNLOAD_PDF.md) implementation.
 
 5. **Validate stored theme IDs against the catalog.** Users may have outdated values from a previous version. Invalid IDs should silently fall back to defaults — no crash, no unstyled page.
 6. **Curate for quality, not quantity.** All 35 DaisyUI themes is fine for a portfolio, but utility apps should pick 8-10 per mode that look good with the content. Novelty themes (cyberpunk, halloween) can look unprofessional.
-7. **PWA meta theme-color hex values are auto-generated.** DaisyUI uses oklch internally. Run `npm run generate:meta-colors` to extract primary (light themes) or base-100 (dark themes) as hex, and write them to theme.js, head-common.html, navbar.html, index.html, and project.html. Light/dark classification also comes from DaisyUI's `color-scheme`. No manual lists to maintain.
+7. **PWA meta theme-color hex values should be auto-generated.** DaisyUI uses oklch internally. Use a build script to extract primary (light themes) or base-100 (dark themes) as hex from `daisyui/theme/object.js`. Derive light/dark classification from each theme's `color-scheme` property. Generate all theme lists, color maps, and navbar buttons — no manual maintenance.
 
 **Persistence and sync:**
 
