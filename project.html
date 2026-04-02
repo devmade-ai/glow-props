@@ -5,6 +5,10 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <meta name="color-scheme" content="light dark">
   <title>Loading... — devmade-ai</title>
+  <meta property="og:title" content="devmade-ai — Project Details">
+  <meta property="og:description" content="Software projects, internal tools, and reusable engineering patterns by devmade-ai.">
+  <meta property="og:image" content="https://devmade-ai.github.io/glow-props/assets/images/icon-512.png">
+  <meta property="og:type" content="website">
   <link rel="icon" type="image/png" href="assets/images/favicon.png">
   <link rel="apple-touch-icon" href="assets/images/icon-192.png">
 
@@ -63,6 +67,11 @@
   <link rel="stylesheet" href="main.css">
 </head>
 <body class="bg-base-100 text-base-content min-h-screen">
+
+  <!-- Skip link for keyboard users (same pattern as index.html) -->
+  <a href="#main" class="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-90 focus:btn focus:btn-primary focus:btn-sm">
+    Skip to main content
+  </a>
 
   <!-- Header — Navbar with burger menu (same pattern as index.html) -->
   <nav class="navbar bg-base-100/80 backdrop-blur-md sticky top-0 z-30 border-b border-base-300 no-print px-4"
@@ -135,7 +144,7 @@
               <span id="random-theme-indicator" class="text-xs text-base-content/40">Off</span>
             </button></li>
             <!-- PWA install — hidden by default, shown by pwa.js when installable -->
-            <li class="pwa-install-item hidden"><button type="button"
+            <li class="pwa-install-item hidden"><button type="button" data-close
                         onclick="window.__pwa && window.__pwa.triggerInstall()"
                         class="block w-full text-left px-4 py-2.5 text-sm text-base-content
                                hover:bg-base-200 transition-colors cursor-pointer
@@ -489,7 +498,7 @@
     </div>
   </nav>
 
-  <main class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+  <main id="main" class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
     <div id="app">
       <p class="text-center py-16 text-base-content/40">Loading...</p>
     </div>
@@ -559,20 +568,45 @@
         return html;
       }
 
+      // Requirement: Inline markdown formatting for project doc content
+      // Approach: Escape HTML entities FIRST to prevent XSS, then apply
+      //   formatting replacements on the escaped text. Link hrefs are
+      //   validated to reject javascript:/data: protocol injection.
+      // Alternative: DOMPurify — rejected, adds dependency for simple case
       function inlineMarkdown(text) {
-        return text
+        var escaped = escapeHtml(text);
+        return escaped
           .replace(/`([^`]+)`/g, '<code class="text-xs bg-base-300/50 px-1.5 py-0.5 rounded">$1</code>')
           .replace(/\*\*([^*]+)\*\*/g, '<strong class="font-semibold">$1</strong>')
           .replace(/\*([^*]+)\*/g, '<em>$1</em>')
-          .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" class="link link-primary">$1</a>');
+          .replace(/\[([^\]]+)\]\(([^)]+)\)/g, function (m, label, href) {
+            if (!isSafeUrl(href)) return label;
+            return '<a href="' + href + '" class="link link-primary">' + label + '</a>';
+          });
+      }
+
+      // Requirement: Prevent javascript:/data: protocol injection in URLs
+      // Approach: Allowlist http(s) and relative URLs only. Reject everything else.
+      function isSafeUrl(url) {
+        var decoded = url.replace(/&amp;/g, '&');
+        if (/^https?:\/\//i.test(decoded)) return true;
+        if (/^[a-z0-9]/i.test(decoded) && !/:/.test(decoded)) return true; // relative path
+        if (decoded.startsWith('/') || decoded.startsWith('#') || decoded.startsWith('.')) return true;
+        return false;
       }
 
       function escapeHtml(str) {
         return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
       }
 
-      fetch(basePath + 'meta.json')
+      // Requirement: Timeout on metadata fetch to avoid indefinite loading on slow/broken networks
+      // Approach: AbortController with 10s timeout — shows error instead of endless spinner
+      var fetchController = new AbortController();
+      var fetchTimeout = setTimeout(function () { fetchController.abort(); }, 10000);
+
+      fetch(basePath + 'meta.json', { signal: fetchController.signal })
         .then(function (r) {
+          clearTimeout(fetchTimeout);
           if (!r.ok) throw new Error('Not found');
           return r.json();
         })
@@ -602,6 +636,9 @@
                     docs[doc.key] = text;
                     render();
                   }
+                })
+                .catch(function () {
+                  // Doc file failed to load — skip silently, project still renders without it
                 });
             }
           });
@@ -617,17 +654,17 @@
         var statusLabel = meta.liveUrl ? 'Live' : 'No live URL';
 
         var linksHtml = '';
-        if (meta.liveUrl) {
+        if (meta.liveUrl && isSafeUrl(meta.liveUrl)) {
           linksHtml += '<a href="' + escapeHtml(meta.liveUrl) + '" target="_blank" rel="noopener" class="btn btn-outline btn-sm gap-1">Visit app</a>';
         }
-        if (meta.repoUrl) {
+        if (meta.repoUrl && isSafeUrl(meta.repoUrl)) {
           linksHtml += '<a href="' + escapeHtml(meta.repoUrl) + '" target="_blank" rel="noopener" class="btn btn-outline btn-sm gap-1">Source code</a>';
         }
         if (!meta.repoUrl && meta.repo === 'private') {
           linksHtml += '<span class="btn btn-outline btn-sm btn-disabled opacity-50">Private repository</span>';
         }
 
-        var techHtml = meta.tech ? meta.tech.map(function (t) { return '<span class="badge badge-ghost badge-sm">' + t + '</span>'; }).join('') : '';
+        var techHtml = meta.tech ? meta.tech.map(function (t) { return '<span class="badge badge-ghost badge-sm">' + escapeHtml(t) + '</span>'; }).join('') : '';
         var useCasesHtml = meta.useCases ? meta.useCases.map(function (u) { return '<li class="text-sm text-base-content/70">' + escapeHtml(u) + '</li>'; }).join('') : '<p class="text-sm text-base-content/40">Coming soon.</p>';
 
         var privacyHtml = '';

@@ -6,6 +6,10 @@
   <meta name="color-scheme" content="light dark">
   <title>devmade-ai</title>
   <meta name="description" content="Software projects, internal tools, and reusable engineering patterns by devmade-ai.">
+  <meta property="og:title" content="devmade-ai — Project Portfolio">
+  <meta property="og:description" content="Software projects, internal tools, and reusable engineering patterns by devmade-ai.">
+  <meta property="og:image" content="https://devmade-ai.github.io/glow-props/assets/images/icon-512.png">
+  <meta property="og:type" content="website">
   <link rel="icon" type="image/png" href="assets/images/favicon.png">
   <link rel="apple-touch-icon" href="assets/images/icon-192.png">
 
@@ -78,6 +82,12 @@
   <link rel="stylesheet" href="main.css">
 </head>
 <body class="bg-base-100 text-base-content min-h-screen">
+
+  <!-- Requirement: Skip link for keyboard users to bypass navbar + burger menu (30+ items)
+       Approach: Visually hidden link that becomes visible on focus. Points to #main. -->
+  <a href="#main" class="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-90 focus:btn focus:btn-primary focus:btn-sm">
+    Skip to main content
+  </a>
 
   <!-- Header — Navbar with burger menu
        Requirement: Clean header with logo + title on left, burger menu on right
@@ -173,7 +183,7 @@
                    "Check for updates" always visible — triggers SW update check.
                  Alternative: Separate install banner — rejected, burger menu is the
                    standard location for app actions per BURGER_MENU.md -->
-            <li class="pwa-install-item hidden"><button type="button"
+            <li class="pwa-install-item hidden"><button type="button" data-close
                         onclick="window.__pwa && window.__pwa.triggerInstall()"
                         class="block w-full text-left px-4 py-2.5 text-sm text-base-content
                                hover:bg-base-200 transition-colors cursor-pointer
@@ -532,7 +542,7 @@
     </div>
   </nav>
 
-  <main class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+  <main id="main" class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
     <!-- Hero -->
     <header class="pt-4 pb-6 animate-fade-in-up">
       <!-- Requirement: Hero heading gradient that adapts to any theme combo
@@ -568,9 +578,9 @@
             <div class="mt-auto pt-2">
               <p class="text-xs text-base-content/40">JavaScript &middot; Vite &middot; Tailwind</p>
               <div class="card-links">
-                <a href="project.html?name=canva-grid" class="btn btn-xs btn-primary rounded-full" onclick="event.stopPropagation()">Details</a>
-                <a href="https://canva-grid.vercel.app/" target="_blank" rel="noopener" class="btn btn-xs btn-outline rounded-full" onclick="event.stopPropagation()">Live app</a>
-                <a href="https://github.com/devmade-ai/canva-grid" target="_blank" rel="noopener" class="btn btn-xs btn-outline rounded-full" onclick="event.stopPropagation()">Source</a>
+                <a href="project.html?name=canva-grid" class="btn btn-sm btn-primary rounded-full" onclick="event.stopPropagation()">Details</a>
+                <a href="https://canva-grid.vercel.app/" target="_blank" rel="noopener" class="btn btn-sm btn-outline rounded-full" onclick="event.stopPropagation()">Live app</a>
+                <a href="https://github.com/devmade-ai/canva-grid" target="_blank" rel="noopener" class="btn btn-sm btn-outline rounded-full" onclick="event.stopPropagation()">Source</a>
               </div>
             </div>
           </div>
@@ -587,8 +597,8 @@
             <div class="mt-auto pt-2">
               <p class="text-xs text-base-content/40">TypeScript &middot; Cytoscape.js &middot; IndexedDB</p>
               <div class="card-links">
-                <a href="project.html?name=graphiki" class="btn btn-xs btn-primary rounded-full" onclick="event.stopPropagation()">Details</a>
-                <a href="https://graphiki.vercel.app/" target="_blank" rel="noopener" class="btn btn-xs btn-outline rounded-full" onclick="event.stopPropagation()">Live app</a>
+                <a href="project.html?name=graphiki" class="btn btn-sm btn-primary rounded-full" onclick="event.stopPropagation()">Details</a>
+                <a href="https://graphiki.vercel.app/" target="_blank" rel="noopener" class="btn btn-sm btn-outline rounded-full" onclick="event.stopPropagation()">Live app</a>
               </div>
             </div>
           </div>
@@ -605,8 +615,8 @@
             <div class="mt-auto pt-2">
               <p class="text-xs text-base-content/40">TypeScript &middot; Expo &middot; Supabase &middot; Mapbox</p>
               <div class="card-links">
-                <a href="project.html?name=few-lap" class="btn btn-xs btn-primary rounded-full" onclick="event.stopPropagation()">Details</a>
-                <a href="https://few-lap.vercel.app/" target="_blank" rel="noopener" class="btn btn-xs btn-outline rounded-full" onclick="event.stopPropagation()">Live app</a>
+                <a href="project.html?name=few-lap" class="btn btn-sm btn-primary rounded-full" onclick="event.stopPropagation()">Details</a>
+                <a href="https://few-lap.vercel.app/" target="_blank" rel="noopener" class="btn btn-sm btn-outline rounded-full" onclick="event.stopPropagation()">Live app</a>
               </div>
             </div>
           </div>
@@ -623,8 +633,8 @@
             <div class="mt-auto pt-2">
               <p class="text-xs text-base-content/40">TypeScript &middot; Expo &middot; Supabase</p>
               <div class="card-links">
-                <a href="project.html?name=synctone" class="btn btn-xs btn-primary rounded-full" onclick="event.stopPropagation()">Details</a>
-                <a href="https://synctone.vercel.app/" target="_blank" rel="noopener" class="btn btn-xs btn-outline rounded-full" onclick="event.stopPropagation()">Live app</a>
+                <a href="project.html?name=synctone" class="btn btn-sm btn-primary rounded-full" onclick="event.stopPropagation()">Details</a>
+                <a href="https://synctone.vercel.app/" target="_blank" rel="noopener" class="btn btn-sm btn-outline rounded-full" onclick="event.stopPropagation()">Live app</a>
               </div>
             </div>
           </div>
@@ -641,8 +651,8 @@
             <div class="mt-auto pt-2">
               <p class="text-xs text-base-content/40">TypeScript &middot; React &middot; Supabase &middot; Tailwind</p>
               <div class="card-links">
-                <a href="project.html?name=sun-sea-o" class="btn btn-xs btn-primary rounded-full" onclick="event.stopPropagation()">Details</a>
-                <a href="https://sun-sea-o.vercel.app/" target="_blank" rel="noopener" class="btn btn-xs btn-outline rounded-full" onclick="event.stopPropagation()">Live app</a>
+                <a href="project.html?name=sun-sea-o" class="btn btn-sm btn-primary rounded-full" onclick="event.stopPropagation()">Details</a>
+                <a href="https://sun-sea-o.vercel.app/" target="_blank" rel="noopener" class="btn btn-sm btn-outline rounded-full" onclick="event.stopPropagation()">Live app</a>
               </div>
             </div>
           </div>
@@ -659,8 +669,8 @@
             <div class="mt-auto pt-2">
               <p class="text-xs text-base-content/40">TypeScript &middot; React &middot; Tailwind &middot; Supabase</p>
               <div class="card-links">
-                <a href="project.html?name=four-ems" class="btn btn-xs btn-primary rounded-full" onclick="event.stopPropagation()">Details</a>
-                <a href="https://four-ems.vercel.app/" target="_blank" rel="noopener" class="btn btn-xs btn-outline rounded-full" onclick="event.stopPropagation()">Live app</a>
+                <a href="project.html?name=four-ems" class="btn btn-sm btn-primary rounded-full" onclick="event.stopPropagation()">Details</a>
+                <a href="https://four-ems.vercel.app/" target="_blank" rel="noopener" class="btn btn-sm btn-outline rounded-full" onclick="event.stopPropagation()">Live app</a>
               </div>
             </div>
           </div>
@@ -677,9 +687,9 @@
             <div class="mt-auto pt-2">
               <p class="text-xs text-base-content/40">JavaScript &middot; Vue 3 &middot; Vite &middot; IndexedDB</p>
               <div class="card-links">
-                <a href="project.html?name=budgy-ting" class="btn btn-xs btn-primary rounded-full" onclick="event.stopPropagation()">Details</a>
-                <a href="https://budgy-ting.vercel.app/" target="_blank" rel="noopener" class="btn btn-xs btn-outline rounded-full" onclick="event.stopPropagation()">Live app</a>
-                <a href="https://github.com/devmade-ai/budgy-ting" target="_blank" rel="noopener" class="btn btn-xs btn-outline rounded-full" onclick="event.stopPropagation()">Source</a>
+                <a href="project.html?name=budgy-ting" class="btn btn-sm btn-primary rounded-full" onclick="event.stopPropagation()">Details</a>
+                <a href="https://budgy-ting.vercel.app/" target="_blank" rel="noopener" class="btn btn-sm btn-outline rounded-full" onclick="event.stopPropagation()">Live app</a>
+                <a href="https://github.com/devmade-ai/budgy-ting" target="_blank" rel="noopener" class="btn btn-sm btn-outline rounded-full" onclick="event.stopPropagation()">Source</a>
               </div>
             </div>
           </div>
@@ -695,9 +705,9 @@
             <div class="mt-auto pt-2">
               <p class="text-xs text-base-content/40">TypeScript &middot; React &middot; Vite</p>
               <div class="card-links">
-                <a href="project.html?name=model-pear" class="btn btn-xs btn-primary rounded-full" onclick="event.stopPropagation()">Details</a>
-                <a href="https://model-pear-web.vercel.app/" target="_blank" rel="noopener" class="btn btn-xs btn-outline rounded-full" onclick="event.stopPropagation()">Live app</a>
-                <a href="https://github.com/devmade-ai/model-pear" target="_blank" rel="noopener" class="btn btn-xs btn-outline rounded-full" onclick="event.stopPropagation()">Source</a>
+                <a href="project.html?name=model-pear" class="btn btn-sm btn-primary rounded-full" onclick="event.stopPropagation()">Details</a>
+                <a href="https://model-pear-web.vercel.app/" target="_blank" rel="noopener" class="btn btn-sm btn-outline rounded-full" onclick="event.stopPropagation()">Live app</a>
+                <a href="https://github.com/devmade-ai/model-pear" target="_blank" rel="noopener" class="btn btn-sm btn-outline rounded-full" onclick="event.stopPropagation()">Source</a>
               </div>
             </div>
           </div>
@@ -714,9 +724,9 @@
             <div class="mt-auto pt-2">
               <p class="text-xs text-base-content/40">TypeScript &middot; React &middot; Tailwind</p>
               <div class="card-links">
-                <a href="project.html?name=see-veo" class="btn btn-xs btn-primary rounded-full" onclick="event.stopPropagation()">Details</a>
-                <a href="https://see-veo.vercel.app/" target="_blank" rel="noopener" class="btn btn-xs btn-outline rounded-full" onclick="event.stopPropagation()">Live app</a>
-                <a href="https://github.com/devmade-ai/see-veo" target="_blank" rel="noopener" class="btn btn-xs btn-outline rounded-full" onclick="event.stopPropagation()">Source</a>
+                <a href="project.html?name=see-veo" class="btn btn-sm btn-primary rounded-full" onclick="event.stopPropagation()">Details</a>
+                <a href="https://see-veo.vercel.app/" target="_blank" rel="noopener" class="btn btn-sm btn-outline rounded-full" onclick="event.stopPropagation()">Live app</a>
+                <a href="https://github.com/devmade-ai/see-veo" target="_blank" rel="noopener" class="btn btn-sm btn-outline rounded-full" onclick="event.stopPropagation()">Source</a>
               </div>
             </div>
           </div>
@@ -739,9 +749,9 @@
             </h4>
             <p class="text-sm text-base-content/70">Git analytics dashboard. Extract commit history from any repo, visualize progress, contributors, and code health. 6 dashboard tabs with role-based views.</p>
             <div class="card-links">
-              <a href="project.html?name=repo-tor" class="btn btn-xs btn-primary rounded-full" onclick="event.stopPropagation()">Details</a>
-              <a href="https://repo-tor.vercel.app/" target="_blank" rel="noopener" class="btn btn-xs btn-outline rounded-full" onclick="event.stopPropagation()">Dashboard</a>
-              <a href="https://github.com/devmade-ai/repo-tor" target="_blank" rel="noopener" class="btn btn-xs btn-outline rounded-full" onclick="event.stopPropagation()">Source</a>
+              <a href="project.html?name=repo-tor" class="btn btn-sm btn-primary rounded-full" onclick="event.stopPropagation()">Details</a>
+              <a href="https://repo-tor.vercel.app/" target="_blank" rel="noopener" class="btn btn-sm btn-outline rounded-full" onclick="event.stopPropagation()">Dashboard</a>
+              <a href="https://github.com/devmade-ai/repo-tor" target="_blank" rel="noopener" class="btn btn-sm btn-outline rounded-full" onclick="event.stopPropagation()">Source</a>
             </div>
           </div>
         </div>
@@ -754,8 +764,8 @@
             </h4>
             <p class="text-sm text-base-content/70">Utilities API on Vercel. Contact form endpoint, multi-tenant form builder, and agreement management backend. All backed by Supabase.</p>
             <div class="card-links">
-              <a href="project.html?name=tool-till-tees" class="btn btn-xs btn-primary rounded-full" onclick="event.stopPropagation()">Details</a>
-              <a href="https://tool-till-tees.vercel.app/" target="_blank" rel="noopener" class="btn btn-xs btn-outline rounded-full" onclick="event.stopPropagation()">Live</a>
+              <a href="project.html?name=tool-till-tees" class="btn btn-sm btn-primary rounded-full" onclick="event.stopPropagation()">Details</a>
+              <a href="https://tool-till-tees.vercel.app/" target="_blank" rel="noopener" class="btn btn-sm btn-outline rounded-full" onclick="event.stopPropagation()">Live</a>
             </div>
           </div>
         </div>
@@ -768,8 +778,8 @@
             </h4>
             <p class="text-sm text-base-content/70">This site. Hosts shared AI assistant rules, engineering patterns, and the project portfolio. Also serves as the canonical CLAUDE.md reference.</p>
             <div class="card-links">
-              <a href="CLAUDE.md" class="btn btn-xs btn-primary rounded-full" onclick="event.stopPropagation()">CLAUDE.md</a>
-              <a href="https://github.com/devmade-ai/glow-props" target="_blank" rel="noopener" class="btn btn-xs btn-outline rounded-full" onclick="event.stopPropagation()">Source</a>
+              <a href="CLAUDE.md" class="btn btn-sm btn-primary rounded-full" onclick="event.stopPropagation()">CLAUDE.md</a>
+              <a href="https://github.com/devmade-ai/glow-props" target="_blank" rel="noopener" class="btn btn-sm btn-outline rounded-full" onclick="event.stopPropagation()">Source</a>
             </div>
           </div>
         </div>
@@ -782,8 +792,8 @@
             </h4>
             <p class="text-sm text-base-content/70">CDN assets repository for canva-grid. Hosts sample images and media files served to the design tool.</p>
             <div class="card-links">
-              <a href="project.html?name=canva-grid-assets" class="btn btn-xs btn-primary rounded-full" onclick="event.stopPropagation()">Details</a>
-              <a href="https://github.com/devmade-ai/canva-grid-assets" target="_blank" rel="noopener" class="btn btn-xs btn-outline rounded-full" onclick="event.stopPropagation()">Source</a>
+              <a href="project.html?name=canva-grid-assets" class="btn btn-sm btn-primary rounded-full" onclick="event.stopPropagation()">Details</a>
+              <a href="https://github.com/devmade-ai/canva-grid-assets" target="_blank" rel="noopener" class="btn btn-sm btn-outline rounded-full" onclick="event.stopPropagation()">Source</a>
             </div>
           </div>
         </div>

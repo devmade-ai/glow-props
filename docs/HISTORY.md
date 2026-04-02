@@ -2,6 +2,18 @@
 
 ## 2026-04-02
 
+### Full audit sweep — security, UX, accessibility, and code quality fixes
+- **Security (critical):** Fixed XSS in `inlineMarkdown()` — escape HTML before formatting, sanitize link hrefs via protocol allowlist (`isSafeUrl()`), escape `meta.tech` array
+- **Security (high):** Added URL protocol validation on `meta.liveUrl`/`meta.repoUrl` to reject `javascript:`/`data:` protocols
+- **Bug fix (critical):** Random theme toggle now stores `String(newState)` instead of boolean — was always reading as "Off"
+- **PWA (high):** Fixed Escape listener leak in install modal — now cleaned up on all close paths (backdrop, buttons, Escape). Added `.catch()` on `deferredPrompt.userChoice`. Removed dead `needsRefresh` variable. Added `data-close` to install menu button.
+- **PWA (medium):** Added `env(safe-area-inset-bottom)` to update banner and modal for iPhone home indicator
+- **Mobile (medium):** Bumped card action buttons from `btn-xs` (24px) to `btn-sm` (32px+) for better touch targets. Bumped PWA modal buttons to standard `btn` size.
+- **Accessibility (medium):** Added skip-to-content link on both pages for keyboard navigation past 30+ burger menu items
+- **SEO (medium):** Added OG meta tags (og:title, og:description, og:image, og:type) on both pages
+- **Reliability (medium):** Added 10s AbortController timeout on project metadata fetch. Added `.catch()` on secondary doc file fetches.
+- **Docs:** Updated README (35 themes, not 8 combos), PWA_SYSTEM.md (version ^1.2.0)
+
 ### Organize suggested implementations into standalone files
 - Extracted all 7 suggested implementations from inline CLAUDE.md into `docs/implementations/`
 - Files: PWA_SYSTEM.md, DEBUG_SYSTEM.md, APP_ICONS.md, DOWNLOAD_PDF.md, HTTPS_PROXY.md, BURGER_MENU.md, THEME_DARK_MODE.md

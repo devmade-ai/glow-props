@@ -1,6 +1,6 @@
 # PWA System
 
-Four parts, built on `vite-plugin-pwa` (^0.21.1) with React. Adapt patterns for other frameworks.
+Four parts, built on `vite-plugin-pwa` (^1.2.0) with React. Adapt patterns for other frameworks (glow-props uses vanilla JS).
 
 ## Vite Config (`vite.config.ts`)
 

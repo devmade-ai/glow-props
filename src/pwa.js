@@ -12,14 +12,12 @@ import { registerSW } from 'virtual:pwa-register';
 // The onNeedRefresh callback fires when a new SW is installed and waiting.
 // The onOfflineReady callback fires when the app is fully cached for offline use.
 
-var needsRefresh = false;
 var updateSW = null;
 
 var CHECK_INTERVAL_MS = 60 * 60 * 1000; // Check for new SW every 60 minutes
 
 updateSW = registerSW({
   onNeedRefresh: function () {
-    needsRefresh = true;
     showUpdateBanner();
   },
   onOfflineReady: function () {
@@ -38,6 +36,7 @@ updateSW = registerSW({
 // Requirement: Non-intrusive banner when a new version is available
 // Approach: Fixed bottom banner with "Update" and "Dismiss" actions.
 //   User controls when the update applies — no silent refresh.
+//   Safe area inset on bottom for iPhone home indicator in standalone mode.
 
 function showUpdateBanner() {
   var existing = document.getElementById('pwa-update-banner');
@@ -45,9 +44,10 @@ function showUpdateBanner() {
 
   var banner = document.createElement('div');
   banner.id = 'pwa-update-banner';
-  banner.className = 'fixed bottom-4 left-4 right-4 z-70 flex items-center justify-between gap-3 ' +
+  banner.className = 'fixed left-4 right-4 z-70 flex items-center justify-between gap-3 ' +
     'rounded-xl bg-base-200 border border-base-300 px-4 py-3 shadow-lg ' +
     'max-w-md mx-auto no-print';
+  banner.style.bottom = 'max(1rem, env(safe-area-inset-bottom))';
   banner.innerHTML =
     '<span class="text-sm text-base-content">A new version is available.</span>' +
     '<div class="flex gap-2 shrink-0">' +
@@ -70,9 +70,10 @@ function showUpdateBanner() {
 
 function showOfflineToast() {
   var toast = document.createElement('div');
-  toast.className = 'fixed bottom-4 left-4 right-4 z-70 ' +
+  toast.className = 'fixed left-4 right-4 z-70 ' +
     'rounded-xl bg-base-200 border border-base-300 px-4 py-3 shadow-lg ' +
     'max-w-md mx-auto text-sm text-base-content text-center no-print';
+  toast.style.bottom = 'max(1rem, env(safe-area-inset-bottom))';
   toast.textContent = 'Ready for offline use.';
   document.body.appendChild(toast);
   setTimeout(function () {
@@ -158,13 +159,19 @@ function triggerInstall() {
   if (deferredPrompt) {
     // Chromium native install
     deferredPrompt.prompt();
-    deferredPrompt.userChoice.then(function (result) {
-      if (result.outcome === 'dismissed') {
-        dismissInstall();
-      }
-      deferredPrompt = null;
-      updateInstallMenuVisibility();
-    });
+    deferredPrompt.userChoice
+      .then(function (result) {
+        if (result.outcome === 'dismissed') {
+          dismissInstall();
+        }
+        deferredPrompt = null;
+        updateInstallMenuVisibility();
+      })
+      .catch(function () {
+        // Browser rejected the install prompt — clear state to avoid stale prompt
+        deferredPrompt = null;
+        updateInstallMenuVisibility();
+      });
   } else if (needsManualInstructions) {
     showManualInstallInstructions();
   }
@@ -178,11 +185,23 @@ function dismissInstall() {
 
 // ===== Manual Install Instructions =====
 // Requirement: Browser-specific step-by-step guides for Safari and Firefox
-// Approach: Simple modal with plain language instructions for non-technical users
+// Approach: Simple modal with plain language instructions for non-technical users.
+//   Escape listener is cleaned up on ALL close paths (not just Escape) to prevent leaks.
+
+// Track active Escape listener so it can be cleaned up from any close path
+var activeEscapeHandler = null;
+
+function closeInstallModal() {
+  var modal = document.getElementById('pwa-install-modal');
+  if (modal) modal.remove();
+  if (activeEscapeHandler) {
+    document.removeEventListener('keydown', activeEscapeHandler);
+    activeEscapeHandler = null;
+  }
+}
 
 function showManualInstallInstructions() {
-  var existing = document.getElementById('pwa-install-modal');
-  if (existing) existing.remove();
+  closeInstallModal(); // Clean up any existing modal + listener
 
   var steps = '';
   if (browser === 'safari-ios') {
@@ -203,38 +222,33 @@ function showManualInstallInstructions() {
 
   var modal = document.createElement('div');
   modal.id = 'pwa-install-modal';
-  modal.className = 'fixed inset-0 z-60 flex items-center justify-center p-4 no-print';
+  modal.className = 'fixed inset-0 z-60 flex items-center justify-center no-print';
+  modal.style.padding = 'max(1rem, env(safe-area-inset-top)) max(1rem, env(safe-area-inset-right)) max(1rem, env(safe-area-inset-bottom)) max(1rem, env(safe-area-inset-left))';
   modal.innerHTML =
     '<div class="fixed inset-0 bg-black/50 cursor-pointer" id="pwa-install-backdrop"></div>' +
     '<div class="relative bg-base-100 rounded-xl border border-base-300 shadow-xl p-6 max-w-sm w-full">' +
       '<h3 class="font-heading text-lg font-bold mb-3">Install Glow Props</h3>' +
       '<ol class="list-decimal list-inside space-y-2 text-sm text-base-content/80">' + steps + '</ol>' +
       '<div class="flex justify-end gap-2 mt-4">' +
-        '<button type="button" id="pwa-install-modal-dismiss" class="btn btn-ghost btn-sm">Not now</button>' +
-        '<button type="button" id="pwa-install-modal-close" class="btn btn-primary btn-sm">Got it</button>' +
+        '<button type="button" id="pwa-install-modal-dismiss" class="btn btn-ghost">Not now</button>' +
+        '<button type="button" id="pwa-install-modal-close" class="btn btn-primary">Got it</button>' +
       '</div>' +
     '</div>';
   document.body.appendChild(modal);
 
-  document.getElementById('pwa-install-backdrop').addEventListener('click', function () {
-    modal.remove();
-  });
-  document.getElementById('pwa-install-modal-close').addEventListener('click', function () {
-    modal.remove();
-  });
+  document.getElementById('pwa-install-backdrop').addEventListener('click', closeInstallModal);
+  document.getElementById('pwa-install-modal-close').addEventListener('click', closeInstallModal);
   document.getElementById('pwa-install-modal-dismiss').addEventListener('click', function () {
     dismissInstall();
-    modal.remove();
+    closeInstallModal();
   });
 
-  // Close on Escape
-  function handleEscape(e) {
+  activeEscapeHandler = function (e) {
     if (e.key === 'Escape') {
-      modal.remove();
-      document.removeEventListener('keydown', handleEscape);
+      closeInstallModal();
     }
-  }
-  document.addEventListener('keydown', handleEscape);
+  };
+  document.addEventListener('keydown', activeEscapeHandler);
 }
 
 // ===== Expose to global scope =====

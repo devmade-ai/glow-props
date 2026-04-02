@@ -65,7 +65,7 @@ glow-props/
   project.html                  # Project detail page (markdown viewer)
   main.css                      # Tailwind directives, DaisyUI config, custom animations
   public/
-    theme.js                    # Theme combo picker, dark/light toggle, burger menu behavior
+    theme.js                    # Per-mode theme picker, dark/light toggle, burger menu behavior
     projects/                   # Mirrored docs per project
       {name}/
         meta.json               # Metadata (audience, use cases, privacy, status)
@@ -101,7 +101,7 @@ npm run build        # Production build → dist/
 
 ## Tech Stack
 
-- **CSS Framework:** [Tailwind CSS](https://tailwindcss.com/) v4 + [DaisyUI](https://daisyui.com/) v5 — utility-first CSS with 8 theme combos (light/dark pairs) selectable from the burger menu
+- **CSS Framework:** [Tailwind CSS](https://tailwindcss.com/) v4 + [DaisyUI](https://daisyui.com/) v5 — utility-first CSS with 35 DaisyUI themes (22 light, 13 dark) independently selectable per mode from the burger menu
 - **Fonts:** [Space Grotesk](https://fonts.google.com/specimen/Space+Grotesk) (headings) + [Inter](https://fonts.google.com/specimen/Inter) (body) via Google Fonts
 - **Build:** Vite 7 with `@tailwindcss/vite` plugin
 - **Icons:** Sharp (SVG to PNG at 400 DPI)
