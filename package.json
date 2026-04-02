@@ -7,7 +7,8 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "generate-icons": "node scripts/generate-icons.mjs"
+    "generate-icons": "node scripts/generate-icons.mjs",
+    "generate:meta-colors": "node scripts/generate-meta-colors.mjs"
   },
   "devDependencies": {
     "@tailwindcss/vite": "^4.2.2",
