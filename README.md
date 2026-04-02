@@ -63,6 +63,7 @@ glow-props/
   vite.config.js                # Build config (multi-page, Tailwind plugin, copies CLAUDE.md)
   index.html                    # Portfolio landing page
   project.html                  # Project detail page (markdown viewer)
+  pattern.html                  # Pattern detail page (markdown viewer + copy)
   main.css                      # Tailwind directives, DaisyUI config, custom animations, markdown renderer styles
   partials/
     head-common.html            # Shared <head> content (bootstrap, fonts, CSS)

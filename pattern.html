@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="color-scheme" content="light dark">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: https:; connect-src 'self';">
+  <title>Loading... — devmade-ai</title>
+  <meta property="og:title" content="devmade-ai — Pattern Details">
+  <meta property="og:description" content="Reusable engineering patterns by devmade-ai.">
+  <meta property="og:image" content="https://devmade-ai.github.io/glow-props/assets/images/icon-512.png">
+  <meta property="og:type" content="website">
+  <link rel="icon" type="image/png" href="assets/images/favicon.png">
+  <link rel="apple-touch-icon" href="assets/images/icon-192.png">
+
+  <!-- Shared <head> content injected from partials/head-common.html by htmlPartials Vite plugin -->
+  <!-- HEAD_COMMON -->
+</head>
+<body class="bg-base-100 text-base-content min-h-screen">
+
+  <!-- SKIP_LINK -->
+
+  <!-- Navbar injected from partials/navbar.html by htmlPartials Vite plugin.
+       NAV_PREFIX is "./" for pattern.html (cross-page #anchors back to index). -->
+  <!-- NAVBAR:./ -->
+  <main id="main" class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+    <div id="app">
+      <p class="text-center py-16 text-base-content/40">Loading...</p>
+    </div>
+  </main>
+
+  <footer class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6 text-center border-t border-base-300"
+          style="padding-bottom: max(1.5rem, env(safe-area-inset-bottom));">
+    <p class="text-sm text-base-content/40">
+      <a href="https://github.com/devmade-ai" target="_blank" rel="noopener" class="link link-hover text-base-content/40 hover:text-base-content/70">github.com/devmade-ai</a>
+    </p>
+  </footer>
+
+  <script src="theme.js"></script>
+  <!-- Requirement: Pattern detail page — renders a single implementation doc with copy button
+       Approach: Fetch markdown file from patterns/ directory, render with same markdown
+         parser as project.html. Simpler than project.html — no tabs, no meta.json, just
+         the markdown content with copy and raw file buttons.
+       Alternative: Reuse project.html — rejected, patterns have no meta.json, tabs, or
+         project-specific sections (audience, use cases, privacy). Separate page is cleaner. -->
+  <script>
+    (function () {
+      var app = document.getElementById('app');
+      var params = new URLSearchParams(window.location.search);
+      var patternName = params.get('name');
+
+      // Requirement: Pattern name-to-file mapping
+      // Approach: Data-driven map from URL slug to file name and display title.
+      //   Adding a new pattern is one map entry.
+      var PATTERNS = {
+        'pwa-system':       { file: 'PWA_SYSTEM.md',       title: 'PWA System',          badge: 'Infrastructure' },
+        'theme-dark-mode':  { file: 'THEME_DARK_MODE.md',  title: 'Theme & Dark Mode',   badge: 'UI' },
+        'burger-menu':      { file: 'BURGER_MENU.md',      title: 'Burger Menu',          badge: 'UI' },
+        'app-icons':        { file: 'APP_ICONS.md',        title: 'App Icons from SVG',   badge: 'Build' },
+        'download-pdf':     { file: 'DOWNLOAD_PDF.md',     title: 'Download as PDF',      badge: 'Feature' },
+        'https-proxy':      { file: 'HTTPS_PROXY.md',      title: 'HTTPS Proxy Support',  badge: 'Infrastructure' },
+        'debug-system':     { file: 'DEBUG_SYSTEM.md',     title: 'Debug System',         badge: 'DX' }
+      };
+
+      // Validate pattern name
+      if (!patternName || !PATTERNS[patternName]) {
+        app.innerHTML = '<div class="text-center py-16"><h1 class="text-2xl font-bold mb-2">Pattern not found</h1><p class="text-base-content/60"><a href="./#patterns" class="link link-primary">Back to patterns</a></p></div>';
+        return;
+      }
+
+      var pattern = PATTERNS[patternName];
+      var filePath = 'patterns/' + pattern.file;
+      var rawMarkdown = null;
+
+      document.title = pattern.title + ' — devmade-ai';
+
+      // Render immediately with loading state
+      render();
+
+      // Fetch the markdown file
+      var fetchController = new AbortController();
+      var fetchTimeout = setTimeout(function () { fetchController.abort(); }, 15000);
+
+      fetch(filePath, { signal: fetchController.signal })
+        .then(function (r) {
+          clearTimeout(fetchTimeout);
+          if (!r.ok) throw new Error('HTTP ' + r.status);
+          return r.text();
+        })
+        .then(function (text) {
+          rawMarkdown = text;
+          render();
+        })
+        .catch(function (err) {
+          var isTimeout = err && err.name === 'AbortError';
+          var title = isTimeout ? 'Request timed out' : 'Pattern not found';
+          var body = isTimeout
+            ? 'Could not load pattern data. Check your connection and try again.'
+            : 'The pattern file could not be loaded.';
+          var retryHtml = isTimeout
+            ? '<p class="mt-2"><button onclick="location.reload()" class="btn btn-primary btn-sm">Retry</button></p>'
+            : '';
+          app.innerHTML = '<div class="text-center py-16"><h1 class="text-2xl font-bold mb-2">' + title + '</h1><p class="text-base-content/60">' + body + '</p>' + retryHtml + '<p class="mt-2"><a href="./#patterns" class="link link-primary">Back to patterns</a></p></div>';
+        });
+
+      function render() {
+        var contentHtml = '';
+        if (rawMarkdown) {
+          contentHtml = '<div class="card bg-base-200/50 border border-base-300"><div class="card-body">' +
+            '<div class="flex gap-3 mb-4 no-print">' +
+            '<button id="copy-btn" class="btn btn-outline btn-sm gap-1" onclick="copyPattern()">Copy markdown</button>' +
+            '<a href="' + filePath + '" class="btn btn-outline btn-sm gap-1" target="_blank">Raw file</a>' +
+            '</div>' +
+            '<div class="md-render">' + renderMarkdown(rawMarkdown) + '</div></div></div>';
+        } else {
+          contentHtml = '<div class="card bg-base-200/50 border border-base-300"><div class="card-body"><p class="text-center py-8 text-base-content/40">Loading...</p></div></div>';
+        }
+
+        app.innerHTML =
+          '<p class="text-sm mb-4"><a href="./#patterns" class="link link-primary">&larr; All patterns</a></p>' +
+          '<header class="mb-6 animate-fade-in-up">' +
+            '<div class="flex items-center gap-3 flex-wrap">' +
+              '<h1 class="text-3xl font-bold">' + escapeHtml(pattern.title) + '</h1>' +
+              '<span class="badge badge-primary">' + escapeHtml(pattern.badge) + '</span>' +
+            '</div>' +
+          '</header>' +
+          contentHtml;
+      }
+
+      // ===== Markdown renderer (same as project.html) =====
+      function renderMarkdown(md) {
+        if (!md) return '';
+        var html = md
+          .replace(/```(\w*)\n([\s\S]*?)```/g, function (_, lang, code) {
+            return '<pre><code>' + escapeHtml(code.trim()) + '</code></pre>';
+          })
+          .replace(/^\|(.+)\|\s*\n\|[\s\-:|]+\|\s*\n((?:\|.+\|\s*\n?)*)/gm, function (_, header, body) {
+            var ths = header.split('|').map(function (h) { return '<th>' + escapeHtml(h.trim()) + '</th>'; }).join('');
+            var rows = body.trim().split('\n').map(function (row) {
+              var tds = row.replace(/^\||\|$/g, '').split('|').map(function (d) { return '<td>' + inlineMarkdown(d.trim()) + '</td>'; }).join('');
+              return '<tr>' + tds + '</tr>';
+            }).join('');
+            return '<div class="overflow-x-auto"><table><thead><tr>' + ths + '</tr></thead><tbody>' + rows + '</tbody></table></div>';
+          })
+          .replace(/^#### (.+)$/gm, '<h4>$1</h4>')
+          .replace(/^### (.+)$/gm, '<h3>$1</h3>')
+          .replace(/^## (.+)$/gm, '<h2>$1</h2>')
+          .replace(/^# (.+)$/gm, '<h1>$1</h1>')
+          .replace(/^---+$/gm, '<hr>')
+          .replace(/^> (.+)$/gm, '<blockquote>$1</blockquote>')
+          .replace(/^- \[x\] (.+)$/gm, '<li class="flex items-start gap-2"><input type="checkbox" checked disabled class="checkbox checkbox-xs checkbox-primary mt-1"> $1</li>')
+          .replace(/^- \[ \] (.+)$/gm, '<li class="flex items-start gap-2"><input type="checkbox" disabled class="checkbox checkbox-xs mt-1"> $1</li>')
+          .replace(/^  - (.+)$/gm, '<li class="ml-4">$1</li>')
+          .replace(/^- (.+)$/gm, '<li>$1</li>')
+          .replace(/^\d+\. (.+)$/gm, '<li>$1</li>')
+          .replace(/((?:<li class="ml-4">.*<\/li>\s*)+)/g, '<ul>$1</ul>')
+          .replace(/((?:<li>.*<\/li>\s*)+)/g, '<ul>$1</ul>')
+          .replace(/((?:<li class="flex.*<\/li>\s*)+)/g, '<ul class="space-y-1 my-2">$1</ul>')
+          .replace(/^(?!<[a-z])((?!<).+)$/gm, '<p>$1</p>');
+
+        html = html.replace(/>([^<]+)</g, function (m, content) {
+          return '>' + inlineMarkdown(content) + '<';
+        });
+
+        return html;
+      }
+
+      function inlineMarkdown(text) {
+        var escaped = escapeHtml(text);
+        return escaped
+          .replace(/`([^`]+)`/g, '<code class="text-xs bg-base-300/50 px-1.5 py-0.5 rounded">$1</code>')
+          .replace(/\*\*([^*]+)\*\*/g, '<strong class="font-semibold">$1</strong>')
+          .replace(/\*([^*]+)\*/g, '<em>$1</em>')
+          .replace(/\[([^\]]+)\]\(([^)]+)\)/g, function (m, label, href) {
+            if (!isSafeUrl(href)) return label;
+            return '<a href="' + href + '" class="link link-primary">' + label + '</a>';
+          });
+      }
+
+      function isSafeUrl(url) {
+        var decoded;
+        try { decoded = decodeURIComponent(url.replace(/&amp;/g, '&')); } catch (e) { return false; }
+        if (/^https?:\/\//i.test(decoded)) return true;
+        if (/^[a-z0-9]/i.test(decoded) && !/:/.test(decoded)) return true;
+        if (decoded.charAt(0) === '/' || decoded.charAt(0) === '#' || decoded.charAt(0) === '.') return true;
+        return false;
+      }
+
+      function escapeHtml(str) {
+        return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+      }
+
+      // Requirement: Copy markdown with success/failure feedback
+      window.copyPattern = function () {
+        if (!rawMarkdown) return;
+        var btn = document.getElementById('copy-btn');
+        function showFeedback(msg) {
+          if (btn) {
+            btn.textContent = msg;
+            setTimeout(function () { btn.textContent = 'Copy markdown'; }, 1500);
+          }
+        }
+        if (navigator.clipboard) {
+          navigator.clipboard.writeText(rawMarkdown)
+            .then(function () { showFeedback('Copied!'); })
+            .catch(function () { showFeedback('Copy failed'); });
+        } else {
+          try {
+            var ta = document.createElement('textarea');
+            ta.value = rawMarkdown;
+            ta.style.position = 'fixed';
+            ta.style.opacity = '0';
+            document.body.appendChild(ta);
+            ta.select();
+            var ok = document.execCommand('copy');
+            document.body.removeChild(ta);
+            showFeedback(ok ? 'Copied!' : 'Copy failed');
+          } catch (e) {
+            showFeedback('Copy failed');
+          }
+        }
+      };
+    })();
+  </script>
+
+  <!-- PWA: service worker registration, update prompts, install detection -->
+  <script type="module" src="src/pwa.js"></script>
+</body>
+</html>

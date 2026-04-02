@@ -1,7 +1,7 @@
 import { defineConfig } from 'vite';
 import tailwindcss from '@tailwindcss/vite';
 import { VitePWA } from 'vite-plugin-pwa';
-import { copyFileSync, readFileSync, readdirSync, existsSync } from 'fs';
+import { copyFileSync, readFileSync, readdirSync, existsSync, mkdirSync } from 'fs';
 import { resolve } from 'path';
 
 // Requirement: Shared partials across index.html and project.html without duplication
@@ -49,15 +49,44 @@ function htmlPartials() {
 
 // Requirement: CLAUDE.md must live at repo root (Claude Code reads it there)
 // but also be served via GitHub Pages at /glow-props/CLAUDE.md.
-// Approach: Small plugin copies root-level files into dist/ after build.
+// Also copies implementation pattern docs to dist/patterns/ so pattern.html can fetch them.
+// Approach: Small plugin copies files into dist/ after build.
 // Alternative: Symlink in public/ — rejected, fragile with git across platforms.
+// Alternative: Put patterns in public/ — rejected, they live in docs/implementations/
+//   which is the canonical location referenced by CLAUDE.md.
 function copyRootFiles() {
   const files = ['CLAUDE.md'];
+  const implDir = resolve(__dirname, 'docs', 'implementations');
   return {
     name: 'copy-root-files',
+    // Requirement: Serve pattern docs during dev so pattern.html works locally
+    // Approach: Dev server middleware rewrites /patterns/*.md to docs/implementations/*.md
+    configureServer(server) {
+      server.middlewares.use(function (req, res, next) {
+        if (req.url && req.url.startsWith('/patterns/')) {
+          const fileName = req.url.replace('/patterns/', '');
+          const filePath = resolve(implDir, fileName);
+          if (existsSync(filePath)) {
+            res.setHeader('Content-Type', 'text/markdown; charset=utf-8');
+            res.end(readFileSync(filePath, 'utf-8'));
+            return;
+          }
+        }
+        next();
+      });
+    },
     closeBundle() {
       for (const file of files) {
         copyFileSync(resolve(__dirname, file), resolve(__dirname, 'dist', file));
+      }
+      // Copy implementation pattern docs to dist/patterns/
+      const distPatterns = resolve(__dirname, 'dist', 'patterns');
+      if (existsSync(implDir)) {
+        mkdirSync(distPatterns, { recursive: true });
+        const mdFiles = readdirSync(implDir).filter(f => f.endsWith('.md'));
+        for (const file of mdFiles) {
+          copyFileSync(resolve(implDir, file), resolve(distPatterns, file));
+        }
       }
     },
   };
@@ -111,7 +140,7 @@ function validateProjectMeta() {
   };
 }
 
-// Requirement: Multi-page site (index.html + project.html)
+// Requirement: Multi-page site (index.html + project.html + pattern.html)
 // Approach: Vite build.rollupOptions.input for multiple HTML entry points
 // Alternative: Single-page with client-side routing — rejected, unnecessary complexity
 export default defineConfig({
@@ -177,6 +206,7 @@ export default defineConfig({
       input: {
         main: resolve(__dirname, 'index.html'),
         project: resolve(__dirname, 'project.html'),
+        pattern: resolve(__dirname, 'pattern.html'),
       },
     },
   },
