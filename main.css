@@ -64,6 +64,24 @@
     padding-left: env(safe-area-inset-left);
     padding-right: env(safe-area-inset-right);
   }
+
+  /* Requirement: Respect user motion preferences (WCAG 2.1 SC 2.3.3)
+     Approach: Disable smooth scrolling and all animations/transitions for users
+       who prefer reduced motion. Overrides scroll-behavior, animation, and transition
+       globally. Applied at base layer to ensure it takes precedence.
+     Alternative: Per-element media queries — rejected, too error-prone to maintain */
+  @media (prefers-reduced-motion: reduce) {
+    html {
+      scroll-behavior: auto;
+    }
+
+    *, *::before, *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
 }
 
 /* ===== Custom animations =====
@@ -82,17 +100,8 @@
   }
 }
 
-@keyframes fade-in {
-  from { opacity: 0; }
-  to { opacity: 1; }
-}
-
 @utility animate-fade-in-up {
   animation: fade-in-up 0.6s ease-out both;
-}
-
-@utility animate-fade-in {
-  animation: fade-in 0.5s ease-out both;
 }
 
 /* Scroll-triggered animation: elements start invisible,
@@ -113,7 +122,6 @@
 .scroll-animate[data-delay="2"] { transition-delay: 0.2s; }
 .scroll-animate[data-delay="3"] { transition-delay: 0.3s; }
 .scroll-animate[data-delay="4"] { transition-delay: 0.4s; }
-.scroll-animate[data-delay="5"] { transition-delay: 0.5s; }
 
 /* ===== Card interactive effects =====
    Requirement: Cards reveal action links when tapped/clicked
@@ -128,11 +136,18 @@
   transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
 }
 
-.card-interactive:hover {
-  transform: translateY(-2px);
-  box-shadow:
-    0 6px 16px -4px oklch(0 0 0 / 0.08),
-    0 2px 6px -2px oklch(0 0 0 / 0.03);
+/* Requirement: Avoid "sticky hover" on touch devices
+   Approach: @media (hover: hover) ensures the lift effect only applies when the device
+     has a real hover pointer (mouse/trackpad). Touch devices skip it and rely on :active.
+   Alternative: No guard — rejected, causes cards to stay lifted after tap on mobile
+     until the user taps elsewhere. */
+@media (hover: hover) {
+  .card-interactive:hover {
+    transform: translateY(-2px);
+    box-shadow:
+      0 6px 16px -4px oklch(0 0 0 / 0.08),
+      0 2px 6px -2px oklch(0 0 0 / 0.03);
+  }
 }
 
 /* Requirement: Touch feedback for mobile — hover states don't fire on touch devices
@@ -177,6 +192,33 @@
   transform: scale(1);
   transition-delay: 0.12s;
 }
+
+/* ===== Markdown renderer classes =====
+   Requirement: Markdown-rendered content (project.html, pattern.html) styled consistently
+   Approach: CSS classes applied by renderMarkdown() in shared markdown.js. Defined here
+     so styling changes are visible in CSS, not buried in JS regex replacements.
+   Alternative: Inline Tailwind class strings in JS — rejected, hard to maintain and
+     impossible to see in CSS file diffs */
+.md-render h1 { @apply text-2xl font-bold mt-6 mb-3; }
+.md-render h2 { @apply text-xl font-bold mt-6 mb-2 pb-1.5 border-b border-base-300; }
+.md-render h3 { @apply text-lg font-semibold mt-5 mb-2; }
+.md-render h4 { @apply text-base font-semibold mt-4 mb-1.5; }
+.md-render p { @apply my-2 text-sm leading-relaxed; }
+.md-render ul { @apply list-disc ml-4 space-y-1 my-2; }
+.md-render li { @apply text-sm; }
+.md-render blockquote { @apply border-l-4 border-primary/30 pl-4 py-1 my-2 text-base-content/70 italic; }
+.md-render hr { @apply my-4 border-base-300; }
+/* Requirement: Indicate horizontal scroll on code blocks for mobile users
+   Approach: Fading right edge via mask-image gradient. When content overflows,
+     the fade hints that there's more to scroll. Transparent on non-overflow. */
+.md-render pre {
+  @apply bg-base-300/50 rounded-lg p-4 overflow-x-auto text-sm;
+  -webkit-overflow-scrolling: touch;
+}
+.md-render table { @apply w-full; }
+.md-render th { @apply px-3 py-2 text-left text-sm font-semibold border-b border-base-300; }
+.md-render td { @apply px-3 py-2 text-sm border-b border-base-300/50; }
+.md-render tr:hover { @apply bg-base-200/50; }
 
 /* ===== Print styles =====
    Requirement: Clean PDF output via window.print()

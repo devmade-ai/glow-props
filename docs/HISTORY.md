@@ -2,6 +2,56 @@
 
 ## 2026-04-02
 
+### Full 9-trigger parallel audit sweep — comprehensive fixes
+
+Ran all 9 audit triggers (rev, aud, doc, tap, cln, perf, sec, dbg, imp) in parallel. Applied fixes across all categories:
+
+**Deduplication (cleanup):**
+- Extracted shared `<head>` content (bootstrap script, beforeinstallprompt, fonts, CSS) into `partials/head-common.html` — eliminates 80+ lines of duplication between index.html and project.html
+- Extracted skip-to-content link into `partials/skip-link.html`
+- Extended `htmlPartials` Vite plugin to support `<!-- HEAD_COMMON -->` and `<!-- SKIP_LINK -->` in addition to `<!-- NAVBAR:prefix -->`
+- Theme arrays remain duplicated in head-common.html and theme.js (intentional — inline scripts must run synchronously before theme.js loads for flash prevention)
+
+**Security:**
+- Added Content Security Policy meta tag to both HTML files (self + inline + Google Fonts)
+- Added canonical URL to index.html
+- Fixed `isSafeUrl()` — now decodes percent-encoded characters before protocol check (prevents `%3Ajavascript:` bypass)
+- Added projectName format validation (alphanumeric + hyphens only) to prevent path traversal
+- Added theme validation in `getStoredTheme()` — validates stored theme against known lists, falls back to default if corrupted
+
+**Accessibility:**
+- Added `@media (prefers-reduced-motion: reduce)` — disables all animations, transitions, and smooth scrolling (WCAG 2.1 SC 2.3.3)
+- Added focus management on tab switches in project.html — moves focus to content area for screen reader users
+- Fixed burger menu layout shift — added `scrollbar-gutter: stable` before `overflow: hidden` to preserve scrollbar space
+
+**Error handling:**
+- Added 15s AbortController timeout on all doc file fetches (previously only meta.json had a timeout)
+- Differentiated timeout vs 404 errors on meta.json fetch — timeout shows "Request timed out" with retry button
+- Failed doc file loads now show error state instead of perpetual "Loading..."
+- Copy button now shows "Copy failed" on clipboard API errors instead of silent failure
+- Replaced empty `catch(e) {}` in bootstrap script with descriptive comment explaining the intentional catch
+- Added `console.warn` to PWA install prompt error catch for debugging
+- Replaced terse `/* sandboxed */` comments with descriptive explanations in pwa.js
+
+**Cleanup:**
+- Removed all 30+ `onclick="event.stopPropagation()"` from card links — replaced with single delegated check in card click handler
+- Removed unused `animate-fade-in` CSS utility and `fade-in` keyframes (only `animate-fade-in-up` is used)
+- Removed unused `data-delay="5"` CSS selector (only 1-4 are used)
+- Removed `console.log` from `copyRootFiles` Vite plugin
+- Added defensive defaults for all meta.json fields in render() to prevent "undefined" in HTML
+
+**Performance:**
+- Font loading: Changed Google Fonts `<link>` from render-blocking to non-blocking (`media="print" onload="this.media='all'"`)
+
+**Improvements:**
+- Added build-time meta.json validation Vite plugin — checks required fields, validates doc file references exist
+- Added markdown renderer CSS classes to main.css — moved inline Tailwind class strings out of JS regexes into `.md-render` parent selector
+- Simplified `renderMarkdown()` to output bare semantic HTML elements styled by CSS
+
+**Documentation:**
+- Added `partials/` directory to README project structure
+- Added `docs/implementations/` to README project structure
+
 ### Standardize PWA install/update patterns from cross-repo audit
 - Audited canva-grid, four-ems, sync-tone, and glow-props PWA implementations
 - Rewrote `docs/implementations/PWA_SYSTEM.md` — standardized on canva-grid patterns with four-ems TypeScript types

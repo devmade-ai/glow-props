@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <meta name="color-scheme" content="light dark">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: https:; connect-src 'self';">
   <title>Loading... — devmade-ai</title>
   <meta property="og:title" content="devmade-ai — Project Details">
   <meta property="og:description" content="Software projects, internal tools, and reusable engineering patterns by devmade-ai.">
@@ -12,66 +13,12 @@
   <link rel="icon" type="image/png" href="assets/images/favicon.png">
   <link rel="apple-touch-icon" href="assets/images/icon-192.png">
 
-  <!-- Requirement: Prevent dark mode flash (same pattern as index.html)
-       Approach: Inline classic script sets .dark class + data-theme before first paint -->
-  <script>
-    (function() {
-      try {
-        // Requirement: Prevent flash using stored per-mode theme + dark/light preference
-        // Reads lightTheme/darkTheme directly — no combo map needed.
-        // Defaults must stay in sync with theme.js constants.
-        var stored = localStorage.getItem('darkMode');
-        var isDark = stored !== null
-          ? stored === 'true'
-          : window.matchMedia('(prefers-color-scheme: dark)').matches;
-        var theme = isDark
-          ? (localStorage.getItem('darkTheme') || 'coffee')
-          : (localStorage.getItem('lightTheme') || 'caramellatte');
-
-        // Requirement: Random theme on load when enabled (same logic as index.html)
-        if (localStorage.getItem('randomThemeOnLoad') === 'true') {
-          var lt = ['caramellatte','cupcake','pastel','lofi','nord','emerald','garden',
-            'autumn','valentine','fantasy','retro','corporate','silk','bumblebee',
-            'aqua','lemonade','winter','cmyk','acid','cyberpunk','wireframe','light'];
-          var dt = ['coffee','dim','night','dracula','forest','luxury','synthwave',
-            'black','halloween','sunset','abyss','business','dark'];
-          var list = isDark ? dt : lt;
-          theme = list[Math.floor(Math.random() * list.length)];
-          localStorage.setItem(isDark ? 'darkTheme' : 'lightTheme', theme);
-        }
-
-        if (isDark) {
-          document.documentElement.classList.add('dark');
-        } else {
-          document.documentElement.classList.remove('dark');
-        }
-        document.documentElement.setAttribute('data-theme', theme);
-      } catch(e) {}
-    })();
-  </script>
-
-  <!-- Requirement: Capture beforeinstallprompt before framework mounts
-       (same pattern as index.html — see comments there) -->
-  <script>
-    window.addEventListener('beforeinstallprompt', function (e) {
-      e.preventDefault();
-      window.__pwaInstallPromptEvent = e;
-    });
-  </script>
-
-  <!-- Fonts: Space Grotesk for headings, Inter for body -->
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Space+Grotesk:wght@700&display=swap" rel="stylesheet">
-
-  <link rel="stylesheet" href="main.css">
+  <!-- Shared <head> content injected from partials/head-common.html by htmlPartials Vite plugin -->
+  <!-- HEAD_COMMON -->
 </head>
 <body class="bg-base-100 text-base-content min-h-screen">
 
-  <!-- Skip link for keyboard users (same pattern as index.html) -->
-  <a href="#main" class="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-90 focus:btn focus:btn-primary focus:btn-sm">
-    Skip to main content
-  </a>
+  <!-- SKIP_LINK -->
 
   <!-- Navbar injected from partials/navbar.html by htmlPartials Vite plugin.
        NAV_PREFIX is "./" for project.html (cross-page #anchors back to index). -->
@@ -90,8 +37,10 @@
   </footer>
 
   <script src="theme.js"></script>
+  <script src="markdown.js"></script>
   <!-- Requirement: Render markdown docs client-side without a build step
-       Approach: Lightweight custom parser for common markdown (headings, lists, code, tables, links)
+       Approach: Shared markdown.js provides renderMarkdown, escapeHtml, isSafeUrl, copyMarkdown.
+         This script handles project-specific logic: metadata fetch, tabs, doc loading.
        Alternative: marked.js from CDN — rejected, adds external dependency and ~40KB download -->
   <script>
     (function () {
@@ -99,7 +48,9 @@
       var params = new URLSearchParams(window.location.search);
       var projectName = params.get('name');
 
-      if (!projectName) {
+      // Requirement: Validate projectName format to prevent path traversal attempts
+      // Approach: Allowlist alphanumeric + hyphens only. Reject anything else.
+      if (!projectName || !/^[a-z0-9-]+$/i.test(projectName)) {
         app.innerHTML = '<div class="text-center py-16"><h1 class="text-2xl font-bold mb-2">No project specified</h1><p class="text-base-content/60"><a href="./" class="link link-primary">Back to portfolio</a></p></div>';
         return;
       }
@@ -109,87 +60,41 @@
       var docs = {};
       var currentTab = 'readme';
 
-      function renderMarkdown(md) {
-        if (!md) return '';
-        var html = md
-          .replace(/```(\w*)\n([\s\S]*?)```/g, function (_, lang, code) {
-            return '<pre class="bg-base-300/50 rounded-lg p-4 overflow-x-auto text-sm"><code>' + escapeHtml(code.trim()) + '</code></pre>';
-          })
-          .replace(/^\|(.+)\|\s*\n\|[\s\-:|]+\|\s*\n((?:\|.+\|\s*\n?)*)/gm, function (_, header, body) {
-            var ths = header.split('|').map(function (h) { return '<th class="px-3 py-2 text-left text-sm font-semibold border-b border-base-300">' + escapeHtml(h.trim()) + '</th>'; }).join('');
-            var rows = body.trim().split('\n').map(function (row) {
-              var tds = row.replace(/^\||\|$/g, '').split('|').map(function (d) { return '<td class="px-3 py-2 text-sm border-b border-base-300/50">' + inlineMarkdown(d.trim()) + '</td>'; }).join('');
-              return '<tr class="hover:bg-base-200/50">' + tds + '</tr>';
-            }).join('');
-            return '<div class="overflow-x-auto"><table class="w-full"><thead><tr>' + ths + '</tr></thead><tbody>' + rows + '</tbody></table></div>';
-          })
-          .replace(/^#### (.+)$/gm, '<h4 class="text-base font-semibold mt-4 mb-1.5">$1</h4>')
-          .replace(/^### (.+)$/gm, '<h3 class="text-lg font-semibold mt-5 mb-2">$1</h3>')
-          .replace(/^## (.+)$/gm, '<h2 class="text-xl font-bold mt-6 mb-2 pb-1.5 border-b border-base-300">$1</h2>')
-          .replace(/^# (.+)$/gm, '<h1 class="text-2xl font-bold mt-6 mb-3">$1</h1>')
-          .replace(/^---+$/gm, '<hr class="my-4 border-base-300">')
-          .replace(/^> (.+)$/gm, '<blockquote class="border-l-4 border-primary/30 pl-4 py-1 my-2 text-base-content/70 italic">$1</blockquote>')
-          .replace(/^- \[x\] (.+)$/gm, '<li class="flex items-start gap-2"><input type="checkbox" checked disabled class="checkbox checkbox-xs checkbox-primary mt-1"> $1</li>')
-          .replace(/^- \[ \] (.+)$/gm, '<li class="flex items-start gap-2"><input type="checkbox" disabled class="checkbox checkbox-xs mt-1"> $1</li>')
-          .replace(/^  - (.+)$/gm, '<li class="ml-4 text-sm">$1</li>')
-          .replace(/^- (.+)$/gm, '<li class="text-sm">$1</li>')
-          .replace(/^\d+\. (.+)$/gm, '<li class="text-sm">$1</li>')
-          .replace(/((?:<li class="ml-4 text-sm">.*<\/li>\s*)+)/g, '<ul class="list-disc ml-4 space-y-1">$1</ul>')
-          .replace(/((?:<li class="text-sm">.*<\/li>\s*)+)/g, '<ul class="list-disc ml-4 space-y-1 my-2">$1</ul>')
-          .replace(/((?:<li class="flex.*<\/li>\s*)+)/g, '<ul class="space-y-1 my-2">$1</ul>')
-          .replace(/^(?!<[a-z])((?!<).+)$/gm, '<p class="my-2 text-sm leading-relaxed">$1</p>');
-
-        html = html.replace(/>([^<]+)</g, function (m, content) {
-          return '>' + inlineMarkdown(content) + '<';
-        });
-
-        return html;
-      }
-
-      // Requirement: Inline markdown formatting for project doc content
-      // Approach: Escape HTML entities FIRST to prevent XSS, then apply
-      //   formatting replacements on the escaped text. Link hrefs are
-      //   validated to reject javascript:/data: protocol injection.
-      // Alternative: DOMPurify — rejected, adds dependency for simple case
-      function inlineMarkdown(text) {
-        var escaped = escapeHtml(text);
-        return escaped
-          .replace(/`([^`]+)`/g, '<code class="text-xs bg-base-300/50 px-1.5 py-0.5 rounded">$1</code>')
-          .replace(/\*\*([^*]+)\*\*/g, '<strong class="font-semibold">$1</strong>')
-          .replace(/\*([^*]+)\*/g, '<em>$1</em>')
-          .replace(/\[([^\]]+)\]\(([^)]+)\)/g, function (m, label, href) {
-            if (!isSafeUrl(href)) return label;
-            return '<a href="' + href + '" class="link link-primary">' + label + '</a>';
-          });
-      }
-
-      // Requirement: Prevent javascript:/data: protocol injection in URLs
-      // Approach: Allowlist http(s) and relative URLs only. Reject everything else.
-      function isSafeUrl(url) {
-        var decoded = url.replace(/&amp;/g, '&');
-        if (/^https?:\/\//i.test(decoded)) return true;
-        if (/^[a-z0-9]/i.test(decoded) && !/:/.test(decoded)) return true; // relative path
-        if (decoded.startsWith('/') || decoded.startsWith('#') || decoded.startsWith('.')) return true;
-        return false;
-      }
-
-      function escapeHtml(str) {
-        return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
-      }
+      // Markdown rendering, escaping, URL validation, and copy provided by shared markdown.js
+      var renderMarkdown = md.renderMarkdown;
+      var escapeHtml = md.escapeHtml;
+      var isSafeUrl = md.isSafeUrl;
 
       // Requirement: Timeout on metadata fetch to avoid indefinite loading on slow/broken networks
       // Approach: AbortController with 10s timeout — shows error instead of endless spinner
       var fetchController = new AbortController();
       var fetchTimeout = setTimeout(function () { fetchController.abort(); }, 10000);
 
+      // Requirement: Timeout on doc file fetches to prevent indefinite loading
+      // Approach: Each doc file gets its own AbortController with 15s timeout.
+      //   meta.json gets 10s (critical), doc files get 15s (supplemental).
+      var DOC_TIMEOUT_MS = 15000;
+
       fetch(basePath + 'meta.json', { signal: fetchController.signal })
         .then(function (r) {
           clearTimeout(fetchTimeout);
-          if (!r.ok) throw new Error('Not found');
+          if (!r.ok) throw new Error('HTTP ' + r.status);
           return r.json();
         })
         .then(function (data) {
           meta = data;
+          // Requirement: Defensive defaults for missing meta.json fields
+          // Approach: Ensure all rendered fields have fallbacks to prevent "undefined" in HTML
+          meta.title = meta.title || projectName;
+          meta.description = meta.description || '';
+          meta.badge = meta.badge || '';
+          meta.repo = meta.repo || '';
+          meta.audience = meta.audience || 'Not specified';
+          meta.tech = meta.tech || [];
+          meta.useCases = meta.useCases || [];
+          meta.dataPrivacy = meta.dataPrivacy || {};
+          meta.docs = meta.docs || {};
+
           document.title = meta.title + ' — devmade-ai';
           var metaDesc = document.querySelector('meta[name="description"]');
           if (!metaDesc) {
@@ -207,22 +112,42 @@
           ];
           docFiles.forEach(function (doc) {
             if (meta.docs[doc.key]) {
-              fetch(basePath + doc.file)
-                .then(function (r) { return r.ok ? r.text() : null; })
+              var docController = new AbortController();
+              var docTimeout = setTimeout(function () { docController.abort(); }, DOC_TIMEOUT_MS);
+              fetch(basePath + doc.file, { signal: docController.signal })
+                .then(function (r) {
+                  clearTimeout(docTimeout);
+                  return r.ok ? r.text() : null;
+                })
                 .then(function (text) {
                   if (text) {
                     docs[doc.key] = text;
                     render();
                   }
                 })
-                .catch(function () {
-                  // Doc file failed to load — skip silently, project still renders without it
+                .catch(function (err) {
+                  clearTimeout(docTimeout);
+                  // Requirement: Distinguish timeout from network error for debugging
+                  // Doc file failed to load — project still renders without it.
+                  // Mark as failed so the tab shows an error state instead of "Loading..." forever.
+                  docs[doc.key] = null;
+                  render();
                 });
             }
           });
         })
-        .catch(function () {
-          app.innerHTML = '<div class="text-center py-16"><h1 class="text-2xl font-bold mb-2">Project not found</h1><p class="text-base-content/60">"' + escapeHtml(projectName) + '" does not exist.</p><p class="mt-2"><a href="./" class="link link-primary">Back to portfolio</a></p></div>';
+        .catch(function (err) {
+          // Requirement: Differentiate timeout/network errors from missing projects
+          // Approach: Check error type to show appropriate message and action
+          var isTimeout = err && err.name === 'AbortError';
+          var title = isTimeout ? 'Request timed out' : 'Project not found';
+          var body = isTimeout
+            ? 'Could not load project data. Check your connection and try again.'
+            : '"' + escapeHtml(projectName) + '" does not exist.';
+          var retryHtml = isTimeout
+            ? '<p class="mt-2"><button onclick="location.reload()" class="btn btn-primary btn-sm">Retry</button></p>'
+            : '';
+          app.innerHTML = '<div class="text-center py-16"><h1 class="text-2xl font-bold mb-2">' + title + '</h1><p class="text-base-content/60">' + body + '</p>' + retryHtml + '<p class="mt-2"><a href="./" class="link link-primary">Back to portfolio</a></p></div>';
         });
 
       function render() {
@@ -270,6 +195,7 @@
 
         var docContent = '';
         var fileMap = { readme: 'README.md', userGuide: 'USER_GUIDE.md', testingGuide: 'TESTING_GUIDE.md', tutorial: 'TUTORIAL.md' };
+        var tabDef = tabDefs.find(function (t) { return t.key === currentTab; });
         if (docs[currentTab]) {
           var rawUrl = basePath + fileMap[currentTab];
           docContent = '<div class="card bg-base-200/50 border border-base-300"><div class="card-body">' +
@@ -278,7 +204,10 @@
             '<a href="' + rawUrl + '" class="btn btn-outline btn-sm gap-1" target="_blank">Raw file</a>' +
             '</div>' +
             '<div class="md-render">' + renderMarkdown(docs[currentTab]) + '</div></div></div>';
-        } else if (tabDefs.find(function (t) { return t.key === currentTab; }).available) {
+        } else if (docs[currentTab] === null) {
+          // Doc fetch failed (network error or timeout) — show error with retry option
+          docContent = '<div class="card bg-base-200/50 border border-base-300"><div class="card-body"><p class="text-center py-8 text-base-content/40">Failed to load this document. <button onclick="location.reload()" class="link link-primary">Retry</button></p></div></div>';
+        } else if (tabDef && tabDef.available) {
           docContent = '<div class="card bg-base-200/50 border border-base-300"><div class="card-body"><p class="text-center py-8 text-base-content/40">Loading...</p></div></div>';
         } else {
           docContent = '<div class="card bg-base-200/50 border border-base-300"><div class="card-body"><p class="text-center py-12 text-base-content/40 italic">Coming soon.</p></div></div>';
@@ -305,12 +234,14 @@
             '<div class="card bg-base-200/50 border border-base-300"><div class="card-body py-4"><h3 class="text-xs font-semibold uppercase tracking-wider text-base-content/50 mb-2">Data &amp; Privacy</h3>' + privacyHtml + '</div></div>' +
           '</div>' +
 
-          '<div role="tablist" class="tabs tabs-bordered mb-6 no-print" id="doc-tabs">' + tabsHtml + '</div>' +
+          '<div role="tablist" class="tabs tabs-bordered mb-6 no-print overflow-x-auto" id="doc-tabs">' + tabsHtml + '</div>' +
           '<div id="doc-content">' + docContent + '</div>';
       }
 
-      // Requirement: Tab switching without accumulating event listeners
-      // Approach: Event delegation on document — one listener handles all tabs
+      // Requirement: Tab switching with focus management for screen readers
+      // Approach: Event delegation on document — one listener handles all tabs.
+      //   After render, focus moves to the new content area so screen reader users
+      //   hear the updated content without having to navigate back to it.
       // Alternative: Add/remove listeners in render() — rejected, causes
       //   listener accumulation (each render adds new handlers without removing old)
       document.addEventListener('click', function (e) {
@@ -318,29 +249,16 @@
         if (tab && tab.getAttribute('data-tab')) {
           currentTab = tab.getAttribute('data-tab');
           render();
+          var content = document.getElementById('doc-content');
+          if (content) {
+            content.setAttribute('tabindex', '-1');
+            content.focus({ preventScroll: true });
+          }
         }
       });
 
       window.copyDoc = function () {
-        var text = docs[currentTab];
-        if (!text) return;
-        if (navigator.clipboard) {
-          navigator.clipboard.writeText(text);
-        } else {
-          var ta = document.createElement('textarea');
-          ta.value = text;
-          ta.style.position = 'fixed';
-          ta.style.opacity = '0';
-          document.body.appendChild(ta);
-          ta.select();
-          document.execCommand('copy');
-          document.body.removeChild(ta);
-        }
-        var btn = document.getElementById('copy-btn');
-        if (btn) {
-          btn.textContent = 'Copied!';
-          setTimeout(function () { btn.textContent = 'Copy markdown'; }, 1500);
-        }
+        md.copyMarkdown(docs[currentTab], 'copy-btn');
       };
     })();
   </script>

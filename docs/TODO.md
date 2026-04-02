@@ -12,4 +12,4 @@
 
 ## Technical Debt
 
-- [ ] **Flash prevention default duplication** — Default theme names (`caramellatte`/`coffee`) and theme arrays are duplicated in the inline bootstrap scripts of index.html / project.html and in theme.js constants. Intentional — the inline scripts must run before theme.js loads for flash prevention. Each copy has a comment flagging the sync requirement. The navbar HTML duplication was solved via `partials/navbar.html`, but the bootstrap scripts can't be externalized without losing synchronous execution.
+- [ ] **Flash prevention theme array duplication** — Theme arrays are still duplicated in `partials/head-common.html` and `public/theme.js`. Intentional — the inline bootstrap script must run synchronously before theme.js loads for flash prevention. Both copies have comments flagging the sync requirement. Consider build-time injection from a shared JSON source if DaisyUI theme list changes.

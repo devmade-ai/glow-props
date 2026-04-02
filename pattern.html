@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="color-scheme" content="light dark">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: https:; connect-src 'self';">
+  <title>Loading... — devmade-ai</title>
+  <meta property="og:title" content="devmade-ai — Pattern Details">
+  <meta property="og:description" content="Reusable engineering patterns by devmade-ai.">
+  <meta property="og:image" content="https://devmade-ai.github.io/glow-props/assets/images/icon-512.png">
+  <meta property="og:type" content="website">
+  <link rel="icon" type="image/png" href="assets/images/favicon.png">
+  <link rel="apple-touch-icon" href="assets/images/icon-192.png">
+
+  <!-- Shared <head> content injected from partials/head-common.html by htmlPartials Vite plugin -->
+  <!-- HEAD_COMMON -->
+</head>
+<body class="bg-base-100 text-base-content min-h-screen">
+
+  <!-- SKIP_LINK -->
+
+  <!-- Navbar injected from partials/navbar.html by htmlPartials Vite plugin.
+       NAV_PREFIX is "./" for pattern.html (cross-page #anchors back to index). -->
+  <!-- NAVBAR:./ -->
+  <main id="main" class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+    <div id="app">
+      <p class="text-center py-16 text-base-content/40">Loading...</p>
+    </div>
+  </main>
+
+  <footer class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6 text-center border-t border-base-300"
+          style="padding-bottom: max(1.5rem, env(safe-area-inset-bottom));">
+    <p class="text-sm text-base-content/40">
+      <a href="https://github.com/devmade-ai" target="_blank" rel="noopener" class="link link-hover text-base-content/40 hover:text-base-content/70">github.com/devmade-ai</a>
+    </p>
+  </footer>
+
+  <script src="theme.js"></script>
+  <script src="markdown.js"></script>
+  <!-- Requirement: Pattern detail page — renders a single implementation doc with copy button
+       Approach: Fetch markdown file from patterns/ directory, render with same markdown
+         parser as project.html. Simpler than project.html — no tabs, no meta.json, just
+         the markdown content with copy and raw file buttons.
+       Alternative: Reuse project.html — rejected, patterns have no meta.json, tabs, or
+         project-specific sections (audience, use cases, privacy). Separate page is cleaner. -->
+  <script>
+    (function () {
+      var app = document.getElementById('app');
+      var params = new URLSearchParams(window.location.search);
+      var patternName = params.get('name');
+
+      // Requirement: Pattern name-to-file mapping
+      // Approach: Data-driven map from URL slug to file name and display title.
+      //   Adding a new pattern is one map entry.
+      var PATTERNS = {
+        'pwa-system':       { file: 'PWA_SYSTEM.md',       title: 'PWA System',          badge: 'Infrastructure' },
+        'theme-dark-mode':  { file: 'THEME_DARK_MODE.md',  title: 'Theme & Dark Mode',   badge: 'UI' },
+        'burger-menu':      { file: 'BURGER_MENU.md',      title: 'Burger Menu',          badge: 'UI' },
+        'app-icons':        { file: 'APP_ICONS.md',        title: 'App Icons from SVG',   badge: 'Build' },
+        'download-pdf':     { file: 'DOWNLOAD_PDF.md',     title: 'Download as PDF',      badge: 'Feature' },
+        'https-proxy':      { file: 'HTTPS_PROXY.md',      title: 'HTTPS Proxy Support',  badge: 'Infrastructure' },
+        'debug-system':     { file: 'DEBUG_SYSTEM.md',     title: 'Debug System',         badge: 'DX' }
+      };
+
+      // Validate pattern name
+      if (!patternName || !PATTERNS[patternName]) {
+        app.innerHTML = '<div class="text-center py-16"><h1 class="text-2xl font-bold mb-2">Pattern not found</h1><p class="text-base-content/60"><a href="./#patterns" class="link link-primary">Back to patterns</a></p></div>';
+        return;
+      }
+
+      var pattern = PATTERNS[patternName];
+      var filePath = 'patterns/' + pattern.file;
+      var rawMarkdown = null;
+
+      document.title = pattern.title + ' — devmade-ai';
+
+      // Render immediately with loading state
+      render();
+
+      // Fetch the markdown file
+      var fetchController = new AbortController();
+      var fetchTimeout = setTimeout(function () { fetchController.abort(); }, 15000);
+
+      fetch(filePath, { signal: fetchController.signal })
+        .then(function (r) {
+          clearTimeout(fetchTimeout);
+          if (!r.ok) throw new Error('HTTP ' + r.status);
+          return r.text();
+        })
+        .then(function (text) {
+          rawMarkdown = text;
+          render();
+        })
+        .catch(function (err) {
+          var isTimeout = err && err.name === 'AbortError';
+          var title = isTimeout ? 'Request timed out' : 'Pattern not found';
+          var body = isTimeout
+            ? 'Could not load pattern data. Check your connection and try again.'
+            : 'The pattern file could not be loaded.';
+          var retryHtml = isTimeout
+            ? '<p class="mt-2"><button onclick="location.reload()" class="btn btn-primary btn-sm">Retry</button></p>'
+            : '';
+          app.innerHTML = '<div class="text-center py-16"><h1 class="text-2xl font-bold mb-2">' + title + '</h1><p class="text-base-content/60">' + body + '</p>' + retryHtml + '<p class="mt-2"><a href="./#patterns" class="link link-primary">Back to patterns</a></p></div>';
+        });
+
+      function render() {
+        var contentHtml = '';
+        if (rawMarkdown) {
+          contentHtml = '<div class="card bg-base-200/50 border border-base-300"><div class="card-body">' +
+            '<div class="flex gap-3 mb-4 no-print">' +
+            '<button id="copy-btn" class="btn btn-outline btn-sm gap-1" onclick="copyPattern()">Copy markdown</button>' +
+            '<a href="' + filePath + '" class="btn btn-outline btn-sm gap-1" target="_blank">Raw file</a>' +
+            '</div>' +
+            '<div class="md-render">' + renderMarkdown(rawMarkdown) + '</div></div></div>';
+        } else {
+          contentHtml = '<div class="card bg-base-200/50 border border-base-300"><div class="card-body"><p class="text-center py-8 text-base-content/40">Loading...</p></div></div>';
+        }
+
+        app.innerHTML =
+          '<p class="text-sm mb-4"><a href="./#patterns" class="link link-primary">&larr; All patterns</a></p>' +
+          '<header class="mb-6 animate-fade-in-up">' +
+            '<div class="flex items-center gap-3 flex-wrap">' +
+              '<h1 class="text-3xl font-bold">' + escapeHtml(pattern.title) + '</h1>' +
+              '<span class="badge badge-primary">' + escapeHtml(pattern.badge) + '</span>' +
+            '</div>' +
+          '</header>' +
+          contentHtml;
+      }
+
+      // Markdown rendering, escaping, URL validation, and copy provided by shared markdown.js
+      var renderMarkdown = md.renderMarkdown;
+      var escapeHtml = md.escapeHtml;
+
+      window.copyPattern = function () {
+        md.copyMarkdown(rawMarkdown, 'copy-btn');
+      };
+    })();
+  </script>
+
+  <!-- PWA: service worker registration, update prompts, install detection -->
+  <script type="module" src="src/pwa.js"></script>
+</body>
+</html>
