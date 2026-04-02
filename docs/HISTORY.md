@@ -2,6 +2,27 @@
 
 ## 2026-04-02
 
+### PWA status bar theme-color — dynamic per-theme meta tag
+
+Implemented dynamic `<meta name="theme-color">` that updates on every DaisyUI theme change, matching the canva-grid pattern. The status bar (time, wifi, battery icons) now reflects the active theme color.
+
+**Color strategy:**
+- Light themes with dark/saturated primary (L ≤ ~65%): Use primary color for a colorful branded bar (e.g., nord `#5E81AC`, valentine `#F43098`, autumn `#8C0327`)
+- Light themes with too-light primary (L > ~65%): Use neutral or alternative dark color (e.g., cupcake neutral `#262629`, pastel neutral `#61738D`, emerald secondary `#377CFB`)
+- Dark themes: Use base-100 background (e.g., night `#0F172A`, dracula `#282A36`, coffee `#261B25`)
+- wireframe: Uses base-content `#161616` (only dark option — primary, neutral, secondary are all identical light gray)
+
+**Changes:**
+- Added `<meta name="theme-color">` with media queries to index.html, project.html, pattern.html (two tags: light/dark OS preference, both overwritten by JS)
+- Added `META_COLORS` lookup map (35 hex values) and `updateMetaThemeColor()` to `public/theme.js`
+- Wired `updateMetaThemeColor()` into `applyTheme()` and initialization
+- Added compact color map to bootstrap script in `partials/head-common.html` for flash prevention
+- Updated `THEME_DARK_MODE.md` — expanded PWA Meta Theme-Color section with full-catalog pattern, color strategy rules, HTML setup, bootstrap integration
+- Updated Key Lesson #7 — now explains white-text-safe color selection, not just "needs hex"
+- Added resolution note to `AI_MISTAKES.md` for the 2026-03-30 invisible status bar bug
+
+**Why not page background for light themes:** The original approach (`#ffffff` for light) caused invisible status bar text when the OS color scheme opposed the app theme. The OS controls text/icon color — the app only controls background. All hex values must be dark or saturated enough for white text.
+
 ### Full 9-trigger parallel audit sweep — comprehensive fixes
 
 Ran all 9 audit triggers (rev, aud, doc, tap, cln, perf, sec, dbg, imp) in parallel. Applied fixes across all categories:

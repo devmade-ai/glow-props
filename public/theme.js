@@ -27,6 +27,73 @@
     'black', 'halloween', 'sunset', 'abyss', 'business', 'dark'
   ];
 
+  // ===== PWA status bar meta theme-color =====
+  // Requirement: Status bar (time, wifi, battery) color matches the active DaisyUI theme
+  // Approach: Hex color per theme, updated on every theme change via meta[name="theme-color"].
+  //   Light themes use primary or neutral color (must be dark/saturated enough for white text).
+  //   Dark themes use base-100 (dark background, white text natural).
+  //   DaisyUI's oklch colors can't be used directly in meta tags — hex approximations stored here.
+  // Why not page background for light themes: White/light backgrounds cause invisible status bar
+  //   text when OS color scheme opposes app theme (see docs/AI_MISTAKES.md).
+  // Alternatives considered:
+  //   - All themes use primary: Rejected — some light themes have very light primaries (pastel,
+  //     cupcake, bumblebee) that would cause invisible white text on the status bar.
+  //   - All themes use neutral: Rejected — loses the colorful branded feel for themes with
+  //     dark-enough primaries (valentine, garden, nord, etc.).
+  //   - Single color for all themes: Rejected — defeats the purpose of per-theme status bar.
+  // Must stay in sync with the META_COLORS map in the bootstrap script (partials/head-common.html).
+  var META_COLORS = {
+    // Light themes — primary color (dark/saturated enough for white text)
+    caramellatte: '#000000', // primary: oklch(0% 0 0) — black
+    light:        '#422ad5', // primary: oklch(45% 0.24 277) — deep violet
+    corporate:    '#0082ce', // primary: oklch(58% 0.158 242) — business blue
+    valentine:    '#f43098', // primary: oklch(65% 0.241 354) — hot pink
+    garden:       '#fe0075', // primary: oklch(62% 0.278 4) — magenta
+    lofi:         '#0d0d0d', // primary: oklch(16% 0 0) — near-black
+    fantasy:      '#6d0076', // primary: oklch(37% 0.189 325) — deep purple
+    autumn:       '#8c0327', // primary: oklch(41% 0.161 18) — deep red
+    lemonade:     '#419400', // primary: oklch(59% 0.199 135) — green
+    winter:       '#0069ff', // primary: oklch(57% 0.255 258) — bright blue
+    nord:         '#5e81ac', // primary: oklch(59% 0.077 254) — muted blue
+    silk:         '#1c1c29', // primary: oklch(23% 0.025 284) — dark indigo
+    acid:         '#ff00ff', // primary: oklch(72% 0.357 331) — magenta-pink
+    // Light themes — neutral/alternative (primary too light for white text)
+    cupcake:      '#262629', // neutral: oklch(27% 0.006 286) — primary L=85% too light
+    bumblebee:    '#433f3a', // neutral: oklch(37% 0.01 68) — primary L=85% too light
+    emerald:      '#377cfb', // secondary: oklch(61% 0.202 261) — blue accent, primary L=77% too light
+    retro:        '#56524c', // neutral: oklch(44% 0.011 74) — primary L=80% too light
+    cyberpunk:    '#111a3b', // neutral: oklch(23% 0.065 269) — primary L=74% too light
+    pastel:       '#61738d', // neutral: oklch(55% 0.046 257) — primary L=90% too light
+    cmyk:         '#1a1a1a', // neutral: oklch(22% 0 0) — primary L=72% too light
+    aqua:         '#05176c', // neutral: oklch(27% 0.146 266) — deep navy, primary L=86% too light
+    wireframe:    '#161616', // base-content: oklch(20% 0 0) — primary/neutral/secondary all L=87%
+    // Dark themes — base-100 background (always dark, white text natural)
+    coffee:       '#261b25', // base-100: oklch(24% 0.023 330)
+    dark:         '#1d232a', // base-100: oklch(25% 0.016 252)
+    synthwave:    '#09002f', // base-100: oklch(15% 0.09 281)
+    halloween:    '#1b1816', // base-100: oklch(21% 0.006 56)
+    forest:       '#1b1717', // base-100: oklch(21% 0.008 18)
+    black:        '#000000', // base-100: oklch(0% 0 0)
+    luxury:       '#09090b', // base-100: oklch(14% 0.004 286)
+    dracula:      '#282a36', // base-100: oklch(29% 0.022 278)
+    night:        '#0f172a', // base-100: oklch(21% 0.039 266)
+    dim:          '#2a303c', // base-100: oklch(31% 0.023 264)
+    sunset:       '#121c22', // base-100: oklch(22% 0.019 238)
+    abyss:        '#001e29', // base-100: oklch(20% 0.08 209)
+    business:     '#202020'  // base-100: oklch(24% 0 0)
+  };
+
+  function getMetaColor(themeName) {
+    return META_COLORS[themeName] || '#808080';
+  }
+
+  function updateMetaThemeColor(themeName) {
+    var color = getMetaColor(themeName);
+    document.querySelectorAll('meta[name="theme-color"]').forEach(function (meta) {
+      meta.setAttribute('content', color);
+    });
+  }
+
   // ===== Storage helpers =====
   function safeStorageSet(key, value) {
     try { localStorage.setItem(key, value); } catch (e) { /* sandboxed */ }
@@ -70,6 +137,8 @@
       document.documentElement.classList.remove('dark');
     }
     document.documentElement.setAttribute('data-theme', themeName);
+
+    updateMetaThemeColor(themeName);
 
     if (!skipPersist) {
       safeStorageSet('darkMode', String(dark));
@@ -141,6 +210,7 @@
   // ===== Initialize =====
   var currentDark = isDark();
   var currentTheme = getStoredTheme(currentDark);
+  updateMetaThemeColor(currentTheme);
   updateThemeLabels(currentDark);
   updateThemeListVisibility(currentDark);
   updateThemeIndicators(currentTheme);
