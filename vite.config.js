@@ -166,9 +166,18 @@ export default defineConfig({
       //   globPatterns ensures all asset types used in the project are precached.
       // Alternative: Rely on Workbox defaults — rejected, defaults may miss font/image types
       //   and don't clean up caches from prior Workbox major versions.
+      // Requirement: Fix SW for multi-page app — disable SPA-style navigation fallback
+      // Approach: Set navigateFallback to false so the SW doesn't serve index.html for
+      //   all navigation requests. This is a multi-page app (index, project, pattern),
+      //   not an SPA. Without this fix, navigating to pattern.html?name=... or
+      //   project.html?name=... serves index.html from the SW cache because query params
+      //   prevent precacheAndRoute from matching.
+      // Alternative: navigateFallbackDenylist — rejected, easier to disable entirely
+      //   since every page is already precached.
       workbox: {
         cleanupOutdatedCaches: true,
         globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
+        navigateFallback: null,
       },
       manifest: {
         name: 'Glow Props — Project Portfolio',

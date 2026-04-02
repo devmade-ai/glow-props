@@ -73,6 +73,15 @@
       var filePath = 'patterns/' + pattern.file;
       var rawMarkdown = null;
 
+      // Requirement: Fix pattern loading — variables must be assigned before first render()
+      // Approach: Assign shared markdown.js functions immediately after declaring variables,
+      //   before any code that calls render(). Previously these were at the bottom of the
+      //   IIFE, so var hoisting left them undefined when render() first called escapeHtml().
+      // Alternative: Call md.escapeHtml() directly in render() — rejected, inconsistent
+      //   with the local-variable pattern and would need changing in multiple places.
+      var renderMarkdown = md.renderMarkdown;
+      var escapeHtml = md.escapeHtml;
+
       document.title = pattern.title + ' — devmade-ai';
 
       // Render immediately with loading state
@@ -127,10 +136,6 @@
           '</header>' +
           contentHtml;
       }
-
-      // Markdown rendering, escaping, URL validation, and copy provided by shared markdown.js
-      var renderMarkdown = md.renderMarkdown;
-      var escapeHtml = md.escapeHtml;
 
       window.copyPattern = function () {
         md.copyMarkdown(rawMarkdown, 'copy-btn');
