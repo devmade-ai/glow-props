@@ -6,6 +6,7 @@
   <meta name="color-scheme" content="light dark">
   <title>Loading... — devmade-ai</title>
   <link rel="icon" type="image/png" href="assets/images/favicon.png">
+  <link rel="apple-touch-icon" href="assets/images/icon-192.png">
 
   <!-- Requirement: Prevent dark mode flash (same pattern as index.html)
        Approach: Inline classic script sets .dark class + data-theme before first paint -->
@@ -43,6 +44,15 @@
         document.documentElement.setAttribute('data-theme', theme);
       } catch(e) {}
     })();
+  </script>
+
+  <!-- Requirement: Capture beforeinstallprompt before framework mounts
+       (same pattern as index.html — see comments there) -->
+  <script>
+    window.addEventListener('beforeinstallprompt', function (e) {
+      e.preventDefault();
+      window.__pwaInstallPromptEvent = e;
+    });
   </script>
 
   <!-- Fonts: Space Grotesk for headings, Inter for body -->
@@ -123,6 +133,15 @@
                                min-h-11 flex items-center justify-between">
               <span>Random theme on load</span>
               <span id="random-theme-indicator" class="text-xs text-base-content/40">Off</span>
+            </button></li>
+            <!-- PWA install — hidden by default, shown by pwa.js when installable -->
+            <li class="pwa-install-item hidden"><button type="button"
+                        onclick="window.__pwa && window.__pwa.triggerInstall()"
+                        class="block w-full text-left px-4 py-2.5 text-sm text-base-content
+                               hover:bg-base-200 transition-colors cursor-pointer
+                               focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-[-2px]
+                               min-h-11 flex items-center">
+              Install app
             </button></li>
             <li><hr class="my-1 border-base-300"></li>
             <!-- Per-mode theme picker — same structure as index.html -->
@@ -710,5 +729,8 @@
       };
     })();
   </script>
+
+  <!-- PWA: service worker registration, update prompts, install detection -->
+  <script type="module" src="src/pwa.js"></script>
 </body>
 </html>

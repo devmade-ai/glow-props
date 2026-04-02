@@ -8,6 +8,19 @@
 - Replaced 1,365-line inline section in CLAUDE.md with a reference table linking to each file
 - Content preserved exactly — no changes to non-theme implementation docs
 
+### Implement PWA support
+- Added `vite-plugin-pwa` with `registerType: 'prompt'` for user-controlled updates
+- Created `src/pwa.js` — vanilla JS service worker registration, update banner, offline toast, install prompt, manual install instructions (Safari/Firefox)
+- Generated 1024x1024 maskable icon via Sharp at 400 DPI
+- Added `beforeinstallprompt` early-capture script to both HTML files (prevents lost install prompt on repeat visits)
+- Added "Install app" menu item to burger menu on both pages (hidden when installed/dismissed)
+- Manifest: `id: '/glow-props/'`, `scope: '/glow-props/'`, `display: standalone`, separate icon purposes (any for 192/512, maskable for 1024)
+- Service worker precaches 11 entries (~270KB) for full offline access
+- Added `apple-touch-icon` link to both HTML files for iOS
+- Update banner: fixed bottom bar with "Update" and "Later" buttons, z-70 per z-index scale
+- Offline toast: auto-dismiss after 3s, non-intrusive confirmation
+- Install modal: browser-specific plain-language steps for Safari iOS/macOS and Firefox Android
+
 ### Rewrite THEME_DARK_MODE.md for DaisyUI
 - Complete rewrite to reflect actual DaisyUI-based approach used across glow-props, canva-grid, and few-lap
 - Old doc described custom CSS variable semantic tokens and React hooks that no project uses

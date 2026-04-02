@@ -1,23 +1,26 @@
 # Session Notes
 
 ## Worked on
-Organizing suggested implementations into standalone files and rewriting THEME_DARK_MODE.md.
+Organizing suggested implementations into standalone files, rewriting THEME_DARK_MODE.md, and implementing PWA support.
 
 ## Accomplished
-- Extracted all 7 suggested implementations from inline CLAUDE.md into `docs/implementations/` as standalone files
-- Replaced CLAUDE.md's 1,365-line Suggested Implementations section with a reference table
-- Rewrote THEME_DARK_MODE.md from scratch to reflect actual DaisyUI-based approach used across all three projects (glow-props, canva-grid, few-lap)
-- Old doc described custom CSS variable semantic tokens (`--color-text-default`, `--color-surface`, etc.) and React hooks — none of which are used in any project
-- New doc covers: dual-layer theming (`.dark` + `data-theme`), per-mode theme persistence, theme catalog patterns, validation, flash prevention with DaisyUI, cross-tab sync, Uniwind for React Native, hex color lookup tables
+- Extracted all 7 suggested implementations from inline CLAUDE.md into `docs/implementations/`
+- Rewrote THEME_DARK_MODE.md to reflect actual DaisyUI-based approach across all three projects
+- Implemented PWA support: service worker, offline caching, install prompt, update banner
 
 ## Current state
-- All 7 implementation docs live in `docs/implementations/`
-- CLAUDE.md references them via a table with links
-- THEME_DARK_MODE.md accurately reflects the glow-props (vanilla JS, 35 themes), canva-grid (React, curated 8+8), and few-lap (React Native, 5 named combos) approaches
+- Site builds cleanly with `vite build` — PWA generates manifest, SW, and precaches 11 entries (~270KB)
+- PWA: installable on Chromium (native prompt), Safari/Firefox (manual instructions in modal)
+- Update banner appears when a new SW version is available; user controls when to apply
+- Offline toast auto-dismisses after 3s on first cache completion
+- "Install app" menu item in burger menu, hidden when already installed or dismissed
 - Branch: claude/organize-implementations-folder-DBcuk
 
 ## Key context
-- The old THEME_DARK_MODE.md was a generic implementation guide that never matched any project's actual code
-- All three projects use DaisyUI's semantic color system — no custom CSS variable tokens
-- glow-props is vanilla HTML/CSS/JS (not React), so the old React hook examples were irrelevant
-- few-lap uses Uniwind (not DaisyUI directly) but with DaisyUI's oklch color values extracted into CSS variants
+- glow-props is vanilla JS (no React) — pwa.js uses `virtual:pwa-register` (not the React hook)
+- `registerType: 'prompt'` — user controls updates, no silent refresh
+- `beforeinstallprompt` captured in inline script (both HTML files) before module scripts load
+- `window.__pwa` exposes `triggerInstall()` and `dismissInstall()` for burger menu onclick handlers
+- Icon assets: 48px favicon, 192px + 512px (purpose: any), 1024px (purpose: maskable)
+- Base path is `/glow-props/` — manifest scope, start_url, and id all account for this
+- `theme.js` is loaded as a classic script (not module) intentionally — it runs synchronously for flash prevention. Vite's warning about this is expected and harmless.

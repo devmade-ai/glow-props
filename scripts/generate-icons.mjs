@@ -8,15 +8,15 @@ const ROOT = join(__dirname, '..');
 const SVG_SOURCE = join(ROOT, 'assets', 'icon-source.svg');
 const IMAGES_DIR = join(ROOT, 'public', 'assets', 'images');
 
-// Requirement: Generate icon PNGs from SVG source for header, favicon, and social sharing
+// Requirement: Generate icon PNGs from SVG source for favicon, PWA manifest, and social sharing
 // Approach: Sharp at 400 DPI for crisp anti-aliasing, then downscale to target sizes
-// Sizes: favicon (48), header logo (192), social/general (512)
-// No PWA icons needed — this is a static portfolio site, not an installable app
+// Sizes: favicon (48), PWA manifest (192, 512), maskable full-bleed (1024)
 const SVG_DENSITY = 400;
 const ICONS = [
   { name: 'favicon.png', size: 48 },
   { name: 'icon-192.png', size: 192 },
   { name: 'icon-512.png', size: 512 },
+  { name: 'icon-1024.png', size: 1024 },
 ];
 
 async function generate() {

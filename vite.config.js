@@ -1,5 +1,6 @@
 import { defineConfig } from 'vite';
 import tailwindcss from '@tailwindcss/vite';
+import { VitePWA } from 'vite-plugin-pwa';
 import { copyFileSync } from 'fs';
 import { resolve } from 'path';
 
@@ -25,7 +26,51 @@ function copyRootFiles() {
 // Alternative: Single-page with client-side routing — rejected, unnecessary complexity
 export default defineConfig({
   base: '/glow-props/',
-  plugins: [tailwindcss(), copyRootFiles()],
+  plugins: [
+    tailwindcss(),
+    // Requirement: Installable PWA with offline support and user-controlled updates
+    // Approach: vite-plugin-pwa with registerType: 'prompt' so users control when
+    //   updates apply. Service worker caches all assets for offline portfolio viewing.
+    // Alternative: autoUpdate — rejected, silently refreshes mid-browsing
+    // Alternative: No PWA — rejected, offline access useful for demos/interviews
+    VitePWA({
+      registerType: 'prompt',
+      includeAssets: ['assets/images/favicon.png'],
+      manifest: {
+        name: 'Glow Props — Project Portfolio',
+        short_name: 'Glow Props',
+        description: 'Portfolio of tools and patterns by devmade.ai',
+        id: '/glow-props/',
+        theme_color: '#10b981',
+        background_color: '#ffffff',
+        display: 'standalone',
+        scope: '/glow-props/',
+        start_url: '/glow-props/',
+        prefer_related_applications: false,
+        icons: [
+          {
+            src: 'assets/images/icon-192.png',
+            sizes: '192x192',
+            type: 'image/png',
+            purpose: 'any',
+          },
+          {
+            src: 'assets/images/icon-512.png',
+            sizes: '512x512',
+            type: 'image/png',
+            purpose: 'any',
+          },
+          {
+            src: 'assets/images/icon-1024.png',
+            sizes: '1024x1024',
+            type: 'image/png',
+            purpose: 'maskable',
+          },
+        ],
+      },
+    }),
+    copyRootFiles(),
+  ],
   build: {
     rollupOptions: {
       input: {

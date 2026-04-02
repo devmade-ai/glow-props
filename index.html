@@ -7,6 +7,7 @@
   <title>devmade-ai</title>
   <meta name="description" content="Software projects, internal tools, and reusable engineering patterns by devmade-ai.">
   <link rel="icon" type="image/png" href="assets/images/favicon.png">
+  <link rel="apple-touch-icon" href="assets/images/icon-192.png">
 
   <!-- Requirement: Prevent dark mode flash on page load
        Approach: Inline classic script reads localStorage and sets both .dark class
@@ -52,6 +53,18 @@
         document.documentElement.setAttribute('data-theme', theme);
       } catch(e) {}
     })();
+  </script>
+
+  <!-- Requirement: Capture beforeinstallprompt before framework mounts
+       Approach: Stash the event on window for pwa.js to consume later.
+         On repeat visits with a cached SW, the event fires before any module
+         scripts run — if nothing catches it, the install prompt is permanently lost.
+       Alternative: Listen in pwa.js only — rejected, misses the early-fire case -->
+  <script>
+    window.addEventListener('beforeinstallprompt', function (e) {
+      e.preventDefault();
+      window.__pwaInstallPromptEvent = e;
+    });
   </script>
 
   <!-- Fonts: Space Grotesk for headings, Inter for body -->
@@ -154,6 +167,19 @@
                                min-h-11 flex items-center justify-between">
               <span>Random theme on load</span>
               <span id="random-theme-indicator" class="text-xs text-base-content/40">Off</span>
+            </button></li>
+            <!-- Requirement: PWA install and update actions in burger menu
+                 Approach: Install hidden by default, shown by pwa.js when installable.
+                   "Check for updates" always visible — triggers SW update check.
+                 Alternative: Separate install banner — rejected, burger menu is the
+                   standard location for app actions per BURGER_MENU.md -->
+            <li class="pwa-install-item hidden"><button type="button"
+                        onclick="window.__pwa && window.__pwa.triggerInstall()"
+                        class="block w-full text-left px-4 py-2.5 text-sm text-base-content
+                               hover:bg-base-200 transition-colors cursor-pointer
+                               focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-[-2px]
+                               min-h-11 flex items-center">
+              Install app
             </button></li>
             <li><hr class="my-1 border-base-300"></li>
             <!-- Requirement: Per-mode theme picker — shows light or dark themes based on toggle
@@ -896,5 +922,8 @@
       });
     })();
   </script>
+
+  <!-- PWA: service worker registration, update prompts, install detection -->
+  <script type="module" src="src/pwa.js"></script>
 </body>
 </html>
