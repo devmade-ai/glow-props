@@ -46,8 +46,15 @@
   function renderMarkdown(md) {
     if (!md) return '';
     var html = md
+      // Requirement: Per-code-block copy buttons so users can copy snippets without opening raw file
+      // Approach: Wrap each <pre> in a relative container with an absolute-positioned copy button.
+      //   Button uses onclick handler that finds the sibling <code> element and copies its textContent.
+      // Alternative: Select-all on click — rejected, doesn't work reliably on mobile
       .replace(/```(\w*)\n([\s\S]*?)```/g, function (_, lang, code) {
-        return '<pre><code>' + escapeHtml(code.trim()) + '</code></pre>';
+        return '<div class="code-block-wrap">' +
+          '<button class="code-copy-btn" onclick="this.parentNode.querySelector(\'code\').textContent.trim() && md.copyCodeBlock(this)" aria-label="Copy code">Copy</button>' +
+          '<pre><code>' + escapeHtml(code.trim()) + '</code></pre>' +
+          '</div>';
       })
       .replace(/^\|(.+)\|\s*\n\|[\s\-:|]+\|\s*\n((?:\|.+\|\s*\n?)*)/gm, function (_, header, body) {
         var ths = header.split('|').map(function (h) { return '<th>' + escapeHtml(h.trim()) + '</th>'; }).join('');
@@ -113,12 +120,45 @@
     }
   }
 
+  // Requirement: Copy individual code blocks with visual feedback
+  // Approach: Read textContent from sibling <code>, use Clipboard API with execCommand fallback.
+  //   Button text changes to "Copied!" briefly, then reverts.
+  function copyCodeBlock(btn) {
+    var code = btn.parentNode.querySelector('code');
+    if (!code) return;
+    var text = code.textContent;
+    function showFeedback(msg) {
+      btn.textContent = msg;
+      setTimeout(function () { btn.textContent = 'Copy'; }, 1500);
+    }
+    if (navigator.clipboard) {
+      navigator.clipboard.writeText(text)
+        .then(function () { showFeedback('Copied!'); })
+        .catch(function () { showFeedback('Failed'); });
+    } else {
+      try {
+        var ta = document.createElement('textarea');
+        ta.value = text;
+        ta.style.position = 'fixed';
+        ta.style.opacity = '0';
+        document.body.appendChild(ta);
+        ta.select();
+        var ok = document.execCommand('copy');
+        document.body.removeChild(ta);
+        showFeedback(ok ? 'Copied!' : 'Failed');
+      } catch (e) {
+        showFeedback('Failed');
+      }
+    }
+  }
+
   // Expose as global — both project.html and pattern.html use classic inline scripts
   window.md = {
     renderMarkdown: renderMarkdown,
     inlineMarkdown: inlineMarkdown,
     isSafeUrl: isSafeUrl,
     escapeHtml: escapeHtml,
-    copyMarkdown: copyMarkdown
+    copyMarkdown: copyMarkdown,
+    copyCodeBlock: copyCodeBlock
   };
 })();
