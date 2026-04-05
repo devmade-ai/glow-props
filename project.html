@@ -39,12 +39,13 @@
   </footer>
 
   <script src="theme.js"></script>
-  <script src="markdown.js"></script>
-  <!-- Requirement: Render markdown docs client-side without a build step
-       Approach: Shared markdown.js provides renderMarkdown, escapeHtml, isSafeUrl, copyMarkdown.
+  <script type="module" src="src/markdown.js"></script>
+  <!-- Requirement: Render markdown docs client-side via marked library
+       Approach: src/markdown.js (Vite-bundled module) configures marked with a custom renderer
+         for DaisyUI classes and copy buttons, then exposes window.md.
          This script handles project-specific logic: metadata fetch, tabs, doc loading.
-       Alternative: marked.js from CDN — rejected, adds external dependency and ~40KB download -->
-  <script>
+       Note: type="module" ensures this runs after markdown.js (modules execute in order). -->
+  <script type="module">
     (function () {
       var app = document.getElementById('app');
       var params = new URLSearchParams(window.location.search);

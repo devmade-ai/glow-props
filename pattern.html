@@ -39,14 +39,13 @@
   </footer>
 
   <script src="theme.js"></script>
-  <script src="markdown.js"></script>
+  <script type="module" src="src/markdown.js"></script>
   <!-- Requirement: Pattern detail page — renders a single implementation doc with copy button
-       Approach: Fetch markdown file from patterns/ directory, render with same markdown
-         parser as project.html. Simpler than project.html — no tabs, no meta.json, just
-         the markdown content with copy and raw file buttons.
-       Alternative: Reuse project.html — rejected, patterns have no meta.json, tabs, or
-         project-specific sections (audience, use cases, privacy). Separate page is cleaner. -->
-  <script>
+       Approach: Fetch markdown file from patterns/ directory, render with marked library
+         (configured in src/markdown.js). Simpler than project.html — no tabs, no meta.json,
+         just the markdown content with copy and raw file buttons.
+       Note: type="module" ensures this runs after markdown.js (modules execute in order). -->
+  <script type="module">
     (function () {
       var app = document.getElementById('app');
       var params = new URLSearchParams(window.location.search);
@@ -75,12 +74,6 @@
       var filePath = 'patterns/' + pattern.file;
       var rawMarkdown = null;
 
-      // Requirement: Fix pattern loading — variables must be assigned before first render()
-      // Approach: Assign shared markdown.js functions immediately after declaring variables,
-      //   before any code that calls render(). Previously these were at the bottom of the
-      //   IIFE, so var hoisting left them undefined when render() first called escapeHtml().
-      // Alternative: Call md.escapeHtml() directly in render() — rejected, inconsistent
-      //   with the local-variable pattern and would need changing in multiple places.
       var renderMarkdown = md.renderMarkdown;
       var escapeHtml = md.escapeHtml;
 
