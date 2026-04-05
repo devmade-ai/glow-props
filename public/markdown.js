@@ -54,25 +54,43 @@
     if (!md) return '';
     // Normalize line endings — \r\n (Windows) breaks code block regex which expects \n
     var html = md.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+
+    // Requirement: Protect code blocks from line-by-line regex processing
+    // Approach: Extract fenced code blocks into an array and replace with single-line
+    //   placeholders before running structural regexes (headings, lists, paragraphs).
+    //   The paragraph regex uses /gm (multiline), processing each line independently.
+    //   Without placeholders, multi-line code block content gets matched as paragraphs,
+    //   breaking <pre><code> structure and double-escaping entities.
+    // Alternative: Encode newlines as &#10; — rejected, some browsers render &#10;
+    //   differently in <pre>, and copy-paste would include the entity.
+    var codeBlocks = [];
+    html = html.replace(/```(\w*)\n([\s\S]*?)```/g, function (_, lang, code) {
+      var idx = codeBlocks.length;
+      codeBlocks.push(
+        '<div class="code-block-wrap">' +
+        '<button class="code-copy-btn" onclick="this.parentNode.querySelector(\'code\').textContent.trim() && md.copyCodeBlock(this)" aria-label="Copy code">Copy</button>' +
+        '<pre><code>' + escapeHtml(code.trim()) + '</code></pre>' +
+        '</div>'
+      );
+      return '<codeblock-' + idx + '>';
+    });
+
+    // Requirement: Protect tables from line-by-line regex processing
+    // Tables are multi-line and must also be extracted before line-by-line regexes.
+    var tableBlocks = [];
+    html = html.replace(/^\|(.+)\|\s*\n\|[\s\-:|]+\|\s*\n((?:\|.+\|\s*\n?)*)/gm, function (_, header, body) {
+      var idx = tableBlocks.length;
+      var ths = header.split('|').map(function (h) { return '<th>' + inlineMarkdown(h.trim()) + '</th>'; }).join('');
+      var rows = body.trim().split('\n').map(function (row) {
+        var tds = row.replace(/^\||\|$/g, '').split('|').map(function (d) { return '<td>' + inlineMarkdown(d.trim()) + '</td>'; }).join('');
+        return '<tr>' + tds + '</tr>';
+      }).join('');
+      tableBlocks.push('<div class="overflow-x-auto"><table><thead><tr>' + ths + '</tr></thead><tbody>' + rows + '</tbody></table></div>');
+      return '<tableblock-' + idx + '>';
+    });
+
+    // Line-by-line structural replacements — safe because code/table blocks are placeholders
     html = html
-      // Requirement: Per-code-block copy buttons so users can copy snippets without opening raw file
-      // Approach: Wrap each <pre> in a relative container with an absolute-positioned copy button.
-      //   Button uses onclick handler that finds the sibling <code> element and copies its textContent.
-      // Alternative: Select-all on click — rejected, doesn't work reliably on mobile
-      .replace(/```(\w*)\n([\s\S]*?)```/g, function (_, lang, code) {
-        return '<div class="code-block-wrap">' +
-          '<button class="code-copy-btn" onclick="this.parentNode.querySelector(\'code\').textContent.trim() && md.copyCodeBlock(this)" aria-label="Copy code">Copy</button>' +
-          '<pre><code>' + escapeHtml(code.trim()) + '</code></pre>' +
-          '</div>';
-      })
-      .replace(/^\|(.+)\|\s*\n\|[\s\-:|]+\|\s*\n((?:\|.+\|\s*\n?)*)/gm, function (_, header, body) {
-        var ths = header.split('|').map(function (h) { return '<th>' + inlineMarkdown(h.trim()) + '</th>'; }).join('');
-        var rows = body.trim().split('\n').map(function (row) {
-          var tds = row.replace(/^\||\|$/g, '').split('|').map(function (d) { return '<td>' + inlineMarkdown(d.trim()) + '</td>'; }).join('');
-          return '<tr>' + tds + '</tr>';
-        }).join('');
-        return '<div class="overflow-x-auto"><table><thead><tr>' + ths + '</tr></thead><tbody>' + rows + '</tbody></table></div>';
-      })
       .replace(/^#### (.+)$/gm, function (_, t) { return '<h4>' + inlineMarkdown(t) + '</h4>'; })
       .replace(/^### (.+)$/gm, function (_, t) { return '<h3>' + inlineMarkdown(t) + '</h3>'; })
       .replace(/^## (.+)$/gm, function (_, t) { return '<h2>' + inlineMarkdown(t) + '</h2>'; })
@@ -88,6 +106,10 @@
       .replace(/((?:<li>.*<\/li>\s*)+)/g, '<ul>$1</ul>')
       .replace(/((?:<li class="flex.*<\/li>\s*)+)/g, '<ul class="space-y-1 my-2">$1</ul>')
       .replace(/^(?!<[a-z/!])((?!<).+)$/gm, function (_, t) { return '<p>' + inlineMarkdown(t) + '</p>'; });
+
+    // Restore code blocks and tables from placeholders
+    html = html.replace(/<codeblock-(\d+)>/g, function (_, i) { return codeBlocks[parseInt(i)]; });
+    html = html.replace(/<tableblock-(\d+)>/g, function (_, i) { return tableBlocks[parseInt(i)]; });
 
     return html;
   }
