@@ -195,10 +195,11 @@
 
 /* ===== Markdown renderer classes =====
    Requirement: Markdown-rendered content (project.html, pattern.html) styled consistently
-   Approach: CSS classes applied by renderMarkdown() in shared markdown.js. Defined here
-     so styling changes are visible in CSS, not buried in JS regex replacements.
-   Alternative: Inline Tailwind class strings in JS — rejected, hard to maintain and
-     impossible to see in CSS file diffs */
+   Approach: marked library (src/markdown.js) renders markdown to semantic HTML with a
+     custom renderer for DaisyUI classes. Structural styling defined here under .md-render
+     so changes are visible in CSS diffs, not buried in JS.
+   Alternative: Inline Tailwind class strings in JS renderer — rejected, hard to maintain
+     and impossible to see in CSS file diffs */
 .md-render h1 { @apply text-2xl font-bold mt-6 mb-3; }
 .md-render h2 { @apply text-xl font-bold mt-6 mb-2 pb-1.5 border-b border-base-300; }
 .md-render h3 { @apply text-lg font-semibold mt-5 mb-2; }
@@ -207,6 +208,7 @@
 .md-render ul { @apply list-disc ml-4 space-y-1 my-2; }
 .md-render ol { @apply list-decimal ml-4 space-y-1 my-2; }
 .md-render li { @apply text-sm; }
+.md-render em { @apply italic; }
 .md-render blockquote { @apply border-l-4 border-primary/30 pl-4 py-1 my-2 text-base-content/70 italic; }
 .md-render hr { @apply my-4 border-base-300; }
 /* Requirement: Ensure all rendered markdown content is selectable and copyable

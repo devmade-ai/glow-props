@@ -1,5 +1,34 @@
 # History
 
+## 2026-04-05
+
+### Markdown renderer — replace regex parser with marked library
+
+The hand-rolled regex markdown parser had fundamental structural bugs causing content truncation on pages with code blocks. Replaced with `marked` v17 (~43KB bundled / 13KB gzipped).
+
+**Root cause of truncation:** Multi-line fenced code block content was matched by the paragraph regex (`/gm` flag processes each line independently). The `<pre><code>` wrapper only covered the first line, so middle lines got wrapped in `<p>` tags — breaking the `<pre>` structure and double-escaping all HTML entities.
+
+**Additional bugs fixed:**
+- Raw `<` characters in markdown text passed unescaped into innerHTML, creating broken HTML elements that swallowed subsequent content
+- Code block content double-escaped (`&lt;` → `&amp;lt;`) by the catch-all inline formatting pass
+- Table cells double-processed (formatted by inlineMarkdown in the table handler, then re-processed by the catch-all pass)
+- Table headers only escaped, not formatted (missing bold/italic/link/code in headers)
+- Windows `\r\n` line endings broke the code block regex which required `\n`
+
+**New architecture:**
+- `src/markdown.js` — ES module importing `marked`, configured with custom renderer, exposes `window.md`
+- Custom renderer overrides only what needs DaisyUI styling: code blocks (copy button wrapper), codespan (badge classes), tables (scrollable wrapper), links (URL validation + link-primary), strong (font-semibold), list items (DaisyUI checkbox styling for task lists)
+- Everything else uses marked defaults (headings, paragraphs, blockquotes, regular lists, emphasis, horizontal rules)
+- project.html and pattern.html inline scripts changed to `type="module"` (execute after markdown.js in document order)
+
+**CSS additions:**
+- `.md-render ol` — numbered lists now correctly use `<ol>` (old parser incorrectly used `<ul>` for everything)
+- `.md-render em` — explicit italic rule for marked's `<em>` output
+- `.code-block-wrap` / `.code-copy-btn` — per-code-block copy button positioned top-right
+- `.md-render { user-select: text }` — ensures text is always selectable regardless of DaisyUI defaults
+
+**Verified:** 42 markdown files render correctly with zero double-escaped entities and matching code block counts.
+
 ## 2026-04-02
 
 ### PWA status bar theme-color — dynamic per-theme meta tag
