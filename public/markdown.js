@@ -43,9 +43,18 @@
   // Requirement: Render markdown to HTML with CSS classes from main.css
   // Approach: Regex-based parser outputs semantic HTML elements. Styling is handled
   //   by .md-render parent class in main.css — no inline class strings here.
+  // Design: Each structural replacement applies inlineMarkdown() to its text captures
+  //   immediately. This ensures HTML entities are escaped BEFORE injection into HTML,
+  //   preventing raw < from creating broken elements that truncate rendering.
+  //   Previous approach used a catch-all pass (/>([^<]+)</g) which:
+  //     - Treated raw < as tag boundaries, passing them unescaped into innerHTML
+  //     - Double-escaped code block content (already escaped by escapeHtml)
+  //     - Double-processed table cells (already formatted by inlineMarkdown)
   function renderMarkdown(md) {
     if (!md) return '';
-    var html = md
+    // Normalize line endings — \r\n (Windows) breaks code block regex which expects \n
+    var html = md.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+    html = html
       // Requirement: Per-code-block copy buttons so users can copy snippets without opening raw file
       // Approach: Wrap each <pre> in a relative container with an absolute-positioned copy button.
       //   Button uses onclick handler that finds the sibling <code> element and copies its textContent.
@@ -57,32 +66,28 @@
           '</div>';
       })
       .replace(/^\|(.+)\|\s*\n\|[\s\-:|]+\|\s*\n((?:\|.+\|\s*\n?)*)/gm, function (_, header, body) {
-        var ths = header.split('|').map(function (h) { return '<th>' + escapeHtml(h.trim()) + '</th>'; }).join('');
+        var ths = header.split('|').map(function (h) { return '<th>' + inlineMarkdown(h.trim()) + '</th>'; }).join('');
         var rows = body.trim().split('\n').map(function (row) {
           var tds = row.replace(/^\||\|$/g, '').split('|').map(function (d) { return '<td>' + inlineMarkdown(d.trim()) + '</td>'; }).join('');
           return '<tr>' + tds + '</tr>';
         }).join('');
         return '<div class="overflow-x-auto"><table><thead><tr>' + ths + '</tr></thead><tbody>' + rows + '</tbody></table></div>';
       })
-      .replace(/^#### (.+)$/gm, '<h4>$1</h4>')
-      .replace(/^### (.+)$/gm, '<h3>$1</h3>')
-      .replace(/^## (.+)$/gm, '<h2>$1</h2>')
-      .replace(/^# (.+)$/gm, '<h1>$1</h1>')
+      .replace(/^#### (.+)$/gm, function (_, t) { return '<h4>' + inlineMarkdown(t) + '</h4>'; })
+      .replace(/^### (.+)$/gm, function (_, t) { return '<h3>' + inlineMarkdown(t) + '</h3>'; })
+      .replace(/^## (.+)$/gm, function (_, t) { return '<h2>' + inlineMarkdown(t) + '</h2>'; })
+      .replace(/^# (.+)$/gm, function (_, t) { return '<h1>' + inlineMarkdown(t) + '</h1>'; })
       .replace(/^---+$/gm, '<hr>')
-      .replace(/^> (.+)$/gm, '<blockquote>$1</blockquote>')
-      .replace(/^- \[x\] (.+)$/gm, '<li class="flex items-start gap-2"><input type="checkbox" checked disabled class="checkbox checkbox-xs checkbox-primary mt-1"> $1</li>')
-      .replace(/^- \[ \] (.+)$/gm, '<li class="flex items-start gap-2"><input type="checkbox" disabled class="checkbox checkbox-xs mt-1"> $1</li>')
-      .replace(/^  - (.+)$/gm, '<li class="ml-4">$1</li>')
-      .replace(/^- (.+)$/gm, '<li>$1</li>')
-      .replace(/^\d+\. (.+)$/gm, '<li>$1</li>')
+      .replace(/^> (.+)$/gm, function (_, t) { return '<blockquote>' + inlineMarkdown(t) + '</blockquote>'; })
+      .replace(/^- \[x\] (.+)$/gm, function (_, t) { return '<li class="flex items-start gap-2"><input type="checkbox" checked disabled class="checkbox checkbox-xs checkbox-primary mt-1"> ' + inlineMarkdown(t) + '</li>'; })
+      .replace(/^- \[ \] (.+)$/gm, function (_, t) { return '<li class="flex items-start gap-2"><input type="checkbox" disabled class="checkbox checkbox-xs mt-1"> ' + inlineMarkdown(t) + '</li>'; })
+      .replace(/^  - (.+)$/gm, function (_, t) { return '<li class="ml-4">' + inlineMarkdown(t) + '</li>'; })
+      .replace(/^- (.+)$/gm, function (_, t) { return '<li>' + inlineMarkdown(t) + '</li>'; })
+      .replace(/^\d+\. (.+)$/gm, function (_, t) { return '<li>' + inlineMarkdown(t) + '</li>'; })
       .replace(/((?:<li class="ml-4">.*<\/li>\s*)+)/g, '<ul>$1</ul>')
       .replace(/((?:<li>.*<\/li>\s*)+)/g, '<ul>$1</ul>')
       .replace(/((?:<li class="flex.*<\/li>\s*)+)/g, '<ul class="space-y-1 my-2">$1</ul>')
-      .replace(/^(?!<[a-z])((?!<).+)$/gm, '<p>$1</p>');
-
-    html = html.replace(/>([^<]+)</g, function (m, content) {
-      return '>' + inlineMarkdown(content) + '<';
-    });
+      .replace(/^(?!<[a-z/!])((?!<).+)$/gm, function (_, t) { return '<p>' + inlineMarkdown(t) + '</p>'; });
 
     return html;
   }
