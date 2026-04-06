@@ -34,8 +34,8 @@ The pattern docs were significantly expanded this session. The per-repo implemen
 - DEBUG_SYSTEM now specifies console interception, generateReport in module, PWA diagnostics tab, pre-React inline pill, clipboard fallbacks — repos with debug systems need rechecking
 - PWA_SYSTEM now specifies module-level singleton, visibility checks, 7-browser detection, install analytics, custom SW section — repos with PWA need rechecking
 
-**Task:** Re-audit all 10 app repos (skip glow-props, canva-grid-assets, tool-till-tees) against the updated `docs/implementations/*.md` files. For each repo, generate implementation instructions that reference the NEW patterns. Persist the actionable gaps to `docs/TODO.md`.
+**Task:** Re-audit all 11 app repos (skip canva-grid-assets, tool-till-tees) against the updated `docs/implementations/*.md` files. For each repo, generate implementation instructions that reference the NEW patterns. Persist the actionable gaps to `docs/TODO.md`.
 
-**Repos to check:** canva-grid, budgy-ting, model-pear, see-veo, repo-tor, few-lap, sun-sea-o, graphiki, four-ems, synctone
+**Repos to check:** glow-props, canva-grid, budgy-ting, model-pear, see-veo, repo-tor, few-lap, sun-sea-o, graphiki, four-ems, synctone
 
 **Access pattern:** Use `GITHUB_ALL_REPO_TOKEN` with GitHub API (`api.github.com/repos/devmade-ai/{repo}/contents/{path}`) — never clone sibling repos
