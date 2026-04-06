@@ -16,6 +16,7 @@ assets/
     icon.png               # 1024x1024 — main app icon
     adaptive-icon.png       # 1024x1024 — Android adaptive foreground
     splash-icon.png         # 1024x1024 — splash screen
+    apple-touch-icon.png    # 180x180 — Apple's recommended iOS home screen size
     favicon.png             # 48x48 — browser tab
     icon-192.png            # 192x192 — PWA manifest (Android home screen)
     icon-512.png            # 512x512 — PWA manifest (Chrome install)
@@ -45,6 +46,7 @@ const ICONS = [
   { name: 'icon.png', size: 1024 },
   { name: 'adaptive-icon.png', size: 1024 },
   { name: 'splash-icon.png', size: 1024 },
+  { name: 'apple-touch-icon.png', size: 180 },
   { name: 'favicon.png', size: 48 },
   { name: 'icon-192.png', size: 192 },
   { name: 'icon-512.png', size: 512 },
@@ -89,5 +91,62 @@ generate().catch((err) => {
 ```
 
 Separate `purpose` values: `any` for standard display (192, 512), `maskable` for the full-bleed 1024. Don't combine `"any maskable"` — browsers pick the wrong one.
+
+## Favicon.ico Generation (Optional)
+
+For cross-browser compatibility (Windows taskbar pinning, older browsers), generate a `favicon.ico` from a 32x32 PNG. Two approaches:
+
+**With `png-to-ico` package** (see-veo):
+
+```javascript
+import pngToIco from 'png-to-ico';
+
+const favicon32 = await sharp(svgBuffer, { density: SVG_DENSITY })
+  .resize(32, 32).png().toBuffer();
+const icoBuffer = await pngToIco(favicon32);
+writeFileSync(join(IMAGES_DIR, 'favicon.ico'), icoBuffer);
+```
+
+**Manual ICO packing** (budgy-ting) — zero dependencies, stable binary format:
+
+```javascript
+const favicon32 = await sharp(svgBuffer, { density: SVG_DENSITY })
+  .resize(32, 32).png().toBuffer();
+
+// ICO format: 6-byte header + 16-byte directory entry + PNG data
+const header = Buffer.alloc(6);
+header.writeUInt16LE(0, 0);  // Reserved
+header.writeUInt16LE(1, 2);  // Type: ICO
+header.writeUInt16LE(1, 4);  // Number of images
+
+const entry = Buffer.alloc(16);
+entry.writeUInt8(32, 0);     // Width
+entry.writeUInt8(32, 1);     // Height
+entry.writeUInt8(0, 2);      // Color palette
+entry.writeUInt8(0, 3);      // Reserved
+entry.writeUInt16LE(1, 4);   // Color planes
+entry.writeUInt16LE(32, 6);  // Bits per pixel
+entry.writeUInt32LE(favicon32.length, 8);  // Image size
+entry.writeUInt32LE(22, 12); // Offset (6 + 16 = 22)
+
+writeFileSync(join(IMAGES_DIR, 'favicon.ico'),
+  Buffer.concat([header, entry, favicon32]));
+```
+
+## Expo / Metro Projects
+
+Expo uses Metro bundler (not Vite), which hashes filenames in `assets/` but serves `public/` at root. PWA manifest icon paths like `/assets/images/icon-192.png` will 404 unless icons are copied to `public/`:
+
+```javascript
+// After generating icons to assets/images/, copy PWA icons to public/
+import { copyFileSync } from 'fs';
+
+const PUBLIC_DIR = join(ROOT, 'public');
+copyFileSync(join(IMAGES_DIR, 'icon-192.png'), join(PUBLIC_DIR, 'icon-192.png'));
+copyFileSync(join(IMAGES_DIR, 'icon-512.png'), join(PUBLIC_DIR, 'icon-512.png'));
+copyFileSync(join(IMAGES_DIR, 'icon.png'), join(PUBLIC_DIR, 'icon.png'));
+```
+
+Optionally copy the SVG source to `public/` for use as a scalable icon in the web manifest.
 
 **Expo config** (`app.json`): Point `expo.icon`, `expo.splash.image`, `android.adaptiveIcon.foregroundImage`, and `web.favicon` at the generated PNGs. Set `backgroundColor` on splash and adaptive icon to match the SVG background color.

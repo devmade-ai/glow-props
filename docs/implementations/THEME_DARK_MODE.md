@@ -2,12 +2,14 @@
 
 User-controlled dark/light mode with DaisyUI theme selection, system preference fallback, persistence, flash prevention, and cross-tab sync.
 
-Three project variants demonstrate this pattern:
-- **glow-props**: Vanilla HTML/CSS/JS + Vite, full 35-theme catalog, per-mode independent selection
-- **canva-grid**: React + Vite, curated 8+8 theme catalog with validation, per-mode independent selection
-- **few-lap**: React Native (Expo) + Uniwind, 5 named combos (light/dark pairs), CSS variable themes
+Project variants demonstrating this pattern:
+- **glow-props**: Vanilla HTML/CSS/JS + Vite, full 35-theme catalog, per-mode independent selection (3 keys: `darkMode`, `lightTheme`, `darkTheme`)
+- **canva-grid**: React + Vite, combo-based selection with curated presets (2 keys: `darkMode`, `themeCombo`)
+- **graphiki**: React + Vite, combo-based with DaisyUI v5, auto-generated meta colors
+- **few-lap**: React Native (Expo) + Uniwind, named combos (light/dark pairs), CSS variable themes
+- **synctone**: React Native (Expo) + Zustand + Uniwind, combo presets with per-side meta colors
 
-All three use DaisyUI's semantic color system. The old custom CSS variable token approach (`--color-text-default`, `--color-surface`, etc.) is not used in any project.
+All use DaisyUI's semantic color system. The old custom CSS variable token approach (`--color-text-default`, `--color-surface`, etc.) is not used in any project.
 
 ## Dual-Layer Theming
 
@@ -161,14 +163,66 @@ function validDarkTheme(id) {
 
 DaisyUI themes use oklch colors that can't be directly used in `<meta name="theme-color">`. Use a build script to extract hex values from DaisyUI's theme definitions (`daisyui/theme/object.js`) so nothing is manually maintained.
 
-#### Build Script Approach
+#### Build Script (`scripts/generate-theme-meta.mjs`)
 
-Write a Node.js script that reads DaisyUI's theme objects and generates everything:
+Reads DaisyUI's theme objects and generates everything — zero manual maintenance:
+
+```javascript
+import { createRequire } from 'module';
+import { readFileSync, writeFileSync } from 'fs';
+
+const require = createRequire(import.meta.url);
+const themeObj = require('daisyui/theme/object.js');
+
+// oklch → hex conversion (~30 lines, no dependency)
+function oklchToHex(oklchStr) {
+  // Parse oklch(L C H) or oklch(L% C H)
+  const match = oklchStr.match(/oklch\(([\d.]+)%?\s+([\d.]+)\s+([\d.]+)\)/);
+  if (!match) return null;
+  let [, L, C, H] = match.map(Number);
+  if (L > 1) L /= 100; // normalize percentage
+
+  // oklch → oklab
+  const hRad = (H * Math.PI) / 180;
+  const a = C * Math.cos(hRad);
+  const b = C * Math.sin(hRad);
+
+  // oklab → linear sRGB (via LMS)
+  const l_ = L + 0.3963377774 * a + 0.2158037573 * b;
+  const m_ = L - 0.1055613458 * a - 0.0638541728 * b;
+  const s_ = L - 0.0894841775 * a - 1.2914855480 * b;
+  const l = l_ ** 3, m = m_ ** 3, s = s_ ** 3;
+  const r = +4.0767416621 * l - 3.3077115913 * m + 0.2309699292 * s;
+  const g = -1.2684380046 * l + 2.6097574011 * m - 0.3413193965 * s;
+  const bV = -0.0041960863 * l - 0.7034186147 * m + 1.7076147010 * s;
+
+  // Gamma correction + clamp
+  const gamma = (v) => Math.max(0, Math.min(255,
+    Math.round((v <= 0.0031308 ? 12.92 * v : 1.055 * v ** (1 / 2.4) - 0.055) * 255)
+  ));
+  return `#${[r, g, bV].map(gamma).map(v => v.toString(16).padStart(2, '0')).join('')}`;
+}
+
+// Process all themes
+const results = {};
+for (const [name, vars] of Object.entries(themeObj)) {
+  if (name.startsWith('__')) continue;
+  const isDark = vars['color-scheme'] === 'dark';
+  // Light themes: use --color-primary for status bar. Dark themes: use --color-base-100
+  const colorKey = isDark ? '--color-base-100' : '--color-primary';
+  const hex = oklchToHex(vars[colorKey] || '');
+  results[name] = { isDark, metaColor: hex || '#808080' };
+}
+
+// Generate outputs — update your theme catalog, meta tags, and flash prevention script
+console.log(JSON.stringify(results, null, 2));
+// In practice: write to daisyuiThemes.ts, update index.html meta tags, etc.
+```
 
 1. **Light/dark classification** — read each theme's `color-scheme` property
-2. **oklch → hex conversion** — convert oklch to hex at build time (oklab→LMS→linear sRGB→gamma sRGB)
+2. **oklch → hex conversion** — at build time, no runtime dependency
 3. **Color selection** — light themes use `--color-primary`, dark themes use `--color-base-100`
-4. **Generate all outputs** — theme arrays, hex color maps, navbar button lists, initial meta tag values
+4. **Generate all outputs** — theme arrays, hex color maps, initial meta tag values, flash prevention script's color map
 
 The script should update every file that contains theme lists or color maps so there is zero manual maintenance. Run it after DaisyUI version updates.
 
@@ -200,15 +254,20 @@ The flash prevention inline script needs its own copy of the color map (inline s
 
 ## Safe localStorage Wrappers
 
-localStorage throws `SecurityError` in sandboxed iframes, disabled-storage settings, and some enterprise environments. Wrap all access:
+localStorage throws `SecurityError` in sandboxed iframes, disabled-storage settings, and some enterprise environments. Extract into a shared module — reused by theme hook, PWA install hook, debug system, and any other consumer:
 
-```javascript
-function safeStorageGet(key) {
+```typescript
+// src/utils/safeStorage.ts
+export function safeStorageGet(key: string): string | null {
   try { return localStorage.getItem(key) } catch { return null }
 }
 
-function safeStorageSet(key, value) {
+export function safeStorageSet(key: string, value: string): void {
   try { localStorage.setItem(key, value) } catch { /* sandboxed iframe, disabled storage */ }
+}
+
+export function safeStorageRemove(key: string): void {
+  try { localStorage.removeItem(key) } catch { /* sandboxed iframe, disabled storage */ }
 }
 ```
 
@@ -435,7 +494,33 @@ export const THEME_HEX: Record<ThemeName, ThemeColors> = {
 }
 ```
 
-Hex values are manually converted from DaisyUI's oklch source values. When adding a new theme, add its hex mapping here AND its CSS variant definition.
+Hex values should be auto-generated by `scripts/generate-theme-meta.mjs` (see Build Script section above). No manual conversion needed.
+
+### `withAlpha()` Utility
+
+Uniwind doesn't generate opacity modifiers for DaisyUI CSS variable colors (`bg-warning/10` produces no CSS). For inline styles in React Native, append an alpha channel to hex:
+
+```typescript
+export function withAlpha(hex: string, opacity: number): string {
+  const alpha = Math.round(opacity * 255).toString(16).padStart(2, '0')
+  return `${hex}${alpha}` // #RRGGBB → #RRGGBBAA
+}
+```
+
+### Module-Level Theme Dedup
+
+Prevent redundant `setTheme()` calls and debug log noise when multiple components mount simultaneously:
+
+```typescript
+let _lastAppliedTheme: string | null = null
+
+function applyThemeIfChanged(themeName: string) {
+  if (themeName === _lastAppliedTheme) return
+  _lastAppliedTheme = themeName
+  Uniwind.setTheme(themeName)
+  debugAdd('render', 'info', 'Theme applied', { theme: themeName })
+}
+```
 
 ## Uniwind Theme Switching (React Native)
 
@@ -468,6 +553,66 @@ Theme definitions go in `global.css` as `@variant` blocks with DaisyUI oklch val
   }
 }
 ```
+
+## Zustand Store Pattern (React Native)
+
+For React Native apps, Zustand solves the problem where `useState` in hooks gives independent copies across components. All components read from the same store:
+
+```typescript
+import { create } from 'zustand'
+import AsyncStorage from '@react-native-async-storage/async-storage'
+import { debugAdd } from '../utils/debugLog'
+
+interface ThemeState {
+  isDark: boolean
+  comboKey: string
+  loaded: boolean
+  toggleMode: () => void
+  setCombo: (key: string) => void
+}
+
+// Guard against multiple simultaneous AsyncStorage reads on mount
+let _asyncLoadStarted = false
+
+export const useThemeStore = create<ThemeState>((set, get) => ({
+  isDark: false,
+  comboKey: 'default',
+  loaded: false,
+
+  toggleMode: () => {
+    const newDark = !get().isDark
+    set({ isDark: newDark })
+    AsyncStorage.setItem('darkMode', JSON.stringify(newDark))
+    debugAdd('render', 'info', 'Dark mode toggled', { dark: newDark })
+  },
+
+  setCombo: (key: string) => {
+    set({ comboKey: key })
+    AsyncStorage.setItem('themeCombo', JSON.stringify(key))
+  },
+}))
+
+// Hydrate from AsyncStorage — called once from root layout
+export async function hydrateTheme() {
+  if (_asyncLoadStarted) return
+  _asyncLoadStarted = true
+  try {
+    const [darkStr, comboStr] = await Promise.all([
+      AsyncStorage.getItem('darkMode'),
+      AsyncStorage.getItem('themeCombo'),
+    ])
+    useThemeStore.setState({
+      isDark: darkStr ? JSON.parse(darkStr) : false,
+      comboKey: comboStr ? JSON.parse(comboStr) : 'default',
+      loaded: true,
+    })
+  } catch {
+    useThemeStore.setState({ loaded: true })
+  }
+}
+```
+
+Cross-tab sync via `StorageEvent` directly on the store setters — works on web, ignored on native.
 
 ## Content Themes vs App Dark Mode
 
@@ -508,13 +653,13 @@ Pairs with the [Download as PDF](DOWNLOAD_PDF.md) implementation.
 
 5. **Validate stored theme IDs against the catalog.** Users may have outdated values from a previous version. Invalid IDs should silently fall back to defaults — no crash, no unstyled page.
 6. **Curate for quality, not quantity.** All 35 DaisyUI themes is fine for a portfolio, but utility apps should pick 8-10 per mode that look good with the content. Novelty themes (cyberpunk, halloween) can look unprofessional.
-7. **PWA meta theme-color hex values should be auto-generated.** DaisyUI uses oklch internally. Use a build script to extract primary (light themes) or base-100 (dark themes) as hex from `daisyui/theme/object.js`. Derive light/dark classification from each theme's `color-scheme` property. Generate all theme lists, color maps, and navbar buttons — no manual maintenance.
+7. **PWA meta theme-color hex values should be auto-generated.** Use `scripts/generate-theme-meta.mjs` to extract oklch→hex from `daisyui/theme/object.js`. Derive light/dark classification from each theme's `color-scheme` property. Generate all theme lists, color maps, and meta tag values — zero manual maintenance.
 
 **Persistence and sync:**
 
 8. **System preference is a fallback, not an override.** Once the user toggles manually, their choice persists. Overriding a manual choice with OS preference changes is disorienting.
 9. **Cross-tab sync requires the `storage` event listener.** The `storage` event only fires in other tabs (not the one that wrote), so there is no infinite loop. Without it, toggling dark mode in one tab leaves other tabs on the old theme until refresh.
-10. **Wrap all localStorage access in try/catch.** Sandboxed iframes, disabled storage, and enterprise policies throw `SecurityError`. Fall back to OS preference with default themes when storage is unavailable.
+10. **Extract `safeStorage` into a shared module.** `safeStorageGet`, `safeStorageSet`, `safeStorageRemove` in `src/utils/safeStorage.ts` — reused by theme hook, PWA install hook, debug system. Don't inline try/catch in every consumer.
 
 **Flash prevention:**
 
@@ -527,7 +672,11 @@ Pairs with the [Download as PDF](DOWNLOAD_PDF.md) implementation.
 
 15. **Uniwind's `setTheme()` avoids React re-renders.** CSS variable swaps happen at the native layer. Components don't need to re-render when the theme changes — they read the new CSS variable values automatically.
 16. **Hold the splash screen until theme is hydrated.** `usePersistedState` loads asynchronously from AsyncStorage. Hiding the splash before the stored preference resolves causes a visible flash.
-17. **Static hex lookup table for non-CSS contexts.** Mapbox GL, canvas, and charts need raw hex values. Maintain a `THEME_HEX` record that maps each theme to its full set of semantic colors. Keep it in sync with the CSS variant definitions.
+17. **Hex lookup table should be auto-generated.** Use `scripts/generate-theme-meta.mjs` or `scripts/generate-theme-colors.mjs` to generate `THEME_HEX` from DaisyUI's oklch values. No manual conversion.
+18. **Use Zustand for shared theme state.** React Native hooks with `useState` give independent copies across components. Zustand store provides single source of truth accessible everywhere.
+19. **Guard against duplicate AsyncStorage reads.** Module-level `_asyncLoadStarted` flag prevents race condition where multiple simultaneous hook mounts all trigger async reads.
+20. **`withAlpha(hex, opacity)` for inline styles.** Uniwind doesn't generate opacity modifiers for DaisyUI CSS variable colors. Append alpha channel to hex for transparent backgrounds.
+21. **Module-level theme dedup.** Track `_lastAppliedTheme` to prevent redundant `setTheme()` calls and debug log noise when multiple components mount simultaneously.
 
 **Architecture:**
 

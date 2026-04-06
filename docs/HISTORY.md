@@ -1,5 +1,75 @@
 # History
 
+## 2026-04-06
+
+### Cross-repo pattern audit — backport field improvements into reference docs
+
+Audited all 12 active devmade-ai repos for implementation of the 7 suggested patterns. Identified ~70 improvements from field implementations and backported them into the reference pattern docs.
+
+**APP_ICONS.md:**
+- Added `apple-touch-icon.png` (180x180) to output list (Apple's recommended iOS size)
+- Added favicon.ico generation — both manual ICO packing (zero-dep) and `png-to-ico` package
+- Added Expo/Metro copy step for `public/` directory
+
+**BURGER_MENU.md:**
+- Added extracted hooks: `useDisclosureFocus`, `useFocusTrap`, `useEscapeKey`
+- Added ArrowUp/ArrowDown/Home/End keyboard navigation with wrapping
+- Added `icon`, `iconClass`, `disabled`, `highlight`, `highlightColor` to MenuItem interface
+- Added `ModalBackdrop` extraction and haptic feedback for React Native
+- Added version display footer, 44px minimum touch targets, DaisyUI `menu` classes
+- Added Vue variant notes, error routing to debug system
+
+**DEBUG_SYSTEM.md:**
+- Complete rewrite with full code examples
+- Added `generateReport()` to the debugLog module (not just the pill UI)
+- Added `console.error`/`console.warn` interception for automatic React warning capture
+- Added URL redaction in debug reports to prevent token leaking
+- Added numeric `id` field, `(string & {})` typed source fallback, structured `details` as Record
+- Added immediate subscriber delivery (new subscribers get existing entries)
+- Added PWA Diagnostics tab with active health checks
+- Added pre-React inline pill for bundle load failure scenarios (20s loading timeout)
+- Added multiple clipboard fallbacks (ClipboardItem Blob → writeText → textarea → visible textarea)
+- Added failure diagnosis utility (`diagnoseFailure`)
+- Added hydration-safe initialization patterns
+
+**DOWNLOAD_PDF.md:**
+- Added `print-color-adjust: exact` for preserving background colors in print
+- Added `print-avoid-break` utility class (composable alternative to global `section` rule)
+- Added document verification hash pattern (optional)
+
+**PWA_SYSTEM.md:**
+- Added module-level singleton pattern for update state (survives component remounts)
+- Added visibility-based update checks on `visibilitychange`
+- Added `controllerchange` reload guard with user-controlled activation
+- Added `wasJustUpdated()` 30-second suppression
+- Added manual `checkForUpdate()` with typed result and `checking` state
+- Expanded browser detection to 7 Chromium browsers (Samsung, Opera, Vivaldi, Arc)
+- Added Brave Mobile UA stripping bug workaround
+- Added 5-second diagnostic timeout for missing `beforeinstallprompt`
+- Added Chrome 90-day cooldown handling with manual instruction fallback
+- Added install analytics tracking (localStorage, 50-event cap)
+- Added display-mode change listener for browser-menu installation detection
+- Added iOS non-Safari cross-redirect instructions
+- Added custom SW section for non-Vite projects (Expo/Metro)
+- Added `version.json` supplementary update detection
+- Added Workbox runtime caching examples (Google Fonts)
+- Added debug logging throughout PWA hooks
+
+**THEME_DARK_MODE.md:**
+- Corrected canva-grid documentation (uses combo-based, not per-mode independent)
+- Added full `generate-theme-meta.mjs` script with oklch→hex conversion
+- Extracted `safeStorage` into shared utility module with `safeRemoveItem`
+- Added Zustand store pattern for React Native
+- Added `withAlpha()` utility for hex colors with opacity
+- Added module-level theme dedup guard
+- Added `_asyncLoadStarted` guard for preventing duplicate AsyncStorage reads
+
+**HTTPS_PROXY.md:**
+- Added `fetchWithRetry()` with rate-limit handling and exponential backoff
+- Refactored to shared `handleResponse()` (deduplicates direct/proxy paths)
+- Changed return shape to `{ status, data }` for HTTP status visibility
+- Added `logProxyStatus()` startup diagnostic
+
 ## 2026-04-05
 
 ### Markdown renderer — replace regex parser with marked library
