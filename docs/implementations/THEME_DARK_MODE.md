@@ -556,7 +556,7 @@ Theme definitions go in `global.css` as `@variant` blocks with DaisyUI oklch val
 
 ## Zustand Store Pattern (React Native)
 
-For React Native apps, Zustand solves the problem where `useState` in hooks gives independent copies across components. All components read from the same store:
+For React Native apps, Zustand solves the problem where `useState` in hooks gives independent copies across components. All components read from the same store. synctone separates the store (`stores/themeStore.ts`) from the hydration logic (`hooks/useTheme.ts`) — shown combined here for clarity:
 
 ```typescript
 import { create } from 'zustand'

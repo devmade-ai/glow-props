@@ -111,6 +111,8 @@ function httpsGetViaProxy(parsed, headers) {
 
 // --- Retry wrapper with rate-limit handling ---
 // Retries on errors and HTTP 429 with exponential backoff.
+// maxRetries = number of retries after the initial attempt (3 = 4 total attempts).
+// Adapted from few-lap's fetchWithRetry (which uses "total attempts" semantics).
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 async function fetchWithRetry(url, headers = {}, maxRetries = 3) {

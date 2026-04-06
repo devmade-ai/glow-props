@@ -55,9 +55,9 @@ interface MenuItem {
 
 Extract these into shared hooks — they are used by BurgerMenu and other disclosure components (modals, dropdowns).
 
-### `useDisclosureFocus` (canva-grid)
+### `useDisclosureFocus` (adapted from canva-grid)
 
-Handles focus-first-item-on-open and return-to-trigger-on-close. Parameterized for reuse across any disclosure component:
+Handles focus-first-item-on-open and return-to-trigger-on-close. Parameterized for reuse across any disclosure component. canva-grid's original uses an options object `(open, { triggerRef, contentRef, selector })` — simplified here to positional args:
 
 ```javascript
 import { useEffect, useRef } from 'react'
