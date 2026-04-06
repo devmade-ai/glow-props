@@ -76,6 +76,19 @@ Audited all 12 active devmade-ai repos for implementation of the 7 suggested pat
 - Changed return shape to `{ status, data }` for HTTP status visibility
 - Added `logProxyStatus()` startup diagnostic
 
+### Verification and fixes
+
+Spot-checked 12 highest-risk code patterns against their source repos. Fixed 3 code bugs: duplicate `const isIOS` declaration in PWA_SYSTEM.md (would cause syntax error), missing `import { debugAdd }` in usePWAInstall code block, duplicate Key Lesson numbering in THEME_DARK_MODE.md (Architecture 18-20 colliding with React Native 18-21). Clarified 3 source adaptations: useDisclosureFocus API simplified from canva-grid's options object, Zustand store and hydration combined from synctone's separate files, fetchWithRetry `maxRetries` semantics differ from few-lap's "total attempts."
+
+### THEME_DARK_MODE.md — expand combo pattern to equal treatment
+
+The combo pattern (Approach B) was used by 4 of 5 repos but documented as a 15-line "Variant" afterthought. Expanded to full parity with per-mode independent (Approach A):
+- Restructured persistence into "Approach A" vs "Approach B" with comparison table
+- Added combo-specific code: `getStoredTheme` via combo resolution, `getMetaColor` per combo side, `validCombo`, combo catalog with `metaColorLight`/`metaColorDark`
+- Added combo flash prevention bootstrap script with inline combo map
+- Added combo cross-tab sync for vanilla JS, React, and React Native/Zustand
+- Updated Key Lessons: added #5 (choose one approach), #8 (per-side meta colors for combos), #15 (combo map duplication in bootstrap), renumbered to 26 total
+
 ## 2026-04-05
 
 ### Markdown renderer — replace regex parser with marked library
