@@ -2,6 +2,27 @@
 
 ## 2026-04-06
 
+### Per-repo pattern gap audit — re-audit against updated pattern docs
+
+Re-audited all 11 app repos against the 8 updated implementation pattern docs (which were significantly expanded in the previous session). Generated a full gap matrix and persisted per-repo implementation gaps to TODO.md.
+
+**Repos audited:** glow-props, canva-grid, budgy-ting, model-pear, see-veo, repo-tor, few-lap, sun-sea-o, graphiki, four-ems, synctone
+
+**Top 10 cross-cutting gaps (6+ repos each):**
+1. EVENT_BUS missing in 10/11 repos
+2. DEBUG_SYSTEM: console interception missing in all 8 repos with debug systems
+3. DEBUG_SYSTEM: pre-React inline pill missing in 7/8 repos
+4. DEBUG_SYSTEM: inline styles (not Tailwind) missing in 7/8 repos
+5. DEBUG_SYSTEM: PWA Diagnostics tab missing in all 8 repos
+6. PWA_SYSTEM: visibility-based update checks missing in 7/8 repos
+7. PWA_SYSTEM: 30-second suppression missing in 7/8 repos
+8. PWA_SYSTEM: module singleton missing in 6/8 repos
+9. BURGER_MENU: focus hooks extraction missing in all repos with menus
+10. THEME_DARK_MODE entirely missing in 5/11 repos
+
+**Most compliant:** glow-props (5/7 pass), repo-tor (2 pass + 3 partial), graphiki (3 pass + 3 partial)
+**Least compliant:** model-pear (5/7 missing), sun-sea-o (3/7 missing)
+
 ### Cross-repo pattern audit — backport field improvements into reference docs
 
 Audited all 12 active devmade-ai repos for implementation of the 7 suggested patterns. Identified ~70 improvements from field implementations and backported them into the reference pattern docs.
