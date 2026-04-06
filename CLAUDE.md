@@ -340,4 +340,5 @@ Each implementation is in its own file under `docs/implementations/`:
 | HTTPS Proxy | [`docs/implementations/HTTPS_PROXY.md`](docs/implementations/HTTPS_PROXY.md) | Node.js HTTP CONNECT tunnel for proxy environments |
 | Burger Menu | [`docs/implementations/BURGER_MENU.md`](docs/implementations/BURGER_MENU.md) | Disclosure-pattern dropdown (React Web + React Native) |
 | Theme & Dark Mode | [`docs/implementations/THEME_DARK_MODE.md`](docs/implementations/THEME_DARK_MODE.md) | DaisyUI dual-layer theming, per-mode theme selection, flash prevention, cross-tab sync |
+| Event Bus | [`docs/implementations/EVENT_BUS.md`](docs/implementations/EVENT_BUS.md) | Typed pub/sub factory for service-layer events with catch-all and error isolation |
 

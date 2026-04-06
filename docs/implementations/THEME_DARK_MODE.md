@@ -2,12 +2,14 @@
 
 User-controlled dark/light mode with DaisyUI theme selection, system preference fallback, persistence, flash prevention, and cross-tab sync.
 
-Three project variants demonstrate this pattern:
-- **glow-props**: Vanilla HTML/CSS/JS + Vite, full 35-theme catalog, per-mode independent selection
-- **canva-grid**: React + Vite, curated 8+8 theme catalog with validation, per-mode independent selection
-- **few-lap**: React Native (Expo) + Uniwind, 5 named combos (light/dark pairs), CSS variable themes
+Project variants demonstrating this pattern:
+- **glow-props**: Vanilla HTML/CSS/JS + Vite, full 35-theme catalog, per-mode independent selection (3 keys: `darkMode`, `lightTheme`, `darkTheme`)
+- **canva-grid**: React + Vite, combo-based selection with curated presets (2 keys: `darkMode`, `themeCombo`)
+- **graphiki**: React + Vite, combo-based with DaisyUI v5, auto-generated meta colors
+- **few-lap**: React Native (Expo) + Uniwind, named combos (light/dark pairs), CSS variable themes
+- **synctone**: React Native (Expo) + Zustand + Uniwind, combo presets with per-side meta colors
 
-All three use DaisyUI's semantic color system. The old custom CSS variable token approach (`--color-text-default`, `--color-surface`, etc.) is not used in any project.
+All use DaisyUI's semantic color system. The old custom CSS variable token approach (`--color-text-default`, `--color-surface`, etc.) is not used in any project.
 
 ## Dual-Layer Theming
 
@@ -47,7 +49,7 @@ If only one layer is set, DaisyUI components and Tailwind utilities fall out of 
 
 ### Applying Both Layers (JavaScript)
 
-Every theme change must set both layers together:
+Every theme change must set both layers together. The core `applyTheme` function is the same regardless of persistence approach:
 
 ```javascript
 function applyTheme(dark, themeName, skipPersist) {
@@ -58,18 +60,27 @@ function applyTheme(dark, themeName, skipPersist) {
   }
   document.documentElement.setAttribute('data-theme', themeName);
 
+  // Update PWA status bar color
+  const color = META_COLORS[themeName] || '#808080';
+  document.querySelectorAll('meta[name="theme-color"]').forEach(meta => {
+    meta.setAttribute('content', color);
+  });
+
   if (!skipPersist) {
-    safeStorageSet('darkMode', dark);
-    safeStorageSet(dark ? 'darkTheme' : 'lightTheme', themeName);
+    // Persistence differs by approach — see sections below
   }
 }
 ```
 
 The `skipPersist` parameter is used by the cross-tab sync handler — the values already came from another tab's localStorage write, so writing them back is redundant.
 
-## Per-Mode Theme Persistence
+## Theme Persistence — Two Approaches
 
-Each mode (light/dark) stores its own DaisyUI theme independently. Three localStorage keys:
+Choose one approach per project. Both use `darkMode` for the dark/light toggle. They differ in how the DaisyUI theme name is selected and stored.
+
+### Approach A: Per-Mode Independent Selection (glow-props)
+
+Each mode (light/dark) stores its own DaisyUI theme independently. Users pick any theme from the full catalog for each mode. Three localStorage keys:
 
 | Key | Value | Example |
 |-----|-------|---------|
@@ -77,7 +88,7 @@ Each mode (light/dark) stores its own DaisyUI theme independently. Three localSt
 | `lightTheme` | DaisyUI theme name | `'caramellatte'` |
 | `darkTheme` | DaisyUI theme name | `'coffee'` |
 
-When the user toggles dark/light, the system looks up the stored theme for the new mode and applies it. Users can have e.g. "nord" in light mode and "dracula" in dark mode simultaneously.
+**Best for:** Portfolio sites, personal projects, or apps where theme variety is a feature. Users can have e.g. "nord" in light mode and "dracula" in dark mode simultaneously.
 
 ```javascript
 function getStoredTheme(dark) {
@@ -86,40 +97,95 @@ function getStoredTheme(dark) {
   }
   return safeStorageGet('lightTheme') || DEFAULT_LIGHT_THEME;
 }
+
+function persistTheme(dark, themeName) {
+  safeStorageSet('darkMode', String(dark));
+  safeStorageSet(dark ? 'darkTheme' : 'lightTheme', themeName);
+}
 ```
 
-### Variant: Named Combos (React Native)
+### Approach B: Named Combos (canva-grid, graphiki, few-lap, synctone)
 
-few-lap uses named combos instead of independent per-mode selection, because the mobile UI doesn't have room for a full theme picker. Two storage keys:
+Curated light/dark pairs selected as a unit. The user picks a combo name (e.g. "Mono", "Luxe"); toggling dark/light switches between the combo's paired themes. Simpler UI — one dropdown instead of two full theme pickers. Two localStorage keys:
 
 | Key | Value | Example |
 |-----|-------|---------|
-| `theme_combo` | Combo key | `'forest'` |
-| `theme_dark` | `true` or `false` | `true` |
+| `darkMode` | `'true'` or `'false'` | `'false'` |
+| `themeCombo` | Combo key | `'mono'` |
+
+**Best for:** Utility apps, mobile apps, or any project where a full theme picker would overwhelm users. Two combos is enough for most apps.
 
 ```typescript
-export const THEME_COMBOS: Record<ComboKey, ThemeCombo> = {
-  forest: { label: 'Forest', light: 'lemonade', dark: 'abyss' },
-  nordic: { label: 'Nordic', light: 'nord', dark: 'night' },
-  corporate: { label: 'Corporate', light: 'corporate', dark: 'business' },
-  cafe: { label: 'Cafe', light: 'caramellatte', dark: 'coffee' },
-  silk: { label: 'Silk', light: 'silk', dark: 'sunset' },
-};
+interface ThemeCombo {
+  label: string
+  light: string          // DaisyUI theme name for light mode
+  dark: string           // DaisyUI theme name for dark mode
+  metaColorLight: string // Hex color for PWA status bar in light mode
+  metaColorDark: string  // Hex color for PWA status bar in dark mode
+}
+
+export const themeCombos: ThemeCombo[] = [
+  {
+    id: 'mono', label: 'Mono',
+    light: 'lofi', dark: 'black',
+    metaColorLight: '#808080', metaColorDark: '#000000',
+  },
+  {
+    id: 'luxe', label: 'Luxe',
+    light: 'fantasy', dark: 'luxury',
+    metaColorLight: '#6E0B75', metaColorDark: '#09090b',
+  },
+  // Add more as needed — 2-5 combos is the sweet spot
+]
+
+export const DEFAULT_COMBO = 'mono'
 ```
+
+```javascript
+const comboIds = new Set(themeCombos.map(c => c.id))
+
+function validCombo(id) {
+  return comboIds.has(id) ? id : DEFAULT_COMBO
+}
+
+function getCombo(comboId) {
+  return themeCombos.find(c => c.id === comboId) || themeCombos[0]
+}
+
+function getStoredTheme(dark) {
+  const comboId = validCombo(safeStorageGet('themeCombo') || DEFAULT_COMBO)
+  const combo = getCombo(comboId)
+  return dark ? combo.dark : combo.light
+}
+
+function getMetaColor(dark) {
+  const comboId = validCombo(safeStorageGet('themeCombo') || DEFAULT_COMBO)
+  const combo = getCombo(comboId)
+  return dark ? combo.metaColorDark : combo.metaColorLight
+}
+
+function persistTheme(dark, comboId) {
+  safeStorageSet('darkMode', String(dark))
+  safeStorageSet('themeCombo', comboId)
+}
+```
+
+### Choosing Between Approaches
+
+| Consideration | Per-Mode Independent | Named Combos |
+|--------------|---------------------|--------------|
+| UI complexity | Full theme picker per mode | Single combo dropdown |
+| User freedom | Maximum — any theme in any mode | Constrained to curated pairs |
+| Design coherence | User might pick clashing themes | Combos are pre-vetted to look good |
+| Storage keys | 3 (`darkMode`, `lightTheme`, `darkTheme`) | 2 (`darkMode`, `themeCombo`) |
+| Mobile suitability | Needs scrollable picker, lots of screen space | Small dropdown, works well on mobile |
+| Used by | glow-props | canva-grid, graphiki, few-lap, synctone |
 
 ## Theme Catalog
 
-### Curated vs Full Catalog
+### Catalog Structure — Per-Mode vs Combos
 
-Two approaches, choose per project:
-
-**Full catalog** (glow-props): Register all 35 DaisyUI built-in themes. Good for portfolio/personal sites where theme variety is a feature.
-
-**Curated catalog** (canva-grid): Pick 8 light + 8 dark themes that look good with your content. Better for utility apps where novelty themes would look unprofessional.
-
-### Theme Catalog Module (React)
-
-When curating, define themes with metadata for the UI and PWA status bar:
+**Per-mode independent** (Approach A) — define separate light and dark theme arrays:
 
 ```javascript
 export const lightThemes = [
@@ -140,9 +206,34 @@ export const DEFAULT_LIGHT_THEME = 'lofi'
 export const DEFAULT_DARK_THEME = 'black'
 ```
 
+Full 35-theme catalog is fine for portfolio/personal sites. For utility apps, curate 8 light + 8 dark that look good with your content — novelty themes (cyberpunk, halloween) look unprofessional.
+
+**Named combos** (Approach B) — define paired presets with per-side meta colors:
+
+```typescript
+export const themeCombos = [
+  {
+    id: 'mono', label: 'Mono',
+    light: 'lofi', dark: 'black',
+    metaColorLight: '#808080', metaColorDark: '#000000',
+  },
+  {
+    id: 'luxe', label: 'Luxe',
+    light: 'fantasy', dark: 'luxury',
+    metaColorLight: '#6E0B75', metaColorDark: '#09090b',
+  },
+]
+
+export const DEFAULT_COMBO = 'mono'
+```
+
+2-5 combos is the sweet spot. Each combo should pair a light and dark theme that share a similar mood/aesthetic.
+
 ### Validation
 
-Always validate stored theme IDs against the catalog. Users may have outdated values from a previous version where a theme was available but has since been removed:
+Always validate stored values against the catalog. Users may have outdated values from a previous version where a theme/combo was removed.
+
+**Per-mode validation:**
 
 ```javascript
 const lightIds = new Set(lightThemes.map(t => t.id))
@@ -157,18 +248,80 @@ function validDarkTheme(id) {
 }
 ```
 
+**Combo validation:**
+
+```javascript
+const comboIds = new Set(themeCombos.map(c => c.id))
+
+function validCombo(id) {
+  return comboIds.has(id) ? id : DEFAULT_COMBO
+}
+```
+
 ### PWA Meta Theme-Color
 
 DaisyUI themes use oklch colors that can't be directly used in `<meta name="theme-color">`. Use a build script to extract hex values from DaisyUI's theme definitions (`daisyui/theme/object.js`) so nothing is manually maintained.
 
-#### Build Script Approach
+#### Build Script (`scripts/generate-theme-meta.mjs`)
 
-Write a Node.js script that reads DaisyUI's theme objects and generates everything:
+Reads DaisyUI's theme objects and generates everything — zero manual maintenance:
+
+```javascript
+import { createRequire } from 'module';
+import { readFileSync, writeFileSync } from 'fs';
+
+const require = createRequire(import.meta.url);
+const themeObj = require('daisyui/theme/object.js');
+
+// oklch → hex conversion (~30 lines, no dependency)
+function oklchToHex(oklchStr) {
+  // Parse oklch(L C H) or oklch(L% C H)
+  const match = oklchStr.match(/oklch\(([\d.]+)%?\s+([\d.]+)\s+([\d.]+)\)/);
+  if (!match) return null;
+  let [, L, C, H] = match.map(Number);
+  if (L > 1) L /= 100; // normalize percentage
+
+  // oklch → oklab
+  const hRad = (H * Math.PI) / 180;
+  const a = C * Math.cos(hRad);
+  const b = C * Math.sin(hRad);
+
+  // oklab → linear sRGB (via LMS)
+  const l_ = L + 0.3963377774 * a + 0.2158037573 * b;
+  const m_ = L - 0.1055613458 * a - 0.0638541728 * b;
+  const s_ = L - 0.0894841775 * a - 1.2914855480 * b;
+  const l = l_ ** 3, m = m_ ** 3, s = s_ ** 3;
+  const r = +4.0767416621 * l - 3.3077115913 * m + 0.2309699292 * s;
+  const g = -1.2684380046 * l + 2.6097574011 * m - 0.3413193965 * s;
+  const bV = -0.0041960863 * l - 0.7034186147 * m + 1.7076147010 * s;
+
+  // Gamma correction + clamp
+  const gamma = (v) => Math.max(0, Math.min(255,
+    Math.round((v <= 0.0031308 ? 12.92 * v : 1.055 * v ** (1 / 2.4) - 0.055) * 255)
+  ));
+  return `#${[r, g, bV].map(gamma).map(v => v.toString(16).padStart(2, '0')).join('')}`;
+}
+
+// Process all themes
+const results = {};
+for (const [name, vars] of Object.entries(themeObj)) {
+  if (name.startsWith('__')) continue;
+  const isDark = vars['color-scheme'] === 'dark';
+  // Light themes: use --color-primary for status bar. Dark themes: use --color-base-100
+  const colorKey = isDark ? '--color-base-100' : '--color-primary';
+  const hex = oklchToHex(vars[colorKey] || '');
+  results[name] = { isDark, metaColor: hex || '#808080' };
+}
+
+// Generate outputs — update your theme catalog, meta tags, and flash prevention script
+console.log(JSON.stringify(results, null, 2));
+// In practice: write to daisyuiThemes.ts, update index.html meta tags, etc.
+```
 
 1. **Light/dark classification** — read each theme's `color-scheme` property
-2. **oklch → hex conversion** — convert oklch to hex at build time (oklab→LMS→linear sRGB→gamma sRGB)
+2. **oklch → hex conversion** — at build time, no runtime dependency
 3. **Color selection** — light themes use `--color-primary`, dark themes use `--color-base-100`
-4. **Generate all outputs** — theme arrays, hex color maps, navbar button lists, initial meta tag values
+4. **Generate all outputs** — theme arrays, hex color maps, initial meta tag values, flash prevention script's color map
 
 The script should update every file that contains theme lists or color maps so there is zero manual maintenance. Run it after DaisyUI version updates.
 
@@ -200,15 +353,20 @@ The flash prevention inline script needs its own copy of the color map (inline s
 
 ## Safe localStorage Wrappers
 
-localStorage throws `SecurityError` in sandboxed iframes, disabled-storage settings, and some enterprise environments. Wrap all access:
+localStorage throws `SecurityError` in sandboxed iframes, disabled-storage settings, and some enterprise environments. Extract into a shared module — reused by theme hook, PWA install hook, debug system, and any other consumer:
 
-```javascript
-function safeStorageGet(key) {
+```typescript
+// src/utils/safeStorage.ts
+export function safeStorageGet(key: string): string | null {
   try { return localStorage.getItem(key) } catch { return null }
 }
 
-function safeStorageSet(key, value) {
+export function safeStorageSet(key: string, value: string): void {
   try { localStorage.setItem(key, value) } catch { /* sandboxed iframe, disabled storage */ }
+}
+
+export function safeStorageRemove(key: string): void {
+  try { localStorage.removeItem(key) } catch { /* sandboxed iframe, disabled storage */ }
 }
 ```
 
@@ -218,7 +376,9 @@ When storage is unavailable, the system degrades to OS preference with default t
 
 ### Web: Inline Script in `<head>`
 
-The theme hook/script runs after mount — too late. An inline classic `<script>` in `<head>` reads localStorage and sets both `.dark` and `data-theme` before the first paint:
+The theme hook/script runs after mount — too late. An inline classic `<script>` in `<head>` reads localStorage and sets both `.dark` and `data-theme` before the first paint.
+
+**Per-mode independent (Approach A):**
 
 ```html
 <script>
@@ -242,16 +402,48 @@ The theme hook/script runs after mount — too late. An inline classic `<script>
 </script>
 ```
 
+**Named combos (Approach B):**
+
+```html
+<script>
+  (function() {
+    try {
+      var stored = localStorage.getItem('darkMode');
+      var isDark = stored !== null
+        ? stored === 'true'
+        : window.matchMedia('(prefers-color-scheme: dark)').matches;
+      // Combo map — must match the theme catalog module. Generated by build script.
+      var combos = {
+        mono: { light: 'lofi', dark: 'black' },
+        luxe: { light: 'fantasy', dark: 'luxury' }
+      };
+      var comboId = localStorage.getItem('themeCombo') || 'mono';
+      var combo = combos[comboId] || combos.mono;
+      var theme = isDark ? combo.dark : combo.light;
+      if (isDark) {
+        document.documentElement.classList.add('dark');
+      } else {
+        document.documentElement.classList.remove('dark');
+      }
+      document.documentElement.setAttribute('data-theme', theme);
+    } catch(e) {}
+  })();
+</script>
+```
+
 Place before any `<link>` or `<script type="module">` tags. Executes synchronously during HTML parse.
 
 - **Must be a classic script, not `type="module"`**: Module scripts are deferred — they run after DOM parse, too late to prevent flash.
-- **Defaults must match** the hook/theme script defaults. If you change `DEFAULT_DARK_THEME` in your JS, update it here too.
+- **Defaults must match** the hook/theme script defaults. If you change `DEFAULT_DARK_THEME` or `DEFAULT_COMBO` in your JS, update it here too.
+- **Combo map duplication is unavoidable**: The inline script can't import ES modules. The build script should generate both the module catalog and the inline combo map to keep them in sync.
 - **try/catch**: Handles environments where localStorage is unavailable.
 - **CSP note**: Strict Content Security Policy without `unsafe-inline` blocks inline scripts. For static hosting, precompute the script's SHA-256 hash and add it to the CSP: `script-src 'self' 'sha256-<hash>'`.
 
 ### Web: Theme ID Validation in Bootstrap Script
 
-For curated catalogs, validate the stored theme against a hardcoded allowlist in the bootstrap script. This prevents a removed theme from producing an unstyled page on the first paint:
+For curated catalogs, validate the stored theme/combo against a hardcoded allowlist in the bootstrap script. This prevents a removed theme from producing an unstyled page on the first paint.
+
+**Per-mode validation:**
 
 ```html
 <script>
@@ -277,7 +469,9 @@ For curated catalogs, validate the stored theme against a hardcoded allowlist in
 </script>
 ```
 
-Keep the allowlists in sync with the theme catalog module.
+**Combo validation** — the combo map itself acts as the allowlist. If the stored combo ID isn't a key in the map, the fallback combo applies automatically (see combo bootstrap script above).
+
+Keep allowlists and combo maps in sync with the theme catalog module.
 
 ### React Native: Splash Screen Hold
 
@@ -314,7 +508,9 @@ Set `app.json` `backgroundColor` to match the default dark theme. The native spl
 
 The `storage` event fires in other tabs (not the one that wrote), so there's no infinite loop. Without it, toggling dark mode in one tab leaves other tabs on the old theme until refresh.
 
-### Web (Vanilla JS)
+### Per-Mode Independent (Approach A)
+
+**Vanilla JS:**
 
 ```javascript
 window.addEventListener('storage', function (e) {
@@ -326,7 +522,7 @@ window.addEventListener('storage', function (e) {
 });
 ```
 
-### Web (React)
+**React:**
 
 ```javascript
 useEffect(() => {
@@ -347,30 +543,63 @@ useEffect(() => {
 }, [])
 ```
 
-Validate incoming values — another tab could have garbage in localStorage.
+### Named Combos (Approach B)
+
+**Vanilla JS:**
+
+```javascript
+window.addEventListener('storage', function (e) {
+  if (e.key === 'darkMode' || e.key === 'themeCombo') {
+    var dark = safeStorageGet('darkMode') === 'true';
+    var theme = getStoredTheme(dark); // resolves combo → DaisyUI theme name
+    applyTheme(dark, theme, true);
+  }
+});
+```
+
+**React:**
+
+```javascript
+useEffect(() => {
+  const handleStorage = (e) => {
+    if (e.key === 'darkMode') {
+      const newDark = e.newValue !== null
+        ? e.newValue === 'true'
+        : window.matchMedia('(prefers-color-scheme: dark)').matches
+      setIsDark(newDark)
+    } else if (e.key === 'themeCombo' && e.newValue) {
+      setComboId(validCombo(e.newValue))
+    }
+  }
+  window.addEventListener('storage', handleStorage)
+  return () => window.removeEventListener('storage', handleStorage)
+}, [])
+```
 
 ### React Native (Web Platform Only)
+
+For Expo apps using combos with Zustand, cross-tab sync updates the store directly:
 
 ```typescript
 useEffect(() => {
   if (Platform.OS !== 'web' || typeof window === 'undefined') return;
   const handleStorage = (e: StorageEvent) => {
-    if (e.key === 'theme_combo' && e.newValue !== null) {
+    if (e.key === 'darkMode' && e.newValue !== null) {
+      try { useThemeStore.setState({ isDark: JSON.parse(e.newValue) }) } catch {}
+    }
+    if (e.key === 'themeCombo' && e.newValue !== null) {
       try {
         const parsed = JSON.parse(e.newValue);
-        if (parsed in THEME_COMBOS) setComboRaw(parsed);
-      } catch { /* malformed value */ }
-    }
-    if (e.key === 'theme_dark' && e.newValue !== null) {
-      try { setIsDark(JSON.parse(e.newValue)); } catch { /* malformed */ }
+        if (comboIds.has(parsed)) useThemeStore.setState({ comboKey: parsed })
+      } catch {}
     }
   };
   window.addEventListener('storage', handleStorage);
   return () => window.removeEventListener('storage', handleStorage);
-}, [setComboRaw, setIsDark]);
+}, []);
 ```
 
-JSON.parse because `usePersistedState` stores values as JSON strings.
+Validate incoming values — another tab could have garbage in localStorage.
 
 ## System Preference Fallback
 
@@ -435,7 +664,33 @@ export const THEME_HEX: Record<ThemeName, ThemeColors> = {
 }
 ```
 
-Hex values are manually converted from DaisyUI's oklch source values. When adding a new theme, add its hex mapping here AND its CSS variant definition.
+Hex values should be auto-generated by `scripts/generate-theme-meta.mjs` (see Build Script section above). No manual conversion needed.
+
+### `withAlpha()` Utility
+
+Uniwind doesn't generate opacity modifiers for DaisyUI CSS variable colors (`bg-warning/10` produces no CSS). For inline styles in React Native, append an alpha channel to hex:
+
+```typescript
+export function withAlpha(hex: string, opacity: number): string {
+  const alpha = Math.round(opacity * 255).toString(16).padStart(2, '0')
+  return `${hex}${alpha}` // #RRGGBB → #RRGGBBAA
+}
+```
+
+### Module-Level Theme Dedup
+
+Prevent redundant `setTheme()` calls and debug log noise when multiple components mount simultaneously:
+
+```typescript
+let _lastAppliedTheme: string | null = null
+
+function applyThemeIfChanged(themeName: string) {
+  if (themeName === _lastAppliedTheme) return
+  _lastAppliedTheme = themeName
+  Uniwind.setTheme(themeName)
+  debugAdd('render', 'info', 'Theme applied', { theme: themeName })
+}
+```
 
 ## Uniwind Theme Switching (React Native)
 
@@ -468,6 +723,66 @@ Theme definitions go in `global.css` as `@variant` blocks with DaisyUI oklch val
   }
 }
 ```
+
+## Zustand Store Pattern (React Native)
+
+For React Native apps, Zustand solves the problem where `useState` in hooks gives independent copies across components. All components read from the same store. synctone separates the store (`stores/themeStore.ts`) from the hydration logic (`hooks/useTheme.ts`) — shown combined here for clarity:
+
+```typescript
+import { create } from 'zustand'
+import AsyncStorage from '@react-native-async-storage/async-storage'
+import { debugAdd } from '../utils/debugLog'
+
+interface ThemeState {
+  isDark: boolean
+  comboKey: string
+  loaded: boolean
+  toggleMode: () => void
+  setCombo: (key: string) => void
+}
+
+// Guard against multiple simultaneous AsyncStorage reads on mount
+let _asyncLoadStarted = false
+
+export const useThemeStore = create<ThemeState>((set, get) => ({
+  isDark: false,
+  comboKey: 'default',
+  loaded: false,
+
+  toggleMode: () => {
+    const newDark = !get().isDark
+    set({ isDark: newDark })
+    AsyncStorage.setItem('darkMode', JSON.stringify(newDark))
+    debugAdd('render', 'info', 'Dark mode toggled', { dark: newDark })
+  },
+
+  setCombo: (key: string) => {
+    set({ comboKey: key })
+    AsyncStorage.setItem('themeCombo', JSON.stringify(key))
+  },
+}))
+
+// Hydrate from AsyncStorage — called once from root layout
+export async function hydrateTheme() {
+  if (_asyncLoadStarted) return
+  _asyncLoadStarted = true
+  try {
+    const [darkStr, comboStr] = await Promise.all([
+      AsyncStorage.getItem('darkMode'),
+      AsyncStorage.getItem('themeCombo'),
+    ])
+    useThemeStore.setState({
+      isDark: darkStr ? JSON.parse(darkStr) : false,
+      comboKey: comboStr ? JSON.parse(comboStr) : 'default',
+      loaded: true,
+    })
+  } catch {
+    useThemeStore.setState({ loaded: true })
+  }
+}
+```
+
+Cross-tab sync via `StorageEvent` directly on the store setters — works on web, ignored on native.
 
 ## Content Themes vs App Dark Mode
 
@@ -504,33 +819,39 @@ Pairs with the [Download as PDF](DOWNLOAD_PDF.md) implementation.
 3. **DaisyUI's semantic classes (`btn`, `bg-base-100`, `text-primary`) auto-switch** when `data-theme` changes. No `dark:` prefix needed for DaisyUI component classes — only for custom Tailwind utilities.
 4. **Some Tailwind utilities still need `dark:` prefixes.** Hover states (`hover:bg-zinc-100 dark:hover:bg-zinc-700`), placeholder text, dividers, and focus rings that reference non-DaisyUI Tailwind colors need explicit `dark:` variants.
 
-**Theme catalogs:**
+**Theme persistence:**
 
-5. **Validate stored theme IDs against the catalog.** Users may have outdated values from a previous version. Invalid IDs should silently fall back to defaults — no crash, no unstyled page.
-6. **Curate for quality, not quantity.** All 35 DaisyUI themes is fine for a portfolio, but utility apps should pick 8-10 per mode that look good with the content. Novelty themes (cyberpunk, halloween) can look unprofessional.
-7. **PWA meta theme-color hex values should be auto-generated.** DaisyUI uses oklch internally. Use a build script to extract primary (light themes) or base-100 (dark themes) as hex from `daisyui/theme/object.js`. Derive light/dark classification from each theme's `color-scheme` property. Generate all theme lists, color maps, and navbar buttons — no manual maintenance.
+5. **Choose per-mode independent OR named combos — not both.** Per-mode (3 keys) gives users full freedom. Combos (2 keys) give designers control over coherence. Most projects use combos — only glow-props uses per-mode independent.
+6. **Validate stored values against the catalog.** Users may have outdated values from a previous version. Invalid IDs should silently fall back to defaults — no crash, no unstyled page. For combos, the combo map itself acts as the validation allowlist.
+7. **Curate for quality, not quantity.** All 35 DaisyUI themes is fine for a portfolio, but utility apps should pick 2-5 curated combos (or 8-10 themes per mode). Novelty themes (cyberpunk, halloween) look unprofessional.
+8. **PWA meta theme-color hex values should be auto-generated.** Use `scripts/generate-theme-meta.mjs` to extract oklch→hex from `daisyui/theme/object.js`. For combos, store `metaColorLight` and `metaColorDark` per combo so the correct color is applied per mode.
 
-**Persistence and sync:**
+**Sync and preferences:**
 
-8. **System preference is a fallback, not an override.** Once the user toggles manually, their choice persists. Overriding a manual choice with OS preference changes is disorienting.
-9. **Cross-tab sync requires the `storage` event listener.** The `storage` event only fires in other tabs (not the one that wrote), so there is no infinite loop. Without it, toggling dark mode in one tab leaves other tabs on the old theme until refresh.
-10. **Wrap all localStorage access in try/catch.** Sandboxed iframes, disabled storage, and enterprise policies throw `SecurityError`. Fall back to OS preference with default themes when storage is unavailable.
+9. **System preference is a fallback, not an override.** Once the user toggles manually, their choice persists. Overriding a manual choice with OS preference changes is disorienting.
+10. **Cross-tab sync requires the `storage` event listener.** The `storage` event only fires in other tabs (not the one that wrote), so there is no infinite loop. Without it, toggling dark mode in one tab leaves other tabs on the old theme until refresh.
+11. **Extract `safeStorage` into a shared module.** `safeStorageGet`, `safeStorageSet`, `safeStorageRemove` in `src/utils/safeStorage.ts` — reused by theme hook, PWA install hook, debug system. Don't inline try/catch in every consumer.
 
 **Flash prevention:**
 
-11. **The inline `<script>` must set both `.dark` AND `data-theme`.** Setting only `.dark` prevents Tailwind flash but leaves DaisyUI on the wrong theme for one frame. Both must be applied before first paint.
-12. **Must be a classic script, not `type="module"`.** Module scripts are deferred — they run after DOM parse, too late.
-13. **Defaults in the bootstrap script must match defaults in the JS.** If you change `DEFAULT_DARK_THEME` in your theme module, update the inline script too. This duplication is unavoidable — the bootstrap runs before any module loads.
-14. **For curated catalogs, validate in the bootstrap script too.** A hardcoded allowlist prevents a removed theme from producing an unstyled first paint.
+12. **The inline `<script>` must set both `.dark` AND `data-theme`.** Setting only `.dark` prevents Tailwind flash but leaves DaisyUI on the wrong theme for one frame. Both must be applied before first paint.
+13. **Must be a classic script, not `type="module"`.** Module scripts are deferred — they run after DOM parse, too late.
+14. **Defaults in the bootstrap script must match defaults in the JS.** If you change `DEFAULT_DARK_THEME` or `DEFAULT_COMBO` in your theme module, update the inline script too. This duplication is unavoidable — the bootstrap runs before any module loads.
+15. **For combos, the inline script needs a combo map.** The combo map is duplicated between the module and the inline script because inline scripts can't import ES modules. The build script should generate both to keep them in sync.
+16. **For per-mode catalogs, validate in the bootstrap script too.** A hardcoded allowlist prevents a removed theme from producing an unstyled first paint.
 
 **React Native:**
 
-15. **Uniwind's `setTheme()` avoids React re-renders.** CSS variable swaps happen at the native layer. Components don't need to re-render when the theme changes — they read the new CSS variable values automatically.
-16. **Hold the splash screen until theme is hydrated.** `usePersistedState` loads asynchronously from AsyncStorage. Hiding the splash before the stored preference resolves causes a visible flash.
-17. **Static hex lookup table for non-CSS contexts.** Mapbox GL, canvas, and charts need raw hex values. Maintain a `THEME_HEX` record that maps each theme to its full set of semantic colors. Keep it in sync with the CSS variant definitions.
+17. **Uniwind's `setTheme()` avoids React re-renders.** CSS variable swaps happen at the native layer. Components don't need to re-render when the theme changes — they read the new CSS variable values automatically.
+18. **Hold the splash screen until theme is hydrated.** `usePersistedState` loads asynchronously from AsyncStorage. Hiding the splash before the stored preference resolves causes a visible flash.
+19. **Hex lookup table should be auto-generated.** Use `scripts/generate-theme-meta.mjs` or `scripts/generate-theme-colors.mjs` to generate `THEME_HEX` from DaisyUI's oklch values. No manual conversion.
+20. **Use Zustand for shared theme state.** React Native hooks with `useState` give independent copies across components. Zustand store provides single source of truth accessible everywhere.
+21. **Guard against duplicate AsyncStorage reads.** Module-level `_asyncLoadStarted` flag prevents race condition where multiple simultaneous hook mounts all trigger async reads.
+22. **`withAlpha(hex, opacity)` for inline styles.** Uniwind doesn't generate opacity modifiers for DaisyUI CSS variable colors. Append alpha channel to hex for transparent backgrounds.
+23. **Module-level theme dedup.** Track `_lastAppliedTheme` to prevent redundant `setTheme()` calls and debug log noise when multiple components mount simultaneously.
 
 **Architecture:**
 
-18. **No CSS transitions on theme switch.** Instant switches are the industry standard (GitHub, Discord, VS Code). Transitions cause visual inconsistency — different elements change at different rates.
-19. **Content themes and app dark mode are independent.** A user may want a light app with a dark canvas. Keep content color palettes separate from the DaisyUI app theme system.
-20. **Debug pill in separate React root** cannot access theme hooks or context. On web, read the `.dark` class from `document.documentElement` directly. Do not attempt to share React context across separate roots.
+24. **No CSS transitions on theme switch.** Instant switches are the industry standard (GitHub, Discord, VS Code). Transitions cause visual inconsistency — different elements change at different rates.
+25. **Content themes and app dark mode are independent.** A user may want a light app with a dark canvas. Keep content color palettes separate from the DaisyUI app theme system.
+26. **Debug pill in separate React root** cannot access theme hooks or context. On web, read the `.dark` class from `document.documentElement` directly. Do not attempt to share React context across separate roots.

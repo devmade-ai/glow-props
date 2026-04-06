@@ -18,6 +18,29 @@ VitePWA({
     globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
     // SPA only — omit for multi-page apps:
     // navigateFallback: '/index.html',
+    runtimeCaching: [
+      // Google Fonts — cache for 1 year (fonts rarely change)
+      {
+        urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,
+        handler: 'CacheFirst',
+        options: {
+          cacheName: 'google-fonts-cache',
+          expiration: { maxEntries: 10, maxAgeSeconds: 60 * 60 * 24 * 365 },
+          cacheableResponse: { statuses: [0, 200] },
+        },
+      },
+      {
+        urlPattern: /^https:\/\/fonts\.gstatic\.com\/.*/i,
+        handler: 'CacheFirst',
+        options: {
+          cacheName: 'gstatic-fonts-cache',
+          expiration: { maxEntries: 10, maxAgeSeconds: 60 * 60 * 24 * 365 },
+          cacheableResponse: { statuses: [0, 200] },
+        },
+      },
+      // CDN images — cache for 30 days
+      // Adapt the urlPattern to your CDN domain
+    ],
   },
   manifest: {
     name: 'Your App',
@@ -67,22 +90,39 @@ Executes synchronously during HTML parse. Stashes the event for the React hook t
 
 ## Service Worker Updates (`usePWAUpdate.ts`)
 
-Wraps `vite-plugin-pwa`'s React hook. Exposes `hasUpdate` boolean and `update()`. Checks for new SW versions every 60 minutes.
+Wraps `vite-plugin-pwa`'s React hook. Exposes `hasUpdate`, `update()`, `checkForUpdate()`, and `checking` state. Checks for new SW versions every 60 minutes and on visibility change (when tab regains focus).
 
-**Critical:** `onRegistered` fires on every mount. Putting `setInterval` inside it leaks intervals on remount (Strict Mode, HMR, navigation). Store the registration in a ref and manage the interval in a separate `useEffect` with cleanup.
+**Architecture: Module-level singleton** — all SW state lives at module scope, not in React state. This solves a real bug: hook-local state re-initializes on component remount, re-triggering `register()` and causing "update available" to re-appear after navigation. The singleton pattern with pub/sub listeners preserves state across mounts.
 
 ```typescript
 import { useRegisterSW } from 'virtual:pwa-register/react'
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, useCallback } from 'react'
+import { debugAdd } from '../utils/debugLog'
 
 const CHECK_INTERVAL_MS = 60 * 60 * 1000
 
+// Module-level state — survives component remounts
+let _registration: ServiceWorkerRegistration | undefined
+let _hasUpdate = false
+let _userClickedUpdate = false
+const _listeners = new Set<() => void>()
+
+function notifyListeners() { _listeners.forEach(fn => fn()) }
+
+// 30-second suppression after applying an update — prevents false re-detection
+// when the browser's SW lifecycle hasn't fully settled after reload.
+function wasJustUpdated(): boolean {
+  try {
+    const ts = sessionStorage.getItem('pwa-update-applied')
+    if (!ts) return false
+    return Date.now() - Number(ts) < 30_000
+  } catch { return false }
+}
+
 export function usePWAUpdate() {
-  // Requirement: Periodic SW update checks without leaking intervals
-  // Approach: Store registration in ref, manage interval in useEffect with cleanup
-  // Why: onRegistered fires per mount — setInterval inside it leaks on remount
-  const registrationRef = useRef<ServiceWorkerRegistration | undefined>(undefined)
-  const [registered, setRegistered] = useState(false)
+  const [, forceRender] = useState(0)
+  const [checking, setChecking] = useState(false)
+  const intervalRef = useRef<ReturnType<typeof setInterval>>()
 
   const {
     needRefresh: [needRefresh],
@@ -90,26 +130,95 @@ export function usePWAUpdate() {
   } = useRegisterSW({
     onRegistered(r) {
       if (r) {
-        registrationRef.current = r
-        setRegistered(true)
+        _registration = r
+        debugAdd('pwa', 'info', 'Service worker registered')
+
+        // Clear existing interval before setting new one (prevents leak on re-registration)
+        if (intervalRef.current) clearInterval(intervalRef.current)
+        intervalRef.current = setInterval(() => r.update(), CHECK_INTERVAL_MS)
       }
+    },
+    onNeedRefresh() {
+      if (wasJustUpdated()) return
+      _hasUpdate = true
+      debugAdd('pwa', 'info', 'New version available')
+      notifyListeners()
+    },
+    onOfflineReady() {
+      debugAdd('pwa', 'success', 'App ready for offline use')
+    },
+    onRegisterError(error) {
+      debugAdd('pwa', 'error', 'SW registration failed', { error: String(error) })
     },
   })
 
-  // Separate effect for the interval — cleans up on unmount
+  // Sync module state to React
   useEffect(() => {
-    if (!registered || !registrationRef.current) return
-    const interval = setInterval(() => {
-      registrationRef.current?.update()
-    }, CHECK_INTERVAL_MS)
-    return () => clearInterval(interval)
-  }, [registered])
+    const listener = () => forceRender(n => n + 1)
+    _listeners.add(listener)
+    return () => { _listeners.delete(listener) }
+  }, [])
 
-  const update = () => {
+  // Visibility-based update checks — catches updates when user returns to tab
+  useEffect(() => {
+    const handleVisibility = () => {
+      if (document.visibilityState === 'visible' && _registration) {
+        _registration.update()
+      }
+    }
+    document.addEventListener('visibilitychange', handleVisibility)
+    return () => document.removeEventListener('visibilitychange', handleVisibility)
+  }, [])
+
+  // controllerchange reload guard — auto-reload once when new SW takes control,
+  // but ONLY if the user explicitly clicked "Update"
+  useEffect(() => {
+    if (!('serviceWorker' in navigator)) return
+    let refreshing = false
+    const handleController = () => {
+      if (refreshing || !_userClickedUpdate) return
+      refreshing = true
+      window.location.reload()
+    }
+    navigator.serviceWorker.addEventListener('controllerchange', handleController)
+    return () => navigator.serviceWorker.removeEventListener('controllerchange', handleController)
+  }, [])
+
+  // Cleanup interval on unmount
+  useEffect(() => {
+    return () => { if (intervalRef.current) clearInterval(intervalRef.current) }
+  }, [])
+
+  const update = useCallback(() => {
+    _userClickedUpdate = true
+    debugAdd('pwa', 'info', 'User triggered update')
+    try { sessionStorage.setItem('pwa-update-applied', String(Date.now())) } catch {}
     updateServiceWorker(true)
-  }
+  }, [updateServiceWorker])
 
-  return { hasUpdate: needRefresh, update }
+  // Manual "Check for updates" — returns typed result for toast feedback
+  const checkForUpdate = useCallback(async (): Promise<'no-sw' | 'done' | 'error'> => {
+    if (!_registration) return 'no-sw'
+    setChecking(true)
+    try {
+      await _registration.update()
+      // 1500ms settle delay for async SW lifecycle events
+      await new Promise(r => setTimeout(r, 1500))
+      return 'done'
+    } catch (e) {
+      debugAdd('pwa', 'error', 'Update check failed', { error: String(e) })
+      return 'error'
+    } finally {
+      setChecking(false)
+    }
+  }, [])
+
+  return {
+    hasUpdate: _hasUpdate || needRefresh,
+    update,
+    checkForUpdate,
+    checking,
+  }
 }
 ```
 
@@ -131,13 +240,21 @@ Captures `beforeinstallprompt` (consuming the early-captured event from `index.h
 //     manually; showing instructions is better than hiding the feature.
 
 import { useState, useEffect, useMemo } from 'react'
+import { debugAdd } from '../utils/debugLog'
 
 interface BeforeInstallPromptEvent extends Event {
   prompt(): Promise<void>
   userChoice: Promise<{ outcome: 'accepted' | 'dismissed' }>
 }
 
-export type BrowserType = 'chrome' | 'edge' | 'brave' | 'safari' | 'firefox' | 'unknown'
+export type BrowserType =
+  | 'chrome' | 'edge' | 'brave' | 'opera' | 'samsung' | 'vivaldi' | 'arc'
+  | 'safari' | 'firefox' | 'unknown'
+
+// Chromium browsers that support beforeinstallprompt — exported for reuse
+// by install hooks, diagnostics, and analytics.
+export const CHROMIUM_BROWSERS: BrowserType[] =
+  ['chrome', 'edge', 'brave', 'opera', 'samsung', 'vivaldi', 'arc']
 
 export interface InstallInstructions {
   browser: string
@@ -151,12 +268,28 @@ let deferredPrompt: BeforeInstallPromptEvent | null =
 
 function detectBrowser(): BrowserType {
   const ua = navigator.userAgent
-  if ((navigator as any).brave) return 'brave'
+
+  // Brave: Check navigator.brave existence first.
+  // Bug: Brave Mobile strips "Brave" from the UA string (confirmed 2026-03-07).
+  // Use existence check as primary, not async call or UA match.
+  if ('brave' in navigator) return 'brave'
+
   if (/Firefox/i.test(ua)) return 'firefox'
   if (/Safari/i.test(ua) && !/Chrome/i.test(ua) && !/Chromium/i.test(ua)) return 'safari'
+  if (/SamsungBrowser/i.test(ua)) return 'samsung'
+  if (/OPR\//i.test(ua) || /Opera/i.test(ua)) return 'opera'
+  if (/Vivaldi/i.test(ua)) return 'vivaldi'
+  if (/Arc\//i.test(ua)) return 'arc'
   if (/Edg\//i.test(ua)) return 'edge'
   if (/Chrome/i.test(ua) || /Chromium/i.test(ua)) return 'chrome'
   return 'unknown'
+}
+
+// Display names for UI — separate from detection logic
+const BROWSER_DISPLAY_NAMES: Record<BrowserType, string> = {
+  chrome: 'Google Chrome', edge: 'Microsoft Edge', brave: 'Brave',
+  opera: 'Opera', samsung: 'Samsung Internet', vivaldi: 'Vivaldi',
+  arc: 'Arc', safari: 'Safari', firefox: 'Firefox', unknown: 'Your Browser',
 }
 
 function isStandalone(): boolean {
@@ -171,7 +304,7 @@ export function usePWAInstall() {
   const browser = useMemo(() => detectBrowser(), [])
   const isInstalled = useMemo(() => isStandalone(), [])
 
-  const supportsAutoInstall = browser === 'chrome' || browser === 'edge' || browser === 'brave'
+  const supportsAutoInstall = CHROMIUM_BROWSERS.includes(browser)
   const supportsManualInstall = browser === 'safari' || browser === 'firefox'
 
   useEffect(() => {
@@ -188,12 +321,24 @@ export function usePWAInstall() {
       deferredPrompt = e as BeforeInstallPromptEvent
       ;(window as any).__pwaInstallPrompt = e
       setCanInstall(true)
+      trackInstallEvent('prompted')
     }
 
     const installedHandler = () => {
       setCanInstall(false)
       deferredPrompt = null
+      trackInstallEvent('installed')
     }
+
+    // Detect installation via browser menu (not the native prompt)
+    const mediaQuery = window.matchMedia('(display-mode: standalone)')
+    const displayHandler = (e: MediaQueryListEvent) => {
+      if (e.matches) {
+        setCanInstall(false)
+        trackInstallEvent('installed-via-browser')
+      }
+    }
+    mediaQuery.addEventListener('change', displayHandler)
 
     window.addEventListener('beforeinstallprompt', handler)
     window.addEventListener('appinstalled', installedHandler)
@@ -205,12 +350,32 @@ export function usePWAInstall() {
       }
     }, 1000)
 
+    // 5-second diagnostic timeout: on Chromium browsers, if beforeinstallprompt
+    // hasn't fired, log a warning with manifest/SW status to help debug
+    const diagnosticTimeout = setTimeout(() => {
+      if (!deferredPrompt && !isInstalled && supportsAutoInstall) {
+        const hasManifest = !!document.querySelector('link[rel="manifest"]')
+        const hasSW = !!navigator.serviceWorker?.controller
+        const isStandaloneAlready = isStandalone()
+        debugAdd('pwa', 'warn', 'beforeinstallprompt not received after 5s', {
+          browser, hasManifest, hasSW, isStandaloneAlready,
+        })
+        // Chrome suppresses the prompt for 90 days after dismissal —
+        // show manual instructions as fallback
+        if (!deferredPrompt && supportsAutoInstall) {
+          setShowManualInstructions(true)
+        }
+      }
+    }, 5000)
+
     return () => {
       window.removeEventListener('beforeinstallprompt', handler)
       window.removeEventListener('appinstalled', installedHandler)
+      mediaQuery.removeEventListener('change', displayHandler)
       clearTimeout(timeout)
+      clearTimeout(diagnosticTimeout)
     }
-  }, [isInstalled, supportsManualInstall])
+  }, [isInstalled, supportsManualInstall, supportsAutoInstall, browser])
 
   const install = async (): Promise<boolean> => {
     if (!deferredPrompt) return false
@@ -225,10 +390,25 @@ export function usePWAInstall() {
   }
 
   // Data-driven install instructions — the modal just renders whatever this returns.
-  // Uses four-ems' iOS/macOS Safari split via UA sniffing inside the safari case.
+  // Covers 7 Chromium browsers + Safari (iOS/macOS) + Firefox (mobile/desktop) + Samsung.
   const getInstallInstructions = (): InstallInstructions => {
-    const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent)
     const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent)
+
+    const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent)
+
+    // iOS non-Safari browsers cannot install PWAs — redirect to Safari
+    if (isIOS && browser !== 'safari') {
+      return {
+        browser: `${BROWSER_DISPLAY_NAMES[browser]} (iOS)`,
+        steps: [
+          'Open this page in Safari (iOS requires Safari for PWA installation)',
+          'Tap the Share button (square with arrow) at the bottom of the screen',
+          'Scroll down and tap "Add to Home Screen"',
+          'Tap "Add" in the top right corner',
+        ],
+        note: 'On iOS, only Safari can install web apps to the home screen. Chrome, Firefox, and other browsers on iOS use Safari\'s engine but cannot trigger PWA installation.',
+      }
+    }
 
     switch (browser) {
       case 'safari':
@@ -280,10 +460,29 @@ export function usePWAInstall() {
           ],
           note: 'If the install option doesn\'t appear, check that Brave Shields isn\'t blocking it.',
         }
+      case 'samsung':
+        return {
+          browser: 'Samsung Internet',
+          steps: [
+            'Tap the download icon in the address bar',
+            'Or tap the menu (≡) → "Add page to" → "Home screen"',
+            'Tap "Install" to confirm',
+          ],
+        }
+      case 'opera':
+        return {
+          browser: 'Opera',
+          steps: [
+            'Tap the menu (⋮) → "Add to Home screen"',
+            'Tap "Add" to confirm',
+          ],
+        }
+      case 'vivaldi':
+      case 'arc':
       case 'chrome':
       case 'edge':
         return {
-          browser: browser === 'edge' ? 'Microsoft Edge' : 'Google Chrome',
+          browser: BROWSER_DISPLAY_NAMES[browser],
           steps: [
             'Click the install icon in the address bar (computer with down arrow)',
             'Or click the menu (⋮) → "Install App..."',
@@ -307,12 +506,31 @@ export function usePWAInstall() {
     supportsAutoInstall, getInstallInstructions,
   }
 }
+
+// --- Install analytics (optional) ---
+// Track install funnel events in localStorage, capped at 50 entries.
+// Useful for understanding install conversion without external analytics.
+function trackInstallEvent(
+  event: 'prompted' | 'installed' | 'dismissed' | 'instructions-viewed' | 'installed-via-browser'
+) {
+  try {
+    const key = 'pwa-install-events'
+    const events = JSON.parse(localStorage.getItem(key) || '[]')
+    events.push({ event, timestamp: new Date().toISOString(), browser: detectBrowser() })
+    if (events.length > 50) events.splice(0, events.length - 50)
+    localStorage.setItem(key, JSON.stringify(events))
+  } catch { /* best effort */ }
+}
 ```
 
 **Key design decisions:**
-- **`BrowserType` is coarse** (`'safari'`, not `'safari-ios'`/`'safari-macos'`). The iOS/macOS split happens inside `getInstallInstructions()` via UA sniffing — the hook consumer doesn't need to know the platform, just whether to show instructions.
+- **`CHROMIUM_BROWSERS` constant** — single source of truth for which browsers support `beforeinstallprompt`. Shared by install hook, diagnostics, and analytics.
+- **7 Chromium browsers detected** — Chrome, Edge, Brave, Opera, Samsung, Vivaldi, Arc. Brave Mobile strips "Brave" from the UA string — use `'brave' in navigator` existence check, not UA match.
+- **iOS non-Safari cross-redirect** — Chrome/Firefox/Edge on iOS cannot install PWAs. Instructions explicitly tell users to open in Safari and explain WHY.
 - **`deferredPrompt` is module-level** — survives React remounts. The inline script in `index.html` captures it before React mounts (repeat visits), the `useEffect` fallback handles first visits.
-- **1-second timeout for manual instructions** — gives `beforeinstallprompt` time to fire before falling back to manual instructions for Safari/Firefox.
+- **5-second diagnostic timeout** — on Chromium browsers, if `beforeinstallprompt` hasn't fired, log a warning with manifest/SW status. Chrome suppresses the prompt for 90 days after dismissal — fall back to manual instructions.
+- **Display-mode change listener** — detects installation via browser menu (not the native prompt) by watching `matchMedia('(display-mode: standalone)')` changes.
+- **Install analytics** — localStorage-based event log tracking prompted/installed/dismissed/instructions-viewed, capped at 50 entries.
 - **`getInstallInstructions()` returns data, not JSX** — the modal renders whatever it gets. Adding a new browser variant is one switch case, not a new component.
 
 ## Toast System (`Toast.tsx`)
@@ -642,6 +860,99 @@ const Dashboard = lazy(() => lazyRetry(() => import('./Dashboard')))
 
 If self-hosting without a CDN, keep previous build artifacts available for an overlap period after deploy.
 
+## Custom Service Worker (Non-Vite Projects)
+
+For Expo/Metro or other non-Vite build systems, vite-plugin-pwa cannot be used. Implement a hand-written service worker with pattern-based caching:
+
+```javascript
+// public/sw.js
+const SW_BUILD = '__SW_BUILD_VERSION__' // replaced at build time
+const STATIC_CACHE = `app-static-${SW_BUILD}`
+const DYNAMIC_CACHE = `app-dynamic-${SW_BUILD}`
+
+// Install: precache critical assets
+self.addEventListener('install', (event) => {
+  event.waitUntil(
+    caches.open(STATIC_CACHE).then((cache) =>
+      cache.addAll(['/', '/offline.html', '/manifest.json'])
+    )
+  )
+})
+
+// Activate: clean up old caches
+self.addEventListener('activate', (event) => {
+  event.waitUntil(
+    caches.keys().then((keys) =>
+      Promise.all(keys
+        .filter((key) => key !== STATIC_CACHE && key !== DYNAMIC_CACHE)
+        .map((key) => caches.delete(key))
+      )
+    )
+  )
+})
+
+// Fetch: three-tier strategy
+self.addEventListener('fetch', (event) => {
+  const url = new URL(event.request.url)
+
+  // Network-only: API calls (never cache)
+  if (url.pathname.startsWith('/api/') || url.hostname !== location.hostname) return
+
+  // Cache-first: fonts, images (static assets)
+  if (/\.(woff2?|ttf|png|jpg|svg|ico)$/.test(url.pathname)) {
+    event.respondWith(
+      caches.match(event.request).then((cached) =>
+        cached || fetch(event.request).then((res) => {
+          const clone = res.clone()
+          caches.open(STATIC_CACHE).then((cache) => cache.put(event.request, clone))
+          return res
+        })
+      )
+    )
+    return
+  }
+
+  // Network-first: JS, CSS, HTML (dynamic content)
+  event.respondWith(
+    fetch(event.request)
+      .then((res) => {
+        const clone = res.clone()
+        caches.open(DYNAMIC_CACHE).then((cache) => cache.put(event.request, clone))
+        return res
+      })
+      .catch(() => caches.match(event.request)
+        .then((cached) => cached || caches.match('/offline.html'))
+      )
+  )
+})
+```
+
+**Build-time version injection** (`scripts/inject-sw-version.mjs`): Replace `__SW_BUILD_VERSION__` with an ISO timestamp after build. Ensures byte-for-byte SW changes on every deployment without manual version bumping.
+
+**Triple-layer `beforeinstallprompt` capture** for Expo:
+1. **Inline script in `+html.tsx`** — runs during HTML parse, catches repeat-visit early fires
+2. **Module-scope listener in `_layout.tsx`** — catches during initial app boot
+3. **`useEffect` fallback in `usePWAInstall`** — catches late-firing events on first visit
+
+## version.json Update Detection
+
+Supplementary update mechanism independent of SW changes. Compares `buildTime` in a `version.json` file against localStorage. Handles the case where app bundles change but `sw.js` doesn't (no CACHE_VERSION bump needed):
+
+```typescript
+async function checkVersionUpdate(): Promise<boolean> {
+  try {
+    const res = await fetch('/version.json', { cache: 'no-store' })
+    const { buildTime } = await res.json()
+    const stored = localStorage.getItem('app-build-time')
+    if (stored && stored !== buildTime) return true
+    localStorage.setItem('app-build-time', buildTime)
+    return false
+  } catch { return false }
+}
+```
+
+Generate `version.json` at build time with `{ "buildTime": "2026-04-06T12:00:00Z" }`.
+
 ## Platform Gotchas
 
 **Safari aggressive caching:** On iOS, backgrounding a PWA doesn't truly close it — the service worker and cached state persist. Users may not see updates for days. The periodic `registration.update()` interval (see Service Worker Updates section) is critical for Safari users.
@@ -665,23 +976,39 @@ If self-hosting without a CDN, keep previous build artifacts available for an ov
 ### Install Prompt
 5. **The inline script in `index.html` is essential** — without it, repeat visitors on Chromium lose the install prompt.
 6. **`deferredPrompt` must be module-level** — survives React remounts. The inline script captures it before React mounts; the `useEffect` fallback handles first visits.
-7. **Install instructions should be data-driven** — `getInstallInstructions()` returns `{ browser, steps, note }`. The modal renders whatever it gets. One switch case per browser, not one component.
-8. **Focus trap the install modal** — keyboard users must be able to Tab within the modal without escaping to background content.
+7. **Detect 7 Chromium browsers** — Chrome, Edge, Brave, Opera, Samsung, Vivaldi, Arc. Use the `CHROMIUM_BROWSERS` constant as single source of truth.
+8. **Brave Mobile strips "Brave" from UA** — use `'brave' in navigator` existence check as primary detection, not UA string matching.
+9. **iOS non-Safari browsers can't install PWAs** — explicitly redirect users to Safari with explanation.
+10. **5-second diagnostic timeout** — if `beforeinstallprompt` hasn't fired on Chromium, log manifest/SW status. Chrome suppresses the prompt for 90 days after dismissal.
+11. **Install instructions should be data-driven** — `getInstallInstructions()` returns `{ browser, steps, note }`. The modal renders whatever it gets. One switch case per browser, not one component.
+12. **Focus trap the install modal** — keyboard users must be able to Tab within the modal without escaping to background content.
 
 ### Service Worker Updates
-9. **`registerType: 'prompt'`** gives users control. `autoUpdate` silently refreshes mid-work.
-10. **Never put `setInterval` inside `onRegistered`** — it fires per mount, leaking intervals on remount (Strict Mode, HMR). Store the registration in a ref, manage the interval in a `useEffect` with cleanup.
-11. **`cleanupOutdatedCaches: true`** — removes stale caches from older Workbox major versions. Set this in the workbox config.
-12. **`globPatterns` must match your asset types** — default may miss fonts, images, or other static assets your app uses.
+13. **`registerType: 'prompt'`** gives users control. `autoUpdate` silently refreshes mid-work.
+14. **Module-level singleton for update state** — survives component mount/unmount cycles. Hook-local state re-initializes on remount, causing false "update available" re-detection.
+15. **Visibility-based update checks** — on `visibilitychange`, trigger `registration.update()` when the page regains focus. Catches updates faster than hourly polling alone.
+16. **`controllerchange` reload guard** — auto-reload when new SW takes control, but ONLY if the user explicitly clicked "Update". Prevents unexpected reloads from background SW lifecycle events.
+17. **30-second `wasJustUpdated()` suppression** — prevents false re-detection after applying an update. The browser's SW lifecycle may not have fully settled after reload.
+18. **Manual `checkForUpdate()` with typed result** — returns `'no-sw' | 'done' | 'error'` for toast feedback from burger menu "Check for Updates" action.
+19. **Debug log all PWA lifecycle events** — SW registration, updates, offline-ready, install events, and errors routed to the debug system.
+20. **`cleanupOutdatedCaches: true`** — removes stale caches from older Workbox major versions. Set this in the workbox config.
+21. **`globPatterns` must match your asset types** — default may miss fonts, images, or other static assets your app uses.
+22. **Workbox runtime caching for Google Fonts** — CacheFirst with 1-year TTL is universally useful.
 
 ### Caching & Deployment
-13. **`navigateFallback` is SPA-only** — for multi-page apps, omit it or navigation to non-index pages will break.
-14. **Cache headers complement the SW** — `no-cache` on `index.html`/`sw.js`, `immutable` on hashed assets. The SW precache layer handles the rest.
+23. **`navigateFallback` is SPA-only** — for multi-page apps, omit it or navigation to non-index pages will break.
+24. **Cache headers complement the SW** — `no-cache` on `index.html`/`sw.js`, `immutable` on hashed assets. The SW precache layer handles the rest.
+25. **`version.json` for non-SW updates** — supplementary detection mechanism for app changes that don't modify the service worker file.
 
 ### UI Patterns
-15. **Use a context-based Toast system** — `ToastProvider` + `useToast()` replaces one-off DOM-injected banners. Reusable for PWA events and general app feedback.
-16. **DaisyUI semantic colors for toasts** — `bg-success`, `bg-error` etc. work across all themes. Never hardcode colors like `bg-brand-600`.
-17. **iOS safe area on toasts/banners** — `env(safe-area-inset-bottom)` prevents content from hiding behind the home indicator.
+26. **Use a context-based Toast system** — `ToastProvider` + `useToast()` replaces one-off DOM-injected banners. Reusable for PWA events and general app feedback.
+27. **DaisyUI semantic colors for toasts** — `bg-success`, `bg-error` etc. work across all themes. Never hardcode colors like `bg-brand-600`.
+28. **iOS safe area on toasts/banners** — `env(safe-area-inset-bottom)` prevents content from hiding behind the home indicator.
+
+### Non-Vite Projects
+29. **Custom SW with three-tier caching** — network-only for API, cache-first for static assets, network-first for dynamic content. Pattern-based routing is more explicit than Workbox config.
+30. **Build-time SW version injection** — replace a placeholder with ISO timestamp post-build. Ensures cache name uniqueness per deployment.
+31. **Triple-layer `beforeinstallprompt` capture** for Expo — inline script + module-scope listener + useEffect fallback.
 
 ### General
-18. **Clean up all timers** — every `setTimeout`/`setInterval` in `useEffect` needs cleanup. Nested timeouts need the array pattern or mounted ref guard.
+32. **Clean up all timers** — every `setTimeout`/`setInterval` in `useEffect` needs cleanup. Nested timeouts need the array pattern or mounted ref guard.
