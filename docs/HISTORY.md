@@ -64,6 +64,12 @@ Audited all 12 active devmade-ai repos for implementation of the 7 suggested pat
 - Added module-level theme dedup guard
 - Added `_asyncLoadStarted` guard for preventing duplicate AsyncStorage reads
 
+**EVENT_BUS.md (new pattern):**
+- Created new implementation doc for typed pub/sub event bus factory
+- Pattern sourced from graphiki where it's used across graph, workspace, and view services
+- Factory creates a type-safe bus with catch-all "changed" event and per-listener error isolation
+- Documents the encapsulation pattern: export `on` (subscribe), keep `emit` private
+
 **HTTPS_PROXY.md:**
 - Added `fetchWithRetry()` with rate-limit handling and exponential backoff
 - Refactored to shared `handleResponse()` (deduplicates direct/proxy paths)
