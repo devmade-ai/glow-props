@@ -680,6 +680,6 @@ Pairs with the [Download as PDF](DOWNLOAD_PDF.md) implementation.
 
 **Architecture:**
 
-18. **No CSS transitions on theme switch.** Instant switches are the industry standard (GitHub, Discord, VS Code). Transitions cause visual inconsistency — different elements change at different rates.
-19. **Content themes and app dark mode are independent.** A user may want a light app with a dark canvas. Keep content color palettes separate from the DaisyUI app theme system.
-20. **Debug pill in separate React root** cannot access theme hooks or context. On web, read the `.dark` class from `document.documentElement` directly. Do not attempt to share React context across separate roots.
+22. **No CSS transitions on theme switch.** Instant switches are the industry standard (GitHub, Discord, VS Code). Transitions cause visual inconsistency — different elements change at different rates.
+23. **Content themes and app dark mode are independent.** A user may want a light app with a dark canvas. Keep content color palettes separate from the DaisyUI app theme system.
+24. **Debug pill in separate React root** cannot access theme hooks or context. On web, read the `.dark` class from `document.documentElement` directly. Do not attempt to share React context across separate roots.

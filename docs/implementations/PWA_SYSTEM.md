@@ -240,6 +240,7 @@ Captures `beforeinstallprompt` (consuming the early-captured event from `index.h
 //     manually; showing instructions is better than hiding the feature.
 
 import { useState, useEffect, useMemo } from 'react'
+import { debugAdd } from '../utils/debugLog'
 
 interface BeforeInstallPromptEvent extends Event {
   prompt(): Promise<void>
@@ -393,6 +394,8 @@ export function usePWAInstall() {
   const getInstallInstructions = (): InstallInstructions => {
     const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent)
 
+    const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent)
+
     // iOS non-Safari browsers cannot install PWAs — redirect to Safari
     if (isIOS && browser !== 'safari') {
       return {
@@ -406,8 +409,6 @@ export function usePWAInstall() {
         note: 'On iOS, only Safari can install web apps to the home screen. Chrome, Firefox, and other browsers on iOS use Safari\'s engine but cannot trigger PWA installation.',
       }
     }
-    const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent)
-    const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent)
 
     switch (browser) {
       case 'safari':
