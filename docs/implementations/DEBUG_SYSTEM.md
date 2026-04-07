@@ -2,6 +2,12 @@
 
 The debug system is an alpha-phase diagnostic tool, intended to be removed post-alpha.
 
+**Related patterns:**
+- [PWA_SYSTEM.md](PWA_SYSTEM.md) — PWA diagnostics tab probes SW state, manifest, install prompt
+- [BURGER_MENU.md](BURGER_MENU.md) — Menu action errors route to debug via `window.__debugPushError()`; z-index scale (debug pill = z-80, above all other layers)
+- [THEME_DARK_MODE.md](THEME_DARK_MODE.md) — Debug pill in separate React root reads `.dark` class directly from DOM (no shared theme context)
+- [EVENT_BUS.md](EVENT_BUS.md) — Event bus error isolation routes per-listener failures to `debugAdd()`
+
 **In-memory event store** (`debugLog.ts`): A pub/sub system with a capped circular buffer of 200 entries. Each entry has: `id` (auto-incrementing), `timestamp`, `source` (typed union with string fallback), `severity` (info/success/warn/error), `event`, and optional `details` (structured `Record<string, unknown>`). Subscribers get notified on every new entry — new subscribers receive current entries immediately on subscribe. Global `window.error` and `unhandledrejection` listeners are installed at module load time to capture crashes early. Console `error` and `warn` methods are intercepted to capture React warnings and library errors automatically. No external dependencies or persistence — purely in-memory.
 
 **Floating debug pill** (`DebugPill.tsx`): Renders in a separate React root (survives App crashes). Uses inline styles instead of Tailwind — survives stylesheet load failures since the pill runs in an isolated root. Collapsed state shows a "dbg" pill with entry count and error/warning badges. Expanded state has tabs:

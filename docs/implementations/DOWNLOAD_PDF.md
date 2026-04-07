@@ -2,6 +2,11 @@
 
 Zero-dependency PDF download using the browser's native print dialog. No PDF libraries needed — the user selects "Save as PDF" from their system print dialog.
 
+**Related patterns:**
+- [THEME_DARK_MODE.md](THEME_DARK_MODE.md) — Print CSS overrides dark themes to force white background and black text for PDF readability (see [Print Override](THEME_DARK_MODE.md#print-override))
+- [BURGER_MENU.md](BURGER_MENU.md) — The menu, debug pill, and all interactive elements should have `no-print` class applied
+- [DEBUG_SYSTEM.md](DEBUG_SYSTEM.md) — Debug pill should be hidden during print via `no-print`
+
 ## How It Works
 
 Three pieces: a trigger button, a `no-print` utility class, and print-friendly CSS overrides.

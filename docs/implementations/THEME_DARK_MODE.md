@@ -2,6 +2,12 @@
 
 User-controlled dark/light mode with DaisyUI theme selection, system preference fallback, persistence, flash prevention, and cross-tab sync.
 
+**Related patterns:**
+- [BURGER_MENU.md](BURGER_MENU.md) — Dark/light toggle and theme picker UI spec (see [Theme UI in Burger Menu](BURGER_MENU.md#theme-ui-in-burger-menu))
+- [PWA_SYSTEM.md](PWA_SYSTEM.md) — Manifest `theme_color` and dynamic `<meta name="theme-color">` must match active theme
+- [DEBUG_SYSTEM.md](DEBUG_SYSTEM.md) — Debug pill in separate React root reads `.dark` class directly from DOM (no shared context)
+- [DOWNLOAD_PDF.md](DOWNLOAD_PDF.md) — Print CSS forces white bg / black text regardless of dark mode (see [Print Override](#print-override))
+
 Project variants demonstrating this pattern:
 - **glow-props**: Vanilla HTML/CSS/JS + Vite, full 35-theme catalog, per-mode independent selection (3 keys: `darkMode`, `lightTheme`, `darkTheme`)
 - **canva-grid**: React + Vite, combo-based selection with curated presets (2 keys: `darkMode`, `themeCombo`)

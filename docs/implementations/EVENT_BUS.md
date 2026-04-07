@@ -2,7 +2,7 @@
 
 Generic typed event bus factory for service-layer pub/sub. Each service creates its own bus with a typed event union and a catch-all "changed" event that fires automatically on every emission. Per-listener error isolation prevents one throwing subscriber from breaking others.
 
-**Dependencies:** None (uses debugLog for error reporting)
+**Dependencies:** None (uses [DEBUG_SYSTEM.md](DEBUG_SYSTEM.md) `debugAdd()` for error reporting)
 
 ## When to Use
 

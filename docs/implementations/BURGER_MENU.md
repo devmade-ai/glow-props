@@ -2,6 +2,12 @@
 
 Dropdown navigation menu triggered by a hamburger icon. Uses the WAI-ARIA **disclosure pattern** (not `role="menu"`) because a burger nav is a list of links/actions revealed by a toggle, not an application menu (File/Edit/View). Two variants: React (Vite + Tailwind) for web-only projects, React Native (Expo) for cross-platform.
 
+**Related patterns:**
+- [THEME_DARK_MODE.md](THEME_DARK_MODE.md) — Dark/light toggle and theme picker UI live inside the menu (see [Theme UI in Burger Menu](#theme-ui-in-burger-menu))
+- [PWA_SYSTEM.md](PWA_SYSTEM.md) — "Check for updates" and "Install app" are standard menu items triggering PWA hooks
+- [DEBUG_SYSTEM.md](DEBUG_SYSTEM.md) — Menu action errors route to `window.__debugPushError()`; z-index scale places debug pill (z-80) above menu (z-50)
+- [DOWNLOAD_PDF.md](DOWNLOAD_PDF.md) — Menu should have `no-print` class applied to hide during print-to-PDF
+
 ## Z-Index Scale
 
 All projects should follow this scale to prevent stacking conflicts between the burger menu, debug pill, modals, toasts, and install banners:
