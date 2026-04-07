@@ -28,10 +28,10 @@ Legend: **Pass** = compliant, **Partial** = has the feature but with gaps, **Mis
 |------|-----------|-----------|-------------|--------------|--------------|------------|-----------------|-----------|
 | glow-props | Pass | Partial | Pass | Missing (N/A) | Pass | Pass | Pass | Missing (N/A) |
 | canva-grid | Missing | Pass | Partial | Partial | Pass (B) | Partial | Pass | Missing |
-| budgy-ting | Missing | Partial | Partial | Partial | Partial | Partial | Missing | Missing |
+| budgy-ting | Partial | Partial | Partial | Partial | Partial | Partial | Missing | Missing |
 | model-pear | Missing | Missing | Missing | Missing | Partial | Missing | Missing | Missing |
 | see-veo | Missing | Partial | Missing | Partial | Partial | Partial | Missing | Missing |
-| repo-tor | Missing | Partial | Partial | Partial | Pass | Pass | Partial | Missing |
+| repo-tor | Pass | Partial | Partial | Partial | Pass | Pass | Partial | Missing |
 | few-lap | Missing | Partial | Partial | Partial | Missing | Partial | Partial | Missing |
 | sun-sea-o | Missing | Partial | Missing | Partial | Pass | Partial | Missing | Missing |
 | graphiki | Missing | Pass | Missing | Partial | Missing | Partial | Pass | Partial |
@@ -69,10 +69,13 @@ React + Vite app. Strong foundation — APP_ICONS and THEME_DARK_MODE are fully 
 
 #### CLAUDE.md — Align with glow-props
 
-1. [ ] **Fetch latest CLAUDE.md** — `curl -sf "https://devmade-ai.github.io/glow-props/CLAUDE.md"` and update the repo's CLAUDE.md to match.
-2. [ ] **Remove local implementation patterns** — Delete any `docs/implementations/` folder or local copies of pattern files. All patterns are fetched from glow-props at implementation time.
-3. [ ] **Remove hardcoded pattern list** — If the repo's CLAUDE.md contains a "Suggested Implementations" table or hardcoded list of patterns, replace it with the "Implementation Patterns (Source of Truth)" section from glow-props CLAUDE.md.
-4. **Confirm:** Repo's CLAUDE.md references glow-props as the single source of truth for patterns. No local `docs/implementations/` folder exists.
+No local `docs/implementations/` folder exists (correct). No inline patterns. Two stale references need updating.
+
+1. [ ] **Update shared scaffolding description** — Near line 5, change "Suggested Implementations" to "Implementation Patterns" in the sentence about shared scaffolding from glow-props.
+2. [ ] **Replace "Sister project reference" AI Note** — Near line 306, replace the bullet referencing "Suggested Implementations" section in glow-props with: `**Implementation patterns — always fetch from glow-props.** Never look for local copies of implementation pattern files (e.g., docs/implementations/*.md) in downstream repos. They do not exist locally — the single source of truth is the docs/implementations/ folder in the glow-props repo. Fetch the latest version before every implementation task.`
+3. [ ] **Add "Implementation Patterns (Source of Truth)" section** — After the Triggers section, add the standard section from glow-props CLAUDE.md with fetch instructions (GitHub Pages URL, GitHub API URL, listing command) and rules.
+4. [ ] **Add prohibition** — Add to Prohibitions: "Create local copies of implementation pattern files in any repo — always fetch from glow-props".
+5. **Confirm:** No references to "Suggested Implementations" remain. Standard pattern source section exists with fetch commands.
 
 #### BURGER_MENU — Partial → Complete
 
@@ -123,12 +126,14 @@ Reference: `docs/implementations/PWA_SYSTEM.md`
 
 Vue + Vite app. Has partial implementations of most patterns but needs DaisyUI migration (currently custom Tailwind v4 CSS variables) and debug/PWA hardening.
 
-#### CLAUDE.md — Align with glow-props
+#### CLAUDE.md — Align with glow-props (Partial — stale URLs)
 
-1. [ ] **Fetch latest CLAUDE.md** — `curl -sf "https://devmade-ai.github.io/glow-props/CLAUDE.md"` and update the repo's CLAUDE.md to match.
-2. [ ] **Remove local implementation patterns** — Delete any `docs/implementations/` folder or local copies of pattern files. All patterns are fetched from glow-props at implementation time.
-3. [ ] **Remove hardcoded pattern list** — If the repo's CLAUDE.md contains a "Suggested Implementations" table or hardcoded list of patterns, replace it with the "Implementation Patterns (Source of Truth)" section from glow-props CLAUDE.md.
-4. **Confirm:** Repo's CLAUDE.md references glow-props as the single source of truth for patterns. No local `docs/implementations/` folder exists.
+No local `docs/implementations/` folder (correct). No inline patterns (correct). Has a clean "Suggested Implementations" pointer and prohibition, but fetch URLs point to the old location (`glow-props/CLAUDE.md`) instead of `glow-props/docs/implementations/`.
+
+1. [ ] **Update "Suggested Implementations" section** — Change fetch URLs from `api.github.com/repos/devmade-ai/glow-props/contents/CLAUDE.md` to `api.github.com/repos/devmade-ai/glow-props/contents/docs/implementations/{PATTERN_NAME}.md`. Add the GitHub Pages URL: `https://devmade-ai.github.io/glow-props/patterns/{PATTERN_NAME}.md`. Add the listing command to discover available patterns.
+2. [ ] **Update AI Notes entry** — Change "All Suggested Implementation patterns live in glow-props CLAUDE.md" to reference `docs/implementations/` folder in glow-props.
+3. [ ] **Rename section** — Change "Suggested Implementations" to "Implementation Patterns (Source of Truth)" to match glow-props.
+4. **Confirm:** All fetch URLs point to `docs/implementations/` in glow-props, not to CLAUDE.md. Listing command exists to discover patterns dynamically.
 
 #### APP_ICONS — Partial → Complete
 
@@ -199,10 +204,12 @@ SvelteKit app. Lowest compliance across the fleet — 5 of 7 patterns are entire
 
 #### CLAUDE.md — Align with glow-props
 
-1. [ ] **Fetch latest CLAUDE.md** — `curl -sf "https://devmade-ai.github.io/glow-props/CLAUDE.md"` and update the repo's CLAUDE.md to match.
-2. [ ] **Remove local implementation patterns** — Delete any `docs/implementations/` folder or local copies of pattern files. All patterns are fetched from glow-props at implementation time.
-3. [ ] **Remove hardcoded pattern list** — If the repo's CLAUDE.md contains a "Suggested Implementations" table or hardcoded list of patterns, replace it with the "Implementation Patterns (Source of Truth)" section from glow-props CLAUDE.md.
-4. **Confirm:** Repo's CLAUDE.md references glow-props as the single source of truth for patterns. No local `docs/implementations/` folder exists.
+No local `docs/implementations/` folder (correct). No inline patterns. Has a stale "Shared conventions with glow-props" AI Note (~line 215) that points to the old `glow-props/CLAUDE.md` for patterns. Missing: Implementation Patterns section, prohibition, and pattern-specific AI note.
+
+1. [ ] **Replace stale AI Note** — Remove the "Shared conventions with glow-props" block (~lines 215-219) that references "suggested implementations" in glow-props CLAUDE.md. Replace with: `**Implementation patterns — always fetch from glow-props.** Never look for local copies of implementation pattern files (e.g., docs/implementations/*.md) in downstream repos. They do not exist locally — the single source of truth is the docs/implementations/ folder in the glow-props repo. Fetch the latest version before every implementation task.`
+2. [ ] **Add "Implementation Patterns (Source of Truth)" section** — Add the standard section from glow-props CLAUDE.md with fetch instructions (GitHub Pages URL, GitHub API URL, listing command) and rules.
+3. [ ] **Add prohibition** — Add to Prohibitions: "Create local copies of implementation pattern files in any repo — always fetch from glow-props".
+4. **Confirm:** No references to "suggested implementations in glow-props CLAUDE.md" remain. Standard pattern source section exists.
 
 #### APP_ICONS — Missing → Implement
 
@@ -280,10 +287,13 @@ React + Vite resume/portfolio site. Single dark theme currently. Has partial deb
 
 #### CLAUDE.md — Align with glow-props
 
-1. [ ] **Fetch latest CLAUDE.md** — `curl -sf "https://devmade-ai.github.io/glow-props/CLAUDE.md"` and update the repo's CLAUDE.md to match.
-2. [ ] **Remove local implementation patterns** — Delete any `docs/implementations/` folder or local copies of pattern files. All patterns are fetched from glow-props at implementation time.
-3. [ ] **Remove hardcoded pattern list** — If the repo's CLAUDE.md contains a "Suggested Implementations" table or hardcoded list of patterns, replace it with the "Implementation Patterns (Source of Truth)" section from glow-props CLAUDE.md.
-4. **Confirm:** Repo's CLAUDE.md references glow-props as the single source of truth for patterns. No local `docs/implementations/` folder exists.
+No local `docs/implementations/` folder (correct). Has **~280 lines of hardcoded inline patterns** in a "Suggested Implementations" section (~lines 322-603) covering PWA System, App Icons, Download as PDF, Timer Leaks, and HTTPS Proxy — full code examples embedded directly. Missing: any reference to glow-props as pattern source.
+
+1. [ ] **Delete entire "Suggested Implementations" section** — Remove ~lines 322-603 (~280 lines of inline pattern code for PWA System, App Icons, Download as PDF, Timer Leaks, HTTPS Proxy).
+2. [ ] **Add "Implementation Patterns (Source of Truth)" section** — Replace deleted section with the standard glow-props reference block (source location, fetch via GitHub Pages/API, listing command, rules).
+3. [ ] **Add AI Note** — Add: `**Implementation patterns — always fetch from glow-props.** Never look for local copies of implementation pattern files (e.g., docs/implementations/*.md) in downstream repos. They do not exist locally — the single source of truth is the docs/implementations/ folder in the glow-props repo. Fetch the latest version before every implementation task.`
+4. [ ] **Add prohibition** — Add to Prohibitions: "Create local copies of implementation pattern files in any repo — always fetch from glow-props".
+5. **Confirm:** CLAUDE.md is ~280 lines shorter. No inline code examples for patterns remain. Standard fetch commands point to glow-props.
 
 #### APP_ICONS — Partial → Complete
 
@@ -353,12 +363,9 @@ see-veo is a single dark theme with no DaisyUI. Ground-up implementation.
 
 React + Vite dashboard app. One of the most compliant repos — PWA and DOWNLOAD_PDF are fully passing. Has the fleet's best pre-React inline debug pill. Main gaps: DaisyUI migration and debug system modernization.
 
-#### CLAUDE.md — Align with glow-props
+#### CLAUDE.md — Pass (already aligned)
 
-1. [ ] **Fetch latest CLAUDE.md** — `curl -sf "https://devmade-ai.github.io/glow-props/CLAUDE.md"` and update the repo's CLAUDE.md to match.
-2. [ ] **Remove local implementation patterns** — Delete any `docs/implementations/` folder or local copies of pattern files. All patterns are fetched from glow-props at implementation time.
-3. [ ] **Remove hardcoded pattern list** — If the repo's CLAUDE.md contains a "Suggested Implementations" table or hardcoded list of patterns, replace it with the "Implementation Patterns (Source of Truth)" section from glow-props CLAUDE.md.
-4. **Confirm:** Repo's CLAUDE.md references glow-props as the single source of truth for patterns. No local `docs/implementations/` folder exists.
+No local `docs/implementations/` folder (correct). "Suggested Implementations" section already points to glow-props `docs/implementations/` with dynamic fetch commands and listing. Prohibition against local copies exists. No action needed.
 
 #### APP_ICONS — Partial → Complete
 
@@ -417,10 +424,14 @@ React Native (Expo) app. Uses Metro bundler (not Vite) and Uniwind for theming. 
 
 #### CLAUDE.md — Align with glow-props
 
-1. [ ] **Fetch latest CLAUDE.md** — `curl -sf "https://devmade-ai.github.io/glow-props/CLAUDE.md"` and update the repo's CLAUDE.md to match.
-2. [ ] **Remove local implementation patterns** — Delete any `docs/implementations/` folder or local copies of pattern files. All patterns are fetched from glow-props at implementation time.
-3. [ ] **Remove hardcoded pattern list** — If the repo's CLAUDE.md contains a "Suggested Implementations" table or hardcoded list of patterns, replace it with the "Implementation Patterns (Source of Truth)" section from glow-props CLAUDE.md.
-4. **Confirm:** Repo's CLAUDE.md references glow-props as the single source of truth for patterns. No local `docs/implementations/` folder exists.
+No local `docs/implementations/` folder (correct). Has **~620 lines of hardcoded inline patterns** in a "Suggested Implementations" section (~lines 597-1219) covering PWA System, Debug System, App Icons, Download as PDF, and HTTPS Proxy — full code examples. Also has an AI Note (~line 525) referencing "from Suggested Implementations" locally.
+
+1. [ ] **Delete entire "Suggested Implementations" section** — Remove ~lines 597-1219 (~620 lines of inline pattern code for PWA System, Debug System, App Icons, Download as PDF, HTTPS Proxy).
+2. [ ] **Add "Implementation Patterns (Source of Truth)" section** — Replace deleted section with the standard glow-props reference block (source location, fetch via GitHub Pages/API, listing command, rules).
+3. [ ] **Update AI Note reference** — Near line 525, change `httpsGet() CONNECT tunnel pattern from Suggested Implementations` to reference fetching the HTTPS_PROXY pattern from glow-props.
+4. [ ] **Add AI Note** — Add the standard implementation patterns note about always fetching from glow-props.
+5. [ ] **Add prohibition** — Add to Prohibitions: "Create local copies of implementation pattern files in any repo — always fetch from glow-props".
+6. **Confirm:** CLAUDE.md is ~620 lines shorter. No inline code examples for patterns remain. All pattern references point to glow-props.
 
 #### APP_ICONS — Partial → Complete
 
@@ -495,10 +506,14 @@ React + Vite app. DOWNLOAD_PDF is fully compliant. Debug system and PWA have par
 
 #### CLAUDE.md — Align with glow-props
 
-1. [ ] **Fetch latest CLAUDE.md** — `curl -sf "https://devmade-ai.github.io/glow-props/CLAUDE.md"` and update the repo's CLAUDE.md to match.
-2. [ ] **Remove local implementation patterns** — Delete any `docs/implementations/` folder or local copies of pattern files. All patterns are fetched from glow-props at implementation time.
-3. [ ] **Remove hardcoded pattern list** — If the repo's CLAUDE.md contains a "Suggested Implementations" table or hardcoded list of patterns, replace it with the "Implementation Patterns (Source of Truth)" section from glow-props CLAUDE.md.
-4. **Confirm:** Repo's CLAUDE.md references glow-props as the single source of truth for patterns. No local `docs/implementations/` folder exists.
+No local `docs/implementations/` folder (correct). Has **~470 lines of hardcoded inline patterns** in a "Suggested Implementations" section (~lines 419-888) covering PWA System, Debug System, App Icons, Download as PDF — full code examples. Also has a "Shared References" section (~lines 6-20) that points to `raw.githubusercontent.com/.../CLAUDE.md` instead of `docs/implementations/`.
+
+1. [ ] **Delete entire "Suggested Implementations" section** — Remove ~lines 419-888 (~470 lines of inline pattern code for PWA System, Debug System, App Icons, Download as PDF).
+2. [ ] **Add "Implementation Patterns (Source of Truth)" section** — Replace deleted section with the standard glow-props reference block (source location, fetch via GitHub Pages/API, listing command, rules).
+3. [ ] **Update "Shared References" section** — Near lines 6-20, update the fetch URL from `raw.githubusercontent.com/.../CLAUDE.md` to the GitHub Pages URL for `docs/implementations/`. Remove the hardcoded list of "adopted patterns" and replace with the listing command to discover patterns dynamically.
+4. [ ] **Add AI Note** — Add the standard implementation patterns note about always fetching from glow-props.
+5. [ ] **Add prohibition** — Add to Prohibitions: "Create local copies of implementation pattern files in any repo — always fetch from glow-props".
+6. **Confirm:** CLAUDE.md is ~470 lines shorter. No inline code examples for patterns remain. Shared References points to `docs/implementations/`.
 
 #### APP_ICONS — Partial → Complete
 
@@ -581,10 +596,13 @@ React + Vite graph editor. Strong foundation — APP_ICONS, THEME_DARK_MODE, and
 
 #### CLAUDE.md — Align with glow-props
 
-1. [ ] **Fetch latest CLAUDE.md** — `curl -sf "https://devmade-ai.github.io/glow-props/CLAUDE.md"` and update the repo's CLAUDE.md to match.
-2. [ ] **Remove local implementation patterns** — Delete any `docs/implementations/` folder or local copies of pattern files. All patterns are fetched from glow-props at implementation time.
-3. [ ] **Remove hardcoded pattern list** — If the repo's CLAUDE.md contains a "Suggested Implementations" table or hardcoded list of patterns, replace it with the "Implementation Patterns (Source of Truth)" section from glow-props CLAUDE.md.
-4. **Confirm:** Repo's CLAUDE.md references glow-props as the single source of truth for patterns. No local `docs/implementations/` folder exists.
+No local `docs/implementations/` folder (correct). Has **~180 lines of hardcoded inline patterns** in a "SUGGESTED IMPLEMENTATIONS" section (~line 581) covering PWA System, Debug System, App Icons, Download as PDF — full code examples. No reference to glow-props as pattern source exists.
+
+1. [ ] **Delete entire "SUGGESTED IMPLEMENTATIONS" section** — Remove ~180 lines of inline pattern code (~lines 581-760) for PWA System, Debug System, App Icons, Download as PDF.
+2. [ ] **Add "Implementation Patterns (Source of Truth)" section** — Replace deleted section with the standard glow-props reference block (source location, fetch via GitHub Pages/API, listing command, rules).
+3. [ ] **Add AI Note** — Add the standard implementation patterns note about always fetching from glow-props.
+4. [ ] **Add prohibition** — Add to Prohibitions: "Create local copies of implementation pattern files in any repo — always fetch from glow-props".
+5. **Confirm:** CLAUDE.md is ~180 lines shorter. No inline code examples for patterns remain. Standard fetch commands point to glow-props.
 
 #### BURGER_MENU — Evaluate if needed
 
@@ -640,10 +658,13 @@ React + Vite app. Has partial APP_ICONS, DEBUG_SYSTEM, DOWNLOAD_PDF, and PWA. Mi
 
 #### CLAUDE.md — Align with glow-props
 
-1. [ ] **Fetch latest CLAUDE.md** — `curl -sf "https://devmade-ai.github.io/glow-props/CLAUDE.md"` and update the repo's CLAUDE.md to match.
-2. [ ] **Remove local implementation patterns** — Delete any `docs/implementations/` folder or local copies of pattern files. All patterns are fetched from glow-props at implementation time.
-3. [ ] **Remove hardcoded pattern list** — If the repo's CLAUDE.md contains a "Suggested Implementations" table or hardcoded list of patterns, replace it with the "Implementation Patterns (Source of Truth)" section from glow-props CLAUDE.md.
-4. **Confirm:** Repo's CLAUDE.md references glow-props as the single source of truth for patterns. No local `docs/implementations/` folder exists.
+No local `docs/implementations/` folder (correct). Has **~475 lines of hardcoded inline patterns** in a "Suggested Implementations" section (~lines 326-800) covering PWA System, Debug System, App Icons, Download as PDF — full code examples. No reference to glow-props as pattern source exists.
+
+1. [ ] **Delete entire "Suggested Implementations" section** — Remove ~lines 326-800 (~475 lines of inline pattern code for PWA System, Debug System, App Icons, Download as PDF).
+2. [ ] **Add "Implementation Patterns (Source of Truth)" section** — Replace deleted section with the standard glow-props reference block (source location, fetch via GitHub Pages/API, listing command, rules).
+3. [ ] **Add AI Note** — Add the standard implementation patterns note about always fetching from glow-props.
+4. [ ] **Add prohibition** — Add to Prohibitions: "Create local copies of implementation pattern files in any repo — always fetch from glow-props".
+5. **Confirm:** CLAUDE.md is ~475 lines shorter. No inline code examples for patterns remain. Standard fetch commands point to glow-props.
 
 #### APP_ICONS — Partial → Complete
 
@@ -719,10 +740,14 @@ React Native (Expo) chat app. Uses Metro bundler and Uniwind for theming. Has Zu
 
 #### CLAUDE.md — Align with glow-props
 
-1. [ ] **Fetch latest CLAUDE.md** — `curl -sf "https://devmade-ai.github.io/glow-props/CLAUDE.md"` and update the repo's CLAUDE.md to match.
-2. [ ] **Remove local implementation patterns** — Delete any `docs/implementations/` folder or local copies of pattern files. All patterns are fetched from glow-props at implementation time.
-3. [ ] **Remove hardcoded pattern list** — If the repo's CLAUDE.md contains a "Suggested Implementations" table or hardcoded list of patterns, replace it with the "Implementation Patterns (Source of Truth)" section from glow-props CLAUDE.md.
-4. **Confirm:** Repo's CLAUDE.md references glow-props as the single source of truth for patterns. No local `docs/implementations/` folder exists.
+**Only repo with a local `docs/implementations/` folder** — contains 8 files (APP_ICONS.md, BURGER_MENU.md, DEBUG_SYSTEM.md, DOWNLOAD_PDF.md, HTTPS_PROXY.md, KEY_LESSONS.md, PWA_SYSTEM.md, TIMER_LEAKS.md). Also has a hardcoded table in "Suggested Implementations" (~line 1413) linking to these local files, and an Architecture section (~line 790) listing the folder.
+
+1. [ ] **Delete `docs/implementations/` folder** — Remove the entire directory and all 8 local pattern files. These are stale copies of the glow-props originals.
+2. [ ] **Delete "Suggested Implementations" section** — Remove the hardcoded table (~line 1413) that links to local `docs/implementations/` files.
+3. [ ] **Remove Architecture listing** — Remove the `implementations/` entry (~lines 790-798) from the file tree in the Architecture section since the directory will no longer exist.
+4. [ ] **Add "Implementation Patterns (Source of Truth)" section** — Replace deleted section with the standard glow-props reference block (source location, fetch via GitHub Pages/API, listing command, rules).
+5. [ ] **Add AI Note** — Add the standard implementation patterns note about always fetching from glow-props.
+6. **Confirm:** No `docs/implementations/` folder exists. No hardcoded table. Architecture section no longer lists pattern files. Standard fetch commands point to glow-props.
 
 #### APP_ICONS — Partial → Complete
 
@@ -799,7 +824,7 @@ synctone uses Uniwind's `setTheme()` with `classList.add()` — not the DaisyUI 
 
 These gaps appear in 6+ repos and represent the highest-leverage improvements:
 
-1. **CLAUDE.md alignment** — Missing in 10/10 downstream repos. Must be done first — removes local pattern copies and ensures all repos fetch from glow-props source of truth.
+1. **CLAUDE.md alignment** — 1 Pass (repo-tor), 1 Partial (budgy-ting), 8 Missing. Must be done first — removes inline patterns and local copies, ensures all repos fetch from glow-props. Worst offenders: few-lap (~620 lines inline), four-ems (~475 lines), sun-sea-o (~470 lines), see-veo (~280 lines), synctone (8 local files in `docs/implementations/`).
 2. **EVENT_BUS** — Missing in 10/11 repos (only graphiki has partial). Most repos may not need it.
 3. **DEBUG_SYSTEM: console interception** — Missing in all repos that have debug systems (8/8)
 4. **DEBUG_SYSTEM: pre-React inline pill** — Missing in 7/8 repos (only repo-tor has it)
