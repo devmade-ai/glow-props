@@ -313,6 +313,8 @@ This prompt surfaces remaining custom patterns after an initial migration pass. 
 
 Choose one approach per project. Both use `darkMode` for the dark/light toggle. They differ in how the DaisyUI theme name is selected and stored.
 
+> **UI specification:** The dark/light toggle and theme picker UI components live inside the burger menu. See [BURGER_MENU.md — Theme UI in Burger Menu](BURGER_MENU.md#theme-ui-in-burger-menu) for the complete UI spec including toggle item, scrollable picker (Approach A), combo selector (Approach B), active theme indicator, and recommended menu item order.
+
 ### Approach A: Per-Mode Independent Selection (glow-props)
 
 Each mode (light/dark) stores its own DaisyUI theme independently. Users pick any theme from the full catalog for each mode. Three localStorage keys:

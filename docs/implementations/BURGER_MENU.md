@@ -31,6 +31,156 @@ Adapt per project. Show/hide based on state. Items can be hidden (`visible: fals
 | Admin | When authenticated admin | Auth |
 | Sign out | When authenticated | Auth |
 
+## Theme UI in Burger Menu
+
+The dark/light toggle and theme picker live inside the burger menu. The UI varies by persistence approach (see [THEME_DARK_MODE.md](THEME_DARK_MODE.md) for the two approaches).
+
+### Dark/Light Toggle Item
+
+Always present. Single menu item that toggles between modes.
+
+```jsx
+{
+  label: isDark ? 'Light mode' : 'Dark mode',
+  action: toggleDarkMode,
+  separator: true,  // Visual break before preferences section
+  icon: isDark
+    ? 'M12 3v2.25m6.364.386l-1.591 1.591M21 12h-2.25m-.386 6.364l-1.591-1.591M12 18.75V21m-4.773-4.227l-1.591 1.591M5.25 12H3m4.227-4.773L5.636 5.636M15.75 12a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0z'   // Sun icon when dark (clicking switches to light)
+    : 'M21.752 15.002A9.718 9.718 0 0118 15.75c-5.385 0-9.75-4.365-9.75-9.75 0-1.33.266-2.597.748-3.752A9.753 9.753 0 003 11.25C3 16.635 7.365 21 12.75 21a9.753 9.753 0 009.002-5.998z',  // Moon icon when light
+}
+```
+
+- **Label flips** to show what you'll switch TO, not what you're currently in
+- **Icon matches the label** — sun icon for "Light mode", moon icon for "Dark mode"
+- **`separator: true`** groups it visually with other preference items (theme picker below, random theme toggle)
+- **`aria-label`** on the toggle should update with state (e.g., "Switch to dark mode" → "Switch to light mode"). See [THEME_DARK_MODE.md Key Lesson #10](THEME_DARK_MODE.md#key-lessons)
+
+### Theme Picker — Approach A: Per-Mode Independent
+
+For projects using per-mode independent selection (e.g., glow-props with 35 themes). Each mode has its own scrollable list.
+
+```jsx
+// Section header changes based on current mode
+<li className="menu-title text-xs uppercase tracking-wider px-4 py-1.5">
+  {isDark ? 'Dark themes' : 'Light themes'}
+</li>
+
+// Scrollable theme list — max-h prevents the menu from growing unbounded
+<div className="max-h-52 overflow-y-auto overscroll-contain">
+  {(isDark ? darkThemes : lightThemes).map(theme => (
+    <li key={theme.id}>
+      <button
+        type="button"
+        onClick={() => setTheme(theme.id)}
+        className={`w-full text-left px-4 min-h-11 text-sm flex items-center gap-2
+          ${activeTheme === theme.id
+            ? 'bg-primary/10 text-primary font-medium'
+            : 'text-base-content hover:bg-base-200'
+          }`}
+      >
+        <span className="truncate">{theme.name}</span>
+        <span className="text-xs text-base-content/40 ml-auto">{theme.description}</span>
+        {activeTheme === theme.id && (
+          <svg className="w-4 h-4 text-primary shrink-0" viewBox="0 0 20 20"
+               fill="currentColor" aria-hidden="true">
+            <path fillRule="evenodd" d="M16.704 4.153a.75.75 0 01.143 1.052l-8 10.5a.75.75 0 01-1.127.075l-4.5-4.5a.75.75 0 011.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 011.05-.143z"
+                  clipRule="evenodd" />
+          </svg>
+        )}
+      </button>
+    </li>
+  ))}
+</div>
+```
+
+Key design decisions:
+- **`max-h-52` (208px) with `overflow-y-auto`** — fits ~5 items visible, scrolls for the rest. Prevents the menu from growing to 22+ items tall.
+- **`overscroll-contain`** on the scrollable area — prevents scroll chaining to the page body when the user reaches the end of the theme list.
+- **Dynamic section header** — "Light themes" / "Dark themes" changes with mode toggle. Non-technical users see which list they're browsing.
+- **Active theme indicator** — checkmark + `bg-primary/10` highlight on the current theme. Without this, users can't tell which theme is active.
+- **Description/mood tag** — short text like "Cool blue-gray", "Minimal mono" helps users pick without trial and error.
+- **Menu stays open during theme switching** — DO NOT close the menu when a theme is selected. Users need to compare themes quickly by clicking through the list. Only close on backdrop click, Escape, or navigating away.
+
+### Theme Picker — Approach B: Named Combos
+
+For projects using named combos (e.g., canva-grid, graphiki with 2-5 curated pairs). Simpler UI — a small group of radio-style buttons.
+
+```jsx
+// Combo section header
+<li className="menu-title text-xs uppercase tracking-wider px-4 py-1.5">
+  Theme
+</li>
+
+// Combo buttons — small enough to show all without scrolling
+{themeCombos.map(combo => (
+  <li key={combo.id}>
+    <button
+      type="button"
+      onClick={() => setCombo(combo.id)}
+      className={`w-full text-left px-4 min-h-11 text-sm flex items-center gap-2
+        ${activeCombo === combo.id
+          ? 'bg-primary/10 text-primary font-medium'
+          : 'text-base-content hover:bg-base-200'
+        }`}
+    >
+      <span>{combo.label}</span>
+      {activeCombo === combo.id && (
+        <svg className="w-4 h-4 text-primary shrink-0 ml-auto" viewBox="0 0 20 20"
+             fill="currentColor" aria-hidden="true">
+          <path fillRule="evenodd" d="M16.704 4.153a.75.75 0 01.143 1.052l-8 10.5a.75.75 0 01-1.127.075l-4.5-4.5a.75.75 0 011.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 011.05-.143z"
+                clipRule="evenodd" />
+        </svg>
+      )}
+    </button>
+  </li>
+))}
+```
+
+Key design decisions:
+- **No scroll needed** — 2-5 combos fit without scrolling. No `max-h` or `overflow` required.
+- **Single header "Theme"** — combos are mode-independent (each combo defines both light and dark), so no need for "Light themes" / "Dark themes" distinction.
+- **Same active indicator pattern** — checkmark + highlight, consistent with Approach A.
+- **Menu stays open** — same as Approach A. Users compare combos by clicking through.
+
+### Optional: Random Theme on Load Toggle
+
+For per-mode independent projects (Approach A) that offer a "random theme on each page load" feature.
+
+```jsx
+{
+  label: `Random theme: ${randomEnabled ? 'On' : 'Off'}`,
+  action: toggleRandomTheme,
+  icon: 'M19.5 12c0-1.232-.046-2.453-.138-3.662a4.006 4.006 0 00-3.7-3.7 48.678 48.678 0 00-7.324 0 4.006 4.006 0 00-3.7 3.7c-.017.22-.032.441-.046.662M19.5 12l3-3m-3 3l-3-3m-12 3c0 1.232.046 2.453.138 3.662a4.006 4.006 0 003.7 3.7 48.656 48.656 0 007.324 0 4.006 4.006 0 003.7-3.7c.017-.22.032-.441.046-.662M4.5 12l3 3m-3-3l-3 3',
+}
+```
+
+This is a simple on/off toggle — the label shows current state. The actual randomization happens on page load (see [THEME_DARK_MODE.md Random Theme on Load](THEME_DARK_MODE.md#random-theme-on-load-optional)).
+
+### Menu Item Order
+
+Recommended order for the full menu with theme UI:
+
+```
+How to use / Tutorial
+User Guide (external ↗)
+─────────────────────
+☀ Light mode / 🌙 Dark mode     ← toggle
+  Light themes / Dark themes     ← section header (Approach A only)
+  [ scrollable theme list ]      ← Approach A: per-mode themes
+  Theme                          ← section header (Approach B only)
+  [ combo buttons ]              ← Approach B: named combos
+  ↻ Random theme: On/Off         ← optional (Approach A only)
+─────────────────────
+Check for updates
+Install app
+─────────────────────
+Sign out
+─────────────────────
+v1.2.3                           ← version footer
+```
+
+The theme section (toggle + picker) is grouped between help items and PWA items, separated by dividers. This keeps preferences together and prevents them from dominating the menu.
+
 ## MenuItem Interface
 
 ```typescript
@@ -617,3 +767,5 @@ Vue projects use the same patterns with framework-specific adaptations:
 11. **Haptic feedback on toggle** — `lightTap()` from expo-haptics (with web no-op guard) provides tactile feedback on mobile. Subtle but noticeable improvement in perceived quality.
 12. **Tailwind v4 `dark:` variant requires project-level config** — v4 defaults to `prefers-color-scheme` (OS preference). For class-based dark mode toggling (`.dark` on `<html>`), the project must add `@custom-variant dark (&:where(.dark, .dark *));` to its CSS.
 13. **If wrapping in `React.memo`, memoize the `items` array** — inline array literals (`items={[...]}`) create new references every render, defeating memoization. Use `useMemo` for the items array if the parent re-renders frequently and the menu is memoized.
+14. **Keep the menu open during theme switching** — DO NOT close the menu when a theme is selected. Users need to compare themes by clicking through the list rapidly. Only close on backdrop click, Escape, or navigation actions. This applies to both per-mode theme pickers and combo selectors.
+15. **Theme picker needs `overscroll-contain` separately** — If the theme list is scrollable (`max-h-52 overflow-y-auto`), it needs its own `overscroll-contain` to prevent scroll chaining to the menu container or the page body. Two levels of `overscroll-contain`: one on the menu card, one on the scrollable theme list.
