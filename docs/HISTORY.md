@@ -2,6 +2,17 @@
 
 ## 2026-04-06
 
+### DOWNLOAD_PDF.md — expand to dual-approach pattern (window.print + pdf-lib)
+
+Rewrote DOWNLOAD_PDF.md from a window.print()-only doc to a dual-approach pattern covering both text-based and canvas/image-based PDF export.
+
+- **Decision guide**: text/documents → window.print(), canvas/images → pdf-lib, mixed → pdf-lib
+- **Approach A (window.print)**: Preserved existing content. Added "Limitations" section (mobile issues, canvas blindness, no silent download).
+- **Approach B (pdf-lib)**: Full implementation — html-to-image capture → pdf-lib composition → blob download. Quality levels (1x/2x/3x), ExportButton component, no-print filtering.
+- **Comparison table**: Side-by-side on deps, mobile, canvas, text searchability, file size, layout control
+- **Key Lessons**: 6 → 11 covering both approaches and their tradeoffs
+- Sourced from canva-grid's implementation with documented rejection reasons for jsPDF and window.print()
+
 ### THEME_DARK_MODE.md — add migration guide from custom CSS variables to DaisyUI
 
 Added a comprehensive 6-phase migration guide between the "Dual-Layer Theming" and "Theme Persistence" sections. Covers the full journey from custom `:root`/`.dark` CSS variables to DaisyUI's dual-layer architecture.
