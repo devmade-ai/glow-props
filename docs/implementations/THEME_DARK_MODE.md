@@ -84,7 +84,11 @@ For repos currently using custom `:root`/`.dark` CSS variables (repo-tor, budgy-
 
 ```bash
 npm install -D daisyui@5
+# Vite projects also need the Tailwind v4 Vite plugin:
+npm install -D @tailwindcss/vite
 ```
+
+Add `@tailwindcss/vite` to `vite.config.js` plugins if not already present.
 
 **Tailwind v4 CSS setup** (replace existing theme config):
 
@@ -106,7 +110,13 @@ npm install -D daisyui@5
 
 If migrating from **Tailwind v3**, the `darkMode: 'class'` option in `tailwind.config.js` is replaced by the `@custom-variant dark` line above. The config file itself may become unnecessary — Tailwind v4 uses CSS-first configuration.
 
+**Extract safe localStorage wrappers** into `src/utils/safeStorage.ts` (see [Safe localStorage Wrappers](#safe-localstorage-wrappers) section). The flash prevention script, theme hook, and other consumers all need these.
+
 **Add the flash prevention inline script** to `index.html` `<head>` (see [Flash Prevention](#flash-prevention) section below for the full script). This must be in place before removing custom variables, otherwise the first paint will flash.
+
+**Incremental migration is possible.** DaisyUI semantic classes and custom CSS variables can coexist during transition. You don't need a big-bang swap — migrate component by component, verifying each. DaisyUI's `data-theme` won't interfere with existing `var(--color-*)` references until you remove the variable definitions.
+
+> **React Native / Expo projects** (few-lap, synctone): This migration guide assumes web + Vite. Expo projects use Uniwind's `setTheme()` with `@variant` blocks in CSS instead of `data-theme`. The audit and mapping steps still apply, but the mechanism differs — see the [Uniwind Theme Switching](#uniwind-theme-switching-react-native) and [Zustand Store Pattern](#zustand-store-pattern-react-native) sections for the target architecture.
 
 ### Phase 1: Audit — Find What Needs to Change
 
@@ -114,17 +124,17 @@ Run these searches against your TSX/JSX component files to build a migration wor
 
 #### 1a. Hardcoded colors
 
-Search for hex/rgb values in component files:
+Search for hex/rgb values in component files. Note: ripgrep doesn't have built-in `tsx`/`jsx` types — use `-g` glob patterns instead.
 
 ```bash
 # Hex colors in TSX/JSX (skip CSS files, skip SVG icon paths)
-rg '#[0-9a-fA-F]{3,8}' --type tsx --type jsx -g '!*.css'
+rg '#[0-9a-fA-F]{3,8}' -g '*.tsx' -g '*.jsx' -g '!*.css'
 
 # RGB/RGBA values
-rg 'rgb\(|rgba\(' --type tsx --type jsx
+rg 'rgb\(|rgba\(' -g '*.tsx' -g '*.jsx'
 
 # Tailwind arbitrary color values
-rg '\[#[0-9a-fA-F]' --type tsx --type jsx
+rg '\[#[0-9a-fA-F]' -g '*.tsx' -g '*.jsx'
 ```
 
 Each hit is a candidate for a DaisyUI semantic token. Not all need to change — SVG icon fill colors, chart data colors, and brand colors may stay hardcoded.
@@ -133,39 +143,40 @@ Each hit is a candidate for a DaisyUI semantic token. Not all need to change —
 
 ```bash
 # Direct var() usage that should become DaisyUI classes
-rg 'var\(--color-' --type tsx --type jsx --type css
+rg 'var\(--color-' -g '*.tsx' -g '*.jsx' -g '*.css'
 
 # Custom dark mode overrides that DaisyUI handles automatically
-rg 'dark:bg-|dark:text-|dark:border-' --type tsx --type jsx
+# Includes hover, focus, placeholder, and other state variants
+rg 'dark:|dark:hover:|dark:focus:|dark:placeholder:' -g '*.tsx' -g '*.jsx'
 ```
 
 #### 1c. Raw Tailwind where DaisyUI components exist
 
 ```bash
 # Buttons using raw Tailwind instead of btn classes
-rg 'className=.*bg-(blue|green|red|gray|zinc|slate)-[0-9].*onClick' --type tsx
+rg 'className=.*bg-(blue|green|red|gray|zinc|slate)-[0-9].*onClick' -g '*.tsx'
 
 # Inputs without DaisyUI input class
-rg '<input' --type tsx | rg -v 'input input-'
+rg '<input' -g '*.tsx' | rg -v 'input input-'
 
 # Badges/tags using raw bg + rounded + text-xs instead of badge class
-rg 'rounded-full.*text-xs|text-xs.*rounded-full' --type tsx
+rg 'rounded-full.*text-xs|text-xs.*rounded-full' -g '*.tsx'
 ```
 
 #### 1d. Z-index values outside the scale
 
 ```bash
 # Find all z-index usage
-rg 'z-\[|z-[0-9]' --type tsx --type jsx --type css
+rg 'z-\[|z-[0-9]' -g '*.tsx' -g '*.jsx' -g '*.css'
 ```
 
-Standard scale: backdrop=40, menu=50, modal=60, toast=70, debug=80. Flag anything outside this range (e.g., `z-[9999]`, `z-[1000]`, `z-100`).
+Standard scale: backdrop=40, menu=50, modal=60, toast=70, debug=80. Flag anything outside this range (e.g., `z-[9999]`, `z-[1000]`).
 
 #### 1e. Custom overlay/backdrop implementations
 
 ```bash
 # Fixed/absolute overlays that should use DaisyUI modal or drawer
-rg 'fixed inset-0|absolute inset-0' --type tsx | rg -i 'overlay\|backdrop\|modal'
+rg 'fixed inset-0|absolute inset-0' -g '*.tsx' | rg -i 'overlay\|backdrop\|modal'
 ```
 
 ### Phase 2: CSS Variable Removal
@@ -245,11 +256,13 @@ Replace ad-hoc z-index values with the standard scale:
 | Toast | `z-70` | Toast notifications, update banners |
 | Debug | `z-80` | Debug pill (must be above everything) |
 
+Tailwind's default z-index scale only goes to `z-50`. Values above 50 require arbitrary values (`z-[60]`, `z-[70]`, `z-[80]`). Alternatively, define CSS custom properties or Tailwind utilities for the scale.
+
 Common fixes:
-- `z-[9999]` on debug pill → `z-[80]` (or CSS custom property `--z-debug: 80`)
+- `z-[9999]` on debug pill → `z-[80]`
 - `z-[1000]` on modal → `z-[60]`
 - `z-100` on dropdown → `z-50`
-- `z-[1000]` typo (non-functional in some Tailwind versions) → correct value from scale
+- Any `z-[1000]`+ values → map to the correct layer from the scale above
 
 ### Phase 5: Verification
 
@@ -262,10 +275,12 @@ After migration, verify with this checklist:
 2. **Switch themes** (if using multiple) — DaisyUI components should update. Custom `dark:` classes should still work via `.dark` class.
 3. **Check all button states** — hover, focus, active, disabled. DaisyUI `btn` handles these automatically.
 4. **Check form inputs** — borders, focus rings, placeholder text, disabled state. Verify `color-scheme` makes native select dropdowns match.
-5. **Print preview** — `@media print` overrides should still force white bg + black text. See [Print Override](#print-override) section.
-6. **Mobile** — touch targets (44px min), safe area insets, scrollable theme pickers.
-7. **Cross-tab sync** — Open two tabs, toggle theme in one, verify the other follows.
-8. **Fresh visit** — Clear localStorage, reload. Should fall back to OS preference with default themes, no crash.
+5. **Meta theme-color** — Open DevTools, switch themes, verify `<meta name="theme-color">` content attribute updates. On mobile, the PWA status bar should reflect the active theme.
+6. **Print preview** — `@media print` overrides should still force white bg + black text. See [Print Override](#print-override) section.
+7. **Mobile** — touch targets (44px min), safe area insets, scrollable theme pickers.
+8. **Cross-tab sync** — Open two tabs, toggle theme in one, verify the other follows.
+9. **Fresh visit** — Clear localStorage, reload. Should fall back to OS preference with default themes, no crash.
+10. **Accessibility** — Tab through interactive elements. Focus rings should be visible in both light and dark modes. Screen reader should announce theme toggle state.
 
 ### Phase 6: Cleanup
 
