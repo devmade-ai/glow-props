@@ -76,7 +76,8 @@ Reference: `docs/implementations/BURGER_MENU.md`
 3. [ ] **Add MenuItem interface support** — Add `disabled`, `separator`, `destructive`, and `external` properties to menu items. See pattern's MenuItem interface.
 4. [ ] **Add close-then-act delay** — Close menu first, execute action after 50-150ms timeout to prevent visual glitches.
 5. [ ] **Optional: version footer** — Display app version at bottom of dropdown.
-6. **Confirm:** Toggle menu open/close, verify Escape closes it, verify backdrop click closes it, verify 44px touch targets on all items.
+6. [ ] **Verify theme UI** — canva-grid's THEME_DARK_MODE is compliant (combo-based). Verify the theme toggle and combo picker in the burger menu match the [Theme UI in Burger Menu](../implementations/BURGER_MENU.md#theme-ui-in-burger-menu) spec (toggle item with sun/moon icons, combo buttons with active checkmark, menu stays open during switching).
+7. **Confirm:** Toggle menu open/close, verify Escape closes it, verify backdrop click closes it, verify 44px touch targets on all items. Theme toggle and picker work within menu.
 
 #### DEBUG_SYSTEM — Partial → Complete
 
@@ -129,7 +130,8 @@ Reference: `docs/implementations/BURGER_MENU.md`
 
 1. [ ] **Add arrow key navigation** — In the menu component, handle `ArrowDown`/`ArrowUp` (with wrapping) and `Home`/`End` keys to move focus between items. See pattern's `handleMenuKeyDown`.
 2. [ ] **Establish z-index scale** — Document and enforce: backdrop=40, menu=50, modal=60, toast=70, debug=80. Audit existing z-index values.
-3. **Confirm:** Open menu, press ArrowDown through all items, verify wrapping. Press Home/End. Verify z-index layering with debug pill visible.
+3. [ ] **Add theme UI to menu** — Once THEME_DARK_MODE migration is done, add dark/light toggle and theme picker per [Theme UI in Burger Menu](../implementations/BURGER_MENU.md#theme-ui-in-burger-menu) spec.
+4. **Confirm:** Open menu, press ArrowDown through all items, verify wrapping. Press Home/End. Verify z-index layering with debug pill visible.
 
 #### DEBUG_SYSTEM — Partial → Complete
 
@@ -339,7 +341,8 @@ Reference: `docs/implementations/BURGER_MENU.md`
 2. [ ] **Wire `useFocusTrap` to menu** — Hook exists in codebase but isn't used by the burger menu. Import and apply.
 3. [ ] **Add Home/End key support** — Currently handles ArrowDown/ArrowUp. Add Home (first item) and End (last item).
 4. [ ] **Add `disabled` item support** — Grayed out styling, prevent click/focus. See pattern's MenuItem interface.
-5. **Confirm:** Open menu, Tab is trapped. Home/End work. Disabled items can't be clicked or focused.
+5. [ ] **Add theme UI to menu** — Once THEME_DARK_MODE migration is done, add dark/light toggle and theme picker per [Theme UI in Burger Menu](../implementations/BURGER_MENU.md#theme-ui-in-burger-menu) spec.
+6. **Confirm:** Open menu, Tab is trapped. Home/End work. Disabled items can't be clicked or focused. Theme toggle and picker work.
 
 #### DEBUG_SYSTEM — Partial → Complete
 
@@ -394,7 +397,8 @@ Reference: `docs/implementations/BURGER_MENU.md` (React Native variant section)
 3. [ ] **Add arrow key / Home / End navigation** — For web platform. React Native doesn't have DOM keyboard nav, but Expo serves on web too.
 4. [ ] **Add `aria-controls` linking** — Trigger button `aria-controls={menuId}` pointing to the menu element.
 5. [ ] **Add data-driven MenuItem interface** — Replace hardcoded inline buttons with `items` prop supporting `visible`, `disabled`, `highlight`, `highlightColor`. See pattern's MenuItem interface.
-6. **Confirm:** Open menu on web — keyboard navigation works, focus is trapped. On mobile — haptic feedback on toggle, 44px touch targets.
+6. [ ] **Add theme UI to menu** — Once THEME_DARK_MODE flash prevention is done, verify theme toggle and picker follow [Theme UI in Burger Menu](../implementations/BURGER_MENU.md#theme-ui-in-burger-menu) spec (React Native variant).
+7. **Confirm:** Open menu on web — keyboard navigation works, focus is trapped. On mobile — haptic feedback on toggle, 44px touch targets. Theme toggle works within menu.
 
 #### DEBUG_SYSTEM — Partial → Complete
 
