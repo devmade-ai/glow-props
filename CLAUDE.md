@@ -265,6 +265,7 @@ These footers are required on every commit. No exceptions.
   - Use `$(printenv GITHUB_ALL_REPO_TOKEN)` not `$GITHUB_ALL_REPO_TOKEN` to avoid shell expansion issues
   - Never clone sibling repos — use the API instead
 - **Discontinued repos — skip entirely:** `plant-fur` and `coin-zapp` are discontinued. Do not check, audit, align, or include them in cross-project operations.
+- **Implementation patterns — always fetch from glow-props.** Never look for local copies of implementation pattern files (e.g., `docs/implementations/*.md`) in downstream repos. They do not exist locally — the single source of truth is the `docs/implementations/` folder in the glow-props repo. Fetch the latest version before every implementation task.
 
 ### REMINDER: READ AND FOLLOW THE AI NOTES EVERY TIME
 
@@ -273,6 +274,7 @@ These footers are required on every commit. No exceptions.
 Never:
 - Start implementation without understanding full scope
 - Create files outside established project structure
+- Create local copies of implementation pattern files in any repo — always fetch from glow-props
 - Leave TODO comments in code without tracking them in `docs/TODO.md`
 - Ignore errors or warnings in build/console output
 - Make "while I'm here" changes without asking first
@@ -325,20 +327,20 @@ Rules:
 
 ### REMINDER: READ AND FOLLOW THE TRIGGERS EVERY TIME
 
-## Suggested Implementations
+## Implementation Patterns (Source of Truth)
 
-Reference patterns for features that should be implemented across all projects. These describe the architecture and behavior to follow — adapt file names and frameworks to the specific project.
+All implementation patterns live in the **glow-props** repo and are the single source of truth for all devmade-ai projects.
 
-Each implementation is in its own file under `docs/implementations/`:
+**Source location:** `docs/implementations/` in the glow-props repo
 
-| Implementation | File | Description |
-|---------------|------|-------------|
-| PWA System | [`docs/implementations/PWA_SYSTEM.md`](docs/implementations/PWA_SYSTEM.md) | Vite PWA config, install prompt, service worker updates, install detection |
-| Debug System | [`docs/implementations/DEBUG_SYSTEM.md`](docs/implementations/DEBUG_SYSTEM.md) | In-memory event store, floating debug pill (alpha-phase) |
-| App Icons | [`docs/implementations/APP_ICONS.md`](docs/implementations/APP_ICONS.md) | SVG source to PNG conversion via Sharp at 400 DPI |
-| Download as PDF | [`docs/implementations/DOWNLOAD_PDF.md`](docs/implementations/DOWNLOAD_PDF.md) | Zero-dependency PDF via `window.print()` |
-| HTTPS Proxy | [`docs/implementations/HTTPS_PROXY.md`](docs/implementations/HTTPS_PROXY.md) | Node.js HTTP CONNECT tunnel for proxy environments |
-| Burger Menu | [`docs/implementations/BURGER_MENU.md`](docs/implementations/BURGER_MENU.md) | Disclosure-pattern dropdown (React Web + React Native) |
-| Theme & Dark Mode | [`docs/implementations/THEME_DARK_MODE.md`](docs/implementations/THEME_DARK_MODE.md) | DaisyUI dual-layer theming, per-mode theme selection, flash prevention, cross-tab sync |
-| Event Bus | [`docs/implementations/EVENT_BUS.md`](docs/implementations/EVENT_BUS.md) | Typed pub/sub factory for service-layer events with catch-all and error isolation |
+**How to access from any repo:**
+- Fetch via GitHub Pages: `curl -sf "https://devmade-ai.github.io/glow-props/patterns/{PATTERN_NAME}.md"`
+- Fetch via GitHub API: `curl -sf -H "Authorization: token $(printenv GITHUB_ALL_REPO_TOKEN)" "https://api.github.com/repos/devmade-ai/glow-props/contents/docs/implementations/{PATTERN_NAME}.md" | jq -r .content | base64 -d`
+- To list all available patterns: `curl -sf -H "Authorization: token $(printenv GITHUB_ALL_REPO_TOKEN)" "https://api.github.com/repos/devmade-ai/glow-props/contents/docs/implementations" | jq -r '.[].name'`
+
+**Rules:**
+- **Always fetch the latest version** from glow-props before implementing — patterns are continuously improved
+- **Never create local copies** of implementation pattern files in downstream repos
+- **Do not hardcode a list of patterns** — scan the source folder to discover what's available
+- The set of patterns grows over time; always check the source for new additions
 
