@@ -24,19 +24,19 @@ Legend: **Pass** = compliant, **Partial** = has the feature but with gaps, **Mis
 
 ### Gap Matrix
 
-| Repo | APP_ICONS | BURGER_MENU | DEBUG_SYSTEM | DOWNLOAD_PDF | PWA_SYSTEM | THEME_DARK_MODE | EVENT_BUS |
-|------|-----------|-------------|--------------|--------------|------------|-----------------|-----------|
-| glow-props | Partial | Pass | Missing (N/A) | Pass | Pass | Pass | Missing (N/A) |
-| canva-grid | Pass | Partial | Partial | Pass (B) | Partial | Pass | Missing |
-| budgy-ting | Partial | Partial | Partial | Partial | Partial | Missing | Missing |
-| model-pear | Missing | Missing | Missing | Partial | Missing | Missing | Missing |
-| see-veo | Partial | Missing | Partial | Partial | Partial | Missing | Missing |
-| repo-tor | Partial | Partial | Partial | Pass | Pass | Partial | Missing |
-| few-lap | Partial | Partial | Partial | Missing | Partial | Partial | Missing |
-| sun-sea-o | Partial | Missing | Partial | Pass | Partial | Missing | Missing |
-| graphiki | Pass | Missing | Partial | Missing | Partial | Pass | Partial |
-| four-ems | Partial | Missing | Partial | Partial | Partial | Missing | Missing |
-| synctone | Partial | Missing | Partial | Missing | Partial | Partial | Missing |
+| Repo | CLAUDE.md | APP_ICONS | BURGER_MENU | DEBUG_SYSTEM | DOWNLOAD_PDF | PWA_SYSTEM | THEME_DARK_MODE | EVENT_BUS |
+|------|-----------|-----------|-------------|--------------|--------------|------------|-----------------|-----------|
+| glow-props | Pass | Partial | Pass | Missing (N/A) | Pass | Pass | Pass | Missing (N/A) |
+| canva-grid | Missing | Pass | Partial | Partial | Pass (B) | Partial | Pass | Missing |
+| budgy-ting | Missing | Partial | Partial | Partial | Partial | Partial | Missing | Missing |
+| model-pear | Missing | Missing | Missing | Missing | Partial | Missing | Missing | Missing |
+| see-veo | Missing | Partial | Missing | Partial | Partial | Partial | Missing | Missing |
+| repo-tor | Missing | Partial | Partial | Partial | Pass | Pass | Partial | Missing |
+| few-lap | Missing | Partial | Partial | Partial | Missing | Partial | Partial | Missing |
+| sun-sea-o | Missing | Partial | Missing | Partial | Pass | Partial | Missing | Missing |
+| graphiki | Missing | Pass | Missing | Partial | Missing | Partial | Pass | Partial |
+| four-ems | Missing | Partial | Missing | Partial | Partial | Partial | Missing | Missing |
+| synctone | Missing | Partial | Missing | Partial | Missing | Partial | Partial | Missing |
 
 **(B)** = Approach B (pdf-lib) per `docs/implementations/DOWNLOAD_PDF.md` — correct choice for canvas-heavy content
 
@@ -66,6 +66,13 @@ Reference: `docs/implementations/APP_ICONS.md`
 ### canva-grid
 
 React + Vite app. Strong foundation — APP_ICONS and THEME_DARK_MODE are fully compliant. Focus areas: debug system robustness, PWA update reliability, and burger menu completeness.
+
+#### CLAUDE.md — Align with glow-props
+
+1. [ ] **Fetch latest CLAUDE.md** — `curl -sf "https://devmade-ai.github.io/glow-props/CLAUDE.md"` and update the repo's CLAUDE.md to match.
+2. [ ] **Remove local implementation patterns** — Delete any `docs/implementations/` folder or local copies of pattern files. All patterns are fetched from glow-props at implementation time.
+3. [ ] **Remove hardcoded pattern list** — If the repo's CLAUDE.md contains a "Suggested Implementations" table or hardcoded list of patterns, replace it with the "Implementation Patterns (Source of Truth)" section from glow-props CLAUDE.md.
+4. **Confirm:** Repo's CLAUDE.md references glow-props as the single source of truth for patterns. No local `docs/implementations/` folder exists.
 
 #### BURGER_MENU — Partial → Complete
 
@@ -115,6 +122,13 @@ Reference: `docs/implementations/PWA_SYSTEM.md`
 ### budgy-ting
 
 Vue + Vite app. Has partial implementations of most patterns but needs DaisyUI migration (currently custom Tailwind v4 CSS variables) and debug/PWA hardening.
+
+#### CLAUDE.md — Align with glow-props
+
+1. [ ] **Fetch latest CLAUDE.md** — `curl -sf "https://devmade-ai.github.io/glow-props/CLAUDE.md"` and update the repo's CLAUDE.md to match.
+2. [ ] **Remove local implementation patterns** — Delete any `docs/implementations/` folder or local copies of pattern files. All patterns are fetched from glow-props at implementation time.
+3. [ ] **Remove hardcoded pattern list** — If the repo's CLAUDE.md contains a "Suggested Implementations" table or hardcoded list of patterns, replace it with the "Implementation Patterns (Source of Truth)" section from glow-props CLAUDE.md.
+4. **Confirm:** Repo's CLAUDE.md references glow-props as the single source of truth for patterns. No local `docs/implementations/` folder exists.
 
 #### APP_ICONS — Partial → Complete
 
@@ -182,6 +196,13 @@ This is a full migration from custom Tailwind v4 CSS variables to DaisyUI. Follo
 ### model-pear
 
 SvelteKit app. Lowest compliance across the fleet — 5 of 7 patterns are entirely missing. This needs foundational work. Dark-only design currently.
+
+#### CLAUDE.md — Align with glow-props
+
+1. [ ] **Fetch latest CLAUDE.md** — `curl -sf "https://devmade-ai.github.io/glow-props/CLAUDE.md"` and update the repo's CLAUDE.md to match.
+2. [ ] **Remove local implementation patterns** — Delete any `docs/implementations/` folder or local copies of pattern files. All patterns are fetched from glow-props at implementation time.
+3. [ ] **Remove hardcoded pattern list** — If the repo's CLAUDE.md contains a "Suggested Implementations" table or hardcoded list of patterns, replace it with the "Implementation Patterns (Source of Truth)" section from glow-props CLAUDE.md.
+4. **Confirm:** Repo's CLAUDE.md references glow-props as the single source of truth for patterns. No local `docs/implementations/` folder exists.
 
 #### APP_ICONS — Missing → Implement
 
@@ -257,6 +278,13 @@ model-pear is dark-only with no DaisyUI. This is a ground-up implementation, not
 
 React + Vite resume/portfolio site. Single dark theme currently. Has partial debug and PWA implementations that need hardening. Burger menu and theming are absent but may be intentional for a minimal resume site.
 
+#### CLAUDE.md — Align with glow-props
+
+1. [ ] **Fetch latest CLAUDE.md** — `curl -sf "https://devmade-ai.github.io/glow-props/CLAUDE.md"` and update the repo's CLAUDE.md to match.
+2. [ ] **Remove local implementation patterns** — Delete any `docs/implementations/` folder or local copies of pattern files. All patterns are fetched from glow-props at implementation time.
+3. [ ] **Remove hardcoded pattern list** — If the repo's CLAUDE.md contains a "Suggested Implementations" table or hardcoded list of patterns, replace it with the "Implementation Patterns (Source of Truth)" section from glow-props CLAUDE.md.
+4. **Confirm:** Repo's CLAUDE.md references glow-props as the single source of truth for patterns. No local `docs/implementations/` folder exists.
+
 #### APP_ICONS — Partial → Complete
 
 Reference: `docs/implementations/APP_ICONS.md`
@@ -325,6 +353,13 @@ see-veo is a single dark theme with no DaisyUI. Ground-up implementation.
 
 React + Vite dashboard app. One of the most compliant repos — PWA and DOWNLOAD_PDF are fully passing. Has the fleet's best pre-React inline debug pill. Main gaps: DaisyUI migration and debug system modernization.
 
+#### CLAUDE.md — Align with glow-props
+
+1. [ ] **Fetch latest CLAUDE.md** — `curl -sf "https://devmade-ai.github.io/glow-props/CLAUDE.md"` and update the repo's CLAUDE.md to match.
+2. [ ] **Remove local implementation patterns** — Delete any `docs/implementations/` folder or local copies of pattern files. All patterns are fetched from glow-props at implementation time.
+3. [ ] **Remove hardcoded pattern list** — If the repo's CLAUDE.md contains a "Suggested Implementations" table or hardcoded list of patterns, replace it with the "Implementation Patterns (Source of Truth)" section from glow-props CLAUDE.md.
+4. **Confirm:** Repo's CLAUDE.md references glow-props as the single source of truth for patterns. No local `docs/implementations/` folder exists.
+
 #### APP_ICONS — Partial → Complete
 
 Reference: `docs/implementations/APP_ICONS.md`
@@ -379,6 +414,13 @@ repo-tor has working flash prevention and cross-tab sync using custom CSS variab
 ### few-lap
 
 React Native (Expo) app. Uses Metro bundler (not Vite) and Uniwind for theming. Has a burger menu and debug system that need hardening. Custom SW approach is correct for Expo.
+
+#### CLAUDE.md — Align with glow-props
+
+1. [ ] **Fetch latest CLAUDE.md** — `curl -sf "https://devmade-ai.github.io/glow-props/CLAUDE.md"` and update the repo's CLAUDE.md to match.
+2. [ ] **Remove local implementation patterns** — Delete any `docs/implementations/` folder or local copies of pattern files. All patterns are fetched from glow-props at implementation time.
+3. [ ] **Remove hardcoded pattern list** — If the repo's CLAUDE.md contains a "Suggested Implementations" table or hardcoded list of patterns, replace it with the "Implementation Patterns (Source of Truth)" section from glow-props CLAUDE.md.
+4. **Confirm:** Repo's CLAUDE.md references glow-props as the single source of truth for patterns. No local `docs/implementations/` folder exists.
 
 #### APP_ICONS — Partial → Complete
 
@@ -450,6 +492,13 @@ few-lap uses Uniwind with `@variant` blocks — not `data-theme`. The Uniwind ap
 ### sun-sea-o
 
 React + Vite app. DOWNLOAD_PDF is fully compliant. Debug system and PWA have partial implementations with many gaps. No theming or burger menu — hardcoded slate colors.
+
+#### CLAUDE.md — Align with glow-props
+
+1. [ ] **Fetch latest CLAUDE.md** — `curl -sf "https://devmade-ai.github.io/glow-props/CLAUDE.md"` and update the repo's CLAUDE.md to match.
+2. [ ] **Remove local implementation patterns** — Delete any `docs/implementations/` folder or local copies of pattern files. All patterns are fetched from glow-props at implementation time.
+3. [ ] **Remove hardcoded pattern list** — If the repo's CLAUDE.md contains a "Suggested Implementations" table or hardcoded list of patterns, replace it with the "Implementation Patterns (Source of Truth)" section from glow-props CLAUDE.md.
+4. **Confirm:** Repo's CLAUDE.md references glow-props as the single source of truth for patterns. No local `docs/implementations/` folder exists.
 
 #### APP_ICONS — Partial → Complete
 
@@ -530,6 +579,13 @@ Hardcoded slate color scheme only. Ground-up implementation.
 
 React + Vite graph editor. Strong foundation — APP_ICONS, THEME_DARK_MODE, and EVENT_BUS (origin repo) are compliant or near-compliant. Focus areas: debug system hardening, PWA update reliability, and evaluating burger menu need.
 
+#### CLAUDE.md — Align with glow-props
+
+1. [ ] **Fetch latest CLAUDE.md** — `curl -sf "https://devmade-ai.github.io/glow-props/CLAUDE.md"` and update the repo's CLAUDE.md to match.
+2. [ ] **Remove local implementation patterns** — Delete any `docs/implementations/` folder or local copies of pattern files. All patterns are fetched from glow-props at implementation time.
+3. [ ] **Remove hardcoded pattern list** — If the repo's CLAUDE.md contains a "Suggested Implementations" table or hardcoded list of patterns, replace it with the "Implementation Patterns (Source of Truth)" section from glow-props CLAUDE.md.
+4. **Confirm:** Repo's CLAUDE.md references glow-props as the single source of truth for patterns. No local `docs/implementations/` folder exists.
+
 #### BURGER_MENU — Evaluate if needed
 
 Reference: `docs/implementations/BURGER_MENU.md`
@@ -581,6 +637,13 @@ graphiki is the origin repo for this pattern. Core is compliant (catch-all, erro
 ### four-ems
 
 React + Vite app. Has partial APP_ICONS, DEBUG_SYSTEM, DOWNLOAD_PDF, and PWA. Missing BURGER_MENU, THEME_DARK_MODE, and EVENT_BUS entirely.
+
+#### CLAUDE.md — Align with glow-props
+
+1. [ ] **Fetch latest CLAUDE.md** — `curl -sf "https://devmade-ai.github.io/glow-props/CLAUDE.md"` and update the repo's CLAUDE.md to match.
+2. [ ] **Remove local implementation patterns** — Delete any `docs/implementations/` folder or local copies of pattern files. All patterns are fetched from glow-props at implementation time.
+3. [ ] **Remove hardcoded pattern list** — If the repo's CLAUDE.md contains a "Suggested Implementations" table or hardcoded list of patterns, replace it with the "Implementation Patterns (Source of Truth)" section from glow-props CLAUDE.md.
+4. **Confirm:** Repo's CLAUDE.md references glow-props as the single source of truth for patterns. No local `docs/implementations/` folder exists.
 
 #### APP_ICONS — Partial → Complete
 
@@ -653,6 +716,13 @@ No theming currently. Ground-up implementation.
 ### synctone
 
 React Native (Expo) chat app. Uses Metro bundler and Uniwind for theming. Has Zustand stores for state. Custom SW approach is correct for Expo. Theming exists via Uniwind but doesn't follow the DaisyUI dual-layer spec.
+
+#### CLAUDE.md — Align with glow-props
+
+1. [ ] **Fetch latest CLAUDE.md** — `curl -sf "https://devmade-ai.github.io/glow-props/CLAUDE.md"` and update the repo's CLAUDE.md to match.
+2. [ ] **Remove local implementation patterns** — Delete any `docs/implementations/` folder or local copies of pattern files. All patterns are fetched from glow-props at implementation time.
+3. [ ] **Remove hardcoded pattern list** — If the repo's CLAUDE.md contains a "Suggested Implementations" table or hardcoded list of patterns, replace it with the "Implementation Patterns (Source of Truth)" section from glow-props CLAUDE.md.
+4. **Confirm:** Repo's CLAUDE.md references glow-props as the single source of truth for patterns. No local `docs/implementations/` folder exists.
 
 #### APP_ICONS — Partial → Complete
 
@@ -729,13 +799,14 @@ synctone uses Uniwind's `setTheme()` with `classList.add()` — not the DaisyUI 
 
 These gaps appear in 6+ repos and represent the highest-leverage improvements:
 
-1. **EVENT_BUS** — Missing in 10/11 repos (only graphiki has partial). Most repos may not need it.
-2. **DEBUG_SYSTEM: console interception** — Missing in all repos that have debug systems (8/8)
-3. **DEBUG_SYSTEM: pre-React inline pill** — Missing in 7/8 repos (only repo-tor has it)
-4. **DEBUG_SYSTEM: inline styles** — Only repo-tor uses inline styles; all others use Tailwind/DaisyUI
-5. **DEBUG_SYSTEM: PWA Diagnostics tab** — Missing in all repos (0/8 have 3 tabs)
-6. **PWA_SYSTEM: visibility-based update checks** — Missing in 7/8 repos (only repo-tor has it)
-7. **PWA_SYSTEM: 30-second suppression** — Missing in 7/8 repos (only repo-tor has it)
-8. **PWA_SYSTEM: module singleton** — Missing in 6/8 repos (glow-props and repo-tor have it)
-9. **BURGER_MENU: focus hooks extraction** — Missing in all repos that have menus
-10. **THEME_DARK_MODE** — Missing in 5/11 repos (model-pear, see-veo, sun-sea-o, four-ems have no theming)
+1. **CLAUDE.md alignment** — Missing in 10/10 downstream repos. Must be done first — removes local pattern copies and ensures all repos fetch from glow-props source of truth.
+2. **EVENT_BUS** — Missing in 10/11 repos (only graphiki has partial). Most repos may not need it.
+3. **DEBUG_SYSTEM: console interception** — Missing in all repos that have debug systems (8/8)
+4. **DEBUG_SYSTEM: pre-React inline pill** — Missing in 7/8 repos (only repo-tor has it)
+5. **DEBUG_SYSTEM: inline styles** — Only repo-tor uses inline styles; all others use Tailwind/DaisyUI
+6. **DEBUG_SYSTEM: PWA Diagnostics tab** — Missing in all repos (0/8 have 3 tabs)
+7. **PWA_SYSTEM: visibility-based update checks** — Missing in 7/8 repos (only repo-tor has it)
+8. **PWA_SYSTEM: 30-second suppression** — Missing in 7/8 repos (only repo-tor has it)
+9. **PWA_SYSTEM: module singleton** — Missing in 6/8 repos (glow-props and repo-tor have it)
+10. **BURGER_MENU: focus hooks extraction** — Missing in all repos that have menus
+11. **THEME_DARK_MODE** — Missing in 5/11 repos (model-pear, see-veo, sun-sea-o, four-ems have no theming)
