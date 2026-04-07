@@ -26,8 +26,8 @@ Legend: **Pass** = compliant, **Partial** = has the feature but with gaps, **Mis
 
 | Repo | APP_ICONS | BURGER_MENU | DEBUG_SYSTEM | DOWNLOAD_PDF | PWA_SYSTEM | THEME_DARK_MODE | EVENT_BUS |
 |------|-----------|-------------|--------------|--------------|------------|-----------------|-----------|
-| glow-props | Pass | Pass | Missing (N/A) | Pass | Pass | Pass | Missing (N/A) |
-| canva-grid | Pass | Partial | Partial | Partial* | Partial | Pass | Missing |
+| glow-props | Partial | Pass | Missing (N/A) | Pass | Pass | Pass | Missing (N/A) |
+| canva-grid | Pass | Partial | Partial | Pass (B) | Partial | Pass | Missing |
 | budgy-ting | Partial | Partial | Partial | Partial | Partial | Missing | Missing |
 | model-pear | Missing | Missing | Missing | Partial | Missing | Missing | Missing |
 | see-veo | Partial | Missing | Partial | Partial | Partial | Missing | Missing |
@@ -38,11 +38,18 @@ Legend: **Pass** = compliant, **Partial** = has the feature but with gaps, **Mis
 | four-ems | Partial | Missing | Partial | Partial | Partial | Missing | Missing |
 | synctone | Partial | Missing | Partial | Missing | Partial | Partial | Missing |
 
-*canva-grid intentionally uses pdf-lib instead of window.print() (documented deviation — broken on mobile)
+**(B)** = Approach B (pdf-lib) per `docs/implementations/DOWNLOAD_PDF.md` — correct choice for canvas-heavy content
 
 ### glow-props
 
 This is the reference docs repo (vanilla JS portfolio). Most patterns are fully compliant. Two patterns are documented but not implemented — evaluate if they're warranted for a static portfolio site.
+
+#### APP_ICONS — Partial (missing 180px)
+
+Reference: `docs/implementations/APP_ICONS.md`
+
+1. [ ] **Add 180px Apple touch icon** — Add `{ name: 'apple-touch-icon.png', size: 180 }` to `scripts/generate-icons.mjs`. Add `<link rel="apple-touch-icon" href="/assets/images/apple-touch-icon.png">` to `partials/head-common.html`.
+2. **Confirm:** Run `node scripts/generate-icons.mjs`, verify 180px PNG is generated. Test on iOS home screen.
 
 #### DEBUG_SYSTEM — Evaluate if needed
 
@@ -87,9 +94,9 @@ Reference: `docs/implementations/DEBUG_SYSTEM.md`
 10. [ ] **Add embed mode skip** — Skip pill when `?embed=` is in the URL.
 11. **Confirm:** Open app, verify pill appears in bottom corner, check all 3 tabs render, crash the app (throw in a component) and verify pill survives, copy report and check URL is redacted.
 
-#### DOWNLOAD_PDF — Intentional deviation
+#### DOWNLOAD_PDF — Compliant (Approach B: pdf-lib)
 
-- **No action needed.** canva-grid intentionally uses pdf-lib instead of `window.print()` because print-to-PDF is broken on mobile browsers for canvas-heavy content. This is a documented, justified deviation.
+- **No action needed.** canva-grid uses pdf-lib (Approach B in `docs/implementations/DOWNLOAD_PDF.md`) — the correct choice for canvas-heavy content where `window.print()` can't reliably capture visual output. Implementation includes html-to-image capture, quality selection (1x/2x/3x), and multi-page support.
 
 #### PWA_SYSTEM — Partial → Complete
 
@@ -194,7 +201,7 @@ Reference: `docs/implementations/BURGER_MENU.md`
 3. [ ] **Add keyboard navigation** — `useEscapeKey` to close, `ArrowDown`/`ArrowUp`/`Home`/`End` within items.
 4. [ ] **Add focus management** — Focus first item on open, return to trigger on close.
 5. [ ] **Add backdrop** — Click-outside overlay with `cursor-pointer` (iOS Safari needs this).
-6. [ ] **Add standard menu items** — Tutorial/help, dark mode toggle, install app (once PWA is added).
+6. [ ] **Add standard menu items** — Tutorial/help, dark mode toggle, install app (once PWA is added). See pattern's [Theme UI in Burger Menu](../implementations/BURGER_MENU.md#theme-ui-in-burger-menu) for toggle item spec (sun/moon icons, label flips) and theme picker layout.
 7. **Confirm:** Keyboard-only navigation through entire menu. Verify 44px touch targets on mobile. Verify Escape and backdrop close.
 
 #### DEBUG_SYSTEM — Missing → Implement
@@ -235,7 +242,7 @@ model-pear is dark-only with no DaisyUI. This is a ground-up implementation, not
 1. [ ] **Install DaisyUI** — `npm install -D daisyui@5`. Configure `@plugin "daisyui"` with 2 starter themes.
 2. [ ] **Add dual-layer theming** — `@custom-variant dark`, `color-scheme`, flash prevention inline script in `app.html`.
 3. [ ] **Create theme module** — `applyTheme(dark, themeName, skipPersist)`, persistence (pick Approach A or B), cross-tab sync via `storage` event, OS preference fallback.
-4. [ ] **Add dark/light toggle** — In burger menu (once built). `aria-label` that updates with state.
+4. [ ] **Add dark/light toggle + theme picker** — In burger menu (once built). Follow [Theme UI in Burger Menu](../implementations/BURGER_MENU.md#theme-ui-in-burger-menu) for toggle item (sun/moon icons, label flips), theme picker layout (scrollable list for Approach A, combo buttons for Approach B), and `aria-label` that updates with state.
 5. [ ] **Add `<meta name="theme-color">`** — Two tags with media queries in `app.html`. Dynamic updates in theme module.
 6. [ ] **Migrate existing styles** — Replace hardcoded dark colors with DaisyUI semantic classes (`bg-base-100`, `text-base-content`, etc.). Follow Phase 1-3 of the migration guide for the audit and mapping process.
 7. **Confirm:** Toggle dark/light. Open two tabs, toggle in one — other follows. Clear localStorage — falls back to OS preference. Check meta theme-color updates in DevTools.
@@ -445,9 +452,10 @@ React + Vite app. DOWNLOAD_PDF is fully compliant. Debug system and PWA have par
 Reference: `docs/implementations/APP_ICONS.md`
 
 1. [ ] **Add 400 DPI density** — In `generate-icons.mjs`, change `sharp(svgBuffer).resize()` to `sharp(svgBuffer, { density: 400 }).resize()`.
-2. [ ] **Add 180px Apple touch icon** — Add to generation script output list. Add `<link rel="apple-touch-icon">` to `index.html`.
-3. [ ] **Optional: Add favicon.ico** — For Windows taskbar pinning and older browsers. See pattern's ICO generation section.
-4. **Confirm:** Regenerate all PNGs, verify 180px is crisp. Check Apple touch icon on iOS.
+2. [ ] **Fix maskable icon size** — Currently generates maskable at 512px (`pwa-maskable-512x512.png`). Pattern requires 1024px for high-DPI Android devices. Add a 1024px maskable output and update manifest `purpose` values.
+3. [ ] **Add 180px Apple touch icon** — Add to generation script output list. Add `<link rel="apple-touch-icon">` to `index.html`.
+4. [ ] **Optional: Add favicon.ico** — For Windows taskbar pinning and older browsers. See pattern's ICO generation section.
+5. **Confirm:** Regenerate all PNGs, verify 180px and 1024px maskable are crisp. Check manifest has `"purpose": "maskable"` on 1024.
 
 #### BURGER_MENU — Missing → Implement
 
@@ -456,7 +464,7 @@ Reference: `docs/implementations/BURGER_MENU.md`
 1. [ ] **Create BurgerMenu component** — Disclosure pattern with `aria-expanded`, `aria-controls`, backdrop with `cursor-pointer`.
 2. [ ] **Add focus hooks** — `useDisclosureFocus`, `useEscapeKey`. Extract as reusable hooks.
 3. [ ] **Add keyboard navigation** — ArrowDown/ArrowUp with wrapping, Home/End.
-4. [ ] **Add standard menu items** — Dark mode toggle (once theming is added), app info, install app.
+4. [ ] **Add standard menu items** — Dark mode toggle (once theming is added), app info, install app. See pattern's [Theme UI in Burger Menu](../implementations/BURGER_MENU.md#theme-ui-in-burger-menu) for toggle and picker spec.
 5. [ ] **Fix z-index** — Debug pill currently uses `z-[9999]`. Normalize to standard scale (debug=`z-[80]`).
 6. **Confirm:** Full keyboard navigation. Escape closes. Backdrop click closes. 44px touch targets. Debug pill renders above menu.
 
@@ -505,7 +513,7 @@ Hardcoded slate color scheme only. Ground-up implementation.
 1. [ ] **Install DaisyUI** — `npm install -D daisyui@5`. Configure with 2 themes.
 2. [ ] **Add dual-layer theming** — `@custom-variant dark`, `color-scheme`, flash prevention script.
 3. [ ] **Create theme module** — `applyTheme`, persistence (Approach A or B), cross-tab sync, OS preference fallback.
-4. [ ] **Add dark/light toggle** — In burger menu (once built).
+4. [ ] **Add dark/light toggle + theme picker** — In burger menu (once built). Follow [Theme UI in Burger Menu](../implementations/BURGER_MENU.md#theme-ui-in-burger-menu) for toggle and picker spec.
 5. [ ] **Add `<meta name="theme-color">`** — Dynamic updates per theme.
 6. [ ] **Migrate hardcoded slate colors** — Replace with DaisyUI semantic classes. Follow migration guide Phase 1-3.
 7. **Confirm:** Toggle dark/light. Cross-tab sync. Fresh visit falls back to OS preference.
@@ -544,9 +552,9 @@ graphiki's debug system has `#debug-root` (compliant) and clipboard fallbacks (c
 
 Reference: `docs/implementations/DOWNLOAD_PDF.md`
 
-1. [ ] **Decide:** Does a graph editor benefit from print-to-PDF? If users need to export graph views as documents, this is useful. If graph export is handled differently (e.g., SVG/PNG export), skip.
-2. If implementing: Add `@media print` CSS, `.no-print` class, `print-color-adjust: exact`, and a `window.print()` trigger.
-3. **Confirm:** Print preview shows clean graph output.
+1. [ ] **Decide:** Does a graph editor benefit from PDF export? If users need to export graph views as documents, this is useful. If graph export is handled differently (e.g., SVG/PNG export), skip.
+2. If implementing: **Use Approach B (pdf-lib)** — graph views are canvas/visual content that `window.print()` can't reliably capture. Follow the pdf-lib section: `npm install pdf-lib html-to-image`, capture graph DOM via `toPng()`, compose into PDF pages.
+3. **Confirm:** Export produces a clean PDF with the graph rendered at chosen quality level.
 
 #### PWA_SYSTEM — Partial → Complete
 
@@ -585,7 +593,7 @@ Reference: `docs/implementations/BURGER_MENU.md`
 1. [ ] **Create BurgerMenu component** — Disclosure pattern with `aria-expanded`, `aria-controls`, backdrop.
 2. [ ] **Add focus hooks** — `useDisclosureFocus`, `useEscapeKey`. Extract as reusable hooks.
 3. [ ] **Add keyboard navigation** — ArrowDown/ArrowUp with wrapping, Home/End.
-4. [ ] **Add standard menu items** — Tutorial/help, dark mode toggle (once theming added), check for updates, install app.
+4. [ ] **Add standard menu items** — Tutorial/help, dark mode toggle (once theming added), check for updates, install app. See pattern's [Theme UI in Burger Menu](../implementations/BURGER_MENU.md#theme-ui-in-burger-menu) for toggle and picker spec.
 5. **Confirm:** Full keyboard navigation. Escape and backdrop close. 44px touch targets.
 
 #### DEBUG_SYSTEM — Partial → Complete
@@ -629,7 +637,7 @@ No theming currently. Ground-up implementation.
 1. [ ] **Install DaisyUI** — `npm install -D daisyui@5`. Configure with 2 themes.
 2. [ ] **Add dual-layer theming** — `@custom-variant dark`, `color-scheme`, flash prevention script in `index.html`.
 3. [ ] **Create theme hook** — `applyTheme`, persistence (Approach A or B), cross-tab sync, OS preference fallback.
-4. [ ] **Add dark/light toggle** — In burger menu (once built).
+4. [ ] **Add dark/light toggle + theme picker** — In burger menu (once built). Follow [Theme UI in Burger Menu](../implementations/BURGER_MENU.md#theme-ui-in-burger-menu) for toggle and picker spec.
 5. [ ] **Add `<meta name="theme-color">`** — Dynamic updates per theme.
 6. [ ] **Migrate existing plain colors** — Replace Tailwind color classes with DaisyUI semantic tokens. Follow migration guide Phase 1-3.
 7. **Confirm:** Toggle dark/light. Cross-tab sync. Fresh visit falls back to OS preference.
