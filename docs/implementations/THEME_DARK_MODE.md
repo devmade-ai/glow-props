@@ -2,6 +2,12 @@
 
 User-controlled dark/light mode with DaisyUI theme selection, system preference fallback, persistence, flash prevention, and cross-tab sync.
 
+**Related patterns:**
+- [BURGER_MENU.md](BURGER_MENU.md) — Dark/light toggle and theme picker UI spec (see [Theme UI in Burger Menu](BURGER_MENU.md#theme-ui-in-burger-menu))
+- [PWA_SYSTEM.md](PWA_SYSTEM.md) — Manifest `theme_color` and dynamic `<meta name="theme-color">` must match active theme
+- [DEBUG_SYSTEM.md](DEBUG_SYSTEM.md) — Debug pill in separate React root reads `.dark` class directly from DOM (no shared context)
+- [DOWNLOAD_PDF.md](DOWNLOAD_PDF.md) — Print CSS forces white bg / black text regardless of dark mode (see [Print Override](#print-override))
+
 Project variants demonstrating this pattern:
 - **glow-props**: Vanilla HTML/CSS/JS + Vite, full 35-theme catalog, per-mode independent selection (3 keys: `darkMode`, `lightTheme`, `darkTheme`)
 - **canva-grid**: React + Vite, combo-based selection with curated presets (2 keys: `darkMode`, `themeCombo`)
@@ -74,9 +80,246 @@ function applyTheme(dark, themeName, skipPersist) {
 
 The `skipPersist` parameter is used by the cross-tab sync handler — the values already came from another tab's localStorage write, so writing them back is redundant.
 
+## Migration Guide: Custom CSS Variables → DaisyUI
+
+For repos currently using custom `:root`/`.dark` CSS variables (repo-tor, budgy-ting, sun-sea-o, four-ems) or no theming at all (model-pear, see-veo). This section walks through migrating to the DaisyUI dual-layer architecture described above.
+
+### Phase 0: Prerequisites
+
+**Install DaisyUI and configure the plugin:**
+
+```bash
+npm install -D daisyui@5
+# Vite projects also need the Tailwind v4 Vite plugin:
+npm install -D @tailwindcss/vite
+```
+
+Add `@tailwindcss/vite` to `vite.config.js` plugins if not already present.
+
+**Tailwind v4 CSS setup** (replace existing theme config):
+
+```css
+@import "tailwindcss";
+
+@plugin "daisyui" {
+  themes: lofi --default, black --prefersdark;
+  /* Start with 2 themes. Add more after migration is stable. */
+}
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+@layer base {
+  html { color-scheme: light; }
+  html.dark { color-scheme: dark; }
+}
+```
+
+If migrating from **Tailwind v3**, the `darkMode: 'class'` option in `tailwind.config.js` is replaced by the `@custom-variant dark` line above. The config file itself may become unnecessary — Tailwind v4 uses CSS-first configuration.
+
+**Extract safe localStorage wrappers** into `src/utils/safeStorage.ts` (see [Safe localStorage Wrappers](#safe-localstorage-wrappers) section). The flash prevention script, theme hook, and other consumers all need these.
+
+**Add the flash prevention inline script** to `index.html` `<head>` (see [Flash Prevention](#flash-prevention) section below for the full script). This must be in place before removing custom variables, otherwise the first paint will flash.
+
+**Incremental migration is possible.** DaisyUI semantic classes and custom CSS variables can coexist during transition. You don't need a big-bang swap — migrate component by component, verifying each. DaisyUI's `data-theme` won't interfere with existing `var(--color-*)` references until you remove the variable definitions.
+
+> **React Native / Expo projects** (few-lap, synctone): This migration guide assumes web + Vite. Expo projects use Uniwind's `setTheme()` with `@variant` blocks in CSS instead of `data-theme`. The audit and mapping steps still apply, but the mechanism differs — see the [Uniwind Theme Switching](#uniwind-theme-switching-react-native) and [Zustand Store Pattern](#zustand-store-pattern-react-native) sections for the target architecture.
+
+### Phase 1: Audit — Find What Needs to Change
+
+Run these searches against your TSX/JSX component files to build a migration worklist. Skip CSS files with intentional custom styling (canvas renderers, chart themes, animation keyframes) — those are valid exceptions.
+
+#### 1a. Hardcoded colors
+
+Search for hex/rgb values in component files. Note: ripgrep doesn't have built-in `tsx`/`jsx` types — use `-g` glob patterns instead.
+
+```bash
+# Hex colors in TSX/JSX (skip CSS files, skip SVG icon paths)
+rg '#[0-9a-fA-F]{3,8}' -g '*.tsx' -g '*.jsx' -g '!*.css'
+
+# RGB/RGBA values
+rg 'rgb\(|rgba\(' -g '*.tsx' -g '*.jsx'
+
+# Tailwind arbitrary color values
+rg '\[#[0-9a-fA-F]' -g '*.tsx' -g '*.jsx'
+```
+
+Each hit is a candidate for a DaisyUI semantic token. Not all need to change — SVG icon fill colors, chart data colors, and brand colors may stay hardcoded.
+
+#### 1b. Custom CSS variable references
+
+```bash
+# Direct var() usage that should become DaisyUI classes
+rg 'var\(--color-' -g '*.tsx' -g '*.jsx' -g '*.css'
+
+# Custom dark mode overrides that DaisyUI handles automatically
+# Catches all dark: variants (dark:hover:, dark:focus:, dark:placeholder:, etc.)
+rg 'dark:' -g '*.tsx' -g '*.jsx'
+```
+
+#### 1c. Raw Tailwind where DaisyUI components exist
+
+```bash
+# Buttons using raw Tailwind instead of btn classes
+rg 'className=.*bg-(blue|green|red|gray|zinc|slate)-[0-9].*onClick' -g '*.tsx'
+
+# Inputs without DaisyUI input class
+rg '<input' -g '*.tsx' | rg -v 'input input-'
+
+# Badges/tags using raw bg + rounded + text-xs instead of badge class
+rg 'rounded-full.*text-xs|text-xs.*rounded-full' -g '*.tsx'
+```
+
+#### 1d. Z-index values outside the scale
+
+```bash
+# Find all z-index usage
+rg 'z-\[|z-[0-9]' -g '*.tsx' -g '*.jsx' -g '*.css'
+```
+
+Standard scale: backdrop=40, menu=50, modal=60, toast=70, debug=80. Flag anything outside this range (e.g., `z-[9999]`, `z-[1000]`).
+
+#### 1e. Custom overlay/backdrop implementations
+
+```bash
+# Fixed/absolute overlays that should use DaisyUI modal or drawer
+rg 'fixed inset-0|absolute inset-0' -g '*.tsx' | rg -i 'overlay\|backdrop\|modal'
+```
+
+### Phase 2: CSS Variable Removal
+
+Remove custom `:root`/`.dark` variable definitions and replace references with DaisyUI semantic classes.
+
+**Common mappings from custom variables to DaisyUI:**
+
+| Custom Variable | DaisyUI Replacement | Notes |
+|----------------|---------------------|-------|
+| `--color-bg`, `--color-surface` | `bg-base-100`, `bg-base-200`, `bg-base-300` | Three surface levels for depth |
+| `--color-text`, `--color-text-default` | `text-base-content` | Auto-contrasts with bg |
+| `--color-text-muted`, `--color-text-secondary` | `text-base-content/60` | Opacity modifier for secondary text |
+| `--color-primary` | `text-primary`, `bg-primary` | DaisyUI provides matching `primary-content` |
+| `--color-border`, `--color-divider` | `border-base-300` or `border-base-content/20` | — |
+| `--color-error`, `--color-danger` | `text-error`, `bg-error` | Also `error-content` for text on error bg |
+| `--color-success` | `text-success`, `bg-success` | — |
+| `--color-warning` | `text-warning`, `bg-warning` | — |
+| `--color-hover` | `hover:bg-base-200` or `hover:bg-base-content/10` | — |
+
+**Common mappings from raw Tailwind to DaisyUI components:**
+
+| Raw Tailwind | DaisyUI Class | Notes |
+|-------------|---------------|-------|
+| `bg-blue-600 text-white px-4 py-2 rounded` | `btn btn-primary` | Includes hover, focus, active states |
+| `bg-gray-100 dark:bg-gray-800` | `bg-base-200` | Auto-switches with theme |
+| `text-gray-900 dark:text-white` | `text-base-content` | Auto-switches with theme |
+| `text-gray-500 dark:text-gray-400` | `text-base-content/60` | Opacity modifier |
+| `border border-gray-200 dark:border-gray-700` | `border border-base-300` | Auto-switches |
+| `bg-red-100 text-red-800 rounded px-2 text-sm` | `badge badge-error` | Or `alert alert-error` for blocks |
+| `bg-green-100 text-green-800 rounded-full px-2 text-xs` | `badge badge-success` | — |
+| `rounded-lg border p-4 shadow` | `card bg-base-100 shadow` | Use `card-body` for padding |
+| `px-4 py-2 border rounded` (secondary button) | `btn btn-outline` or `btn btn-ghost` | — |
+| `text-red-600 hover:text-red-800` (cancel) | `btn btn-ghost text-error` | Destructive action styling |
+
+**The key win:** Every `dark:` prefix paired with a light-mode class is a candidate for replacement with a single DaisyUI semantic class. `bg-white dark:bg-gray-900` → `bg-base-100`. This eliminates entire categories of dark mode bugs.
+
+**Important: colors will change.** DaisyUI semantic tokens (`primary`, `base-100`, etc.) resolve to the active DaisyUI theme's palette — NOT your old custom variable values. Switching from `--color-primary: #2D68FF` to DaisyUI's `text-primary` means the actual rendered color depends on which DaisyUI theme is active. This is intentional (themes should control colors), but review the visual result for each theme you register.
+
+**Component classes change more than color.** Replacing raw Tailwind with DaisyUI component classes (e.g., `btn btn-primary`) also changes padding, font-weight, height, border-radius, and interactive states (hover, focus, active, disabled). These aren't drop-in color swaps — visually compare before and after for each component type.
+
+#### Removal steps
+
+1. **Delete custom variable blocks** — Remove `:root { --color-bg: ...; }` and `.dark { --color-bg: ...; }` from your CSS
+2. **Find-and-replace `var()` references** — Each `var(--color-*)` in component styles becomes the matching DaisyUI class (see table above)
+3. **Collapse `dark:` pairs** — Search for `bg-white dark:bg-`, `text-gray-900 dark:text-`, etc. Replace each pair with the single DaisyUI equivalent
+4. **Remove orphaned `dark:` prefixes** — After collapsing pairs, any remaining standalone `dark:` classes on DaisyUI semantic tokens are unnecessary (DaisyUI handles the switching via `data-theme`)
+
+### Phase 3: Component Class Migration
+
+Replace custom-styled elements with DaisyUI component classes. Work through one component type at a time.
+
+**Priority order** (most impactful first):
+
+1. **Buttons** — Search for `<button` without `btn` class. Replace with `btn btn-primary`, `btn btn-ghost`, `btn btn-outline`, etc.
+2. **Form inputs** — Search for `<input`, `<select>`, `<textarea>` without DaisyUI classes. Add `input input-bordered`, `select select-bordered`, `textarea textarea-bordered`.
+3. **Badges/tags** — Search for small rounded colored labels. Replace with `badge badge-{variant}`.
+4. **Alerts/notifications** — Search for colored message blocks. Replace with `alert alert-{variant}`.
+5. **Cards/panels** — Search for bordered/shadowed containers. Replace with `card` + `card-body`.
+6. **Modals/overlays** — Search for custom fixed-position overlays. Consider DaisyUI `modal` or `drawer`.
+7. **Tabs** — Search for custom tab implementations. Consider DaisyUI `tabs` + `tab`.
+8. **Tooltips** — Search for custom hover-reveal elements. Consider DaisyUI `tooltip`.
+
+**What NOT to migrate:**
+
+- **CSS files explicitly marked as exceptions** — Canvas renderers, chart themes, map styles, animation keyframes. These operate outside DaisyUI's semantic system.
+- **SVG `fill`/`stroke` colors** — Icon colors that are part of the icon design, not the theme.
+- **Third-party library overrides** — Styles targeting library internals (CodeMirror, Mapbox, etc.) that don't use DaisyUI.
+- **Brand colors** — Logo colors, fixed brand elements that shouldn't change with theme.
+- **Data visualization colors** — Chart series colors, heatmap scales, status indicators with fixed meaning (red=error regardless of theme).
+
+### Phase 4: Z-Index Normalization
+
+Replace ad-hoc z-index values with the standard scale:
+
+| Layer | Z-Index | Usage |
+|-------|---------|-------|
+| Backdrop | `z-40` | Behind menus/modals, click-to-close overlay |
+| Menu/Dropdown | `z-50` | Burger menu, dropdowns, popovers |
+| Modal | `z-60` | Modal dialogs, drawers, full-screen overlays |
+| Toast | `z-70` | Toast notifications, update banners |
+| Debug | `z-80` | Debug pill (must be above everything) |
+
+Tailwind's default z-index scale only goes to `z-50`. Values above 50 require arbitrary values (`z-[60]`, `z-[70]`, `z-[80]`). Alternatively, define CSS custom properties or Tailwind utilities for the scale.
+
+Common fixes:
+- `z-[9999]` on debug pill → `z-[80]`
+- `z-[1000]` on modal → `z-[60]`
+- `z-100` on dropdown → `z-50`
+- Any `z-[1000]`+ values → map to the correct layer from the scale above
+
+### Phase 5: Verification
+
+After migration, verify with this checklist:
+
+1. **Toggle dark/light mode** — Every surface, text color, and border should switch. Look for:
+   - White text on white background (missed `dark:` removal)
+   - Dark text on dark background (missed variable replacement)
+   - Borders that disappear in one mode
+2. **Switch themes** (if using multiple) — DaisyUI components should update. Custom `dark:` classes should still work via `.dark` class.
+3. **Check all button states** — hover, focus, active, disabled. DaisyUI `btn` handles these automatically.
+4. **Check form inputs** — borders, focus rings, placeholder text, disabled state. Verify `color-scheme` makes native select dropdowns match.
+5. **Meta theme-color** — Open DevTools, switch themes, verify `<meta name="theme-color">` content attribute updates. On mobile, the PWA status bar should reflect the active theme.
+6. **Print preview** — `@media print` overrides should still force white bg + black text. See [Print Override](#print-override) section.
+7. **Mobile** — touch targets (44px min), safe area insets, scrollable theme pickers.
+8. **Cross-tab sync** — Open two tabs, toggle theme in one, verify the other follows.
+9. **Fresh visit** — Clear localStorage, reload. Should fall back to OS preference with default themes, no crash.
+10. **Accessibility** — Tab through interactive elements. Focus rings should be visible in both light and dark modes. Theme toggle button should have `aria-label` (e.g., "Switch to dark mode") that updates when toggled.
+
+### Phase 6: Cleanup
+
+1. **Delete old theme files** — Remove `theme.css`, `variables.css`, or equivalent custom variable definitions
+2. **Remove `tailwind.config.js`** if fully migrated to Tailwind v4 CSS-first config (DaisyUI v5 supports `@plugin` directive)
+3. **Remove unused `dark:` prefixes** — After collapsing pairs in Phase 2, scan for any remaining `dark:` on DaisyUI semantic tokens that are now redundant
+4. **Update flash prevention script** — Replace any custom variable reads with `data-theme` + `.dark` setting (see [Flash Prevention](#flash-prevention) section)
+5. **Update debug pill** — If using a separate React root, the pill reads `.dark` class directly from `document.documentElement` (no theme context sharing)
+6. **Clean up old localStorage keys** — If the old theme system used different key names (e.g., `theme`, `colorMode`, `dark-mode`), clear them on first load to avoid confusion. A one-time migration: read the old key, map it to the new schema (`darkMode`/`lightTheme`/`darkTheme` or `darkMode`/`themeCombo`), write the new keys, delete the old ones.
+
+### Migration Audit Prompt Template
+
+Use this prompt with an AI assistant to audit a codebase for remaining migration work. Adapt the file types and exception list to your project:
+
+> In the [project] codebase (src/), DaisyUI v5 is the CSS component framework. Find places where the code uses custom CSS/Tailwind utilities instead of proper DaisyUI component classes, or where DaisyUI classes are misused.
+>
+> Look for: (1) Custom overlay/backdrop → DaisyUI modal/drawer, (2) Custom button styling → btn classes, (3) Custom form input styling → input/select/textarea classes, (4) Custom badge/tag → badge class, (5) Custom alert/notification → alert class, (6) Custom tab styling → tab classes, (7) DaisyUI class misuse (e.g., "modal" without "modal-open"), (8) Custom tooltip implementations, (9) Custom card/panel → card class, (10) Hardcoded hex/rgb values → DaisyUI semantic tokens.
+>
+> Focus on TSX component files. Skip [list CSS files with intentional exceptions] since those are documented exceptions for features DaisyUI can't express.
+>
+> Report findings with file paths and line numbers.
+
+This prompt surfaces remaining custom patterns after an initial migration pass. Run it periodically to catch regressions.
+
 ## Theme Persistence — Two Approaches
 
 Choose one approach per project. Both use `darkMode` for the dark/light toggle. They differ in how the DaisyUI theme name is selected and stored.
+
+> **UI specification:** The dark/light toggle and theme picker UI components live inside the burger menu. See [BURGER_MENU.md — Theme UI in Burger Menu](BURGER_MENU.md#theme-ui-in-burger-menu) for the complete UI spec including toggle item, scrollable picker (Approach A), combo selector (Approach B), active theme indicator, and recommended menu item order.
 
 ### Approach A: Per-Mode Independent Selection (glow-props)
 

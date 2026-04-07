@@ -2,6 +2,9 @@
 
 Single SVG source file, Sharp converts to all needed PNG sizes at 400 DPI for crisp edges. One command regenerates everything.
 
+**Related patterns:**
+- [PWA_SYSTEM.md](PWA_SYSTEM.md) — Manifest references the generated 192, 512, and 1024 PNGs with `purpose` values (`any` vs `maskable`)
+
 **Dependencies:** `sharp` (devDependency)
 
 ```bash

@@ -2,6 +2,58 @@
 
 ## 2026-04-06
 
+### DOWNLOAD_PDF.md — expand to dual-approach pattern (window.print + pdf-lib)
+
+Rewrote DOWNLOAD_PDF.md from a window.print()-only doc to a dual-approach pattern covering both text-based and canvas/image-based PDF export.
+
+- **Decision guide**: text/documents → window.print(), canvas/images → pdf-lib, mixed → pdf-lib
+- **Approach A (window.print)**: Preserved existing content. Added "Limitations" section (mobile issues, canvas blindness, no silent download).
+- **Approach B (pdf-lib)**: Full implementation — html-to-image capture → pdf-lib composition → blob download. Quality levels (1x/2x/3x), ExportButton component, no-print filtering.
+- **Comparison table**: Side-by-side on deps, mobile, canvas, text searchability, file size, layout control
+- **Key Lessons**: 6 → 11 covering both approaches and their tradeoffs
+- Sourced from canva-grid's implementation with documented rejection reasons for jsPDF and window.print()
+
+### THEME_DARK_MODE.md — add migration guide from custom CSS variables to DaisyUI
+
+Added a comprehensive 6-phase migration guide between the "Dual-Layer Theming" and "Theme Persistence" sections. Covers the full journey from custom `:root`/`.dark` CSS variables to DaisyUI's dual-layer architecture.
+
+**Phase 0: Prerequisites** — DaisyUI install, Tailwind v4 plugin config, `@custom-variant dark` (replaces v3's `darkMode: 'class'`), flash prevention script placement.
+
+**Phase 1: Audit** — Search patterns for finding hardcoded colors (hex/rgb in TSX), custom CSS variable references, raw Tailwind where DaisyUI components exist, z-index values outside the standard scale, custom overlay/backdrop implementations.
+
+**Phase 2: CSS Variable Removal** — Mapping tables from custom variables (`--color-bg`, `--color-text`, etc.) to DaisyUI semantic classes (`bg-base-100`, `text-base-content`). Mapping table from raw Tailwind pairs (`bg-white dark:bg-gray-900`) to single DaisyUI tokens. Step-by-step removal process.
+
+**Phase 3: Component Class Migration** — Priority-ordered checklist (buttons → inputs → badges → alerts → cards → modals → tabs → tooltips). Explicit "what NOT to migrate" section covering CSS exception files, SVG fills, third-party overrides, brand colors, and data visualization colors.
+
+**Phase 4: Z-Index Normalization** — Standard scale (backdrop=40, menu=50, modal=60, toast=70, debug=80) with common fixes for ad-hoc values like `z-[9999]` and `z-[1000]`.
+
+**Phase 5: Verification** — 8-point checklist: dark/light toggle, theme switching, button states, form inputs, print preview, mobile, cross-tab sync, fresh visit.
+
+**Phase 6: Cleanup** — Delete old theme files, remove unused `dark:` prefixes, update flash prevention script, update debug pill.
+
+**Migration audit prompt template** — Reusable AI prompt (derived from graphiki's DaisyUI audit) for finding remaining custom patterns after initial migration. Covers 10 pattern categories with explicit exception handling.
+
+### Per-repo pattern gap audit — re-audit against updated pattern docs
+
+Re-audited all 11 app repos against the 8 updated implementation pattern docs (which were significantly expanded in the previous session). Generated a full gap matrix and persisted per-repo implementation gaps to TODO.md.
+
+**Repos audited:** glow-props, canva-grid, budgy-ting, model-pear, see-veo, repo-tor, few-lap, sun-sea-o, graphiki, four-ems, synctone
+
+**Top 10 cross-cutting gaps (6+ repos each):**
+1. EVENT_BUS missing in 10/11 repos
+2. DEBUG_SYSTEM: console interception missing in all 8 repos with debug systems
+3. DEBUG_SYSTEM: pre-React inline pill missing in 7/8 repos
+4. DEBUG_SYSTEM: inline styles (not Tailwind) missing in 7/8 repos
+5. DEBUG_SYSTEM: PWA Diagnostics tab missing in all 8 repos
+6. PWA_SYSTEM: visibility-based update checks missing in 7/8 repos
+7. PWA_SYSTEM: 30-second suppression missing in 7/8 repos
+8. PWA_SYSTEM: module singleton missing in 6/8 repos
+9. BURGER_MENU: focus hooks extraction missing in all repos with menus
+10. THEME_DARK_MODE entirely missing in 5/11 repos
+
+**Most compliant:** glow-props (5/7 pass), repo-tor (2 pass + 3 partial), graphiki (3 pass + 3 partial)
+**Least compliant:** model-pear (5/7 missing), sun-sea-o (3/7 missing)
+
 ### Cross-repo pattern audit — backport field improvements into reference docs
 
 Audited all 12 active devmade-ai repos for implementation of the 7 suggested patterns. Identified ~70 improvements from field implementations and backported them into the reference pattern docs.

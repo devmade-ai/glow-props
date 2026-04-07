@@ -2,6 +2,12 @@
 
 Four parts, built on `vite-plugin-pwa` (^1.2.0) with React. Adapt patterns for other frameworks (glow-props uses vanilla JS).
 
+**Related patterns:**
+- [APP_ICONS.md](APP_ICONS.md) — Generates the icon PNGs (192, 512, 1024) referenced in the manifest
+- [BURGER_MENU.md](BURGER_MENU.md) — "Check for updates" and "Install app" are standard menu items
+- [THEME_DARK_MODE.md](THEME_DARK_MODE.md) — Manifest `theme_color` and dynamic `<meta name="theme-color">` must match the active theme
+- [DEBUG_SYSTEM.md](DEBUG_SYSTEM.md) — PWA Diagnostics tab in the debug pill runs active health checks against SW state, manifest, and install prompt
+
 **React dependency note:** React projects using `virtual:pwa-register/react` require `workbox-window` as a dev dependency: `npm install -D workbox-window`. Add `/// <reference types="vite-plugin-pwa/react" />` to your type declarations.
 
 ## Vite Config (`vite.config.ts`)
