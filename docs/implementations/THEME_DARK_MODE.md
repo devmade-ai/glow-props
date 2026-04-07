@@ -146,8 +146,8 @@ Each hit is a candidate for a DaisyUI semantic token. Not all need to change —
 rg 'var\(--color-' -g '*.tsx' -g '*.jsx' -g '*.css'
 
 # Custom dark mode overrides that DaisyUI handles automatically
-# Includes hover, focus, placeholder, and other state variants
-rg 'dark:|dark:hover:|dark:focus:|dark:placeholder:' -g '*.tsx' -g '*.jsx'
+# Catches all dark: variants (dark:hover:, dark:focus:, dark:placeholder:, etc.)
+rg 'dark:' -g '*.tsx' -g '*.jsx'
 ```
 
 #### 1c. Raw Tailwind where DaisyUI components exist
@@ -213,6 +213,10 @@ Remove custom `:root`/`.dark` variable definitions and replace references with D
 | `text-red-600 hover:text-red-800` (cancel) | `btn btn-ghost text-error` | Destructive action styling |
 
 **The key win:** Every `dark:` prefix paired with a light-mode class is a candidate for replacement with a single DaisyUI semantic class. `bg-white dark:bg-gray-900` → `bg-base-100`. This eliminates entire categories of dark mode bugs.
+
+**Important: colors will change.** DaisyUI semantic tokens (`primary`, `base-100`, etc.) resolve to the active DaisyUI theme's palette — NOT your old custom variable values. Switching from `--color-primary: #2D68FF` to DaisyUI's `text-primary` means the actual rendered color depends on which DaisyUI theme is active. This is intentional (themes should control colors), but review the visual result for each theme you register.
+
+**Component classes change more than color.** Replacing raw Tailwind with DaisyUI component classes (e.g., `btn btn-primary`) also changes padding, font-weight, height, border-radius, and interactive states (hover, focus, active, disabled). These aren't drop-in color swaps — visually compare before and after for each component type.
 
 #### Removal steps
 
@@ -280,7 +284,7 @@ After migration, verify with this checklist:
 7. **Mobile** — touch targets (44px min), safe area insets, scrollable theme pickers.
 8. **Cross-tab sync** — Open two tabs, toggle theme in one, verify the other follows.
 9. **Fresh visit** — Clear localStorage, reload. Should fall back to OS preference with default themes, no crash.
-10. **Accessibility** — Tab through interactive elements. Focus rings should be visible in both light and dark modes. Screen reader should announce theme toggle state.
+10. **Accessibility** — Tab through interactive elements. Focus rings should be visible in both light and dark modes. Theme toggle button should have `aria-label` (e.g., "Switch to dark mode") that updates when toggled.
 
 ### Phase 6: Cleanup
 
@@ -289,6 +293,7 @@ After migration, verify with this checklist:
 3. **Remove unused `dark:` prefixes** — After collapsing pairs in Phase 2, scan for any remaining `dark:` on DaisyUI semantic tokens that are now redundant
 4. **Update flash prevention script** — Replace any custom variable reads with `data-theme` + `.dark` setting (see [Flash Prevention](#flash-prevention) section)
 5. **Update debug pill** — If using a separate React root, the pill reads `.dark` class directly from `document.documentElement` (no theme context sharing)
+6. **Clean up old localStorage keys** — If the old theme system used different key names (e.g., `theme`, `colorMode`, `dark-mode`), clear them on first load to avoid confusion. A one-time migration: read the old key, map it to the new schema (`darkMode`/`lightTheme`/`darkTheme` or `darkMode`/`themeCombo`), write the new keys, delete the old ones.
 
 ### Migration Audit Prompt Template
 
@@ -299,6 +304,8 @@ Use this prompt with an AI assistant to audit a codebase for remaining migration
 > Look for: (1) Custom overlay/backdrop → DaisyUI modal/drawer, (2) Custom button styling → btn classes, (3) Custom form input styling → input/select/textarea classes, (4) Custom badge/tag → badge class, (5) Custom alert/notification → alert class, (6) Custom tab styling → tab classes, (7) DaisyUI class misuse (e.g., "modal" without "modal-open"), (8) Custom tooltip implementations, (9) Custom card/panel → card class, (10) Hardcoded hex/rgb values → DaisyUI semantic tokens.
 >
 > Focus on TSX component files. Skip [list CSS files with intentional exceptions] since those are documented exceptions for features DaisyUI can't express.
+>
+> Report findings with file paths and line numbers.
 
 This prompt surfaces remaining custom patterns after an initial migration pass. Run it periodically to catch regressions.
 
