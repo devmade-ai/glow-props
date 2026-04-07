@@ -2,6 +2,26 @@
 
 ## 2026-04-06
 
+### THEME_DARK_MODE.md — add migration guide from custom CSS variables to DaisyUI
+
+Added a comprehensive 6-phase migration guide between the "Dual-Layer Theming" and "Theme Persistence" sections. Covers the full journey from custom `:root`/`.dark` CSS variables to DaisyUI's dual-layer architecture.
+
+**Phase 0: Prerequisites** — DaisyUI install, Tailwind v4 plugin config, `@custom-variant dark` (replaces v3's `darkMode: 'class'`), flash prevention script placement.
+
+**Phase 1: Audit** — Search patterns for finding hardcoded colors (hex/rgb in TSX), custom CSS variable references, raw Tailwind where DaisyUI components exist, z-index values outside the standard scale, custom overlay/backdrop implementations.
+
+**Phase 2: CSS Variable Removal** — Mapping tables from custom variables (`--color-bg`, `--color-text`, etc.) to DaisyUI semantic classes (`bg-base-100`, `text-base-content`). Mapping table from raw Tailwind pairs (`bg-white dark:bg-gray-900`) to single DaisyUI tokens. Step-by-step removal process.
+
+**Phase 3: Component Class Migration** — Priority-ordered checklist (buttons → inputs → badges → alerts → cards → modals → tabs → tooltips). Explicit "what NOT to migrate" section covering CSS exception files, SVG fills, third-party overrides, brand colors, and data visualization colors.
+
+**Phase 4: Z-Index Normalization** — Standard scale (backdrop=40, menu=50, modal=60, toast=70, debug=80) with common fixes for ad-hoc values like `z-[9999]` and `z-[1000]`.
+
+**Phase 5: Verification** — 8-point checklist: dark/light toggle, theme switching, button states, form inputs, print preview, mobile, cross-tab sync, fresh visit.
+
+**Phase 6: Cleanup** — Delete old theme files, remove unused `dark:` prefixes, update flash prevention script, update debug pill.
+
+**Migration audit prompt template** — Reusable AI prompt (derived from graphiki's DaisyUI audit) for finding remaining custom patterns after initial migration. Covers 10 pattern categories with explicit exception handling.
+
 ### Per-repo pattern gap audit — re-audit against updated pattern docs
 
 Re-audited all 11 app repos against the 8 updated implementation pattern docs (which were significantly expanded in the previous session). Generated a full gap matrix and persisted per-repo implementation gaps to TODO.md.
