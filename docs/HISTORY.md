@@ -1,5 +1,14 @@
 # History
 
+## 2026-04-08
+
+### glow-props — resolve all pattern implementation gaps
+
+- **APP_ICONS**: Added 180px Apple touch icon (`apple-touch-icon.png`) to `scripts/generate-icons.mjs`. Updated `<link rel="apple-touch-icon">` in `index.html`, `pattern.html`, and `project.html` to reference the new 180px file instead of the 192px PWA icon.
+- **DEBUG_SYSTEM**: Marked N/A — static vanilla JS portfolio has no dynamic state, user input, or API calls. Only failure mode is build/deploy.
+- **EVENT_BUS**: Marked N/A — no service-layer pub/sub needs for a static portfolio.
+- Updated gap matrix: glow-props is now fully passing on all applicable patterns.
+
 ## 2026-04-06
 
 ### DOWNLOAD_PDF.md — expand to dual-approach pattern (window.print + pdf-lib)

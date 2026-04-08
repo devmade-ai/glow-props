@@ -14,6 +14,7 @@ const IMAGES_DIR = join(ROOT, 'public', 'assets', 'images');
 const SVG_DENSITY = 400;
 const ICONS = [
   { name: 'favicon.png', size: 48 },
+  { name: 'apple-touch-icon.png', size: 180 },
   { name: 'icon-192.png', size: 192 },
   { name: 'icon-512.png', size: 512 },
   { name: 'icon-1024.png', size: 1024 },

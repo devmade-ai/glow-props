@@ -26,7 +26,7 @@ Legend: **Pass** = compliant, **Partial** = has the feature but with gaps, **Mis
 
 | Repo | CLAUDE.md | APP_ICONS | BURGER_MENU | DEBUG_SYSTEM | DOWNLOAD_PDF | PWA_SYSTEM | THEME_DARK_MODE | EVENT_BUS |
 |------|-----------|-----------|-------------|--------------|--------------|------------|-----------------|-----------|
-| glow-props | Pass | Partial | Pass | Missing (N/A) | Pass | Pass | Pass | Missing (N/A) |
+| glow-props | Pass | Pass | Pass | N/A | Pass | Pass | Pass | N/A |
 | canva-grid | Missing | Pass | Partial | Partial | Pass (B) | Partial | Pass | Missing |
 | budgy-ting | Partial | Partial | Partial | Partial | Partial | Partial | Missing | Missing |
 | model-pear | Missing | Missing | Missing | Missing | Partial | Missing | Missing | Missing |
@@ -42,26 +42,19 @@ Legend: **Pass** = compliant, **Partial** = has the feature but with gaps, **Mis
 
 ### glow-props
 
-This is the reference docs repo (vanilla JS portfolio). Most patterns are fully compliant. Two patterns are documented but not implemented — evaluate if they're warranted for a static portfolio site.
+This is the reference docs repo (vanilla JS portfolio). All applicable patterns are fully compliant.
 
-#### APP_ICONS — Partial (missing 180px)
+#### APP_ICONS — Pass
 
-Reference: `docs/implementations/APP_ICONS.md`
+180px Apple touch icon added to `scripts/generate-icons.mjs` and HTML files updated. Run `node scripts/generate-icons.mjs` to regenerate (requires `sharp`).
 
-1. [ ] **Add 180px Apple touch icon** — Add `{ name: 'apple-touch-icon.png', size: 180 }` to `scripts/generate-icons.mjs`. Add `<link rel="apple-touch-icon" href="/assets/images/apple-touch-icon.png">` to `partials/head-common.html`.
-2. **Confirm:** Run `node scripts/generate-icons.mjs`, verify 180px PNG is generated. Test on iOS home screen.
+#### DEBUG_SYSTEM — N/A
 
-#### DEBUG_SYSTEM — Evaluate if needed
+Static vanilla JS portfolio with no user input, API calls, or dynamic state. Only failure mode is build/deploy. Debug system not warranted.
 
-- [ ] **Decide:** Does a vanilla JS portfolio benefit from a debug system? It has no user input, no API calls, no dynamic state. The only failure mode is a build/deploy issue.
-- If yes: Follow `docs/implementations/DEBUG_SYSTEM.md` — start with a minimal inline pill (repo-tor's approach) since this isn't React.
-- If no: Mark as N/A and move on.
+#### EVENT_BUS — N/A
 
-#### EVENT_BUS — Evaluate if needed
-
-- [ ] **Decide:** Same question. Event bus is for service-layer pub/sub. A static portfolio has no services.
-- If yes: Follow `docs/implementations/EVENT_BUS.md`.
-- If no: Mark as N/A and move on.
+Event bus is for service-layer pub/sub. Static portfolio has no services.
 
 ### canva-grid
 
