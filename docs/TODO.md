@@ -40,22 +40,6 @@ Legend: **Pass** = compliant, **Partial** = has the feature but with gaps, **Mis
 
 **(B)** = Approach B (pdf-lib) per `docs/implementations/DOWNLOAD_PDF.md` — correct choice for canvas-heavy content
 
-### glow-props
-
-This is the reference docs repo (vanilla JS portfolio). All applicable patterns are fully compliant.
-
-#### APP_ICONS — Pass
-
-180px Apple touch icon added to `scripts/generate-icons.mjs` and HTML files updated. Run `node scripts/generate-icons.mjs` to regenerate (requires `sharp`).
-
-#### DEBUG_SYSTEM — N/A
-
-Static vanilla JS portfolio with no user input, API calls, or dynamic state. Only failure mode is build/deploy. Debug system not warranted.
-
-#### EVENT_BUS — N/A
-
-Event bus is for service-layer pub/sub. Static portfolio has no services.
-
 ### canva-grid
 
 React + Vite app. Strong foundation — APP_ICONS and THEME_DARK_MODE are fully compliant. Focus areas: debug system robustness, PWA update reliability, and burger menu completeness.
