@@ -3,8 +3,9 @@
 The debug system is an alpha-phase diagnostic tool, intended to be removed post-alpha.
 
 **Related patterns:**
+- [Z_INDEX_SCALE.md](Z_INDEX_SCALE.md) — Debug pill is z-80 (topmost layer in the standard scale)
 - [PWA_SYSTEM.md](PWA_SYSTEM.md) — PWA diagnostics tab probes SW state, manifest, install prompt
-- [BURGER_MENU.md](BURGER_MENU.md) — Menu action errors route to debug via `window.__debugPushError()`; z-index scale (debug pill = z-80, above all other layers)
+- [BURGER_MENU.md](BURGER_MENU.md) — Menu action errors route to debug via `window.__debugPushError()`
 - [THEME_DARK_MODE.md](THEME_DARK_MODE.md) — Debug pill in separate React root reads `.dark` class directly from DOM (no shared theme context)
 - [EVENT_BUS.md](EVENT_BUS.md) — Event bus error isolation routes per-listener failures to `debugAdd()`
 

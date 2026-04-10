@@ -3,6 +3,7 @@
 Four parts, built on `vite-plugin-pwa` (^1.2.0) with React. Adapt patterns for other frameworks (glow-props uses vanilla JS).
 
 **Related patterns:**
+- [Z_INDEX_SCALE.md](Z_INDEX_SCALE.md) — Update banner/toast at z-70, install instructions modal at z-60
 - [APP_ICONS.md](APP_ICONS.md) — Generates the icon PNGs (192, 512, 1024) referenced in the manifest
 - [BURGER_MENU.md](BURGER_MENU.md) — "Check for updates" and "Install app" are standard menu items
 - [THEME_DARK_MODE.md](THEME_DARK_MODE.md) — Manifest `theme_color` and dynamic `<meta name="theme-color">` must match the active theme

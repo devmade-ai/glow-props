@@ -18,50 +18,27 @@
 
 ## Per-Repo Pattern Implementation Gaps
 
-Audited 2026-04-06 against updated `docs/implementations/*.md` pattern docs (8 patterns).
+Audited 2026-04-06 against updated `docs/implementations/*.md` pattern docs. Updated 2026-04-10 with Z_INDEX_SCALE (9 patterns).
 
 Legend: **Pass** = compliant, **Partial** = has the feature but with gaps, **Missing** = not implemented, **N/A** = not applicable
 
 ### Gap Matrix
 
-| Repo | CLAUDE.md | APP_ICONS | BURGER_MENU | DEBUG_SYSTEM | DOWNLOAD_PDF | PWA_SYSTEM | THEME_DARK_MODE | EVENT_BUS |
-|------|-----------|-----------|-------------|--------------|--------------|------------|-----------------|-----------|
-| glow-props | Pass | Partial | Pass | Missing (N/A) | Pass | Pass | Pass | Missing (N/A) |
-| canva-grid | Missing | Pass | Partial | Partial | Pass (B) | Partial | Pass | Missing |
-| budgy-ting | Partial | Partial | Partial | Partial | Partial | Partial | Missing | Missing |
-| model-pear | Missing | Missing | Missing | Missing | Partial | Missing | Missing | Missing |
-| see-veo | Missing | Partial | Missing | Partial | Partial | Partial | Missing | Missing |
-| repo-tor | Pass | Partial | Partial | Partial | Pass | Pass | Partial | Missing |
-| few-lap | Missing | Partial | Partial | Partial | Missing | Partial | Partial | Missing |
-| sun-sea-o | Missing | Partial | Missing | Partial | Pass | Partial | Missing | Missing |
-| graphiki | Missing | Pass | Missing | Partial | Missing | Partial | Pass | Partial |
-| four-ems | Missing | Partial | Missing | Partial | Partial | Partial | Missing | Missing |
-| synctone | Missing | Partial | Missing | Partial | Missing | Partial | Partial | Missing |
+| Repo | CLAUDE.md | APP_ICONS | BURGER_MENU | DEBUG_SYSTEM | DOWNLOAD_PDF | PWA_SYSTEM | THEME_DARK_MODE | EVENT_BUS | Z_INDEX_SCALE |
+|------|-----------|-----------|-------------|--------------|--------------|------------|-----------------|-----------|---------------|
+| glow-props | Pass | Pass | Pass | N/A | Pass | Pass | Pass | N/A | Pass |
+| canva-grid | Missing | Pass | Partial | Partial | Pass (B) | Partial | Pass | Missing | Partial |
+| budgy-ting | Partial | Partial | Partial | Partial | Partial | Partial | Missing | Missing | Missing |
+| model-pear | Missing | Missing | Missing | Missing | Partial | Missing | Missing | Missing | Missing |
+| see-veo | Missing | Partial | Missing | Partial | Partial | Partial | Missing | Missing | Missing |
+| repo-tor | Pass | Partial | Partial | Partial | Pass | Pass | Partial | Missing | Partial |
+| few-lap | Missing | Partial | Partial | Partial | Missing | Partial | Partial | Missing | Missing |
+| sun-sea-o | Missing | Partial | Missing | Partial | Pass | Partial | Missing | Missing | Missing |
+| graphiki | Missing | Pass | Missing | Partial | Missing | Partial | Pass | Partial | Partial |
+| four-ems | Missing | Partial | Missing | Partial | Partial | Partial | Missing | Missing | Missing |
+| synctone | Missing | Partial | Missing | Partial | Missing | Partial | Partial | Missing | Missing |
 
 **(B)** = Approach B (pdf-lib) per `docs/implementations/DOWNLOAD_PDF.md` — correct choice for canvas-heavy content
-
-### glow-props
-
-This is the reference docs repo (vanilla JS portfolio). Most patterns are fully compliant. Two patterns are documented but not implemented — evaluate if they're warranted for a static portfolio site.
-
-#### APP_ICONS — Partial (missing 180px)
-
-Reference: `docs/implementations/APP_ICONS.md`
-
-1. [ ] **Add 180px Apple touch icon** — Add `{ name: 'apple-touch-icon.png', size: 180 }` to `scripts/generate-icons.mjs`. Add `<link rel="apple-touch-icon" href="/assets/images/apple-touch-icon.png">` to `partials/head-common.html`.
-2. **Confirm:** Run `node scripts/generate-icons.mjs`, verify 180px PNG is generated. Test on iOS home screen.
-
-#### DEBUG_SYSTEM — Evaluate if needed
-
-- [ ] **Decide:** Does a vanilla JS portfolio benefit from a debug system? It has no user input, no API calls, no dynamic state. The only failure mode is a build/deploy issue.
-- If yes: Follow `docs/implementations/DEBUG_SYSTEM.md` — start with a minimal inline pill (repo-tor's approach) since this isn't React.
-- If no: Mark as N/A and move on.
-
-#### EVENT_BUS — Evaluate if needed
-
-- [ ] **Decide:** Same question. Event bus is for service-layer pub/sub. A static portfolio has no services.
-- If yes: Follow `docs/implementations/EVENT_BUS.md`.
-- If no: Mark as N/A and move on.
 
 ### canva-grid
 
@@ -118,6 +95,13 @@ Reference: `docs/implementations/PWA_SYSTEM.md`
 3. [ ] **Fix module singleton for install prompt** — Each `usePWAInstall` hook instance has its own `canInstall` state. Lift to module-level variable so all consumers share state. See pattern's "Module-Level Singleton" section.
 4. **Confirm:** Deploy, wait for a new build, reopen tab — update banner should appear. Click Update, verify reload. Reopen — no banner for 30 seconds.
 
+#### Z_INDEX_SCALE — Partial → Complete
+
+Reference: `docs/implementations/Z_INDEX_SCALE.md`
+
+1. [ ] **Audit and normalize all z-index values** — Run the audit command from the pattern doc. Fix any values outside the standard scale.
+2. **Confirm:** All z-index values map to the standard scale.
+
 #### EVENT_BUS — Evaluate if needed
 
 - [ ] **Decide:** Does canva-grid have service-layer communication that would benefit from pub/sub? (e.g., layout engine notifying renderers, export service notifying UI). If yes, follow `docs/implementations/EVENT_BUS.md`. If not, skip.
@@ -148,7 +132,7 @@ Reference: `docs/implementations/APP_ICONS.md`
 Reference: `docs/implementations/BURGER_MENU.md`
 
 1. [ ] **Add arrow key navigation** — In the menu component, handle `ArrowDown`/`ArrowUp` (with wrapping) and `Home`/`End` keys to move focus between items. See pattern's `handleMenuKeyDown`.
-2. [ ] **Establish z-index scale** — Document and enforce: backdrop=40, menu=50, modal=60, toast=70, debug=80. Audit existing z-index values.
+2. [ ] **Normalize z-index values** — Audit existing z-index values and align to `docs/implementations/Z_INDEX_SCALE.md`. Run the audit command from that pattern.
 3. [ ] **Add theme UI to menu** — Once THEME_DARK_MODE migration is done, add dark/light toggle and theme picker per [Theme UI in Burger Menu](../implementations/BURGER_MENU.md#theme-ui-in-burger-menu) spec.
 4. **Confirm:** Open menu, press ArrowDown through all items, verify wrapping. Press Home/End. Verify z-index layering with debug pill visible.
 
@@ -189,10 +173,17 @@ This is a full migration from custom Tailwind v4 CSS variables to DaisyUI. Follo
 2. [ ] **Phase 1: Audit** — Run the search patterns from the migration guide to build a worklist of hardcoded colors, custom variables, raw Tailwind, and z-index values.
 3. [ ] **Phase 2: CSS variable removal** — Map custom `:root`/`.dark` variables to DaisyUI semantic classes using the mapping tables. Collapse `dark:` pairs.
 4. [ ] **Phase 3: Component class migration** — Replace raw Tailwind on buttons, inputs, badges, etc. with DaisyUI component classes. Work incrementally.
-5. [ ] **Phase 4: Z-index normalization** — Align to standard scale.
+5. [ ] **Phase 4: Z-index normalization** — Align to `docs/implementations/Z_INDEX_SCALE.md`.
 6. [ ] **Phase 5: Verification** — Run the 10-point checklist (dark toggle, theme switch, button states, form inputs, meta theme-color, print, mobile, cross-tab, fresh visit, accessibility).
 7. [ ] **Phase 6: Cleanup** — Delete old variable definitions, remove orphaned `dark:` prefixes, migrate localStorage keys.
 8. **Confirm:** Toggle dark/light in two tabs simultaneously. Clear localStorage and reload — should fall back to OS preference.
+
+#### Z_INDEX_SCALE — Missing → Implement
+
+Reference: `docs/implementations/Z_INDEX_SCALE.md`
+
+1. [ ] **Audit all z-index values** — Run the audit command from the pattern doc. Map all ad-hoc values to the standard scale.
+2. **Confirm:** No z-index values outside the standard scale remain.
 
 #### EVENT_BUS — Evaluate if needed
 
@@ -277,6 +268,13 @@ model-pear is dark-only with no DaisyUI. This is a ground-up implementation, not
 6. [ ] **Migrate existing styles** — Replace hardcoded dark colors with DaisyUI semantic classes (`bg-base-100`, `text-base-content`, etc.). Follow Phase 1-3 of the migration guide for the audit and mapping process.
 7. **Confirm:** Toggle dark/light. Open two tabs, toggle in one — other follows. Clear localStorage — falls back to OS preference. Check meta theme-color updates in DevTools.
 
+#### Z_INDEX_SCALE — Missing → Implement
+
+Reference: `docs/implementations/Z_INDEX_SCALE.md`
+
+1. [ ] **Audit and normalize all z-index values** — Run the audit command from the pattern doc. Align all values to the standard scale.
+2. **Confirm:** All z-index values map to the standard scale.
+
 #### EVENT_BUS — Evaluate if needed
 
 - [ ] **Decide:** Does model-pear have service-layer needs? If yes, follow `docs/implementations/EVENT_BUS.md`. If not, skip.
@@ -355,6 +353,13 @@ see-veo is a single dark theme with no DaisyUI. Ground-up implementation.
 5. [ ] **Migrate existing dark styles** — Replace custom `@theme` CSS variables with DaisyUI semantic classes. Follow migration guide Phase 1-3.
 6. **Confirm:** Toggle works, cross-tab syncs, fresh visit falls back to OS preference.
 
+#### Z_INDEX_SCALE — Missing → Implement
+
+Reference: `docs/implementations/Z_INDEX_SCALE.md`
+
+1. [ ] **Audit and normalize all z-index values** — Run the audit command from the pattern doc. Align all values to the standard scale.
+2. **Confirm:** All z-index values map to the standard scale.
+
 #### EVENT_BUS — Evaluate if needed
 
 - [ ] **Decide:** Minimal resume site — likely not needed. Skip unless service-layer pub/sub becomes necessary.
@@ -408,11 +413,20 @@ repo-tor has working flash prevention and cross-tab sync using custom CSS variab
 1. [ ] **Phase 0: Prerequisites** — `npm install -D daisyui@5`. Configure `@plugin "daisyui"` in CSS with 2 themes (e.g., `lofi --default, black --prefersdark`). Add `@custom-variant dark`. DaisyUI can coexist with existing custom variables during transition.
 2. [ ] **Phase 1: Audit** — Run migration guide search patterns to find all custom variable references and `dark:` pairs in components.
 3. [ ] **Phase 2-3: Variable removal + component migration** — Replace custom `:root`/`.dark` variables with DaisyUI semantic classes. Replace raw Tailwind with DaisyUI component classes (buttons, inputs, cards, etc.). Work incrementally.
-4. [ ] **Phase 4: Z-index normalization** — Audit z-index values, align to standard scale.
+4. [ ] **Phase 4: Z-index normalization** — Align to `docs/implementations/Z_INDEX_SCALE.md`.
 5. [ ] **Add `data-theme` attribute** — Update flash prevention script and theme toggle to set `data-theme` alongside `.dark` class. See pattern's `applyTheme()`.
 6. [ ] **Add `<meta name="theme-color">`** — Two tags with media queries in `index.html`. Dynamic updates in theme module. Generate hex values with `scripts/generate-theme-meta.mjs`.
 7. [ ] **Phase 5-6: Verification and cleanup** — Run 10-point checklist. Delete old variable definitions. Clean up orphaned `dark:` prefixes.
 8. **Confirm:** All DaisyUI components switch themes correctly. Flash prevention still works. Cross-tab sync still works. Meta theme-color updates in DevTools.
+
+#### Z_INDEX_SCALE — Partial → Complete
+
+Reference: `docs/implementations/Z_INDEX_SCALE.md`
+
+repo-tor uses the scale in most places but has ad-hoc values in older components.
+
+1. [ ] **Audit and normalize** — Run the audit command from the pattern doc. Fix any values outside the standard scale.
+2. **Confirm:** No ad-hoc z-index values remain.
 
 #### EVENT_BUS — Evaluate if needed
 
@@ -496,6 +510,13 @@ few-lap uses Uniwind with `@variant` blocks — not `data-theme`. The Uniwind ap
 2. [ ] **Verify Uniwind `@variant` blocks cover all DaisyUI semantic tokens** — Ensure the CSS variable definitions in each `@variant` block match DaisyUI's expected variables for full component compatibility.
 3. **Confirm:** Reload with a non-default theme saved — no flash. Toggle dark/light — instant switch.
 
+#### Z_INDEX_SCALE — Missing → Implement
+
+Reference: `docs/implementations/Z_INDEX_SCALE.md`
+
+1. [ ] **Audit and normalize all z-index values** — Run the audit command from the pattern doc. Align all values to the standard scale.
+2. **Confirm:** All z-index values map to the standard scale.
+
 #### EVENT_BUS — Evaluate if needed
 
 - [ ] **Decide:** Does few-lap have service-layer pub/sub needs? If yes, follow `docs/implementations/EVENT_BUS.md`. If not, skip.
@@ -533,8 +554,14 @@ Reference: `docs/implementations/BURGER_MENU.md`
 2. [ ] **Add focus hooks** — `useDisclosureFocus`, `useEscapeKey`. Extract as reusable hooks.
 3. [ ] **Add keyboard navigation** — ArrowDown/ArrowUp with wrapping, Home/End.
 4. [ ] **Add standard menu items** — Dark mode toggle (once theming is added), app info, install app. See pattern's [Theme UI in Burger Menu](../implementations/BURGER_MENU.md#theme-ui-in-burger-menu) for toggle and picker spec.
-5. [ ] **Fix z-index** — Debug pill currently uses `z-[9999]`. Normalize to standard scale (debug=`z-[80]`).
-6. **Confirm:** Full keyboard navigation. Escape closes. Backdrop click closes. 44px touch targets. Debug pill renders above menu.
+5. **Confirm:** Full keyboard navigation. Escape closes. Backdrop click closes. 44px touch targets. Debug pill renders above menu.
+
+#### Z_INDEX_SCALE — Missing → Implement
+
+Reference: `docs/implementations/Z_INDEX_SCALE.md`
+
+1. [ ] **Audit and normalize all z-index values** — Debug pill currently uses `z-[9999]`. Run the audit command from the pattern doc and fix all violations.
+2. **Confirm:** All z-index values map to the standard scale. Debug pill at z-[80] renders above menu at z-50.
 
 #### DEBUG_SYSTEM — Partial → Complete
 
@@ -643,6 +670,13 @@ Reference: `docs/implementations/PWA_SYSTEM.md`
 3. [ ] **Add 30-second suppression** — `sessionStorage` timestamp after update applied. See pattern's `wasJustUpdated()`.
 4. **Confirm:** Deploy new version, background tab, bring back — update detected. No re-detection within 30s of applying.
 
+#### Z_INDEX_SCALE — Partial → Complete
+
+Reference: `docs/implementations/Z_INDEX_SCALE.md`
+
+1. [ ] **Audit and normalize all z-index values** — Run the audit command from the pattern doc. Fix any values outside the standard scale.
+2. **Confirm:** All z-index values map to the standard scale.
+
 #### EVENT_BUS — Partial → Complete (origin repo)
 
 Reference: `docs/implementations/EVENT_BUS.md`
@@ -730,6 +764,13 @@ No theming currently. Ground-up implementation.
 6. [ ] **Migrate existing plain colors** — Replace Tailwind color classes with DaisyUI semantic tokens. Follow migration guide Phase 1-3.
 7. **Confirm:** Toggle dark/light. Cross-tab sync. Fresh visit falls back to OS preference.
 
+#### Z_INDEX_SCALE — Missing → Implement
+
+Reference: `docs/implementations/Z_INDEX_SCALE.md`
+
+1. [ ] **Audit and normalize all z-index values** — Run the audit command from the pattern doc. Align all values to the standard scale.
+2. **Confirm:** All z-index values map to the standard scale.
+
 #### EVENT_BUS — Evaluate if needed
 
 - [ ] **Decide:** If service-layer pub/sub needs emerge, follow `docs/implementations/EVENT_BUS.md`. Otherwise skip.
@@ -767,8 +808,14 @@ synctone uses `ChatHeaderMenu` (per-chat contextual actions) and `SettingsModal`
 2. If adding burger menu: Follow pattern's React Native variant with `Modal`, `ModalBackdrop`, haptic feedback.
 3. [ ] **Either way: Extract shared `ModalBackdrop`** — Each modal currently implements its own backdrop inline. Extract to a reusable component.
 4. [ ] **Either way: Add haptic feedback** — `expo-haptics` lightTap on menu/modal toggle.
-5. [ ] **Either way: Establish z-index scale** — Document and enforce consistent layering.
-6. **Confirm:** Modals/menus have consistent backdrop behavior, haptic feedback on toggle.
+5. **Confirm:** Modals/menus have consistent backdrop behavior, haptic feedback on toggle.
+
+#### Z_INDEX_SCALE — Missing → Implement
+
+Reference: `docs/implementations/Z_INDEX_SCALE.md`
+
+1. [ ] **Audit and normalize all z-index values** — Run the audit command from the pattern doc. Align all values to the standard scale.
+2. **Confirm:** Consistent layering across modals, menus, debug pill, and toasts.
 
 #### DEBUG_SYSTEM — Partial → Complete
 
@@ -835,3 +882,4 @@ These gaps appear in 6+ repos and represent the highest-leverage improvements:
 9. **PWA_SYSTEM: module singleton** — Missing in 6/8 repos (glow-props and repo-tor have it)
 10. **BURGER_MENU: focus hooks extraction** — Missing in all repos that have menus
 11. **THEME_DARK_MODE** — Missing in 5/11 repos (model-pear, see-veo, sun-sea-o, four-ems have no theming)
+12. **Z_INDEX_SCALE** — 1 Pass (glow-props), 3 Partial (canva-grid, repo-tor, graphiki), 7 Missing. Most repos have ad-hoc z-index values that need normalizing to the standard scale.

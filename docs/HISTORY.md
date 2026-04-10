@@ -1,5 +1,39 @@
 # History
 
+## 2026-04-10
+
+### Z_INDEX_SCALE — new implementation pattern (9th pattern)
+
+Created `docs/implementations/Z_INDEX_SCALE.md` as a standalone pattern document. Previously, the z-index scale was duplicated across BURGER_MENU.md (full table), THEME_DARK_MODE.md (two inline copies in audit and Phase 4 sections), and referenced inline in DEBUG_SYSTEM.md and PWA_SYSTEM.md.
+
+**Pattern content:**
+- Full 8-layer scale table with Tailwind classes (0–10 base, 20 sticky, 30 sheets, 40 backdrop, 50 menu, 60 modal, 70 toast, 80 debug)
+- Rules (no ad-hoc values, backdrop always z-40, debug always topmost, don't nest stacking contexts)
+- Audit command and common violation fixes
+- Stacking context gotchas (CSS properties that create contexts, navbar `backdrop-filter` trap, separate React roots)
+- Per-framework notes (React portals, React Native/Expo web, Vue/Svelte teleport)
+
+**Cross-references updated:**
+- BURGER_MENU.md: Replaced inline z-index table with reference, added to related patterns
+- THEME_DARK_MODE.md: Replaced Phase 1d inline audit and Phase 4 inline table with references, added to related patterns
+- DEBUG_SYSTEM.md: Added to related patterns (debug pill = z-80)
+- PWA_SYSTEM.md: Added to related patterns (toast = z-70, modal = z-60)
+
+**TODO.md updated:**
+- Added Z_INDEX_SCALE column to gap matrix (9 patterns total)
+- Added Z_INDEX_SCALE sections to all 10 downstream repos
+- Updated existing z-index normalization items to reference the pattern doc
+- Added to cross-cutting gaps (#12)
+
+## 2026-04-08
+
+### glow-props — resolve all pattern implementation gaps
+
+- **APP_ICONS**: Added 180px Apple touch icon (`apple-touch-icon.png`) to `scripts/generate-icons.mjs`. Updated `<link rel="apple-touch-icon">` in `index.html`, `pattern.html`, and `project.html` to reference the new 180px file instead of the 192px PWA icon.
+- **DEBUG_SYSTEM**: Marked N/A — static vanilla JS portfolio has no dynamic state, user input, or API calls. Only failure mode is build/deploy.
+- **EVENT_BUS**: Marked N/A — no service-layer pub/sub needs for a static portfolio.
+- Updated gap matrix: glow-props is now fully passing on all applicable patterns.
+
 ## 2026-04-06
 
 ### DOWNLOAD_PDF.md — expand to dual-approach pattern (window.print + pdf-lib)
