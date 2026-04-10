@@ -27,7 +27,7 @@ Legend: **Pass** = compliant, **Partial** = has the feature but with gaps, **Mis
 | Repo | CLAUDE.md | APP_ICONS | BURGER_MENU | DEBUG_SYSTEM | DOWNLOAD_PDF | PWA_SYSTEM | THEME_DARK_MODE | EVENT_BUS | Z_INDEX_SCALE |
 |------|-----------|-----------|-------------|--------------|--------------|------------|-----------------|-----------|---------------|
 | glow-props | Pass | Pass | Pass | N/A | Pass | Pass | Pass | N/A | Pass |
-| canva-grid | Pass | Pass | Pass | Pass | Pass (B) | Pass | Pass | Missing | Pass |
+| canva-grid | Pass | Pass | Pass | Pass | Pass (B) | Pass | Pass | N/A | Pass |
 | budgy-ting | Pass | Pass | Partial | Partial | Partial | Pass | Pass | Missing | Pass |
 | model-pear | Missing | Missing | Missing | Missing | Partial | Missing | Missing | Missing | Missing |
 | see-veo | Missing | Partial | Missing | Partial | Partial | Partial | Missing | Missing | Missing |
@@ -42,13 +42,9 @@ Legend: **Pass** = compliant, **Partial** = has the feature but with gaps, **Mis
 
 ### canva-grid
 
-React + Vite app. **Fully compliant** across all 8 patterns (verified 2026-04-10). Only EVENT_BUS remains as an evaluate decision.
+React + Vite app. **Fully compliant** across all 8 applicable patterns (verified 2026-04-10). No remaining gaps.
 
-All previous gaps (CLAUDE.md alignment, BURGER_MENU hooks/backdrop/MenuItem, DEBUG_SYSTEM console interception/#debug-root/PWA tab/inline pill/redaction/replay/gating/severity/report/embed skip, PWA_SYSTEM visibility checks/suppression/singleton, Z_INDEX_SCALE normalization) have been implemented.
-
-#### EVENT_BUS — Evaluate if needed
-
-- [ ] **Decide:** Does canva-grid have service-layer communication that would benefit from pub/sub? (e.g., layout engine notifying renderers, export service notifying UI). If yes, follow `docs/implementations/EVENT_BUS.md`. If not, skip.
+EVENT_BUS: Decided against — canva-grid uses React Context dispatch for component communication, which is sufficient for its architecture. No service-layer pub/sub needed.
 
 ### budgy-ting
 
