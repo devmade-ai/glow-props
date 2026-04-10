@@ -3,25 +3,18 @@
 Dropdown navigation menu triggered by a hamburger icon. Uses the WAI-ARIA **disclosure pattern** (not `role="menu"`) because a burger nav is a list of links/actions revealed by a toggle, not an application menu (File/Edit/View). Two variants: React (Vite + Tailwind) for web-only projects, React Native (Expo) for cross-platform.
 
 **Related patterns:**
+- [Z_INDEX_SCALE.md](Z_INDEX_SCALE.md) — Menu backdrop (z-40) and dropdown (z-50) positioning in the standard scale
 - [THEME_DARK_MODE.md](THEME_DARK_MODE.md) — Dark/light toggle and theme picker UI live inside the menu (see [Theme UI in Burger Menu](#theme-ui-in-burger-menu))
 - [PWA_SYSTEM.md](PWA_SYSTEM.md) — "Check for updates" and "Install app" are standard menu items triggering PWA hooks
-- [DEBUG_SYSTEM.md](DEBUG_SYSTEM.md) — Menu action errors route to `window.__debugPushError()`; z-index scale places debug pill (z-80) above menu (z-50)
+- [DEBUG_SYSTEM.md](DEBUG_SYSTEM.md) — Menu action errors route to `window.__debugPushError()`; debug pill (z-80) renders above menu
 - [DOWNLOAD_PDF.md](DOWNLOAD_PDF.md) — Menu should have `no-print` class applied to hide during print-to-PDF
 
 ## Z-Index Scale
 
-All projects should follow this scale to prevent stacking conflicts between the burger menu, debug pill, modals, toasts, and install banners:
+See [Z_INDEX_SCALE.md](Z_INDEX_SCALE.md) for the full standard scale. The burger menu uses two layers:
 
-| Layer | Z-Index | Examples |
-|-------|---------|----------|
-| Base content | 0-10 | Page content, cards |
-| Sticky headers | 20 | App bar, bottom nav |
-| Sheets / drawers | 30 | Bottom sheets, side panels |
-| Menu backdrop | 40 | Burger menu backdrop |
-| Menu dropdown | 50 | Burger menu card |
-| Modals | 60 | Dialogs, confirmation modals |
-| Toasts / banners | 70 | Update banner, install prompt |
-| Debug pill | 80 | Debug overlay (separate React root) |
+- **Backdrop**: `z-40` — click-to-close overlay with `cursor-pointer` (required for iOS Safari)
+- **Menu dropdown**: `z-50` — the menu card itself
 
 ## Standard Menu Items
 

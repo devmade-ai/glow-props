@@ -3,6 +3,7 @@
 User-controlled dark/light mode with DaisyUI theme selection, system preference fallback, persistence, flash prevention, and cross-tab sync.
 
 **Related patterns:**
+- [Z_INDEX_SCALE.md](Z_INDEX_SCALE.md) — Migration Phase 4 normalizes z-index values to the standard scale
 - [BURGER_MENU.md](BURGER_MENU.md) — Dark/light toggle and theme picker UI spec (see [Theme UI in Burger Menu](BURGER_MENU.md#theme-ui-in-burger-menu))
 - [PWA_SYSTEM.md](PWA_SYSTEM.md) — Manifest `theme_color` and dynamic `<meta name="theme-color">` must match active theme
 - [DEBUG_SYSTEM.md](DEBUG_SYSTEM.md) — Debug pill in separate React root reads `.dark` class directly from DOM (no shared context)
@@ -171,12 +172,7 @@ rg 'rounded-full.*text-xs|text-xs.*rounded-full' -g '*.tsx'
 
 #### 1d. Z-index values outside the scale
 
-```bash
-# Find all z-index usage
-rg 'z-\[|z-[0-9]' -g '*.tsx' -g '*.jsx' -g '*.css'
-```
-
-Standard scale: backdrop=40, menu=50, modal=60, toast=70, debug=80. Flag anything outside this range (e.g., `z-[9999]`, `z-[1000]`).
+See [Z_INDEX_SCALE.md](Z_INDEX_SCALE.md) for the full scale and audit commands. Flag anything outside the standard range.
 
 #### 1e. Custom overlay/backdrop implementations
 
@@ -256,23 +252,7 @@ Replace custom-styled elements with DaisyUI component classes. Work through one 
 
 ### Phase 4: Z-Index Normalization
 
-Replace ad-hoc z-index values with the standard scale:
-
-| Layer | Z-Index | Usage |
-|-------|---------|-------|
-| Backdrop | `z-40` | Behind menus/modals, click-to-close overlay |
-| Menu/Dropdown | `z-50` | Burger menu, dropdowns, popovers |
-| Modal | `z-60` | Modal dialogs, drawers, full-screen overlays |
-| Toast | `z-70` | Toast notifications, update banners |
-| Debug | `z-80` | Debug pill (must be above everything) |
-
-Tailwind's default z-index scale only goes to `z-50`. Values above 50 require arbitrary values (`z-[60]`, `z-[70]`, `z-[80]`). Alternatively, define CSS custom properties or Tailwind utilities for the scale.
-
-Common fixes:
-- `z-[9999]` on debug pill → `z-[80]`
-- `z-[1000]` on modal → `z-[60]`
-- `z-100` on dropdown → `z-50`
-- Any `z-[1000]`+ values → map to the correct layer from the scale above
+Replace ad-hoc z-index values with the standard scale defined in [Z_INDEX_SCALE.md](Z_INDEX_SCALE.md). Run the audit command from that document to find all violations, then map each value to the correct layer.
 
 ### Phase 5: Verification
 
