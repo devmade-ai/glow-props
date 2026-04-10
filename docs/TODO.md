@@ -18,7 +18,7 @@
 
 ## Per-Repo Pattern Implementation Gaps
 
-Audited 2026-04-06 against updated `docs/implementations/*.md` pattern docs. Updated 2026-04-10 with Z_INDEX_SCALE (9 patterns).
+Audited 2026-04-06 against updated `docs/implementations/*.md` pattern docs. Updated 2026-04-10 with Z_INDEX_SCALE (9 patterns). Re-audited 2026-04-10 against actual repo code — corrected stale statuses for canva-grid, budgy-ting, see-veo, few-lap, four-ems, repo-tor.
 
 Legend: **Pass** = compliant, **Partial** = has the feature but with gaps, **Missing** = not implemented, **N/A** = not applicable
 
@@ -27,8 +27,8 @@ Legend: **Pass** = compliant, **Partial** = has the feature but with gaps, **Mis
 | Repo | CLAUDE.md | APP_ICONS | BURGER_MENU | DEBUG_SYSTEM | DOWNLOAD_PDF | PWA_SYSTEM | THEME_DARK_MODE | EVENT_BUS | Z_INDEX_SCALE |
 |------|-----------|-----------|-------------|--------------|--------------|------------|-----------------|-----------|---------------|
 | glow-props | Pass | Pass | Pass | N/A | Pass | Pass | Pass | N/A | Pass |
-| canva-grid | Missing | Pass | Partial | Partial | Pass (B) | Partial | Pass | Missing | Partial |
-| budgy-ting | Partial | Partial | Partial | Partial | Partial | Partial | Missing | Missing | Missing |
+| canva-grid | Pass | Pass | Pass | Pass | Pass (B) | Pass | Pass | Missing | Pass |
+| budgy-ting | Pass | Pass | Partial | Partial | Partial | Pass | Pass | Missing | Pass |
 | model-pear | Missing | Missing | Missing | Missing | Partial | Missing | Missing | Missing | Missing |
 | see-veo | Missing | Partial | Missing | Partial | Partial | Partial | Missing | Missing | Missing |
 | repo-tor | Pass | Partial | Partial | Partial | Pass | Pass | Partial | Missing | Partial |
@@ -42,65 +42,9 @@ Legend: **Pass** = compliant, **Partial** = has the feature but with gaps, **Mis
 
 ### canva-grid
 
-React + Vite app. Strong foundation — APP_ICONS and THEME_DARK_MODE are fully compliant. Focus areas: debug system robustness, PWA update reliability, and burger menu completeness.
+React + Vite app. **Fully compliant** across all 8 patterns (verified 2026-04-10). Only EVENT_BUS remains as an evaluate decision.
 
-#### CLAUDE.md — Align with glow-props
-
-No local `docs/implementations/` folder exists (correct). No inline patterns. Two stale references need updating.
-
-1. [ ] **Update shared scaffolding description** — Near line 5, change "Suggested Implementations" to "Implementation Patterns" in the sentence about shared scaffolding from glow-props.
-2. [ ] **Replace "Sister project reference" AI Note** — Near line 306, replace the bullet referencing "Suggested Implementations" section in glow-props with: `**Implementation patterns — always fetch from glow-props.** Never look for local copies of implementation pattern files (e.g., docs/implementations/*.md) in downstream repos. They do not exist locally — the single source of truth is the docs/implementations/ folder in the glow-props repo. Fetch the latest version before every implementation task.`
-3. [ ] **Add "Implementation Patterns (Source of Truth)" section** — After the Triggers section, add the standard section from glow-props CLAUDE.md with fetch instructions (GitHub Pages URL, GitHub API URL, listing command) and rules.
-4. [ ] **Add prohibition** — Add to Prohibitions: "Create local copies of implementation pattern files in any repo — always fetch from glow-props".
-5. **Confirm:** No references to "Suggested Implementations" remain. Standard pattern source section exists with fetch commands.
-
-#### BURGER_MENU — Partial → Complete
-
-Reference: `docs/implementations/BURGER_MENU.md`
-
-1. [ ] **Extract `useEscapeKey` hook** — Currently inlined in the BurgerMenu component. Extract to `src/hooks/useEscapeKey.js` per the pattern.
-2. [ ] **Move backdrop into BurgerMenu** — Currently delegated to parent (MobileLayout). The menu should own its backdrop with `cursor-pointer` for iOS Safari click support. Z-index: backdrop z-40, menu z-50.
-3. [ ] **Add MenuItem interface support** — Add `disabled`, `separator`, `destructive`, and `external` properties to menu items. See pattern's MenuItem interface.
-4. [ ] **Add close-then-act delay** — Close menu first, execute action after 50-150ms timeout to prevent visual glitches.
-5. [ ] **Optional: version footer** — Display app version at bottom of dropdown.
-6. [ ] **Verify theme UI** — canva-grid's THEME_DARK_MODE is compliant (combo-based). Verify the theme toggle and combo picker in the burger menu match the [Theme UI in Burger Menu](../implementations/BURGER_MENU.md#theme-ui-in-burger-menu) spec (toggle item with sun/moon icons, combo buttons with active checkmark, menu stays open during switching).
-7. **Confirm:** Toggle menu open/close, verify Escape closes it, verify backdrop click closes it, verify 44px touch targets on all items. Theme toggle and picker work within menu.
-
-#### DEBUG_SYSTEM — Partial → Complete
-
-Reference: `docs/implementations/DEBUG_SYSTEM.md`
-
-1. [ ] **Add console interception** — Patch `console.error` and `console.warn` at module load in `debugLog.js` to capture React warnings automatically. See pattern's "Console Interception" section.
-2. [ ] **Add `#debug-root` to `index.html`** — Replace dynamic `document.createElement` with a static `<div id="debug-root">` after `<div id="root">`. Mount DebugPill into this separate React root.
-3. [ ] **Add PWA Diagnostics tab** — Third tab alongside Log and Env. Active health checks: HTTPS status, SW registration state, manifest validation, standalone mode, beforeinstallprompt receipt.
-4. [ ] **Add pre-React inline pill** — Inline `<script>` in `index.html` with `window.__debugPushError()` global and 20-second loading timeout. See pattern's "Pre-React Inline Pill" section and repo-tor's implementation for reference.
-5. [ ] **Add URL query param redaction** — In the copy/report function, replace query strings with `?[redacted]` to prevent token leaking.
-6. [ ] **Add subscriber replay** — New subscribers should receive existing entries immediately on subscribe.
-7. [ ] **Remove DEV-only gating** — Debug pill should be available in production (alpha phase tool).
-8. [ ] **Add `success` severity** — Add to the severity union type and `SEVERITY_COLORS` map.
-9. [ ] **Add `debugGenerateReport()` to module** — Move report generation out of the pill component into the debug log module for reuse.
-10. [ ] **Add embed mode skip** — Skip pill when `?embed=` is in the URL.
-11. **Confirm:** Open app, verify pill appears in bottom corner, check all 3 tabs render, crash the app (throw in a component) and verify pill survives, copy report and check URL is redacted.
-
-#### DOWNLOAD_PDF — Compliant (Approach B: pdf-lib)
-
-- **No action needed.** canva-grid uses pdf-lib (Approach B in `docs/implementations/DOWNLOAD_PDF.md`) — the correct choice for canvas-heavy content where `window.print()` can't reliably capture visual output. Implementation includes html-to-image capture, quality selection (1x/2x/3x), and multi-page support.
-
-#### PWA_SYSTEM — Partial → Complete
-
-Reference: `docs/implementations/PWA_SYSTEM.md`
-
-1. [ ] **Add visibility-based update checks** — In `usePWAUpdate.js`, add a `visibilitychange` listener that checks for SW updates when the tab regains focus. See pattern's "Visibility-Based Checks" section.
-2. [ ] **Add 30-second suppression** — After user clicks "Update", write timestamp to `sessionStorage`. On next mount, skip update banner if within 30 seconds. See pattern's `wasJustUpdated()`.
-3. [ ] **Fix module singleton for install prompt** — Each `usePWAInstall` hook instance has its own `canInstall` state. Lift to module-level variable so all consumers share state. See pattern's "Module-Level Singleton" section.
-4. **Confirm:** Deploy, wait for a new build, reopen tab — update banner should appear. Click Update, verify reload. Reopen — no banner for 30 seconds.
-
-#### Z_INDEX_SCALE — Partial → Complete
-
-Reference: `docs/implementations/Z_INDEX_SCALE.md`
-
-1. [ ] **Audit and normalize all z-index values** — Run the audit command from the pattern doc. Fix any values outside the standard scale.
-2. **Confirm:** All z-index values map to the standard scale.
+All previous gaps (CLAUDE.md alignment, BURGER_MENU hooks/backdrop/MenuItem, DEBUG_SYSTEM console interception/#debug-root/PWA tab/inline pill/redaction/replay/gating/severity/report/embed skip, PWA_SYSTEM visibility checks/suppression/singleton, Z_INDEX_SCALE normalization) have been implemented.
 
 #### EVENT_BUS — Evaluate if needed
 
@@ -108,82 +52,36 @@ Reference: `docs/implementations/Z_INDEX_SCALE.md`
 
 ### budgy-ting
 
-Vue + Vite app. Has partial implementations of most patterns but needs DaisyUI migration (currently custom Tailwind v4 CSS variables) and debug/PWA hardening.
+Vue + Vite app. Mostly compliant (verified 2026-04-10). CLAUDE.md, APP_ICONS, PWA_SYSTEM, THEME_DARK_MODE, and Z_INDEX_SCALE are now fully passing. Remaining gaps: BURGER_MENU (minor), DEBUG_SYSTEM (minor), DOWNLOAD_PDF (needs print button).
 
-#### CLAUDE.md — Align with glow-props (Partial — stale URLs)
+Previous gaps now confirmed done: CLAUDE.md URLs updated, 400 DPI + separate maskable icon, visibility-based update checks + 30-second suppression + module singleton, full DaisyUI combo-based theme system with flash prevention + cross-tab sync, z-index scale documented and applied.
 
-No local `docs/implementations/` folder (correct). No inline patterns (correct). Has a clean "Suggested Implementations" pointer and prohibition, but fetch URLs point to the old location (`glow-props/CLAUDE.md`) instead of `glow-props/docs/implementations/`.
-
-1. [ ] **Update "Suggested Implementations" section** — Change fetch URLs from `api.github.com/repos/devmade-ai/glow-props/contents/CLAUDE.md` to `api.github.com/repos/devmade-ai/glow-props/contents/docs/implementations/{PATTERN_NAME}.md`. Add the GitHub Pages URL: `https://devmade-ai.github.io/glow-props/patterns/{PATTERN_NAME}.md`. Add the listing command to discover available patterns.
-2. [ ] **Update AI Notes entry** — Change "All Suggested Implementation patterns live in glow-props CLAUDE.md" to reference `docs/implementations/` folder in glow-props.
-3. [ ] **Rename section** — Change "Suggested Implementations" to "Implementation Patterns (Source of Truth)" to match glow-props.
-4. **Confirm:** All fetch URLs point to `docs/implementations/` in glow-props, not to CLAUDE.md. Listing command exists to discover patterns dynamically.
-
-#### APP_ICONS — Partial → Complete
-
-Reference: `docs/implementations/APP_ICONS.md`
-
-1. [ ] **Increase Sharp density to 400 DPI** — In `scripts/generate-icons.mjs`, change `sharp(svgBuffer, { density: 150 })` to `sharp(svgBuffer, { density: 400 })`. Regenerate all PNGs.
-2. [ ] **Create separate maskable icon** — Currently reuses the same file for both `any` and `maskable` purposes. Create a maskable variant with safe-area padding (content within 80% inner zone) at 1024px. Update manifest to reference separate files with distinct `purpose` values.
-3. **Confirm:** Run `node scripts/generate-icons.mjs`, verify output sizes (48, 180, 192, 512, 1024). Check manifest has `"purpose": "any"` on 192/512 and `"purpose": "maskable"` on 1024.
-
-#### BURGER_MENU — Partial → Complete
+#### BURGER_MENU — Partial (minor gaps)
 
 Reference: `docs/implementations/BURGER_MENU.md`
 
-1. [ ] **Add arrow key navigation** — In the menu component, handle `ArrowDown`/`ArrowUp` (with wrapping) and `Home`/`End` keys to move focus between items. See pattern's `handleMenuKeyDown`.
-2. [ ] **Normalize z-index values** — Audit existing z-index values and align to `docs/implementations/Z_INDEX_SCALE.md`. Run the audit command from that pattern.
-3. [ ] **Add theme UI to menu** — Once THEME_DARK_MODE migration is done, add dark/light toggle and theme picker per [Theme UI in Burger Menu](../implementations/BURGER_MENU.md#theme-ui-in-burger-menu) spec.
-4. **Confirm:** Open menu, press ArrowDown through all items, verify wrapping. Press Home/End. Verify z-index layering with debug pill visible.
+Arrow key navigation (ArrowDown/Up/Home/End with wrapping), z-index normalization (backdrop z-40, menu z-50), close-then-act delay, and MenuItem interface with `disabled`/`separator` are all implemented.
 
-#### DEBUG_SYSTEM — Partial → Complete
+1. [ ] **Add `destructive` and `external` MenuItem properties** — These properties from the pattern's MenuItem interface are not yet supported.
+2. **Confirm:** Verify destructive items have warning styling. External items open in new tab with indicator icon.
+
+#### DEBUG_SYSTEM — Partial (minor gaps)
 
 Reference: `docs/implementations/DEBUG_SYSTEM.md`
 
-1. [ ] **Add console interception** — Patch `console.error`/`console.warn` at module load in debug store.
-2. [ ] **Add PWA Diagnostics tab** — Third tab with active health checks (HTTPS, SW state, manifest, standalone, install prompt).
-3. [ ] **Add pre-framework inline pill** — Inline `<script>` in `index.html` with vanilla JS pill, `window.__debugPushError()`, and 20-second loading timeout. See repo-tor's implementation.
-4. [ ] **Switch to inline styles** — Replace Tailwind classes in DebugPill with inline styles so the pill renders even if CSS fails to load.
-5. [ ] **Replace array shift with circular buffer** — Use head/tail pointer pattern for O(1) instead of `Array.shift()` O(n).
-6. **Confirm:** Open app, verify 3 tabs in pill. Kill the dev server mid-load — inline pill should still appear after 20 seconds.
+Console interception, PWA Diagnostics tab, pre-framework inline pill, circular buffer (head/count pattern), URL redaction, success severity, and debugGenerateReport in module are all implemented. Inline styles in Vue DebugPill use Tailwind (intentional — inline pill handles CSS-not-loaded case).
+
+1. [ ] **Add static `#debug-root` to `index.html`** — Still uses `document.createElement('div')` in `main.ts`. Add a static `<div id="debug-root">` after `<div id="root">`.
+2. [ ] **Add subscriber replay** — New subscribers should receive existing entries immediately on subscribe.
+3. [ ] **Add embed mode skip** — Skip pill when `?embed=` is in the URL.
+4. **Confirm:** New subscriber gets existing log entries. Pill hidden in embed mode.
 
 #### DOWNLOAD_PDF — Partial → Complete
 
 Reference: `docs/implementations/DOWNLOAD_PDF.md`
 
-1. [ ] **Add `window.print()` trigger button** — Print CSS already exists (`.no-print` class, `@media print` rules). Add a "Save as PDF" button in the UI that calls `window.print()`.
+1. [ ] **Add `window.print()` trigger button** — Print CSS already exists (`.no-print` class, `@media print` rules, `beforeprint`/`afterprint` dark mode handlers). Add a "Save as PDF" button in the UI that calls `window.print()`.
 2. **Confirm:** Click button, verify print preview shows clean output with no interactive elements.
-
-#### PWA_SYSTEM — Partial → Complete
-
-Reference: `docs/implementations/PWA_SYSTEM.md`
-
-1. [ ] **Add visibility-based update checks** — `visibilitychange` listener to check for SW updates when tab regains focus.
-2. [ ] **Add 30-second suppression** — `sessionStorage` timestamp after update applied. See pattern's `wasJustUpdated()`.
-3. [ ] **Add PWA diagnostics** — Wire into debug pill's new PWA tab (step 2 under DEBUG_SYSTEM above).
-4. **Confirm:** Deploy new version, background the tab, bring it back — should detect update. After applying, no re-detection for 30 seconds.
-
-#### THEME_DARK_MODE — Missing → Implement
-
-Reference: `docs/implementations/THEME_DARK_MODE.md`, including the **Migration Guide** section
-
-This is a full migration from custom Tailwind v4 CSS variables to DaisyUI. Follow the 6-phase migration guide:
-
-1. [ ] **Phase 0: Prerequisites** — `npm install -D daisyui@5`, configure `@plugin "daisyui"` in CSS, add `@custom-variant dark`, add `color-scheme`, add flash prevention script. Start with 2 themes.
-2. [ ] **Phase 1: Audit** — Run the search patterns from the migration guide to build a worklist of hardcoded colors, custom variables, raw Tailwind, and z-index values.
-3. [ ] **Phase 2: CSS variable removal** — Map custom `:root`/`.dark` variables to DaisyUI semantic classes using the mapping tables. Collapse `dark:` pairs.
-4. [ ] **Phase 3: Component class migration** — Replace raw Tailwind on buttons, inputs, badges, etc. with DaisyUI component classes. Work incrementally.
-5. [ ] **Phase 4: Z-index normalization** — Align to `docs/implementations/Z_INDEX_SCALE.md`.
-6. [ ] **Phase 5: Verification** — Run the 10-point checklist (dark toggle, theme switch, button states, form inputs, meta theme-color, print, mobile, cross-tab, fresh visit, accessibility).
-7. [ ] **Phase 6: Cleanup** — Delete old variable definitions, remove orphaned `dark:` prefixes, migrate localStorage keys.
-8. **Confirm:** Toggle dark/light in two tabs simultaneously. Clear localStorage and reload — should fall back to OS preference.
-
-#### Z_INDEX_SCALE — Missing → Implement
-
-Reference: `docs/implementations/Z_INDEX_SCALE.md`
-
-1. [ ] **Audit all z-index values** — Run the audit command from the pattern doc. Map all ad-hoc values to the standard scale.
-2. **Confirm:** No z-index values outside the standard scale remain.
 
 #### EVENT_BUS — Evaluate if needed
 
@@ -324,9 +222,10 @@ Reference: `docs/implementations/DEBUG_SYSTEM.md`
 
 Reference: `docs/implementations/DOWNLOAD_PDF.md`
 
-1. [ ] **Add `window.print()` trigger button** — Print CSS exists. Add a "Save as PDF" or print icon button.
-2. [ ] **Add `print-color-adjust: exact`** — In `@media print` CSS: `-webkit-print-color-adjust: exact; print-color-adjust: exact;` to preserve background colors.
-3. **Confirm:** Click print button, verify background colors are preserved in preview, no interactive elements visible.
+`window.print()` trigger button already exists in `Hero.tsx` ("Download as PDF"). Only CSS gap remains:
+
+1. [ ] **Add `print-color-adjust: exact`** — In `@media print` CSS: `-webkit-print-color-adjust: exact; print-color-adjust: exact;` to preserve background colors.
+2. **Confirm:** Click print button, verify background colors are preserved in preview, no interactive elements visible.
 
 #### PWA_SYSTEM — Partial → Complete
 
@@ -408,7 +307,7 @@ repo-tor pioneered the pre-React inline pill — that's compliant and inline sty
 
 Reference: `docs/implementations/THEME_DARK_MODE.md`, including **Migration Guide**
 
-repo-tor has working flash prevention and cross-tab sync using custom CSS variables. Needs migration to DaisyUI's dual-layer system.
+repo-tor has working flash prevention using custom CSS variables. Needs migration to DaisyUI's dual-layer system. Note: cross-tab sync was not found in the 2026-04-10 audit (no `storage` event listener detected) — verify before assuming it exists.
 
 1. [ ] **Phase 0: Prerequisites** — `npm install -D daisyui@5`. Configure `@plugin "daisyui"` in CSS with 2 themes (e.g., `lofi --default, black --prefersdark`). Add `@custom-variant dark`. DaisyUI can coexist with existing custom variables during transition.
 2. [ ] **Phase 1: Audit** — Run migration guide search patterns to find all custom variable references and `dark:` pairs in components.
@@ -459,13 +358,14 @@ Reference: `docs/implementations/APP_ICONS.md`
 
 Reference: `docs/implementations/BURGER_MENU.md` (React Native variant section)
 
+Data-driven MenuItem interface already implemented. Remaining gaps:
+
 1. [ ] **Add `useDisclosureFocus` hook** — Focus first item on open, return to trigger on close. Extract as reusable hook.
 2. [ ] **Add `useFocusTrap`** — Tab/Shift+Tab should cycle within menu items when open. For Expo web, this is a DOM concern.
 3. [ ] **Add arrow key / Home / End navigation** — For web platform. React Native doesn't have DOM keyboard nav, but Expo serves on web too.
 4. [ ] **Add `aria-controls` linking** — Trigger button `aria-controls={menuId}` pointing to the menu element.
-5. [ ] **Add data-driven MenuItem interface** — Replace hardcoded inline buttons with `items` prop supporting `visible`, `disabled`, `highlight`, `highlightColor`. See pattern's MenuItem interface.
-6. [ ] **Add theme UI to menu** — Once THEME_DARK_MODE flash prevention is done, verify theme toggle and picker follow [Theme UI in Burger Menu](../implementations/BURGER_MENU.md#theme-ui-in-burger-menu) spec (React Native variant).
-7. **Confirm:** Open menu on web — keyboard navigation works, focus is trapped. On mobile — haptic feedback on toggle, 44px touch targets. Theme toggle works within menu.
+5. [ ] **Add theme UI to menu** — Once THEME_DARK_MODE flash prevention is done, verify theme toggle and picker follow [Theme UI in Burger Menu](../implementations/BURGER_MENU.md#theme-ui-in-burger-menu) spec (React Native variant).
+6. **Confirm:** Open menu on web — keyboard navigation works, focus is trapped. On mobile — haptic feedback on toggle, 44px touch targets. Theme toggle works within menu.
 
 #### DEBUG_SYSTEM — Partial → Complete
 
@@ -477,8 +377,7 @@ Reference: `docs/implementations/DEBUG_SYSTEM.md`
 4. [ ] **Add pre-React inline pill** — Inline `<script>` in `+html.tsx` with `window.__debugPushError()` and 20-second timeout.
 5. [ ] **Add subscriber replay** — New subscribers receive existing entries immediately on subscribe.
 6. [ ] **Change `details` to `Record<string, unknown>`** — Currently `string`. Structured data enables post-mortem filtering.
-7. [ ] **Add ClipboardItem Blob fallback** — Primary clipboard method before writeText.
-8. [ ] **Add URL query param redaction** — In `debugGenerateReport()`.
+7. [ ] **Add URL query param redaction** — In `debugGenerateReport()`.
 9. **Confirm:** Open app, crash a component — pill survives in separate root. Copy report — URLs redacted. New subscriber gets existing entries.
 
 #### DOWNLOAD_PDF — Missing → Implement
@@ -692,9 +591,9 @@ React + Vite app. Has partial APP_ICONS, DEBUG_SYSTEM, DOWNLOAD_PDF, and PWA. Mi
 
 #### CLAUDE.md — Align with glow-props
 
-No local `docs/implementations/` folder (correct). Has **~475 lines of hardcoded inline patterns** in a "Suggested Implementations" section (~lines 326-800) covering PWA System, Debug System, App Icons, Download as PDF — full code examples. No reference to glow-props as pattern source exists.
+No local `docs/implementations/` folder (correct). Has **~630 lines of hardcoded inline patterns** in a "Suggested Implementations" section (~lines 328-957) covering PWA System, Debug System, and Download as PDF — full code examples. No reference to glow-props as pattern source exists.
 
-1. [ ] **Delete entire "Suggested Implementations" section** — Remove ~lines 326-800 (~475 lines of inline pattern code for PWA System, Debug System, App Icons, Download as PDF).
+1. [ ] **Delete entire "Suggested Implementations" section** — Remove ~lines 328-957 (~630 lines of inline pattern code for PWA System, Debug System, and Download as PDF).
 2. [ ] **Add "Implementation Patterns (Source of Truth)" section** — Replace deleted section with the standard glow-props reference block (source location, fetch via GitHub Pages/API, listing command, rules).
 3. [ ] **Add AI Note** — Add the standard implementation patterns note about always fetching from glow-props.
 4. [ ] **Add prohibition** — Add to Prohibitions: "Create local copies of implementation pattern files in any repo — always fetch from glow-props".
@@ -727,7 +626,7 @@ Reference: `docs/implementations/DEBUG_SYSTEM.md`
 3. [ ] **Add pre-React inline pill** — Inline `<script>` in `index.html` with `window.__debugPushError()` and 20-second timeout.
 4. [ ] **Add HMR guard** — `window.__debugLogListenersAttached` flag to prevent duplicate listeners during dev hot reload.
 5. [ ] **Change `details` to `Record<string, unknown>`** — Currently `string`.
-6. [ ] **Improve clipboard fallbacks** — Add ClipboardItem Blob as primary method.
+6. [ ] **Improve clipboard fallbacks** — `navigator.clipboard` + textarea fallback already exists in `src/lib/clipboard.ts`. Add ClipboardItem Blob as primary method for richer content.
 7. **Confirm:** 3 tabs in pill. HMR reload — no duplicate entries. Console errors captured.
 
 #### DOWNLOAD_PDF — Partial → Complete
@@ -869,17 +768,19 @@ synctone uses Uniwind's `setTheme()` with `classList.add()` — not the DaisyUI 
 
 ## Cross-Cutting Gaps (most common across repos)
 
-These gaps appear in 6+ repos and represent the highest-leverage improvements:
+Updated 2026-04-10 after code audit. canva-grid and budgy-ting have resolved most gaps since the original 2026-04-06 audit.
 
-1. **CLAUDE.md alignment** — 1 Pass (repo-tor), 1 Partial (budgy-ting), 8 Missing. Must be done first — removes inline patterns and local copies, ensures all repos fetch from glow-props. Worst offenders: few-lap (~620 lines inline), four-ems (~475 lines), sun-sea-o (~470 lines), see-veo (~280 lines), synctone (8 local files in `docs/implementations/`).
+These gaps appear in 4+ repos and represent the highest-leverage improvements:
+
+1. **CLAUDE.md alignment** — 3 Pass (repo-tor, canva-grid, budgy-ting), 7 Missing. Must be done first — removes inline patterns and local copies, ensures all repos fetch from glow-props. Worst offenders: few-lap (~620 lines inline), four-ems (~630 lines), sun-sea-o (~470 lines), see-veo (~318 lines), synctone (8 local files in `docs/implementations/`).
 2. **EVENT_BUS** — Missing in 10/11 repos (only graphiki has partial). Most repos may not need it.
-3. **DEBUG_SYSTEM: console interception** — Missing in all repos that have debug systems (8/8)
-4. **DEBUG_SYSTEM: pre-React inline pill** — Missing in 7/8 repos (only repo-tor has it)
-5. **DEBUG_SYSTEM: inline styles** — Only repo-tor uses inline styles; all others use Tailwind/DaisyUI
-6. **DEBUG_SYSTEM: PWA Diagnostics tab** — Missing in all repos (0/8 have 3 tabs)
-7. **PWA_SYSTEM: visibility-based update checks** — Missing in 7/8 repos (only repo-tor has it)
-8. **PWA_SYSTEM: 30-second suppression** — Missing in 7/8 repos (only repo-tor has it)
-9. **PWA_SYSTEM: module singleton** — Missing in 6/8 repos (glow-props and repo-tor have it)
-10. **BURGER_MENU: focus hooks extraction** — Missing in all repos that have menus
-11. **THEME_DARK_MODE** — Missing in 5/11 repos (model-pear, see-veo, sun-sea-o, four-ems have no theming)
-12. **Z_INDEX_SCALE** — 1 Pass (glow-props), 3 Partial (canva-grid, repo-tor, graphiki), 7 Missing. Most repos have ad-hoc z-index values that need normalizing to the standard scale.
+3. **DEBUG_SYSTEM: console interception** — Now done in canva-grid and budgy-ting. Still missing in 6/8 repos with debug systems (see-veo, repo-tor, few-lap, sun-sea-o, four-ems, synctone).
+4. **DEBUG_SYSTEM: pre-React inline pill** — Now done in canva-grid and budgy-ting. Still missing in 5/8 repos (see-veo, few-lap, sun-sea-o, four-ems, synctone). repo-tor has the best inline implementation.
+5. **DEBUG_SYSTEM: inline styles** — repo-tor and canva-grid use inline styles. Others still use Tailwind/DaisyUI.
+6. **DEBUG_SYSTEM: PWA Diagnostics tab** — Now done in canva-grid and budgy-ting. Still missing in 6/8 repos.
+7. **PWA_SYSTEM: visibility-based update checks** — Now done in canva-grid, budgy-ting, and repo-tor. Still missing in 5/8 repos.
+8. **PWA_SYSTEM: 30-second suppression** — Now done in canva-grid, budgy-ting, and repo-tor. Still missing in 5/8 repos.
+9. **PWA_SYSTEM: module singleton** — Now done in canva-grid, budgy-ting, glow-props, and repo-tor. Still missing in 4/8 repos.
+10. **BURGER_MENU: focus hooks extraction** — Missing in all repos that have menus except canva-grid (which has `useEscapeKey` extracted).
+11. **THEME_DARK_MODE** — Missing in 4/11 repos (model-pear, see-veo, sun-sea-o, four-ems have no theming). budgy-ting now has full DaisyUI combo system.
+12. **Z_INDEX_SCALE** — 3 Pass (glow-props, canva-grid, budgy-ting), 2 Partial (repo-tor, graphiki), 6 Missing.
