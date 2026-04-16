@@ -42,15 +42,35 @@ Legend: **Pass** = compliant, **Partial** = has the feature but with gaps, **Mis
 
 ### canva-grid
 
-React + Vite app. **Fully compliant** across all 8 applicable patterns (verified 2026-04-10). No remaining gaps.
+React + Vite app. **Fully compliant** across all 8 applicable patterns (verified 2026-04-10). Only HISTORY.md removal pending.
 
 EVENT_BUS: Decided against — canva-grid uses React Context dispatch for component communication, which is sufficient for its architecture. No service-layer pub/sub needed.
+
+#### HISTORY.md — Remove (cross-fleet policy 2026-04-16)
+
+Git history already tracks completions; a separate changelog is redundant.
+
+1. [ ] Delete `docs/HISTORY.md`
+2. [ ] Remove `### docs/HISTORY.md` section from CLAUDE.md Documentation rules
+3. [ ] Change "move completed items to HISTORY.md" → "delete completed items (git history tracks them)" in CLAUDE.md
+4. [ ] Remove HISTORY.md from README.md file tree (if listed)
+5. [ ] Delete any `[x]` completed items from `docs/TODO.md`
 
 ### budgy-ting
 
 Vue + Vite app. Mostly compliant (verified 2026-04-10). CLAUDE.md, APP_ICONS, PWA_SYSTEM, THEME_DARK_MODE, and Z_INDEX_SCALE are now fully passing. Remaining gaps: BURGER_MENU (minor), DEBUG_SYSTEM (minor), DOWNLOAD_PDF (needs print button).
 
 Previous gaps now confirmed done: CLAUDE.md URLs updated, 400 DPI + separate maskable icon, visibility-based update checks + 30-second suppression + module singleton, full DaisyUI combo-based theme system with flash prevention + cross-tab sync, z-index scale documented and applied.
+
+#### HISTORY.md — Remove (cross-fleet policy 2026-04-16)
+
+Git history already tracks completions; a separate changelog is redundant.
+
+1. [ ] Delete `docs/HISTORY.md`
+2. [ ] Remove `### docs/HISTORY.md` section from CLAUDE.md Documentation rules
+3. [ ] Change "move completed items to HISTORY.md" → "delete completed items (git history tracks them)" in CLAUDE.md
+4. [ ] Remove HISTORY.md from README.md file tree (if listed)
+5. [ ] Delete any `[x]` completed items from `docs/TODO.md`
 
 #### BURGER_MENU — Partial (minor gaps)
 
@@ -86,6 +106,16 @@ Reference: `docs/implementations/DOWNLOAD_PDF.md`
 ### model-pear
 
 SvelteKit app. Lowest compliance across the fleet — 5 of 7 patterns are entirely missing. This needs foundational work. Dark-only design currently.
+
+#### HISTORY.md — Remove (cross-fleet policy 2026-04-16)
+
+Git history already tracks completions; a separate changelog is redundant.
+
+1. [ ] Delete `docs/HISTORY.md`
+2. [ ] Remove `### docs/HISTORY.md` section from CLAUDE.md Documentation rules
+3. [ ] Change "move completed items to HISTORY.md" → "delete completed items (git history tracks them)" in CLAUDE.md
+4. [ ] Remove HISTORY.md from README.md file tree (if listed)
+5. [ ] Delete any `[x]` completed items from `docs/TODO.md` (including the "Negotiation Mode" High Priority section which is marked complete)
 
 #### CLAUDE.md — Align with glow-props
 
@@ -177,6 +207,16 @@ Reference: `docs/implementations/Z_INDEX_SCALE.md`
 
 React + Vite resume/portfolio site. Single dark theme currently. Has partial debug and PWA implementations that need hardening. Burger menu and theming are absent but may be intentional for a minimal resume site.
 
+#### HISTORY.md — Remove (cross-fleet policy 2026-04-16)
+
+Git history already tracks completions; a separate changelog is redundant.
+
+1. [ ] Delete `docs/HISTORY.md`
+2. [ ] Remove `### docs/HISTORY.md` section from CLAUDE.md Documentation rules
+3. [ ] Change "move completed items to HISTORY.md" → "delete completed items (git history tracks them)" in CLAUDE.md
+4. [ ] Remove HISTORY.md from README.md file tree (if listed)
+5. [ ] Delete any `[x]` completed items from `docs/TODO.md`
+
 #### CLAUDE.md — Align with glow-props
 
 No local `docs/implementations/` folder (correct). Has **~280 lines of hardcoded inline patterns** in a "Suggested Implementations" section (~lines 322-603) covering PWA System, App Icons, Download as PDF, Timer Leaks, and HTTPS Proxy — full code examples embedded directly. Missing: any reference to glow-props as pattern source.
@@ -267,11 +307,29 @@ All previous gaps implemented: 180px Apple touch icon + favicon.ico generation, 
 
 EVENT_BUS: Not needed — React Context dispatch + useReducer pattern in AppContext.jsx is sufficient. No service-layer pub/sub required.
 
-- [ ] **Decide:** repo-tor currently uses React Context dispatch and `window.dispatchEvent(new CustomEvent(...))` for PWA communication. If this pattern grows unwieldy or other service-layer events emerge, migrate to `docs/implementations/EVENT_BUS.md`. If current approach works, skip.
+#### HISTORY.md — Remove (cross-fleet policy 2026-04-16)
+
+Git history already tracks completions; a separate changelog is redundant.
+
+1. [ ] Delete `docs/HISTORY.md`
+2. [ ] Remove `### docs/HISTORY.md` section from CLAUDE.md Documentation rules
+3. [ ] Change "move completed items to HISTORY.md" → "delete completed items (git history tracks them)" in CLAUDE.md
+4. [ ] Remove HISTORY.md from README.md file tree (if listed)
+5. [ ] Delete any `[x]` completed items from `docs/TODO.md`
 
 ### few-lap
 
 React Native (Expo) app. Uses Metro bundler (not Vite) and Uniwind for theming. Has a burger menu and debug system that need hardening. Custom SW approach is correct for Expo.
+
+#### HISTORY.md — Remove (cross-fleet policy 2026-04-16)
+
+Git history already tracks completions; a separate changelog is redundant.
+
+1. [ ] Delete `docs/HISTORY.md`
+2. [ ] Remove `### docs/HISTORY.md` section from CLAUDE.md Documentation rules
+3. [ ] Change "move completed items to HISTORY.md" → "delete completed items (git history tracks them)" in CLAUDE.md
+4. [ ] Remove HISTORY.md from README.md file tree (if listed)
+5. [ ] Delete any `[x]` completed items from `docs/TODO.md`
 
 #### CLAUDE.md — Align with glow-props
 
@@ -361,6 +419,16 @@ Reference: `docs/implementations/Z_INDEX_SCALE.md`
 ### sun-sea-o
 
 React + Vite app. DOWNLOAD_PDF is fully compliant. Debug system and PWA have partial implementations with many gaps. No theming or burger menu — hardcoded slate colors.
+
+#### HISTORY.md — Remove (cross-fleet policy 2026-04-16)
+
+Git history already tracks completions; a separate changelog is redundant.
+
+1. [ ] Delete `docs/HISTORY.md`
+2. [ ] Remove `### docs/HISTORY.md` section from CLAUDE.md Documentation rules
+3. [ ] Change "move completed items to HISTORY.md" → "delete completed items (git history tracks them)" in CLAUDE.md
+4. [ ] Remove HISTORY.md from README.md file tree (if listed)
+5. [ ] Delete any `[x]` completed items from `docs/TODO.md`
 
 #### CLAUDE.md — Align with glow-props
 
@@ -458,6 +526,16 @@ Hardcoded slate color scheme only. Ground-up implementation.
 
 React + Vite graph editor. Strong foundation — APP_ICONS, THEME_DARK_MODE, and EVENT_BUS (origin repo) are compliant or near-compliant. Focus areas: debug system hardening, PWA update reliability, and evaluating burger menu need.
 
+#### HISTORY.md — Remove (cross-fleet policy 2026-04-16)
+
+Git history already tracks completions; a separate changelog is redundant.
+
+1. [ ] Delete `docs/HISTORY.md`
+2. [ ] Remove `### docs/HISTORY.md` section from CLAUDE.md Documentation rules
+3. [ ] Change "move completed items to HISTORY.md" → "delete completed items (git history tracks them)" in CLAUDE.md
+4. [ ] Remove HISTORY.md from README.md file tree (if listed)
+5. [ ] Delete any `[x]` completed items from `docs/TODO.md` (including the "DONE: Remove IDs from Import/Merge" section which is marked complete)
+
 #### CLAUDE.md — Align with glow-props
 
 No local `docs/implementations/` folder (correct). Has **~180 lines of hardcoded inline patterns** in a "SUGGESTED IMPLEMENTATIONS" section (~line 581) covering PWA System, Debug System, App Icons, Download as PDF — full code examples. No reference to glow-props as pattern source exists.
@@ -526,6 +604,16 @@ graphiki is the origin repo for this pattern. Core is compliant (catch-all, erro
 ### four-ems
 
 React + Vite app. Has partial APP_ICONS, DEBUG_SYSTEM, DOWNLOAD_PDF, and PWA. Missing BURGER_MENU, THEME_DARK_MODE, and EVENT_BUS entirely.
+
+#### HISTORY.md — Remove (cross-fleet policy 2026-04-16)
+
+Git history already tracks completions; a separate changelog is redundant.
+
+1. [ ] Delete `docs/HISTORY.md`
+2. [ ] Remove `### docs/HISTORY.md` section from CLAUDE.md Documentation rules
+3. [ ] Change "move completed items to HISTORY.md" → "delete completed items (git history tracks them)" in CLAUDE.md
+4. [ ] Remove HISTORY.md from README.md file tree (if listed)
+5. [ ] Delete any `[x]` completed items from `docs/TODO.md`
 
 #### CLAUDE.md — Align with glow-props
 
@@ -615,6 +703,16 @@ Reference: `docs/implementations/Z_INDEX_SCALE.md`
 ### synctone
 
 React Native (Expo) chat app. Uses Metro bundler and Uniwind for theming. Has Zustand stores for state. Custom SW approach is correct for Expo. Theming exists via Uniwind but doesn't follow the DaisyUI dual-layer spec.
+
+#### HISTORY.md — Remove (cross-fleet policy 2026-04-16)
+
+Git history already tracks completions; a separate changelog is redundant.
+
+1. [ ] Delete `docs/HISTORY.md`
+2. [ ] Remove `### docs/HISTORY.md` section from CLAUDE.md Documentation rules
+3. [ ] Change "move completed items to HISTORY.md" → "delete completed items (git history tracks them)" in CLAUDE.md
+4. [ ] Remove HISTORY.md from README.md file tree (if listed)
+5. [ ] Delete any `[x]` completed items from `docs/TODO.md`
 
 #### CLAUDE.md — Align with glow-props
 
