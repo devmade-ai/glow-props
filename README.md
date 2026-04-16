@@ -86,7 +86,6 @@ glow-props/
     generate-icons.mjs          # Sharp: SVG → PNG at 400 DPI
   docs/
     SESSION_NOTES.md            # Current session context
-    HISTORY.md                  # Completed work changelog
     TODO.md                     # Pending items
     AI_MISTAKES.md              # Learnings from past AI errors
     USER_ACTIONS.md             # Manual tasks requiring user intervention

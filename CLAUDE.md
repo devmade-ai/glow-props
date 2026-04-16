@@ -153,28 +153,15 @@ These footers are required on every commit. No exceptions.
 
 **Purpose:** AI-managed backlog of ideas and potential improvements.
 **When to read:** When looking for work to do, or when the user asks about pending tasks.
-**When to update:** When noticing potential improvements. Move completed items to HISTORY.md.
+**When to update:** When noticing potential improvements. Delete completed items (git history tracks them).
 **What to include:**
 
 - Group by category (Features, UX, Technical, etc.)
 - Use `- [ ]` for pending items only
 - Brief description of what and why
-- When complete, move to HISTORY.md (don't keep in TODO)
+- When complete, delete from TODO (git history tracks completions — no separate changelog needed)
 
 **Why:** User reviews this to prioritize work. Keeps TODO focused on pending items only.
-
-### `docs/HISTORY.md`
-
-**Purpose:** Changelog and record of completed work.
-**When to read:** When you need historical context about why something was built a certain way.
-**When to update:** When completing TODO items or making significant changes.
-**What to include:**
-
-- Completed TODO items (organized by category)
-- Bug fixes and changes (organized by date)
-- Brief description of what was done
-
-**Why:** Historical context separate from active TODO. Tracks what's been accomplished.
 
 ### `docs/USER_ACTIONS.md`
 
