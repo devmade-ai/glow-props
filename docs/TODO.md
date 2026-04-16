@@ -18,27 +18,29 @@
 
 ## Per-Repo Pattern Implementation Gaps
 
-Audited 2026-04-06 against updated `docs/implementations/*.md` pattern docs. Updated 2026-04-10 with Z_INDEX_SCALE (9 patterns). Re-audited 2026-04-10 against actual repo code — corrected stale statuses for canva-grid, budgy-ting, see-veo, few-lap, four-ems, repo-tor.
+Audited 2026-04-06 against updated `docs/implementations/*.md` pattern docs. Updated 2026-04-10 with Z_INDEX_SCALE (9 patterns). Re-audited 2026-04-10 against actual repo code — corrected stale statuses for canva-grid, budgy-ting, see-veo, few-lap, four-ems, repo-tor. Added PWA_ICON_CACHE_BUST pattern 2026-04-16 (10 patterns).
 
 Legend: **Pass** = compliant, **Partial** = has the feature but with gaps, **Missing** = not implemented, **N/A** = not applicable
 
 ### Gap Matrix
 
-| Repo | CLAUDE.md | APP_ICONS | BURGER_MENU | DEBUG_SYSTEM | DOWNLOAD_PDF | PWA_SYSTEM | THEME_DARK_MODE | EVENT_BUS | Z_INDEX_SCALE |
-|------|-----------|-----------|-------------|--------------|--------------|------------|-----------------|-----------|---------------|
-| glow-props | Pass | Pass | Pass | N/A | Pass | Pass | Pass | N/A | Pass |
-| canva-grid | Pass | Pass | Pass | Pass | Pass (B) | Pass | Pass | N/A | Pass |
-| budgy-ting | Pass | Pass | Partial | Partial | Partial | Pass | Pass | Missing | Pass |
-| model-pear | Missing | Missing | Missing | Missing | Partial | Missing | Missing | Missing | Missing |
-| see-veo | Missing | Partial | Missing | Partial | Partial | Partial | Missing | Missing | Missing |
-| repo-tor | Pass | Pass | Pass | Pass | Pass | Pass | Pass | N/A | Pass |
-| few-lap | Missing | Partial | Partial | Partial | Missing | Partial | Partial | Missing | Missing |
-| sun-sea-o | Missing | Partial | Missing | Partial | Pass | Partial | Missing | Missing | Missing |
-| graphiki | Missing | Pass | Missing | Partial | Missing | Partial | Pass | Partial | Partial |
-| four-ems | Missing | Partial | Missing | Partial | Partial | Partial | Missing | Missing | Missing |
-| synctone | Missing | Partial | Missing | Partial | Missing | Partial | Partial | Missing | Missing |
+| Repo | CLAUDE.md | APP_ICONS | BURGER_MENU | DEBUG_SYSTEM | DOWNLOAD_PDF | PWA_SYSTEM | THEME_DARK_MODE | EVENT_BUS | Z_INDEX_SCALE | ICON_CACHE_BUST |
+|------|-----------|-----------|-------------|--------------|--------------|------------|-----------------|-----------|---------------|-----------------|
+| glow-props | Pass | Pass | Pass | N/A | Pass | Pass | Pass | N/A | Pass | N/A |
+| canva-grid | Pass | Pass | Pass | Pass | Pass (B) | Pass | Pass | N/A | Pass | Missing |
+| budgy-ting | Pass | Pass | Partial | Partial | Partial | Pass | Pass | Missing | Pass | Missing |
+| model-pear | Missing | Missing | Missing | Missing | Partial | Missing | Missing | Missing | Missing | N/A |
+| see-veo | Missing | Partial | Missing | Partial | Partial | Partial | Missing | Missing | Missing | Missing |
+| repo-tor | Pass | Pass | Pass | Pass | Pass | Pass | Pass | N/A | Pass | Missing |
+| few-lap | Missing | Partial | Partial | Partial | Missing | Partial | Partial | Missing | Missing | Missing |
+| sun-sea-o | Missing | Partial | Missing | Partial | Pass | Partial | Missing | Missing | Missing | Missing |
+| graphiki | Missing | Pass | Missing | Partial | Missing | Partial | Pass | Partial | Partial | Missing |
+| four-ems | Missing | Partial | Missing | Partial | Partial | Partial | Missing | Missing | Missing | Missing |
+| synctone | Missing | Partial | Missing | Partial | Missing | Partial | Partial | Missing | Missing | Missing |
 
 **(B)** = Approach B (pdf-lib) per `docs/implementations/DOWNLOAD_PDF.md` — correct choice for canvas-heavy content
+
+**N/A for ICON_CACHE_BUST**: glow-props (static site, no PWA icons), model-pear (no PWA yet — implement PWA_SYSTEM first)
 
 ### canva-grid
 
@@ -820,3 +822,4 @@ These gaps appear in 4+ repos and represent the highest-leverage improvements:
 10. **BURGER_MENU: focus hooks extraction** — Done in canva-grid (`useEscapeKey`) and repo-tor (`useDisclosureFocus` + `useFocusTrap`). Still missing in other repos with menus.
 11. **THEME_DARK_MODE** — Missing in 4/11 repos (model-pear, see-veo, sun-sea-o, four-ems have no theming). budgy-ting and repo-tor now have full DaisyUI systems.
 12. **Z_INDEX_SCALE** — 4 Pass (glow-props, canva-grid, budgy-ting, repo-tor), 1 Partial (graphiki), 6 Missing.
+13. **PWA_ICON_CACHE_BUST** — New pattern added 2026-04-16. Missing in all 9 repos with PWA (canva-grid, budgy-ting, see-veo, repo-tor, few-lap, sun-sea-o, graphiki, four-ems, synctone). N/A for glow-props (static) and model-pear (no PWA yet).
