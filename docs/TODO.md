@@ -31,7 +31,7 @@ Legend: **Pass** = compliant, **Partial** = has the feature but with gaps, **Mis
 | budgy-ting | Pass | Pass | Partial | Partial | Partial | Pass | Pass | Missing | Pass |
 | model-pear | Missing | Missing | Missing | Missing | Partial | Missing | Missing | Missing | Missing |
 | see-veo | Missing | Partial | Missing | Partial | Partial | Partial | Missing | Missing | Missing |
-| repo-tor | Pass | Partial | Partial | Partial | Pass | Pass | Partial | Missing | Partial |
+| repo-tor | Pass | Pass | Pass | Pass | Pass | Pass | Pass | N/A | Pass |
 | few-lap | Missing | Partial | Partial | Partial | Missing | Partial | Partial | Missing | Missing |
 | sun-sea-o | Missing | Partial | Missing | Partial | Pass | Partial | Missing | Missing | Missing |
 | graphiki | Missing | Pass | Missing | Partial | Missing | Partial | Pass | Partial | Partial |
@@ -261,69 +261,11 @@ Reference: `docs/implementations/Z_INDEX_SCALE.md`
 
 ### repo-tor
 
-React + Vite dashboard app. One of the most compliant repos — PWA and DOWNLOAD_PDF are fully passing. Has the fleet's best pre-React inline debug pill. Main gaps: DaisyUI migration and debug system modernization.
+React + Vite dashboard app. **Fully compliant** across all 8 applicable patterns (verified 2026-04-16). No remaining gaps.
 
-#### CLAUDE.md — Pass (already aligned)
+All previous gaps implemented: 180px Apple touch icon + favicon.ico generation, z-index scale normalized (inline pill now uses z-80), full debugLog module with pub/sub + console interception + #debug-root + React DebugPill (3 tabs) + clipboard fallbacks + URL redaction, DaisyUI v5 migration with 8 curated themes + data-theme + flash prevention + cross-tab sync via storage event + meta theme-color + generate-theme-meta script, useDisclosureFocus + useFocusTrap wired to menu + Home/End keys + disabled items + theme UI in burger menu.
 
-No local `docs/implementations/` folder (correct). "Suggested Implementations" section already points to glow-props `docs/implementations/` with dynamic fetch commands and listing. Prohibition against local copies exists. No action needed.
-
-#### APP_ICONS — Partial → Complete
-
-Reference: `docs/implementations/APP_ICONS.md`
-
-1. [ ] **Add 180px Apple touch icon** — Add `{ size: 180, name: 'apple-touch-icon.png' }` to `generate-icons.mjs` output list. Regenerate.
-2. [ ] **Add `<link rel="apple-touch-icon">` to `index.html`** — `<link rel="apple-touch-icon" href="/apple-touch-icon.png">`.
-3. **Confirm:** Run generation script, verify 180px PNG exists. Test on iOS — home screen icon should use the correct image.
-
-#### BURGER_MENU — Partial → Complete
-
-Reference: `docs/implementations/BURGER_MENU.md`
-
-1. [ ] **Extract `useDisclosureFocus` hook** — Focus logic is inlined in HamburgerMenu.jsx. Extract to `src/hooks/useDisclosureFocus.js` — focus first item on open, return to trigger on close.
-2. [ ] **Wire `useFocusTrap` to menu** — Hook exists in codebase but isn't used by the burger menu. Import and apply.
-3. [ ] **Add Home/End key support** — Currently handles ArrowDown/ArrowUp. Add Home (first item) and End (last item).
-4. [ ] **Add `disabled` item support** — Grayed out styling, prevent click/focus. See pattern's MenuItem interface.
-5. [ ] **Add theme UI to menu** — Once THEME_DARK_MODE migration is done, add dark/light toggle and theme picker per [Theme UI in Burger Menu](../implementations/BURGER_MENU.md#theme-ui-in-burger-menu) spec.
-6. **Confirm:** Open menu, Tab is trapped. Home/End work. Disabled items can't be clicked or focused. Theme toggle and picker work.
-
-#### DEBUG_SYSTEM — Partial → Complete
-
-Reference: `docs/implementations/DEBUG_SYSTEM.md`
-
-repo-tor pioneered the pre-React inline pill — that's compliant and inline styles are correct. Focus on the React-side debug system.
-
-1. [ ] **Add console interception** — Patch `console.error`/`console.warn` at module load to capture React warnings.
-2. [ ] **Create full `debugLog` module** — Replace simple `{time, message, stack}` array with typed pub/sub module: `debugAdd`, `debugSubscribe`, `debugGetEntries`, `debugClear`, `debugGenerateReport`. Structured entries with `source`, `severity`, `details` (Record).
-3. [ ] **Add `#debug-root` and React DebugPill** — Add `<div id="debug-root">` to `index.html`. Create a React-based DebugPill in a separate root with 3 tabs (Log, Environment, PWA Diagnostics). The existing inline pill handles pre-React; this handles post-mount.
-4. [ ] **Add clipboard fallbacks** — ClipboardItem Blob → writeText → textarea. Currently only writeText.
-5. [ ] **Add URL query param redaction** — In debug report generation.
-6. **Confirm:** Open app, verify inline pill loads during boot, then React pill takes over. 3 tabs work. Console errors appear in Log. Copy report — URLs redacted.
-
-#### THEME_DARK_MODE — Partial → Full DaisyUI
-
-Reference: `docs/implementations/THEME_DARK_MODE.md`, including **Migration Guide**
-
-repo-tor has working flash prevention using custom CSS variables. Needs migration to DaisyUI's dual-layer system. Note: cross-tab sync was not found in the 2026-04-10 audit (no `storage` event listener detected) — verify before assuming it exists.
-
-1. [ ] **Phase 0: Prerequisites** — `npm install -D daisyui@5`. Configure `@plugin "daisyui"` in CSS with 2 themes (e.g., `lofi --default, black --prefersdark`). Add `@custom-variant dark`. DaisyUI can coexist with existing custom variables during transition.
-2. [ ] **Phase 1: Audit** — Run migration guide search patterns to find all custom variable references and `dark:` pairs in components.
-3. [ ] **Phase 2-3: Variable removal + component migration** — Replace custom `:root`/`.dark` variables with DaisyUI semantic classes. Replace raw Tailwind with DaisyUI component classes (buttons, inputs, cards, etc.). Work incrementally.
-4. [ ] **Phase 4: Z-index normalization** — Align to `docs/implementations/Z_INDEX_SCALE.md`.
-5. [ ] **Add `data-theme` attribute** — Update flash prevention script and theme toggle to set `data-theme` alongside `.dark` class. See pattern's `applyTheme()`.
-6. [ ] **Add `<meta name="theme-color">`** — Two tags with media queries in `index.html`. Dynamic updates in theme module. Generate hex values with `scripts/generate-theme-meta.mjs`.
-7. [ ] **Phase 5-6: Verification and cleanup** — Run 10-point checklist. Delete old variable definitions. Clean up orphaned `dark:` prefixes.
-8. **Confirm:** All DaisyUI components switch themes correctly. Flash prevention still works. Cross-tab sync still works. Meta theme-color updates in DevTools.
-
-#### Z_INDEX_SCALE — Partial → Complete
-
-Reference: `docs/implementations/Z_INDEX_SCALE.md`
-
-repo-tor uses the scale in most places but has ad-hoc values in older components.
-
-1. [ ] **Audit and normalize** — Run the audit command from the pattern doc. Fix any values outside the standard scale.
-2. **Confirm:** No ad-hoc z-index values remain.
-
-#### EVENT_BUS — Evaluate if needed
+EVENT_BUS: Not needed — React Context dispatch + useReducer pattern in AppContext.jsx is sufficient. No service-layer pub/sub required.
 
 - [ ] **Decide:** repo-tor currently uses React Context dispatch and `window.dispatchEvent(new CustomEvent(...))` for PWA communication. If this pattern grows unwieldy or other service-layer events emerge, migrate to `docs/implementations/EVENT_BUS.md`. If current approach works, skip.
 
@@ -764,19 +706,19 @@ synctone uses Uniwind's `setTheme()` with `classList.add()` — not the DaisyUI 
 
 ## Cross-Cutting Gaps (most common across repos)
 
-Updated 2026-04-10 after code audit. canva-grid and budgy-ting have resolved most gaps since the original 2026-04-06 audit.
+Updated 2026-04-16 after code audit. canva-grid, budgy-ting, and repo-tor have resolved all gaps. 3 repos now fully compliant alongside glow-props.
 
 These gaps appear in 4+ repos and represent the highest-leverage improvements:
 
 1. **CLAUDE.md alignment** — 3 Pass (repo-tor, canva-grid, budgy-ting), 7 Missing. Must be done first — removes inline patterns and local copies, ensures all repos fetch from glow-props. Worst offenders: few-lap (~620 lines inline), four-ems (~630 lines), sun-sea-o (~470 lines), see-veo (~318 lines), synctone (8 local files in `docs/implementations/`).
-2. **EVENT_BUS** — Missing in 10/11 repos (only graphiki has partial). Most repos may not need it.
-3. **DEBUG_SYSTEM: console interception** — Now done in canva-grid and budgy-ting. Still missing in 6/8 repos with debug systems (see-veo, repo-tor, few-lap, sun-sea-o, four-ems, synctone).
-4. **DEBUG_SYSTEM: pre-React inline pill** — Now done in canva-grid and budgy-ting. Still missing in 5/8 repos (see-veo, few-lap, sun-sea-o, four-ems, synctone). repo-tor has the best inline implementation.
-5. **DEBUG_SYSTEM: inline styles** — repo-tor and canva-grid use inline styles. Others still use Tailwind/DaisyUI.
-6. **DEBUG_SYSTEM: PWA Diagnostics tab** — Now done in canva-grid and budgy-ting. Still missing in 6/8 repos.
-7. **PWA_SYSTEM: visibility-based update checks** — Now done in canva-grid, budgy-ting, and repo-tor. Still missing in 5/8 repos.
-8. **PWA_SYSTEM: 30-second suppression** — Now done in canva-grid, budgy-ting, and repo-tor. Still missing in 5/8 repos.
-9. **PWA_SYSTEM: module singleton** — Now done in canva-grid, budgy-ting, glow-props, and repo-tor. Still missing in 4/8 repos.
-10. **BURGER_MENU: focus hooks extraction** — Missing in all repos that have menus except canva-grid (which has `useEscapeKey` extracted).
-11. **THEME_DARK_MODE** — Missing in 4/11 repos (model-pear, see-veo, sun-sea-o, four-ems have no theming). budgy-ting now has full DaisyUI combo system.
-12. **Z_INDEX_SCALE** — 3 Pass (glow-props, canva-grid, budgy-ting), 2 Partial (repo-tor, graphiki), 6 Missing.
+2. **EVENT_BUS** — N/A in 3 repos (canva-grid, budgy-ting, repo-tor decided against). graphiki has partial. 7 repos still need evaluate decision.
+3. **DEBUG_SYSTEM: console interception** — Done in canva-grid, budgy-ting, repo-tor. Still missing in 5/8 repos with debug systems (see-veo, few-lap, sun-sea-o, four-ems, synctone).
+4. **DEBUG_SYSTEM: pre-React inline pill** — Done in canva-grid, budgy-ting, repo-tor. Still missing in 5/8 repos (see-veo, few-lap, sun-sea-o, four-ems, synctone).
+5. **DEBUG_SYSTEM: inline styles** — Done in repo-tor and canva-grid. Others still use Tailwind/DaisyUI.
+6. **DEBUG_SYSTEM: PWA Diagnostics tab** — Done in canva-grid, budgy-ting, repo-tor. Still missing in 5/8 repos.
+7. **PWA_SYSTEM: visibility-based update checks** — Done in canva-grid, budgy-ting, repo-tor, glow-props. Still missing in 4/8 repos.
+8. **PWA_SYSTEM: 30-second suppression** — Done in canva-grid, budgy-ting, repo-tor, glow-props. Still missing in 4/8 repos.
+9. **PWA_SYSTEM: module singleton** — Done in canva-grid, budgy-ting, glow-props, repo-tor. Still missing in 4/8 repos.
+10. **BURGER_MENU: focus hooks extraction** — Done in canva-grid (`useEscapeKey`) and repo-tor (`useDisclosureFocus` + `useFocusTrap`). Still missing in other repos with menus.
+11. **THEME_DARK_MODE** — Missing in 4/11 repos (model-pear, see-veo, sun-sea-o, four-ems have no theming). budgy-ting and repo-tor now have full DaisyUI systems.
+12. **Z_INDEX_SCALE** — 4 Pass (glow-props, canva-grid, budgy-ting, repo-tor), 1 Partial (graphiki), 6 Missing.
