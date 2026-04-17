@@ -412,6 +412,8 @@ Examples:
 | `ship` | `shp` | Pre-merge set: `correctness` + `trust` + `a11y` + `tests` |
 | `risk` | `rsk` | Worst-case blast radius analysis on the current change |
 | `surface` | `srf` | Reflective pass on recent changes: what was decided, what was assumed, what was skipped, what needs human review |
+| `wrap` | `wrp` | Wrap-up pass before moving on — anything to double-check / strengthen / improve, anything discovered / assumed / skipped, anything to cleanup / update / tighten, anything to note / document / clarify |
+| `cold` | `cld` | Fresh-eyes branch audit. Re-read CLAUDE.md from scratch. Review every change on the branch as if this were a new session with no prior context — don't privilege the diffs you just made. List all findings with a fix plan per item. Default scope: `branch` |
 | `all` | `*` | Every applicable trigger across every group, in order |
 
 ### REMINDER: READ AND FOLLOW THE TRIGGERS EVERY TIME
