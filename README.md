@@ -41,15 +41,9 @@ Also hosts `CLAUDE.md` — a comprehensive AI assistant ruleset used as a refere
 
 ## Engineering Patterns
 
-The site documents reusable implementation patterns from `CLAUDE.md`:
+The site documents reusable implementation patterns. Each pattern has YAML frontmatter — drop a `.md` file into `docs/implementations/` and it appears in the app automatically via the `generatePatternManifest` Vite plugin.
 
-- **PWA System** — Install prompts, service worker updates, offline support
-- **Theme & Dark Mode** — User-controlled with system fallback, cross-tab sync, flash prevention
-- **Burger Menu** — WAI-ARIA disclosure pattern, iOS Safari fixes, focus management
-- **App Icons from SVG** — Sharp at 400 DPI, single source to all PNG sizes
-- **Download as PDF** — Zero-dependency via `window.print()`
-- **HTTPS Proxy Support** — Node.js HTTP CONNECT tunnel, zero dependencies
-- **Debug System** — In-memory event store with floating debug pill
+Currently 10 patterns: PWA System, Theme & Dark Mode, Burger Menu, App Icons from SVG, Download as PDF, HTTPS Proxy Support, Debug System, Event Bus, Z-Index Scale, PWA Icon Cache Busting.
 
 Full pattern reference: [CLAUDE.md](https://devmade-ai.github.io/glow-props/CLAUDE.md)
 
@@ -86,14 +80,11 @@ glow-props/
     generate-icons.mjs          # Sharp: SVG → PNG at 400 DPI
   docs/
     SESSION_NOTES.md            # Current session context
-    HISTORY.md                  # Completed work changelog
     TODO.md                     # Pending items
     AI_MISTAKES.md              # Learnings from past AI errors
     USER_ACTIONS.md             # Manual tasks requiring user intervention
     PROJECT_DOCS.md             # Status tracker and update guide for mirrored docs
-    implementations/            # Suggested implementation patterns (7 files)
-      PWA_SYSTEM.md, DEBUG_SYSTEM.md, APP_ICONS.md, DOWNLOAD_PDF.md,
-      HTTPS_PROXY.md, BURGER_MENU.md, THEME_DARK_MODE.md
+    implementations/            # Implementation patterns (10 files, YAML frontmatter)
   .github/
     workflows/
       deploy.yml                # GitHub Pages deployment on push to main

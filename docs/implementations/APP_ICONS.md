@@ -1,3 +1,15 @@
+---
+slug: app-icons
+title: App Icons from SVG
+badge: Build
+description: Single SVG source file converted to all PNG sizes at 400 DPI using Sharp. One command regenerates everything.
+tags:
+  - Sharp
+  - 400 DPI rasterization
+  - PWA manifest
+order: 4
+---
+
 # App Icons from SVG Source
 
 Single SVG source file, Sharp converts to all needed PNG sizes at 400 DPI for crisp edges. One command regenerates everything.

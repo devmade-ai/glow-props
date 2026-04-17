@@ -1,3 +1,15 @@
+---
+slug: z-index-scale
+title: Z-Index Scale
+badge: Convention
+description: Standard stacking order for all projects. Fixed values for base, sticky, sheets, backdrop, menu, modal, toast, and debug layers.
+tags:
+  - CSS z-index
+  - Tailwind
+  - Cross-project standard
+order: 9
+---
+
 # Z-Index Scale
 
 Standard stacking order for all devmade-ai projects. Prevents conflicts between overlapping UI layers (menus, modals, toasts, debug overlays) by assigning each layer a fixed z-index value. All repos must use this scale — no ad-hoc values.

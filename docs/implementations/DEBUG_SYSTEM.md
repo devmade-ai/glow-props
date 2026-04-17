@@ -1,3 +1,15 @@
+---
+slug: debug-system
+title: Debug System
+badge: DX
+description: In-memory event store with floating debug pill. Pub/sub circular buffer, severity levels, environment diagnostics. Renders in separate React root.
+tags:
+  - Pub/sub
+  - Separate React root
+  - Alpha diagnostic
+order: 7
+---
+
 # Debug System
 
 The debug system is an alpha-phase diagnostic tool, intended to be removed post-alpha.

@@ -83,9 +83,18 @@ const renderer = {
 
 marked.use({ renderer, gfm: true, breaks: false });
 
+function stripFrontmatter(text) {
+  if (!text) return text;
+  var t = text.replace(/\r\n/g, '\n');
+  if (!t.startsWith('---\n')) return text;
+  var end = t.indexOf('\n---\n', 4);
+  if (end === -1) return text;
+  return t.slice(end + 5);
+}
+
 function renderMarkdown(text) {
   if (!text) return '';
-  return marked.parse(text);
+  return marked.parse(stripFrontmatter(text));
 }
 
 // Requirement: Copy markdown source with success/failure feedback

@@ -1,4 +1,4 @@
-# READ AND FOLLOW THE PROCESS, PRINCIPLES, CODE STANDARDS, DOCUMENTATION, AI NOTES, TRIGGERS, AND PROHIBITIONS EVERY TIME
+# READ AND FOLLOW THE PROCESS, PRINCIPLES, COMMUNICATION, CODE STANDARDS, DOCUMENTATION, AI NOTES, TRIGGERS, AND PROHIBITIONS EVERY TIME
 
 ## Fetching This File
 
@@ -28,6 +28,22 @@ curl -sf "https://devmade-ai.github.io/glow-props/CLAUDE.md"
 7. **Repeatable process** - Follow consistent steps to ensure all the above
 
 ### REMINDER: READ AND FOLLOW THE PRINCIPLES EVERY TIME
+
+## Communication
+
+Respond as if talking to yourself. Peer-to-peer, no servility.
+
+- **Direct.** No filler, no preamble, no conversational padding. State facts and actions.
+- **No sycophancy.** No "great question", "you're absolutely right", "excellent point". Acknowledge errors briefly and move on.
+- **No hedging.** Commit to a position. "I think" / "perhaps" only when genuinely uncertain.
+- **Proper solutions only.** Always suggest the right fix, not a quick hack. If the proper solution is complex, explain why the shortcut is wrong and lay out the real approach.
+- **Ask before assuming.** When a user reports a bug or makes a request, ask clarifying questions until you are certain you understand the requirement. Don't guess the cause and build a fix on an assumption — one wrong assumption wastes multiple commits.
+- **Always ask at least one question before starting work.** This is the minimum bar. Even when the request seems clear, verify scope, constraints, or intent before writing code.
+- **Concrete options.** When clarification is needed, list numbered options — never open-ended questions.
+- **Assume competence.** The reader is a developer. Don't over-explain basics.
+- **Push back.** Disagree when warranted. State your view first, then ask if they want to proceed differently.
+
+### REMINDER: READ AND FOLLOW THE COMMUNICATION RULES EVERY TIME
 
 ## Code Standards
 
@@ -153,28 +169,15 @@ These footers are required on every commit. No exceptions.
 
 **Purpose:** AI-managed backlog of ideas and potential improvements.
 **When to read:** When looking for work to do, or when the user asks about pending tasks.
-**When to update:** When noticing potential improvements. Move completed items to HISTORY.md.
+**When to update:** When noticing potential improvements. Delete completed items (git history tracks them).
 **What to include:**
 
 - Group by category (Features, UX, Technical, etc.)
 - Use `- [ ]` for pending items only
 - Brief description of what and why
-- When complete, move to HISTORY.md (don't keep in TODO)
+- When complete, delete from TODO (git history tracks completions — no separate changelog needed)
 
 **Why:** User reviews this to prioritize work. Keeps TODO focused on pending items only.
-
-### `docs/HISTORY.md`
-
-**Purpose:** Changelog and record of completed work.
-**When to read:** When you need historical context about why something was built a certain way.
-**When to update:** When completing TODO items or making significant changes.
-**What to include:**
-
-- Completed TODO items (organized by category)
-- Bug fixes and changes (organized by date)
-- Brief description of what was done
-
-**Why:** Historical context separate from active TODO. Tracks what's been accomplished.
 
 ### `docs/USER_ACTIONS.md`
 
@@ -256,10 +259,8 @@ These footers are required on every commit. No exceptions.
 - Commit and push changes before ending a session
 - Clean up completed or obsolete docs/files and remove references to them
 - **CRITICAL: Keep `TutorialModal.jsx` up to date** - This is USER-FACING help content shown in-app. When tabs, sections, or features change, update the tutorial steps to match. Outdated tutorial content confuses users.
-- **ASK before assuming.** When a user reports a bug, ask clarifying questions (which mode? what did you type? what do you see?) BEFORE writing code. Don't guess the cause and build a fix on an assumption - you'll waste time fixing the wrong thing. One clarifying question saves multiple wrong commits.
 - **Always read files before editing.** Use the Read tool on every file before attempting to Edit it. Editing without reading first will fail.
 - **Check build tools before building.** Run `npm install` or verify `node_modules/.bin/vite` exists before attempting `npm run build`. The `sharp` package may not be installed (used by prebuild icon generation), so use `./node_modules/.bin/vite build` directly to skip the prebuild step.
-- **Communication style:** Direct, concise responses. No filler phrases or conversational padding. State facts and actions. Ask specific questions with concrete options when clarification is needed.
 - **Claude Code mobile/web — accessing sibling repos:**
   - Use `GITHUB_ALL_REPO_TOKEN` with the GitHub API (`api.github.com/repos/devmade-ai/{repo}/contents/{path}`) to read files from other devmade-ai repos
   - Use `$(printenv GITHUB_ALL_REPO_TOKEN)` not `$GITHUB_ALL_REPO_TOKEN` to avoid shell expansion issues
@@ -337,6 +338,21 @@ All implementation patterns live in the **glow-props** repo and are the single s
 - Fetch via GitHub Pages: `curl -sf "https://devmade-ai.github.io/glow-props/patterns/{PATTERN_NAME}.md"`
 - Fetch via GitHub API: `curl -sf -H "Authorization: token $(printenv GITHUB_ALL_REPO_TOKEN)" "https://api.github.com/repos/devmade-ai/glow-props/contents/docs/implementations/{PATTERN_NAME}.md" | jq -r .content | base64 -d`
 - To list all available patterns: `curl -sf -H "Authorization: token $(printenv GITHUB_ALL_REPO_TOKEN)" "https://api.github.com/repos/devmade-ai/glow-props/contents/docs/implementations" | jq -r '.[].name'`
+
+**Adding a new pattern:** Drop a `.md` file into `docs/implementations/` with YAML frontmatter and it appears in the app automatically. Required frontmatter fields:
+```yaml
+---
+slug: url-safe-slug
+title: Display Title
+badge: Category
+description: One-line description for the card.
+tags:
+  - tag1
+  - tag2
+order: 10
+---
+```
+The `generatePatternManifest` Vite plugin scans the folder at build time, parses frontmatter, validates required fields, and generates `patterns/manifest.json`. Both `index.html` and `pattern.html` consume this manifest — no hardcoded lists.
 
 **Rules:**
 - **Always fetch the latest version** from glow-props before implementing — patterns are continuously improved

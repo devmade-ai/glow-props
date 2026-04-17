@@ -305,99 +305,8 @@
     <section id="patterns" class="mb-12">
       <h2 class="text-2xl font-bold mb-2 scroll-animate">Patterns</h2>
       <p class="text-base-content/60 mb-6 max-w-xl scroll-animate">Reusable implementation patterns extracted from real projects. Each is documented with requirements, approach, alternatives considered, and key lessons. <a href="CLAUDE.md" class="link link-primary">View full reference</a>.</p>
-      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-
-        <div class="card bg-base-200/50 border border-base-300 card-interactive scroll-animate" data-delay="1">
-          <div class="card-body">
-            <h4 class="font-semibold text-base mb-1">PWA System</h4>
-            <p class="text-sm text-base-content/70 grow">Install prompts, service worker updates, offline support. Handles the <code class="text-xs bg-base-300 px-1 rounded">beforeinstallprompt</code> race condition and browser-specific install instructions.</p>
-            <div class="mt-auto pt-2">
-              <p class="text-xs text-base-content/40">vite-plugin-pwa &middot; React hooks &middot; Cross-browser</p>
-              <div class="card-links">
-                <a href="pattern.html?name=pwa-system" class="btn btn-sm btn-primary rounded-full">View pattern</a>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div class="card bg-base-200/50 border border-base-300 card-interactive scroll-animate" data-delay="2">
-          <div class="card-body">
-            <h4 class="font-semibold text-base mb-1">Theme &amp; Dark Mode</h4>
-            <p class="text-sm text-base-content/70 grow">User-controlled dark/light mode with system preference fallback, localStorage persistence, cross-tab sync, and flash prevention.</p>
-            <div class="mt-auto pt-2">
-              <p class="text-xs text-base-content/40">CSS variables &middot; Tailwind v3/v4 &middot; React + React Native</p>
-              <div class="card-links">
-                <a href="pattern.html?name=theme-dark-mode" class="btn btn-sm btn-primary rounded-full">View pattern</a>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div class="card bg-base-200/50 border border-base-300 card-interactive scroll-animate" data-delay="3">
-          <div class="card-body">
-            <h4 class="font-semibold text-base mb-1">Burger Menu</h4>
-            <p class="text-sm text-base-content/70 grow">Accessible dropdown navigation using the WAI-ARIA disclosure pattern. iOS Safari backdrop fix, focus management, and z-index scale.</p>
-            <div class="mt-auto pt-2">
-              <p class="text-xs text-base-content/40">Disclosure pattern &middot; React + React Native &middot; Tailwind</p>
-              <div class="card-links">
-                <a href="pattern.html?name=burger-menu" class="btn btn-sm btn-primary rounded-full">View pattern</a>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div class="card bg-base-200/50 border border-base-300 card-interactive scroll-animate" data-delay="1">
-          <div class="card-body">
-            <h4 class="font-semibold text-base mb-1">App Icons from SVG</h4>
-            <p class="text-sm text-base-content/70 grow">Single SVG source file converted to all PNG sizes at 400 DPI using Sharp. One command regenerates everything.</p>
-            <div class="mt-auto pt-2">
-              <p class="text-xs text-base-content/40">Sharp &middot; 400 DPI rasterization &middot; PWA manifest</p>
-              <div class="card-links">
-                <a href="pattern.html?name=app-icons" class="btn btn-sm btn-primary rounded-full">View pattern</a>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div class="card bg-base-200/50 border border-base-300 card-interactive scroll-animate" data-delay="2">
-          <div class="card-body">
-            <h4 class="font-semibold text-base mb-1">Download as PDF</h4>
-            <p class="text-sm text-base-content/70 grow">Zero-dependency PDF export using <code class="text-xs bg-base-300 px-1 rounded">window.print()</code>. Print-friendly CSS overrides, <code class="text-xs bg-base-300 px-1 rounded">no-print</code> utility class, and page break control.</p>
-            <div class="mt-auto pt-2">
-              <p class="text-xs text-base-content/40">window.print() &middot; @media print &middot; Zero dependencies</p>
-              <div class="card-links">
-                <a href="pattern.html?name=download-pdf" class="btn btn-sm btn-primary rounded-full">View pattern</a>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div class="card bg-base-200/50 border border-base-300 card-interactive scroll-animate" data-delay="3">
-          <div class="card-body">
-            <h4 class="font-semibold text-base mb-1">HTTPS Proxy Support</h4>
-            <p class="text-sm text-base-content/70 grow">Zero-dependency HTTP CONNECT tunnel for Node.js scripts behind proxies. Transparent fallback to direct connections.</p>
-            <div class="mt-auto pt-2">
-              <p class="text-xs text-base-content/40">Node.js stdlib &middot; HTTP CONNECT &middot; Proxy auth</p>
-              <div class="card-links">
-                <a href="pattern.html?name=https-proxy" class="btn btn-sm btn-primary rounded-full">View pattern</a>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div class="card bg-base-200/50 border border-base-300 card-interactive scroll-animate" data-delay="1">
-          <div class="card-body">
-            <h4 class="font-semibold text-base mb-1">Debug System</h4>
-            <p class="text-sm text-base-content/70 grow">In-memory event store with floating debug pill. Pub/sub circular buffer, severity levels, environment diagnostics. Renders in separate React root.</p>
-            <div class="mt-auto pt-2">
-              <p class="text-xs text-base-content/40">Pub/sub &middot; Separate React root &middot; Alpha diagnostic</p>
-              <div class="card-links">
-                <a href="pattern.html?name=debug-system" class="btn btn-sm btn-primary rounded-full">View pattern</a>
-              </div>
-            </div>
-          </div>
-        </div>
-
+      <div id="pattern-cards" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+        <p class="text-base-content/40 text-sm col-span-full text-center py-8">Loading patterns...</p>
       </div>
     </section>
   </main>
@@ -412,47 +321,27 @@
 
   <script src="theme.js"></script>
 
-  <!-- Requirement: Scroll-triggered animations for visual polish
-       Approach: Intersection Observer adds .animate-in class when elements enter viewport.
-         Runs once per element (unobserves after trigger) for performance.
-       Alternative: Scroll event listener with getBoundingClientRect — rejected,
-         Intersection Observer is purpose-built for this and far more performant -->
   <script>
     (function () {
-      var observer = new IntersectionObserver(function (entries) {
+      var scrollObserver = new IntersectionObserver(function (entries) {
         entries.forEach(function (entry) {
           if (entry.isIntersecting) {
             entry.target.classList.add('animate-in');
-            observer.unobserve(entry.target);
+            scrollObserver.unobserve(entry.target);
           }
         });
       }, { threshold: 0.1, rootMargin: '0px 0px -40px 0px' });
 
       document.querySelectorAll('.scroll-animate').forEach(function (el) {
-        observer.observe(el);
+        scrollObserver.observe(el);
       });
-    })();
-  </script>
 
-  <!-- Requirement: Cards reveal action links when tapped/clicked
-       Approach: Toggle .card-active class on click, one card active at a time.
-         Click same card again or click outside to deactivate.
-         Delegated stopPropagation on .card-links a prevents link clicks from
-         toggling the card (replaces 30+ inline onclick handlers).
-       Alternative: CSS :focus-within — rejected, loses state on any click outside
-         and doesn't work with keyboard navigation on the card itself -->
-  <script>
-    (function () {
       var activeCard = null;
 
-      document.querySelectorAll('.card-interactive').forEach(function (card) {
+      function initCardInteractive(card) {
         if (!card.querySelector('.card-links')) return;
-
         card.addEventListener('click', function (e) {
-          // Requirement: Action link clicks should navigate, not toggle the card
-          // Approach: Single delegated check replaces 30+ inline onclick handlers
           if (e.target.closest('.card-links a')) return;
-
           if (activeCard === card) {
             card.classList.remove('card-active');
             activeCard = null;
@@ -462,7 +351,9 @@
             activeCard = card;
           }
         });
-      });
+      }
+
+      document.querySelectorAll('.card-interactive').forEach(initCardInteractive);
 
       document.addEventListener('click', function (e) {
         if (activeCard && !activeCard.contains(e.target)) {
@@ -470,6 +361,44 @@
           activeCard = null;
         }
       });
+
+      function escapeHtml(s) {
+        return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+      }
+
+      var grid = document.getElementById('pattern-cards');
+      if (grid) {
+        fetch('patterns/manifest.json')
+          .then(function (r) { return r.json(); })
+          .then(function (manifest) {
+            grid.innerHTML = '';
+            manifest.patterns.forEach(function (p, i) {
+              var tagsHtml = p.tags.length > 0
+                ? '<p class="text-xs text-base-content/40">' + p.tags.map(escapeHtml).join(' &middot; ') + '</p>'
+                : '';
+              var card = document.createElement('div');
+              card.className = 'card bg-base-200/50 border border-base-300 card-interactive scroll-animate';
+              card.setAttribute('data-delay', String((i % 3) + 1));
+              card.innerHTML =
+                '<div class="card-body">' +
+                  '<h4 class="font-semibold text-base mb-1">' + escapeHtml(p.title) + '</h4>' +
+                  '<p class="text-sm text-base-content/70 grow">' + escapeHtml(p.description) + '</p>' +
+                  '<div class="mt-auto pt-2">' +
+                    tagsHtml +
+                    '<div class="card-links">' +
+                      '<a href="pattern.html?name=' + encodeURIComponent(p.slug) + '" class="btn btn-sm btn-primary rounded-full">View pattern</a>' +
+                    '</div>' +
+                  '</div>' +
+                '</div>';
+              grid.appendChild(card);
+              scrollObserver.observe(card);
+              initCardInteractive(card);
+            });
+          })
+          .catch(function () {
+            grid.innerHTML = '<p class="text-base-content/60 text-sm col-span-full text-center py-8">Could not load patterns.</p>';
+          });
+      }
     })();
   </script>
 

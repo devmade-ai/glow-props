@@ -50,87 +50,83 @@
       var app = document.getElementById('app');
       var params = new URLSearchParams(window.location.search);
       var patternName = params.get('name');
-
-      // Requirement: Pattern name-to-file mapping
-      // Approach: Data-driven map from URL slug to file name and display title.
-      //   Adding a new pattern is one map entry.
-      var PATTERNS = {
-        'pwa-system':       { file: 'PWA_SYSTEM.md',       title: 'PWA System',          badge: 'Infrastructure' },
-        'theme-dark-mode':  { file: 'THEME_DARK_MODE.md',  title: 'Theme & Dark Mode',   badge: 'UI' },
-        'burger-menu':      { file: 'BURGER_MENU.md',      title: 'Burger Menu',          badge: 'UI' },
-        'app-icons':        { file: 'APP_ICONS.md',        title: 'App Icons from SVG',   badge: 'Build' },
-        'download-pdf':     { file: 'DOWNLOAD_PDF.md',     title: 'Download as PDF',      badge: 'Feature' },
-        'https-proxy':      { file: 'HTTPS_PROXY.md',      title: 'HTTPS Proxy Support',  badge: 'Infrastructure' },
-        'debug-system':     { file: 'DEBUG_SYSTEM.md',     title: 'Debug System',         badge: 'DX' }
-      };
-
-      // Validate pattern name
-      if (!patternName || !PATTERNS[patternName]) {
-        app.innerHTML = '<div class="text-center py-16"><h1 class="text-2xl font-bold mb-2">Pattern not found</h1><p class="text-base-content/60"><a href="./#patterns" class="link link-primary">Back to patterns</a></p></div>';
-        return;
-      }
-
-      var pattern = PATTERNS[patternName];
-      var filePath = 'patterns/' + pattern.file;
-      var rawMarkdown = null;
-
       var renderMarkdown = md.renderMarkdown;
       var escapeHtml = md.escapeHtml;
+      var rawMarkdown = null;
 
-      document.title = pattern.title + ' — devmade-ai';
+      function showError(title, body, retry) {
+        var retryHtml = retry ? '<p class="mt-2"><button onclick="location.reload()" class="btn btn-primary btn-sm">Retry</button></p>' : '';
+        app.innerHTML = '<div class="text-center py-16"><h1 class="text-2xl font-bold mb-2">' + title + '</h1><p class="text-base-content/60">' + body + '</p>' + retryHtml + '<p class="mt-2"><a href="./#patterns" class="link link-primary">Back to patterns</a></p></div>';
+      }
 
-      // Render immediately with loading state
-      render();
-
-      // Fetch the markdown file
-      var fetchController = new AbortController();
-      var fetchTimeout = setTimeout(function () { fetchController.abort(); }, 15000);
-
-      fetch(filePath, { signal: fetchController.signal })
-        .then(function (r) {
-          clearTimeout(fetchTimeout);
-          if (!r.ok) throw new Error('HTTP ' + r.status);
-          return r.text();
-        })
-        .then(function (text) {
-          rawMarkdown = text;
-          render();
-        })
-        .catch(function (err) {
-          var isTimeout = err && err.name === 'AbortError';
-          var title = isTimeout ? 'Request timed out' : 'Pattern not found';
-          var body = isTimeout
-            ? 'Could not load pattern data. Check your connection and try again.'
-            : 'The pattern file could not be loaded.';
-          var retryHtml = isTimeout
-            ? '<p class="mt-2"><button onclick="location.reload()" class="btn btn-primary btn-sm">Retry</button></p>'
-            : '';
-          app.innerHTML = '<div class="text-center py-16"><h1 class="text-2xl font-bold mb-2">' + title + '</h1><p class="text-base-content/60">' + body + '</p>' + retryHtml + '<p class="mt-2"><a href="./#patterns" class="link link-primary">Back to patterns</a></p></div>';
-        });
-
-      function render() {
-        var contentHtml = '';
-        if (rawMarkdown) {
-          contentHtml = '<div class="card bg-base-200/50 border border-base-300"><div class="card-body">' +
-            '<div class="flex gap-3 mb-4 no-print">' +
-            '<button id="copy-btn" class="btn btn-outline btn-sm gap-1" onclick="copyPattern()">Copy markdown</button>' +
-            '<a href="' + filePath + '" class="btn btn-outline btn-sm gap-1" target="_blank">Raw file</a>' +
-            '</div>' +
-            '<div class="md-render">' + renderMarkdown(rawMarkdown) + '</div></div></div>';
-        } else {
-          contentHtml = '<div class="card bg-base-200/50 border border-base-300"><div class="card-body"><p class="text-center py-8 text-base-content/40">Loading...</p></div></div>';
-        }
-
-        app.innerHTML =
-          '<p class="text-sm mb-4"><a href="./#patterns" class="link link-primary">&larr; All patterns</a></p>' +
+      function headerHtml(pattern) {
+        return '<p class="text-sm mb-4"><a href="./#patterns" class="link link-primary">&larr; All patterns</a></p>' +
           '<header class="mb-6 animate-fade-in-up">' +
             '<div class="flex items-center gap-3 flex-wrap">' +
               '<h1 class="text-3xl font-bold">' + escapeHtml(pattern.title) + '</h1>' +
               '<span class="badge badge-primary">' + escapeHtml(pattern.badge) + '</span>' +
             '</div>' +
-          '</header>' +
-          contentHtml;
+          '</header>';
       }
+
+      if (!patternName) { showError('Pattern not found', ''); return; }
+
+      var manifestController = new AbortController();
+      var manifestTimeout = setTimeout(function () { manifestController.abort(); }, 10000);
+
+      fetch('patterns/manifest.json', { signal: manifestController.signal })
+        .then(function (r) {
+          clearTimeout(manifestTimeout);
+          if (!r.ok) throw new Error('HTTP ' + r.status);
+          return r.json();
+        })
+        .then(function (manifest) {
+          var pattern = manifest.patterns.find(function (p) { return p.slug === patternName; });
+          if (!pattern) { showError('Pattern not found', ''); return; }
+
+          var filePath = 'patterns/' + pattern.file;
+          document.title = pattern.title + ' — devmade-ai';
+          app.innerHTML = headerHtml(pattern) +
+            '<div class="card bg-base-200/50 border border-base-300"><div class="card-body"><p class="text-center py-8 text-base-content/40">Loading...</p></div></div>';
+
+          var fetchController = new AbortController();
+          var fetchTimeout = setTimeout(function () { fetchController.abort(); }, 15000);
+
+          fetch(filePath, { signal: fetchController.signal })
+            .then(function (r) {
+              clearTimeout(fetchTimeout);
+              if (!r.ok) throw new Error('HTTP ' + r.status);
+              return r.text();
+            })
+            .then(function (text) {
+              rawMarkdown = text;
+              app.innerHTML = headerHtml(pattern) +
+                '<div class="card bg-base-200/50 border border-base-300"><div class="card-body">' +
+                  '<div class="flex gap-3 mb-4 no-print">' +
+                    '<button id="copy-btn" class="btn btn-outline btn-sm gap-1" onclick="copyPattern()">Copy markdown</button>' +
+                    '<a href="' + filePath + '" class="btn btn-outline btn-sm gap-1" target="_blank">Raw file</a>' +
+                  '</div>' +
+                  '<div class="md-render">' + renderMarkdown(text) + '</div>' +
+                '</div></div>';
+            })
+            .catch(function (err) {
+              var isTimeout = err && err.name === 'AbortError';
+              showError(
+                isTimeout ? 'Request timed out' : 'Could not load pattern',
+                isTimeout ? 'Could not load pattern data. Check your connection and try again.' : 'The pattern file could not be loaded.',
+                isTimeout
+              );
+            });
+        })
+        .catch(function (err) {
+          clearTimeout(manifestTimeout);
+          var isTimeout = err && err.name === 'AbortError';
+          showError(
+            isTimeout ? 'Request timed out' : 'Could not load patterns',
+            isTimeout ? 'Could not load pattern data. Check your connection and try again.' : 'Failed to load pattern manifest.',
+            isTimeout
+          );
+        });
 
       window.copyPattern = function () {
         md.copyMarkdown(rawMarkdown, 'copy-btn');
