@@ -1,7 +1,7 @@
 # Session Notes
 
 ## Worked on
-Full TODO.md audit against actual repo code, policy changes (HISTORY.md removal, Communication section), new pattern (PWA_ICON_CACHE_BUST).
+Full TODO.md audit against actual repo code, policy changes (HISTORY.md removal, Communication section), new pattern (PWA_ICON_CACHE_BUST), dynamic pattern discovery system.
 
 ## Accomplished
 - Audited all 10 downstream repos' actual source code against the per-repo gap matrix in TODO.md
@@ -15,12 +15,14 @@ Full TODO.md audit against actual repo code, policy changes (HISTORY.md removal,
 - Created new `docs/implementations/PWA_ICON_CACHE_BUST.md` pattern (content-hashed icon cache busting across 5 cache layers)
 - Added ICON_CACHE_BUST column to gap matrix (Missing in all 9 PWA repos, N/A for glow-props and model-pear)
 - Added per-repo ICON_CACHE_BUST implementation subsections (Vite template for 7 repos, Expo/Metro template for few-lap and synctone)
-- Updated cross-cutting gaps summary (now 14 items)
+- Built dynamic pattern discovery system: YAML frontmatter on all 10 .md files → generatePatternManifest Vite plugin → patterns/manifest.json → index.html and pattern.html consume dynamically. No more hardcoded pattern lists.
+- All 10 patterns now visible in the app (was 7 — EVENT_BUS, Z_INDEX_SCALE, PWA_ICON_CACHE_BUST were missing)
+- Hardened: \r\n line ending support, slug format validation, manifest fetch timeout, closure-scoped rawMarkdown
 
 ## Current state
 - Branch: `claude/review-todo-items-MDTlq`
-- TODO.md is the most comprehensive and accurate it's ever been
-- 10 patterns tracked in the gap matrix (was 9)
+- 10 patterns tracked in gap matrix and all visible in the app
+- Dynamic pattern system: add a .md with frontmatter → it appears automatically
 - Only glow-props is fully clean on all patterns
 - canva-grid, budgy-ting, repo-tor are clean on original 9 patterns but need ICON_CACHE_BUST + HISTORY.md removal + Communication section
 - All changes committed and pushed
@@ -33,3 +35,4 @@ Full TODO.md audit against actual repo code, policy changes (HISTORY.md removal,
 - PWA_ICON_CACHE_BUST uses content-hashed query strings (80/20 approach); filename-hash is the architecturally pure alternative (documented in tradeoff section)
 - Expo repos (few-lap, synctone) need stack-specific adaptation for ICON_CACHE_BUST — custom sw.js, not vite-plugin-pwa
 - model-pear has the lowest compliance (5 of 7 original patterns Missing, no PWA yet)
+- Pattern frontmatter contract: slug (URL-safe), title, badge, description (required); tags, order (optional). Documented in CLAUDE.md Implementation Patterns section.
