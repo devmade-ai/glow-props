@@ -357,54 +357,59 @@ Examples:
 | 13 | `ux` | `ux` | Friction, cognitive load, missing loading/empty/error states, undiscoverable affordances |
 | 14 | `a11y` | `a11y` | Keyboard nav, screen reader labels, focus order, contrast, ARIA correctness |
 | 15 | `mobile` | `mob` | Touch target size, viewport, safe areas, tap delay, gestures, iOS keyboard handling |
-| 16 | `copy` | `cpy` | Microcopy, voice consistency, jargon, error messages users actually see |
-| 17 | `i18n` | `i18` | Hardcoded strings, RTL readiness, date/number formatting, pluralization |
-| 18 | `dark-mode` | `dm` | Semantic color usage, contrast in both themes, flash-on-load |
-| 19 | `visual` | `vis` | Layout/spacing/alignment, visual hierarchy, brand consistency, dark-vs-light visual parity, inconsistent corner radii/shadows/type scale |
+| 16 | `motion` | `mot` | `prefers-reduced-motion` respect, animation jank, 60fps budgets, autoplay, transitions that interrupt screen-reader flow |
+| 17 | `forms` | `frm` | Input validation, per-field error states, submit error handling, accessible field labels, paste/autofill behavior, unsaved-changes warnings |
+| 18 | `copy` | `cpy` | Microcopy, voice consistency, jargon, error messages users actually see |
+| 19 | `i18n` | `i18` | Hardcoded strings, RTL readiness, date/number formatting, pluralization |
+| 20 | `dark-mode` | `dm` | Semantic color usage, contrast in both themes, flash-on-load |
+| 21 | `visual` | `vis` | Layout/spacing/alignment, visual hierarchy, brand consistency, dark-vs-light visual parity, inconsistent corner radii/shadows/type scale |
 
 ### Maintainability — group `quality`
 
 | # | Trigger | Alias | Looks for |
 |---|---------|-------|-----------|
-| 20 | `clean` | `cln` | Dead code, duplication, commented-out blocks, unused imports/exports, leftover TODOs |
-| 21 | `naming` | `nam` | Identifier clarity, consistency with local norms, misleading abbreviations |
-| 22 | `patterns` | `pat` | Deviation from established patterns (fleet-wide glow-props or repo-local), reinvented wheels |
-| 23 | `docs` | `doc` | Docs ↔ code drift, missing docs on public API, outdated README/CLAUDE.md claims |
-| 24 | `doc-cleanup` | `dcl` | Duplicated content across doc files, stale files no longer relevant, orphaned docs nothing references, superseded files that replaced but didn't delete their predecessor, sections still describing removed features |
-| 25 | `tests` | `tst` | Coverage gaps on critical paths, flaky patterns, test smells, missing edge-case tests |
-| 26 | `complexity` | `cpx` | Function length, nesting depth, cyclomatic complexity hotspots |
-| 27 | `hacks` | `hck` | `TODO`/`FIXME`/`HACK`/`XXX` markers, `@ts-ignore`/`@ts-expect-error`, `any` escapes framed as temporary, `setTimeout` for timing fixes, quick patches waiting to be done properly |
-| 28 | `simplify` | `smp` | Reinvented framework features, over-engineered abstractions, custom code that could be 1–2 stdlib/library calls, unnecessary layers |
-| 29 | `reuse` | `rus` | Custom-vs-stdlib balance: how much is hand-written that shouldn't be; logic that should be extracted for reuse but isn't; abstractions generalized for a single caller; speculative parameters, defensive checks for impossible states, and configurability serving no real need |
-| 30 | `back-compat` | `bck` | Orphaned feature flags, deprecated branches with no callers, `legacy*` exports, backcompat shims outliving their purpose, `// kept for compatibility` blocks |
-| 31 | `comments` | `cmt` | Code comments against repo rules — WHY not WHAT, no PR-reference rot, no AI narration, no commented-out blocks unless `// KEEP:` annotated |
+| 22 | `clean` | `cln` | Dead code, duplication, commented-out blocks, unused imports/exports, leftover TODOs |
+| 23 | `naming` | `nam` | Identifier clarity, consistency with local norms, misleading abbreviations |
+| 24 | `patterns` | `pat` | Deviation from established patterns (fleet-wide glow-props or repo-local), reinvented wheels |
+| 25 | `docs` | `doc` | Docs ↔ code drift, missing docs on public API, outdated README/CLAUDE.md claims |
+| 26 | `doc-cleanup` | `dcl` | Duplicated content across doc files, stale files no longer relevant, orphaned docs nothing references, superseded files that replaced but didn't delete their predecessor, sections still describing removed features |
+| 27 | `tests` | `tst` | Coverage gaps on critical paths, flaky patterns, test smells, missing edge-case tests |
+| 28 | `complexity` | `cpx` | Function length, nesting depth, cyclomatic complexity hotspots |
+| 29 | `hacks` | `hck` | `TODO`/`FIXME`/`HACK`/`XXX` markers, `@ts-ignore`/`@ts-expect-error`, `any` escapes framed as temporary, `setTimeout` for timing fixes, quick patches waiting to be done properly |
+| 30 | `simplify` | `smp` | Reinvented framework features, over-engineered abstractions, custom code that could be 1–2 stdlib/library calls, unnecessary layers |
+| 31 | `reuse` | `rus` | Custom-vs-stdlib balance: how much is hand-written that shouldn't be; logic that should be extracted for reuse but isn't; abstractions generalized for a single caller; speculative parameters, defensive checks for impossible states, and configurability serving no real need |
+| 32 | `back-compat` | `bck` | Orphaned feature flags, deprecated branches with no callers, `legacy*` exports, backcompat shims outliving their purpose, `// kept for compatibility` blocks |
+| 33 | `comments` | `cmt` | Code comments against repo rules — WHY not WHAT, no PR-reference rot, no AI narration, no commented-out blocks unless `// KEEP:` annotated |
+| 34 | `dx` | `dx` | Developer experience: README/setup clarity, dev-error message quality, source map/stack trace usefulness, debug-surface ergonomics, contribution path friction |
+| 35 | `undone` | `und` | Started-but-unfinished work — partial implementations, half-wired features, WIP branches of logic, features only reachable from dev but not production |
 
 ### Operational — group `ops`
 
 | # | Trigger | Alias | Looks for |
 |---|---------|-------|-----------|
-| 32 | `deps` | `dep` | Outdated, unused, vulnerable, license-risky dependencies |
-| 33 | `observability` | `obs` | Log coverage, metric hygiene, trace completeness, debug-pill surfaces |
-| 34 | `reliability` | `rel` | Retries, timeouts, idempotency, graceful degradation, offline handling |
-| 35 | `config` | `cfg` | Env var handling, secret management, config schema drift |
-| 36 | `migration` | `mig` | DB migration safety, API versioning, rollback plan, backward compatibility |
-| 37 | `ci` | `ci` | Pipeline health, build speed, cache effectiveness, flake rate |
+| 36 | `deps` | `dep` | Outdated, unused, vulnerable, license-risky dependencies |
+| 37 | `observability` | `obs` | Log coverage, metric hygiene, trace completeness, debug-pill surfaces |
+| 38 | `reliability` | `rel` | Retries, timeouts, idempotency, graceful degradation, offline handling |
+| 39 | `config` | `cfg` | Env var handling, secret management, config schema drift |
+| 40 | `migration` | `mig` | DB migration safety, API versioning, rollback plan, backward compatibility |
+| 41 | `ci` | `ci` | Pipeline health, build speed, cache effectiveness, flake rate |
+| 42 | `pwa` | `pwa` | Service worker correctness, manifest validity, install prompt handling, update flow, offline behavior, icon cache-busting, standalone-mode quirks |
 
 ### Design-level — group `design`
 
 | # | Trigger | Alias | Looks for |
 |---|---------|-------|-----------|
-| 38 | `architecture` | `arch` | Coupling, layering violations, abstraction leaks, module boundaries |
-| 39 | `api` | `api` | Interface consistency, versioning, deprecation, contract clarity |
-| 40 | `state` | `sta` | Where state lives, derivation vs storage, single-source-of-truth violations |
-| 41 | `data-model` | `dat` | Schema normalization, foreign-key integrity, nullable discipline |
+| 43 | `architecture` | `arch` | Coupling, layering violations, abstraction leaks, module boundaries |
+| 44 | `api` | `api` | Interface consistency, versioning, deprecation, contract clarity |
+| 45 | `state` | `sta` | Where state lives, derivation vs storage, single-source-of-truth violations |
+| 46 | `data-model` | `dat` | Schema normalization, foreign-key integrity, nullable discipline |
 
 ### Fleet alignment — group `fleet`
 
 | # | Trigger | Alias | Looks for |
 |---|---------|-------|-----------|
-| 42 | `align` | `aln` | Drift between this repo's CLAUDE.md and glow-props CLAUDE.md — missing sections, stale rules, divergent conventions |
-| 43 | `pattern-audit` | `pa` | Every glow-props implementation pattern: implemented / partial / missing / deviates — with diff notes for each |
+| 47 | `align` | `aln` | Drift between this repo's CLAUDE.md and glow-props CLAUDE.md — missing sections, stale rules, divergent conventions |
+| 48 | `pattern-audit` | `pa` | Every glow-props implementation pattern: implemented / partial / missing / deviates — with diff notes for each |
 
 ### Meta sweeps
 
