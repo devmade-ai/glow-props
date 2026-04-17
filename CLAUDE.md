@@ -413,13 +413,16 @@ Examples:
 
 ### Meta sweeps
 
-Run multiple triggers sequentially, pausing after each for `fix` / `skip` / `stop`.
+Run multiple triggers sequentially, pausing after each for `fix` / `skip` / `stop`. Organised roughly by cadence — pick the one that matches when you're running it.
 
-| Trigger | Alias | What it does |
-|---------|-------|--------------|
-| `quick` | `q` | Fast triad: `bugs` + `security` + `a11y` — the "don't ship this" checks |
-| `ship` | `shp` | Pre-merge set: `correctness` + `trust` + `a11y` + `tests` |
-| `all` | `*` | Every applicable trigger across every group, in order |
+| Trigger | Alias | Cadence | What it does |
+|---------|-------|---------|--------------|
+| `hot` | `h` | pre-commit | `bugs` + `types` + `errors` — fastest sanity check before committing. Pairs well with `hot staged` |
+| `quick` | `q` | pre-push | `bugs` + `security` + `a11y` — the "don't ship this" triad |
+| `ship` | `shp` | pre-merge | `correctness` + `trust` + `a11y` + `tests` — full pre-merge check |
+| `session` | `ses` | end of session | `surface` + `wrap` + `undone` + `skipped` — "what state am I leaving this in?" |
+| `tidy` | `tdy` | weekly | `clean` + `doc-cleanup` + `hacks` + `deps` + `undone` + `dx` — maintenance / hygiene sweep |
+| `all` | `*` | quarterly | Every applicable trigger across every group, in order |
 
 ### Reflective passes
 
