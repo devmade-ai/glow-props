@@ -18,7 +18,7 @@
 
 ## Per-Repo Pattern Implementation Gaps
 
-Audited 2026-04-06 against updated `docs/implementations/*.md` pattern docs. Updated 2026-04-10 with Z_INDEX_SCALE (9 patterns). Re-audited 2026-04-16 against actual repo code — corrected stale statuses for canva-grid, budgy-ting, see-veo, few-lap, four-ems, repo-tor. repo-tor re-audited same day and confirmed fully compliant on original 9 patterns. Added PWA_ICON_CACHE_BUST pattern 2026-04-16 (10 patterns).
+Audited 2026-04-06 against updated `docs/implementations/*.md` pattern docs. Updated 2026-04-10 with Z_INDEX_SCALE (9 patterns). Re-audited 2026-04-16 against actual repo code — corrected stale statuses for canva-grid, budgy-ting, see-veo, few-lap, four-ems, repo-tor. repo-tor re-audited same day and confirmed fully compliant on original 9 patterns. Added PWA_ICON_CACHE_BUST pattern 2026-04-16 (10 patterns). Re-audited 2026-04-17 via GitHub API across all 10 downstream repos — struck items confirmed done: canva-grid/repo-tor ICON_CACHE_BUST partial implementation, repo-tor HISTORY.md already removed, budgy-ting BURGER_MENU + DEBUG_SYSTEM fully done, graphiki PWA module singleton, model-pear APP_ICONS entirely done + Implementation Patterns section exists, see-veo DEBUG PWA Diagnostics tab, few-lap Suggested Implementations already deleted + flash prevention, sun-sea-o maskable 1024 + clipboard + inline pill, four-ems 30s suppression, synctone flash prevention. Also 2026-04-17: Triggers redesign (48 triggers in 8 groups + 6 cadence meta sweeps + 7 reflective passes) added as a cross-fleet alignment task to all 10 repos.
 
 Legend: **Pass** = compliant, **Partial** = has the feature but with gaps, **Missing** = not implemented, **N/A** = not applicable
 
@@ -28,8 +28,8 @@ Legend: **Pass** = compliant, **Partial** = has the feature but with gaps, **Mis
 |------|-----------|-----------|-------------|--------------|--------------|------------|-----------------|-----------|---------------|-----------------|
 | glow-props | Pass | Pass | Pass | N/A | Pass | Pass | Pass | N/A | Pass | N/A |
 | canva-grid | Pass | Pass | Pass | Pass | Pass (B) | Pass | Pass | N/A | Pass | Missing |
-| budgy-ting | Pass | Pass | Partial | Partial | Partial | Pass | Pass | Missing | Pass | Missing |
-| model-pear | Missing | Missing | Missing | Missing | Partial | Missing | Missing | Missing | Missing | N/A |
+| budgy-ting | Pass | Pass | Pass | Pass | Partial | Pass | Pass | Missing | Pass | Missing |
+| model-pear | Partial | Pass | Missing | Partial | Partial | Missing | Missing | Missing | Missing | N/A |
 | see-veo | Missing | Partial | Missing | Partial | Partial | Partial | Missing | Missing | Missing | Missing |
 | repo-tor | Pass | Pass | Pass | Pass | Pass | Pass | Pass | N/A | Pass | Missing |
 | few-lap | Missing | Partial | Partial | Partial | Missing | Partial | Partial | Missing | Missing | Missing |
@@ -66,24 +66,29 @@ glow-props CLAUDE.md now has a top-level `## Communication` section between Prin
 2. [ ] **Update header line** — Add COMMUNICATION to the `# READ AND FOLLOW...` line.
 3. [ ] **Remove duplicate bullets from AI Notes** — If "ASK before assuming" or "Communication style" bullets exist in AI Notes, remove them (now covered by the Communication section).
 
-#### ICON_CACHE_BUST — Missing → Implement
+#### Triggers — Replace with glow-props version (cross-fleet policy 2026-04-17)
+
+glow-props CLAUDE.md has a redesigned Triggers section: 48 triggers in 8 groups, 6 cadence meta sweeps (`hot` / `quick` / `ship` / `session` / `tidy` / `all`), 7 reflective passes (`risk` / `surface` / `wrap` / `skipped` / `assumed` / `approach` / `cold`), and scope modifiers (`branch` / `staged` / `file <path>`). Replaces the older single-word Triggers section (`rev`/`aud`/`mobile`/`clean`/`start`/etc.).
+
+1. [ ] **Replace the existing `## Triggers` section** — Copy the full new `## Triggers` section from glow-props CLAUDE.md verbatim, including How to invoke, Scope modifiers, Behavior rules, all 8 group tables (`correctness`, `trust`, `speed`, `frontend`, `quality`, `ops`, `design`, `fleet`), Meta sweeps table, and Reflective passes table.
+2. [ ] **Note any name collisions** — If the repo has npm scripts, folders, or conventions using single-word names matching trigger names (e.g. `docs/`, `tests/`, `config/`, `api/`), add a line in AI Notes clarifying context precedence.
+3. **Confirm:** `grep -c "^## Triggers$" CLAUDE.md` returns `1`. All 8 group tables present. No old single-word triggers (`rev`/`aud`/`start`/`go`) remain.
+
+#### ICON_CACHE_BUST — Partial → Complete
 
 Reference: `docs/implementations/PWA_ICON_CACHE_BUST.md` (fetch from glow-props)
 
-canva-grid uses vite-plugin-pwa with Approach B (pdf-lib) for export. PWA icons are served with stable filenames.
+Core plumbing done (verified 2026-04-17): `iconVersion()` + `iconCacheBustHtml()` in `vite.config.js`, versioned manifest icon URLs, `ignoreURLParametersMatching: [/^v$/]` in workbox config. Remaining: test + user communication.
 
-1. [ ] **Add `iconVersion()` + `iconCacheBustHtml()` to `vite.config.js`** — Content-hash each icon file, inject `?v=<hash>` into HTML link tags. Plugin must be wired before `VitePWA()`.
-2. [ ] **Version manifest icon URLs** — Pass `versioned()` paths to `VitePWA({ manifest: { icons: [...] } })`.
-3. [ ] **Add `ignoreURLParametersMatching: [/^v$/]`** to workbox config — Required so Workbox precache matches versioned URLs.
-4. [ ] **Add tripwire test** — Source-level and dist-level assertions per the pattern doc.
-5. [ ] **Add user communication** — "Already installed and the icon looks outdated?" collapsible in install modal.
-6. **Confirm:** Build, verify `dist/manifest.webmanifest` icons have `?v=` hashes, `dist/index.html` link tags have `?v=` hashes, `dist/sw.js` has `ignoreURLParametersMatching` with `/^v$/`.
+1. [ ] **Add tripwire test** — Source-level and dist-level assertions per the pattern doc.
+2. [ ] **Add user communication** — "Already installed and the icon looks outdated?" collapsible in install modal.
+3. **Confirm:** Build, verify `dist/manifest.webmanifest` icons have `?v=` hashes, `dist/index.html` link tags have `?v=` hashes, `dist/sw.js` has `ignoreURLParametersMatching` with `/^v$/`.
 
 ### budgy-ting
 
-Vue + Vite app. Mostly compliant (verified 2026-04-10). CLAUDE.md, APP_ICONS, PWA_SYSTEM, THEME_DARK_MODE, and Z_INDEX_SCALE are now fully passing. Remaining gaps: BURGER_MENU (minor), DEBUG_SYSTEM (minor), DOWNLOAD_PDF (needs print button), plus cross-fleet items (HISTORY.md removal, Communication section, ICON_CACHE_BUST).
+Vue + Vite app. Mostly compliant (verified 2026-04-17). CLAUDE.md, APP_ICONS, BURGER_MENU, DEBUG_SYSTEM, PWA_SYSTEM, THEME_DARK_MODE, and Z_INDEX_SCALE are now fully passing. Remaining gaps: DOWNLOAD_PDF (needs print button), plus cross-fleet items (HISTORY.md removal, Communication section, ICON_CACHE_BUST).
 
-Previous gaps now confirmed done: CLAUDE.md URLs updated, 400 DPI + separate maskable icon, visibility-based update checks + 30-second suppression + module singleton, full DaisyUI combo-based theme system with flash prevention + cross-tab sync, z-index scale documented and applied.
+Previous gaps now confirmed done (2026-04-17 audit): BURGER_MENU `destructive`/`external` MenuItem properties implemented; DEBUG_SYSTEM static `#debug-root` in `index.html`, subscriber replay via `getEntries()` on subscribe, `?embed=` skip in `main.ts`.
 
 #### HISTORY.md — Remove (cross-fleet policy 2026-04-16)
 
@@ -94,26 +99,6 @@ Git history already tracks completions; a separate changelog is redundant.
 3. [ ] Change "move completed items to HISTORY.md" → "delete completed items (git history tracks them)" in CLAUDE.md
 4. [ ] Remove HISTORY.md from README.md file tree (if listed)
 5. [ ] Delete any `[x]` completed items from `docs/TODO.md`
-
-#### BURGER_MENU — Partial (minor gaps)
-
-Reference: `docs/implementations/BURGER_MENU.md`
-
-Arrow key navigation (ArrowDown/Up/Home/End with wrapping), z-index normalization (backdrop z-40, menu z-50), close-then-act delay, and MenuItem interface with `disabled`/`separator` are all implemented.
-
-1. [ ] **Add `destructive` and `external` MenuItem properties** — These properties from the pattern's MenuItem interface are not yet supported.
-2. **Confirm:** Verify destructive items have warning styling. External items open in new tab with indicator icon.
-
-#### DEBUG_SYSTEM — Partial (minor gaps)
-
-Reference: `docs/implementations/DEBUG_SYSTEM.md`
-
-Console interception, PWA Diagnostics tab, pre-framework inline pill, circular buffer (head/count pattern), URL redaction, success severity, and debugGenerateReport in module are all implemented. Inline styles in Vue DebugPill use Tailwind (intentional — inline pill handles CSS-not-loaded case).
-
-1. [ ] **Add static `#debug-root` to `index.html`** — Still uses `document.createElement('div')` in `main.ts`. Add a static `<div id="debug-root">` after `<div id="root">`.
-2. [ ] **Add subscriber replay** — New subscribers should receive existing entries immediately on subscribe.
-3. [ ] **Add embed mode skip** — Skip pill when `?embed=` is in the URL.
-4. **Confirm:** New subscriber gets existing log entries. Pill hidden in embed mode.
 
 #### DOWNLOAD_PDF — Partial → Complete
 
@@ -129,6 +114,14 @@ glow-props CLAUDE.md now has a top-level `## Communication` section between Prin
 1. [ ] **Add `## Communication` section** — Copy from glow-props CLAUDE.md (lines 32-46). Place between Principles and Code Standards.
 2. [ ] **Update header line** — Add COMMUNICATION to the `# READ AND FOLLOW...` line.
 3. [ ] **Remove duplicate bullets from AI Notes** — If "ASK before assuming" or "Communication style" bullets exist in AI Notes, remove them (now covered by the Communication section).
+
+#### Triggers — Replace with glow-props version (cross-fleet policy 2026-04-17)
+
+glow-props CLAUDE.md has a redesigned Triggers section: 48 triggers in 8 groups, 6 cadence meta sweeps (`hot` / `quick` / `ship` / `session` / `tidy` / `all`), 7 reflective passes (`risk` / `surface` / `wrap` / `skipped` / `assumed` / `approach` / `cold`), and scope modifiers (`branch` / `staged` / `file <path>`). Replaces the older single-word Triggers section (`rev`/`aud`/`mobile`/`clean`/`start`/etc.).
+
+1. [ ] **Replace the existing `## Triggers` section** — Copy the full new `## Triggers` section from glow-props CLAUDE.md verbatim, including How to invoke, Scope modifiers, Behavior rules, all 8 group tables (`correctness`, `trust`, `speed`, `frontend`, `quality`, `ops`, `design`, `fleet`), Meta sweeps table, and Reflective passes table.
+2. [ ] **Note any name collisions** — If the repo has npm scripts, folders, or conventions using single-word names matching trigger names (e.g. `docs/`, `tests/`, `config/`, `api/`), add a line in AI Notes clarifying context precedence.
+3. **Confirm:** `grep -c "^## Triggers$" CLAUDE.md` returns `1`. All 8 group tables present. No old single-word triggers (`rev`/`aud`/`start`/`go`) remain.
 
 #### ICON_CACHE_BUST — Missing → Implement
 
@@ -149,7 +142,7 @@ budgy-ting uses vite-plugin-pwa. Icons served with stable filenames.
 
 ### model-pear
 
-SvelteKit app. Lowest compliance across the fleet — 5 of 7 patterns are entirely missing. This needs foundational work. Dark-only design currently.
+SvelteKit app. Improved compliance verified 2026-04-17: APP_ICONS fully done (SVG source + generate-icons.mjs + manifest + HTML links + sharp), DEBUG_SYSTEM foundations done (debugLog.ts + `#debug-root` with inline pill + DebugPill.svelte). Implementation Patterns section exists at line 365. No stale "Shared conventions" AI Note. Still needs: PWA_SYSTEM (no vite-plugin-pwa), THEME_DARK_MODE (no DaisyUI), BURGER_MENU hardening, and cross-fleet items.
 
 #### HISTORY.md — Remove (cross-fleet policy 2026-04-16)
 
@@ -163,24 +156,19 @@ Git history already tracks completions; a separate changelog is redundant.
 
 #### CLAUDE.md — Align with glow-props
 
-No local `docs/implementations/` folder (correct). No inline patterns. Has a stale "Shared conventions with glow-props" AI Note (~line 215) that points to the old `glow-props/CLAUDE.md` for patterns. Missing: Implementation Patterns section, prohibition, and pattern-specific AI note.
+"Implementation Patterns (Source of Truth)" section already exists at line 365 (verified 2026-04-17). No stale "Shared conventions" note. Remaining: prohibition + Communication section.
 
-1. [ ] **Replace stale AI Note** — Remove the "Shared conventions with glow-props" block (~lines 215-219) that references "suggested implementations" in glow-props CLAUDE.md. Replace with: `**Implementation patterns — always fetch from glow-props.** Never look for local copies of implementation pattern files (e.g., docs/implementations/*.md) in downstream repos. They do not exist locally — the single source of truth is the docs/implementations/ folder in the glow-props repo. Fetch the latest version before every implementation task.`
-2. [ ] **Add "Implementation Patterns (Source of Truth)" section** — Add the standard section from glow-props CLAUDE.md with fetch instructions (GitHub Pages URL, GitHub API URL, listing command) and rules.
-3. [ ] **Add prohibition** — Add to Prohibitions: "Create local copies of implementation pattern files in any repo — always fetch from glow-props".
-4. [ ] **Add `## Communication` section** — Copy from glow-props CLAUDE.md (lines 32-46). Place between Principles and Code Standards. Update header line to include COMMUNICATION. Remove any duplicate "ASK before assuming" or "Communication style" bullets from AI Notes.
-5. **Confirm:** No references to "suggested implementations in glow-props CLAUDE.md" remain. Standard pattern source section exists. Communication section exists between Principles and Code Standards.
+1. [ ] **Add prohibition** — Add to Prohibitions: "Create local copies of implementation pattern files in any repo — always fetch from glow-props".
+2. [ ] **Add `## Communication` section** — Copy from glow-props CLAUDE.md (lines 32-46). Place between Principles and Code Standards. Update header line to include COMMUNICATION. Remove any duplicate "ASK before assuming" or "Communication style" bullets from AI Notes.
+3. **Confirm:** Prohibition present. Communication section exists between Principles and Code Standards.
 
-#### APP_ICONS — Missing → Implement
+#### Triggers — Replace with glow-props version (cross-fleet policy 2026-04-17)
 
-Reference: `docs/implementations/APP_ICONS.md`
+glow-props CLAUDE.md has a redesigned Triggers section: 48 triggers in 8 groups, 6 cadence meta sweeps (`hot` / `quick` / `ship` / `session` / `tidy` / `all`), 7 reflective passes (`risk` / `surface` / `wrap` / `skipped` / `assumed` / `approach` / `cold`), and scope modifiers (`branch` / `staged` / `file <path>`). Replaces the older single-word Triggers section (`rev`/`aud`/`mobile`/`clean`/`start`/etc.).
 
-1. [ ] **Create SVG source icon** — Design a square SVG at `assets/icon-source.svg` with `shape-rendering="geometricPrecision"`. Content within 80% inner zone for maskable safe area.
-2. [ ] **Create Sharp generation script** — `scripts/generate-icons.mjs` that reads the SVG and outputs PNGs at 400 DPI: 48 (favicon), 180 (Apple touch), 192 (PWA any), 512 (PWA any), 1024 (PWA maskable).
-3. [ ] **Add to manifest** — Create or update `manifest.webmanifest` with icon entries. Separate `purpose` values: `any` for 192/512, `maskable` for 1024.
-4. [ ] **Add HTML links** — `<link rel="icon" href="/favicon.png">` and `<link rel="apple-touch-icon" href="/apple-touch-icon.png">` in `app.html`.
-5. [ ] **Add `sharp` to devDependencies** — `npm install -D sharp`.
-6. **Confirm:** Run `node scripts/generate-icons.mjs`, verify all 5 PNGs generated. Check favicon in browser tab. Test Apple touch icon on iOS.
+1. [ ] **Replace the existing `## Triggers` section** — Copy the full new `## Triggers` section from glow-props CLAUDE.md verbatim, including How to invoke, Scope modifiers, Behavior rules, all 8 group tables (`correctness`, `trust`, `speed`, `frontend`, `quality`, `ops`, `design`, `fleet`), Meta sweeps table, and Reflective passes table.
+2. [ ] **Note any name collisions** — If the repo has npm scripts, folders, or conventions using single-word names matching trigger names (e.g. `docs/`, `tests/`, `config/`, `api/`), add a line in AI Notes clarifying context precedence.
+3. **Confirm:** `grep -c "^## Triggers$" CLAUDE.md` returns `1`. All 8 group tables present. No old single-word triggers (`rev`/`aud`/`start`/`go`) remain.
 
 #### BURGER_MENU — Missing → Implement
 
@@ -194,15 +182,16 @@ Reference: `docs/implementations/BURGER_MENU.md`
 6. [ ] **Add standard menu items** — Tutorial/help, dark mode toggle, install app (once PWA is added). See pattern's [Theme UI in Burger Menu](../implementations/BURGER_MENU.md#theme-ui-in-burger-menu) for toggle item spec (sun/moon icons, label flips) and theme picker layout.
 7. **Confirm:** Keyboard-only navigation through entire menu. Verify 44px touch targets on mobile. Verify Escape and backdrop close.
 
-#### DEBUG_SYSTEM — Missing → Implement
+#### DEBUG_SYSTEM — Partial → Complete
 
 Reference: `docs/implementations/DEBUG_SYSTEM.md`
 
-1. [ ] **Create debug log module** — `src/lib/debugLog.ts` with circular buffer (max 200), typed sources/severities, `debugAdd`/`debugSubscribe`/`debugGetEntries`/`debugClear`/`debugGenerateReport`. Include console interception and global error/rejection listeners.
-2. [ ] **Add `#debug-root`** to `app.html` — After the SvelteKit root element.
-3. [ ] **Create DebugPill component** — Render into `#debug-root` with inline styles (not Tailwind). 3 tabs: Log, Environment, PWA Diagnostics.
-4. [ ] **Add pre-framework inline pill** — Inline `<script>` in `app.html` with `window.__debugPushError()` and 20-second loading timeout.
-5. **Confirm:** Open app, verify pill appears. Trigger `console.error('test')` in DevTools — should appear in Log tab. Kill the server mid-load — inline pill should appear.
+Foundations confirmed present (2026-04-17): `src/lib/debugLog.ts`, `<div id="debug-root">` in `app.html` with inline pill script, `DebugPill.svelte` component. Verify depth of implementation against the pattern doc:
+
+1. [ ] **Audit `debugLog.ts`** — Confirm circular buffer (max 200), typed sources/severities, `debugAdd`/`debugSubscribe`/`debugGetEntries`/`debugClear`/`debugGenerateReport`, console interception (`console.error`/`console.warn` patched at module load), global error/rejection listeners.
+2. [ ] **Audit `DebugPill.svelte`** — Confirm it renders into `#debug-root` (not inline in app tree), uses inline styles (not Tailwind), has 3 tabs: Log, Environment, PWA Diagnostics.
+3. [ ] **Audit inline pill script in `app.html`** — Confirm 20-second loading timeout, `window.__debugPushError()` stub, handover to framework pill.
+4. **Confirm:** Open app, verify pill appears. Trigger `console.error('test')` in DevTools — should appear in Log tab. Kill the server mid-load — inline pill should appear.
 
 #### DOWNLOAD_PDF — Partial → Complete
 
@@ -273,6 +262,14 @@ No local `docs/implementations/` folder (correct). Has **~280 lines of hardcoded
 5. [ ] **Add `## Communication` section** — Copy from glow-props CLAUDE.md (lines 32-46). Place between Principles and Code Standards. Update header line to include COMMUNICATION. Remove any duplicate "ASK before assuming" or "Communication style" bullets from AI Notes.
 6. **Confirm:** CLAUDE.md is ~280 lines shorter. No inline code examples for patterns remain. Standard fetch commands point to glow-props. Communication section exists between Principles and Code Standards.
 
+#### Triggers — Replace with glow-props version (cross-fleet policy 2026-04-17)
+
+glow-props CLAUDE.md has a redesigned Triggers section: 48 triggers in 8 groups, 6 cadence meta sweeps (`hot` / `quick` / `ship` / `session` / `tidy` / `all`), 7 reflective passes (`risk` / `surface` / `wrap` / `skipped` / `assumed` / `approach` / `cold`), and scope modifiers (`branch` / `staged` / `file <path>`). Replaces the older single-word Triggers section (`rev`/`aud`/`mobile`/`clean`/`start`/etc.).
+
+1. [ ] **Replace the existing `## Triggers` section** — Copy the full new `## Triggers` section from glow-props CLAUDE.md verbatim, including How to invoke, Scope modifiers, Behavior rules, all 8 group tables (`correctness`, `trust`, `speed`, `frontend`, `quality`, `ops`, `design`, `fleet`), Meta sweeps table, and Reflective passes table.
+2. [ ] **Note any name collisions** — If the repo has npm scripts, folders, or conventions using single-word names matching trigger names (e.g. `docs/`, `tests/`, `config/`, `api/`), add a line in AI Notes clarifying context precedence.
+3. **Confirm:** `grep -c "^## Triggers$" CLAUDE.md` returns `1`. All 8 group tables present. No old single-word triggers (`rev`/`aud`/`start`/`go`) remain.
+
 #### APP_ICONS — Partial → Complete
 
 Reference: `docs/implementations/APP_ICONS.md`
@@ -294,11 +291,12 @@ Reference: `docs/implementations/DEBUG_SYSTEM.md`
 3. [ ] **Add `id` field to entries** — Auto-incrementing numeric ID for stable React keys and deduplication.
 4. [ ] **Add console interception** — Patch `console.error`/`console.warn` at module load.
 5. [ ] **Add global error/rejection listeners** — `window.addEventListener('error', ...)` and `unhandledrejection` at module load.
-6. [ ] **Add third tab (PWA Diagnostics)** — Active health checks: HTTPS, SW state, manifest validation, standalone mode, install prompt receipt. Currently has Diagnostics + Event Log.
-7. [ ] **Add pre-React inline pill** — Inline `<script>` in `index.html` with `window.__debugPushError()` and 20-second loading timeout.
-8. [ ] **Add URL query param redaction** — Replace query strings with `?[redacted]` in debug reports.
-9. [ ] **Improve clipboard fallbacks** — Add ClipboardItem Blob as primary method, then writeText, then textarea. Currently only writeText with manual textarea fallback.
-10. **Confirm:** Open app, verify 3 tabs. Crash a component — pill survives. Copy report — URLs are redacted. Test clipboard on mobile PWA.
+6. [ ] **Add pre-React inline pill** — Inline `<script>` in `index.html` with `window.__debugPushError()` and 20-second loading timeout.
+7. [ ] **Add URL query param redaction** — Replace query strings with `?[redacted]` in debug reports.
+8. [ ] **Improve clipboard fallbacks** — Add ClipboardItem Blob as primary method, then writeText, then textarea. Currently only writeText with manual textarea fallback.
+9. **Confirm:** Open app, verify 3 tabs. Crash a component — pill survives. Copy report — URLs are redacted. Test clipboard on mobile PWA.
+
+Note: third tab (PWA Diagnostics via `diagnostics.ts`) is already present (verified 2026-04-17).
 
 #### DOWNLOAD_PDF — Partial → Complete
 
@@ -360,42 +358,37 @@ see-veo uses vite-plugin-pwa. Icons served with stable filenames.
 
 ### repo-tor
 
-React + Vite dashboard app. All original 9 patterns resolved (verified 2026-04-16). Remaining: HISTORY.md removal, Communication section, and new ICON_CACHE_BUST pattern.
+React + Vite dashboard app. All original 9 patterns resolved (verified 2026-04-16). HISTORY.md already removed (verified 2026-04-17). Remaining: formalize Communication section as top-level, finish ICON_CACHE_BUST (test + user communication).
 
 All previous gaps implemented: 180px Apple touch icon + favicon.ico, z-index scale normalized, full debugLog module with pub/sub + console interception + #debug-root + React DebugPill (3 tabs) + clipboard fallbacks + URL redaction, DaisyUI v5 with 8 themes + data-theme + flash prevention + cross-tab sync + meta theme-color, useDisclosureFocus + useFocusTrap + Home/End keys + disabled items + theme UI in burger menu.
 
 EVENT_BUS: Not needed — React Context dispatch + useReducer in AppContext.jsx is sufficient.
 
-#### HISTORY.md — Remove (cross-fleet policy 2026-04-16)
+#### CLAUDE.md — Formalize Communication section (cross-fleet policy 2026-04-16)
 
-Git history already tracks completions; a separate changelog is redundant.
+repo-tor already has a "Communication Style" block but not as a top-level `## Communication` section. glow-props CLAUDE.md now places `## Communication` between Principles and Code Standards.
 
-1. [ ] Delete `docs/HISTORY.md`
-2. [ ] Remove `### docs/HISTORY.md` section from CLAUDE.md Documentation rules
-3. [ ] Change "move completed items to HISTORY.md" → "delete completed items (git history tracks them)" in CLAUDE.md
-4. [ ] Remove HISTORY.md from README.md file tree (if listed)
-5. [ ] Delete any `[x]` completed items from `docs/TODO.md`
-
-#### CLAUDE.md — Add Communication section (cross-fleet policy 2026-04-16)
-
-glow-props CLAUDE.md now has a top-level `## Communication` section between Principles and Code Standards. Downstream repos must add it.
-
-1. [ ] **Add `## Communication` section** — Copy from glow-props CLAUDE.md (lines 32-46). Place between Principles and Code Standards.
+1. [ ] **Promote to top-level `## Communication` section** — Move/restructure existing "Communication Style" content into a top-level section placed between Principles and Code Standards. Copy glow-props CLAUDE.md (lines 32-46) as the authoritative version.
 2. [ ] **Update header line** — Add COMMUNICATION to the `# READ AND FOLLOW...` line.
-3. [ ] **Remove duplicate bullets from AI Notes** — If "ASK before assuming" or "Communication style" bullets exist in AI Notes, remove them (now covered by the Communication section).
+3. [ ] **Remove duplicate bullets from AI Notes** — If "ASK before assuming" or "Communication style" bullets remain in AI Notes, remove them (now covered by the Communication section).
 
-#### ICON_CACHE_BUST — Missing → Implement
+#### Triggers — Replace with glow-props version (cross-fleet policy 2026-04-17)
+
+glow-props CLAUDE.md has a redesigned Triggers section: 48 triggers in 8 groups, 6 cadence meta sweeps (`hot` / `quick` / `ship` / `session` / `tidy` / `all`), 7 reflective passes (`risk` / `surface` / `wrap` / `skipped` / `assumed` / `approach` / `cold`), and scope modifiers (`branch` / `staged` / `file <path>`). Replaces the older single-word Triggers section (`rev`/`aud`/`mobile`/`clean`/`start`/etc.).
+
+1. [ ] **Replace the existing `## Triggers` section** — Copy the full new `## Triggers` section from glow-props CLAUDE.md verbatim, including How to invoke, Scope modifiers, Behavior rules, all 8 group tables (`correctness`, `trust`, `speed`, `frontend`, `quality`, `ops`, `design`, `fleet`), Meta sweeps table, and Reflective passes table.
+2. [ ] **Note any name collisions** — If the repo has npm scripts, folders, or conventions using single-word names matching trigger names (e.g. `docs/`, `tests/`, `config/`, `api/`), add a line in AI Notes clarifying context precedence.
+3. **Confirm:** `grep -c "^## Triggers$" CLAUDE.md` returns `1`. All 8 group tables present. No old single-word triggers (`rev`/`aud`/`start`/`go`) remain.
+
+#### ICON_CACHE_BUST — Partial → Complete
 
 Reference: `docs/implementations/PWA_ICON_CACHE_BUST.md` (fetch from glow-props)
 
-repo-tor uses vite-plugin-pwa with a mature PWA setup. Icons are served with stable filenames.
+Core plumbing done (verified 2026-04-17): `iconVersion()` + `iconCacheBustHtml()` in `vite.config.js`, versioned manifest icon URLs, `ignoreURLParametersMatching: [/^v$/]` in workbox config. Remaining: test + user communication.
 
-1. [ ] **Add `iconVersion()` + `iconCacheBustHtml()` to `vite.config.js`** — Content-hash each icon file, inject `?v=<hash>` into HTML link tags. Plugin must be wired before `VitePWA()`.
-2. [ ] **Version manifest icon URLs** — Pass `versioned()` paths to `VitePWA({ manifest: { icons: [...] } })`.
-3. [ ] **Add `ignoreURLParametersMatching: [/^v$/]`** to workbox config.
-4. [ ] **Add tripwire test** — Source-level and dist-level assertions per the pattern doc.
-5. [ ] **Add user communication** — "Already installed and the icon looks outdated?" collapsible in install modal.
-6. **Confirm:** Build, verify versioned URLs in manifest + HTML + SW config.
+1. [ ] **Add tripwire test** — Source-level and dist-level assertions per the pattern doc.
+2. [ ] **Add user communication** — "Already installed and the icon looks outdated?" collapsible in install modal.
+3. **Confirm:** Build, verify versioned URLs in manifest + HTML + SW config.
 
 ### few-lap
 
@@ -413,15 +406,22 @@ Git history already tracks completions; a separate changelog is redundant.
 
 #### CLAUDE.md — Align with glow-props
 
-No local `docs/implementations/` folder (correct). Has **~620 lines of hardcoded inline patterns** in a "Suggested Implementations" section (~lines 597-1219) covering PWA System, Debug System, App Icons, Download as PDF, and HTTPS Proxy — full code examples. Also has an AI Note (~line 525) referencing "from Suggested Implementations" locally.
+"Suggested Implementations" section already deleted (verified 2026-04-17 — CLAUDE.md is 1221 lines, not 1800+). Remaining: add Implementation Patterns section, prohibition, Communication section, and update the stale HTTPS_PROXY AI Note.
 
-1. [ ] **Delete entire "Suggested Implementations" section** — Remove ~lines 597-1219 (~620 lines of inline pattern code for PWA System, Debug System, App Icons, Download as PDF, HTTPS Proxy).
-2. [ ] **Add "Implementation Patterns (Source of Truth)" section** — Replace deleted section with the standard glow-props reference block (source location, fetch via GitHub Pages/API, listing command, rules).
-3. [ ] **Update AI Note reference** — Near line 525, change `httpsGet() CONNECT tunnel pattern from Suggested Implementations` to reference fetching the HTTPS_PROXY pattern from glow-props.
-4. [ ] **Add AI Note** — Add the standard implementation patterns note about always fetching from glow-props.
-5. [ ] **Add prohibition** — Add to Prohibitions: "Create local copies of implementation pattern files in any repo — always fetch from glow-props".
-6. [ ] **Add `## Communication` section** — Copy from glow-props CLAUDE.md (lines 32-46). Place between Principles and Code Standards. Update header line to include COMMUNICATION. Remove any duplicate "ASK before assuming" or "Communication style" bullets from AI Notes.
-7. **Confirm:** CLAUDE.md is ~620 lines shorter. No inline code examples for patterns remain. All pattern references point to glow-props. Communication section exists between Principles and Code Standards.
+1. [ ] **Add "Implementation Patterns (Source of Truth)" section** — Add the standard glow-props reference block (source location, fetch via GitHub Pages/API, listing command, rules).
+2. [ ] **Update AI Note reference** — Near line 525, change `httpsGet() CONNECT tunnel pattern from Suggested Implementations` to reference fetching the HTTPS_PROXY pattern from glow-props.
+3. [ ] **Add AI Note** — Add the standard implementation patterns note about always fetching from glow-props.
+4. [ ] **Add prohibition** — Add to Prohibitions: "Create local copies of implementation pattern files in any repo — always fetch from glow-props".
+5. [ ] **Add `## Communication` section** — Copy from glow-props CLAUDE.md (lines 32-46). Place between Principles and Code Standards. Update header line to include COMMUNICATION. Remove any duplicate "ASK before assuming" or "Communication style" bullets from AI Notes.
+6. **Confirm:** All pattern references point to glow-props. Communication section exists between Principles and Code Standards.
+
+#### Triggers — Replace with glow-props version (cross-fleet policy 2026-04-17)
+
+glow-props CLAUDE.md has a redesigned Triggers section: 48 triggers in 8 groups, 6 cadence meta sweeps (`hot` / `quick` / `ship` / `session` / `tidy` / `all`), 7 reflective passes (`risk` / `surface` / `wrap` / `skipped` / `assumed` / `approach` / `cold`), and scope modifiers (`branch` / `staged` / `file <path>`). Replaces the older single-word Triggers section (`rev`/`aud`/`mobile`/`clean`/`start`/etc.).
+
+1. [ ] **Replace the existing `## Triggers` section** — Copy the full new `## Triggers` section from glow-props CLAUDE.md verbatim, including How to invoke, Scope modifiers, Behavior rules, all 8 group tables (`correctness`, `trust`, `speed`, `frontend`, `quality`, `ops`, `design`, `fleet`), Meta sweeps table, and Reflective passes table.
+2. [ ] **Note any name collisions** — If the repo has npm scripts, folders, or conventions using single-word names matching trigger names (e.g. `docs/`, `tests/`, `config/`, `api/`), add a line in AI Notes clarifying context precedence.
+3. **Confirm:** `grep -c "^## Triggers$" CLAUDE.md` returns `1`. All 8 group tables present. No old single-word triggers (`rev`/`aud`/`start`/`go`) remain.
 
 #### APP_ICONS — Partial → Complete
 
@@ -482,9 +482,10 @@ Reference: `docs/implementations/THEME_DARK_MODE.md` (Uniwind Theme Switching + 
 
 few-lap uses Uniwind with `@variant` blocks — not `data-theme`. The Uniwind approach is architecturally different but should still cover flash prevention.
 
-1. [ ] **Add flash prevention script** — Inline `<script>` in `+html.tsx` `<head>` that reads localStorage and applies the theme CSS class before Expo mounts. Without this, users see a flash of the default theme on page load.
-2. [ ] **Verify Uniwind `@variant` blocks cover all DaisyUI semantic tokens** — Ensure the CSS variable definitions in each `@variant` block match DaisyUI's expected variables for full component compatibility.
-3. **Confirm:** Reload with a non-default theme saved — no flash. Toggle dark/light — instant switch.
+Flash prevention script already present in `+html.tsx` (verified 2026-04-17).
+
+1. [ ] **Verify Uniwind `@variant` blocks cover all DaisyUI semantic tokens** — Ensure the CSS variable definitions in each `@variant` block match DaisyUI's expected variables for full component compatibility.
+2. **Confirm:** Reload with a non-default theme saved — no flash. Toggle dark/light — instant switch.
 
 #### Z_INDEX_SCALE — Missing → Implement
 
@@ -535,15 +536,24 @@ No local `docs/implementations/` folder (correct). Has **~470 lines of hardcoded
 6. [ ] **Add `## Communication` section** — Copy from glow-props CLAUDE.md (lines 32-46). Place between Principles and Code Standards. Update header line to include COMMUNICATION. Remove any duplicate "ASK before assuming" or "Communication style" bullets from AI Notes.
 7. **Confirm:** CLAUDE.md is ~470 lines shorter. No inline code examples for patterns remain. Shared References points to `docs/implementations/`. Communication section exists between Principles and Code Standards.
 
+#### Triggers — Replace with glow-props version (cross-fleet policy 2026-04-17)
+
+glow-props CLAUDE.md has a redesigned Triggers section: 48 triggers in 8 groups, 6 cadence meta sweeps (`hot` / `quick` / `ship` / `session` / `tidy` / `all`), 7 reflective passes (`risk` / `surface` / `wrap` / `skipped` / `assumed` / `approach` / `cold`), and scope modifiers (`branch` / `staged` / `file <path>`). Replaces the older single-word Triggers section (`rev`/`aud`/`mobile`/`clean`/`start`/etc.).
+
+1. [ ] **Replace the existing `## Triggers` section** — Copy the full new `## Triggers` section from glow-props CLAUDE.md verbatim, including How to invoke, Scope modifiers, Behavior rules, all 8 group tables (`correctness`, `trust`, `speed`, `frontend`, `quality`, `ops`, `design`, `fleet`), Meta sweeps table, and Reflective passes table.
+2. [ ] **Note any name collisions** — If the repo has npm scripts, folders, or conventions using single-word names matching trigger names (e.g. `docs/`, `tests/`, `config/`, `api/`), add a line in AI Notes clarifying context precedence.
+3. **Confirm:** `grep -c "^## Triggers$" CLAUDE.md` returns `1`. All 8 group tables present. No old single-word triggers (`rev`/`aud`/`start`/`go`) remain.
+
 #### APP_ICONS — Partial → Complete
 
 Reference: `docs/implementations/APP_ICONS.md`
 
+Maskable 1024px already generated (verified 2026-04-17 — manifest references `pwa-1024x1024.png` with maskable purpose).
+
 1. [ ] **Add 400 DPI density** — In `generate-icons.mjs`, change `sharp(svgBuffer).resize()` to `sharp(svgBuffer, { density: 400 }).resize()`.
-2. [ ] **Fix maskable icon size** — Currently generates maskable at 512px (`pwa-maskable-512x512.png`). Pattern requires 1024px for high-DPI Android devices. Add a 1024px maskable output and update manifest `purpose` values.
-3. [ ] **Add 180px Apple touch icon** — Add to generation script output list. Add `<link rel="apple-touch-icon">` to `index.html`.
-4. [ ] **Optional: Add favicon.ico** — For Windows taskbar pinning and older browsers. See pattern's ICO generation section.
-5. **Confirm:** Regenerate all PNGs, verify 180px and 1024px maskable are crisp. Check manifest has `"purpose": "maskable"` on 1024.
+2. [ ] **Add 180px Apple touch icon** — Add to generation script output list. Add `<link rel="apple-touch-icon">` to `index.html`.
+3. [ ] **Optional: Add favicon.ico** — For Windows taskbar pinning and older browsers. See pattern's ICO generation section.
+4. **Confirm:** Regenerate all PNGs, verify 180px icon is crisp. Check manifest has `"purpose": "maskable"` on 1024.
 
 #### BURGER_MENU — Missing → Implement
 
@@ -566,7 +576,7 @@ Reference: `docs/implementations/Z_INDEX_SCALE.md`
 
 Reference: `docs/implementations/DEBUG_SYSTEM.md`
 
-sun-sea-o's debug system has the most gaps of any partial implementation. Needs significant rework.
+sun-sea-o's debug system still has many gaps. ClipboardItem Blob fallback and pre-React inline pill are already present (verified 2026-04-17).
 
 1. [ ] **Add `id` field to entries** — Auto-incrementing numeric ID.
 2. [ ] **Change `details` to `Record<string, unknown>`** — Currently uses `message: string` only.
@@ -575,12 +585,10 @@ sun-sea-o's debug system has the most gaps of any partial implementation. Needs 
 5. [ ] **Add PWA Diagnostics tab** — Third tab with active health checks.
 6. [ ] **Move `debugGenerateReport()` to module** — Currently inline in component.
 7. [ ] **Add URL query param redaction** — In report generation.
-8. [ ] **Add ClipboardItem Blob fallback** — Before writeText.
-9. [ ] **Add pre-React inline pill** — Inline `<script>` in `index.html` with `window.__debugPushError()` and 20-second timeout.
-10. [ ] **Add HMR guard** — Use `window.__debugLogListenersAttached` flag to prevent duplicate global listeners during dev hot reload. Currently attaches via both `window.onerror` AND `addEventListener`, doubling up.
-11. [ ] **Add subscriber replay** — New subscribers receive existing entries on subscribe.
-12. [ ] **Add subscriber error isolation** — Wrap each subscriber callback in try/catch so one throwing subscriber doesn't break others.
-13. **Confirm:** Open app, verify 3 tabs. HMR reload — no duplicate error entries. New subscriber gets existing log. Copy report — redacted.
+8. [ ] **Add HMR guard** — Use `window.__debugLogListenersAttached` flag to prevent duplicate global listeners during dev hot reload. Currently attaches via both `window.onerror` AND `addEventListener`, doubling up.
+9. [ ] **Add subscriber replay** — New subscribers receive existing entries on subscribe.
+10. [ ] **Add subscriber error isolation** — Wrap each subscriber callback in try/catch so one throwing subscriber doesn't break others.
+11. **Confirm:** Open app, verify 3 tabs. HMR reload — no duplicate error entries. New subscriber gets existing log. Copy report — redacted.
 
 #### PWA_SYSTEM — Partial → Complete
 
@@ -654,6 +662,14 @@ No local `docs/implementations/` folder (correct). Has **~180 lines of hardcoded
 5. [ ] **Add `## Communication` section** — Copy from glow-props CLAUDE.md (lines 32-46). Place between Principles and Code Standards. Update header line to include COMMUNICATION. Remove any duplicate "ASK before assuming" or "Communication style" bullets from AI Notes.
 6. **Confirm:** CLAUDE.md is ~180 lines shorter. No inline code examples for patterns remain. Standard fetch commands point to glow-props. Communication section exists between Principles and Code Standards.
 
+#### Triggers — Replace with glow-props version (cross-fleet policy 2026-04-17)
+
+glow-props CLAUDE.md has a redesigned Triggers section: 48 triggers in 8 groups, 6 cadence meta sweeps (`hot` / `quick` / `ship` / `session` / `tidy` / `all`), 7 reflective passes (`risk` / `surface` / `wrap` / `skipped` / `assumed` / `approach` / `cold`), and scope modifiers (`branch` / `staged` / `file <path>`). Replaces the older single-word Triggers section (`rev`/`aud`/`mobile`/`clean`/`start`/etc.).
+
+1. [ ] **Replace the existing `## Triggers` section** — Copy the full new `## Triggers` section from glow-props CLAUDE.md verbatim, including How to invoke, Scope modifiers, Behavior rules, all 8 group tables (`correctness`, `trust`, `speed`, `frontend`, `quality`, `ops`, `design`, `fleet`), Meta sweeps table, and Reflective passes table.
+2. [ ] **Note any name collisions** — If the repo has npm scripts, folders, or conventions using single-word names matching trigger names (e.g. `docs/`, `tests/`, `config/`, `api/`), add a line in AI Notes clarifying context precedence.
+3. **Confirm:** `grep -c "^## Triggers$" CLAUDE.md` returns `1`. All 8 group tables present. No old single-word triggers (`rev`/`aud`/`start`/`go`) remain.
+
 #### BURGER_MENU — Evaluate if needed
 
 Reference: `docs/implementations/BURGER_MENU.md`
@@ -688,10 +704,11 @@ Reference: `docs/implementations/DOWNLOAD_PDF.md`
 
 Reference: `docs/implementations/PWA_SYSTEM.md`
 
-1. [ ] **Convert install prompt to module singleton** — `usePWAInstall` stores state in React hooks. Lift `deferredPrompt` and `canInstall` to module scope so multiple consumers share state.
-2. [ ] **Add visibility-based update checks** — `visibilitychange` listener to check for SW updates when tab regains focus.
-3. [ ] **Add 30-second suppression** — `sessionStorage` timestamp after update applied. See pattern's `wasJustUpdated()`.
-4. **Confirm:** Deploy new version, background tab, bring back — update detected. No re-detection within 30s of applying.
+Module singleton for install prompt already implemented (verified 2026-04-17 — `consumeEarlyCapturedEvent()` reads from `window.__pwaInstallPromptEvent` captured in inline script).
+
+1. [ ] **Add visibility-based update checks** — `visibilitychange` listener to check for SW updates when tab regains focus.
+2. [ ] **Add 30-second suppression** — `sessionStorage` timestamp after update applied. See pattern's `wasJustUpdated()`.
+3. **Confirm:** Deploy new version, background tab, bring back — update detected. No re-detection within 30s of applying.
 
 #### Z_INDEX_SCALE — Partial → Complete
 
@@ -747,6 +764,14 @@ No local `docs/implementations/` folder (correct). Has **~630 lines of hardcoded
 5. [ ] **Add `## Communication` section** — Copy from glow-props CLAUDE.md (lines 32-46). Place between Principles and Code Standards. Update header line to include COMMUNICATION. Remove any duplicate "ASK before assuming" or "Communication style" bullets from AI Notes.
 6. **Confirm:** CLAUDE.md is ~630 lines shorter. No inline code examples for patterns remain. Standard fetch commands point to glow-props. Communication section exists between Principles and Code Standards.
 
+#### Triggers — Replace with glow-props version (cross-fleet policy 2026-04-17)
+
+glow-props CLAUDE.md has a redesigned Triggers section: 48 triggers in 8 groups, 6 cadence meta sweeps (`hot` / `quick` / `ship` / `session` / `tidy` / `all`), 7 reflective passes (`risk` / `surface` / `wrap` / `skipped` / `assumed` / `approach` / `cold`), and scope modifiers (`branch` / `staged` / `file <path>`). Replaces the older single-word Triggers section (`rev`/`aud`/`mobile`/`clean`/`start`/etc.).
+
+1. [ ] **Replace the existing `## Triggers` section** — Copy the full new `## Triggers` section from glow-props CLAUDE.md verbatim, including How to invoke, Scope modifiers, Behavior rules, all 8 group tables (`correctness`, `trust`, `speed`, `frontend`, `quality`, `ops`, `design`, `fleet`), Meta sweeps table, and Reflective passes table.
+2. [ ] **Note any name collisions** — If the repo has npm scripts, folders, or conventions using single-word names matching trigger names (e.g. `docs/`, `tests/`, `config/`, `api/`), add a line in AI Notes clarifying context precedence.
+3. **Confirm:** `grep -c "^## Triggers$" CLAUDE.md` returns `1`. All 8 group tables present. No old single-word triggers (`rev`/`aud`/`start`/`go`) remain.
+
 #### APP_ICONS — Partial → Complete
 
 Reference: `docs/implementations/APP_ICONS.md`
@@ -789,13 +814,14 @@ Reference: `docs/implementations/DOWNLOAD_PDF.md`
 
 Reference: `docs/implementations/PWA_SYSTEM.md`
 
+30-second suppression already present in `usePWAUpdate.ts` (verified 2026-04-17).
+
 1. [ ] **Convert to module-level singleton** — Move SW state from React hooks to module-scope variables.
 2. [ ] **Add visibility-based update checks** — `visibilitychange` listener.
-3. [ ] **Add 30-second suppression** — `sessionStorage` timestamp after update.
-4. [ ] **Add `checkForUpdate()` function** — Returns typed result for UI/menu integration.
-5. [ ] **Add `controllerchange` reload guard** — Auto-reload only when user clicked "Update".
-6. [ ] **Add `workbox.cleanupOutdatedCaches: true`** — In vite config.
-7. **Confirm:** Deploy, background tab, return — update detected. Manual "Check for updates" works from menu.
+3. [ ] **Add `checkForUpdate()` function** — Returns typed result for UI/menu integration.
+4. [ ] **Add `controllerchange` reload guard** — Auto-reload only when user clicked "Update".
+5. [ ] **Add `workbox.cleanupOutdatedCaches: true`** — In vite config.
+6. **Confirm:** Deploy, background tab, return — update detected. Manual "Check for updates" works from menu.
 
 #### THEME_DARK_MODE — Missing → Implement
 
@@ -861,6 +887,14 @@ Git history already tracks completions; a separate changelog is redundant.
 6. [ ] **Add `## Communication` section** — Copy from glow-props CLAUDE.md (lines 32-46). Place between Principles and Code Standards. Update header line to include COMMUNICATION. Remove any duplicate "ASK before assuming" or "Communication style" bullets from AI Notes.
 7. **Confirm:** No `docs/implementations/` folder exists. No hardcoded table. Architecture section no longer lists pattern files. Standard fetch commands point to glow-props. Communication section exists between Principles and Code Standards.
 
+#### Triggers — Replace with glow-props version (cross-fleet policy 2026-04-17)
+
+glow-props CLAUDE.md has a redesigned Triggers section: 48 triggers in 8 groups, 6 cadence meta sweeps (`hot` / `quick` / `ship` / `session` / `tidy` / `all`), 7 reflective passes (`risk` / `surface` / `wrap` / `skipped` / `assumed` / `approach` / `cold`), and scope modifiers (`branch` / `staged` / `file <path>`). Replaces the older single-word Triggers section (`rev`/`aud`/`mobile`/`clean`/`start`/etc.).
+
+1. [ ] **Replace the existing `## Triggers` section** — Copy the full new `## Triggers` section from glow-props CLAUDE.md verbatim, including How to invoke, Scope modifiers, Behavior rules, all 8 group tables (`correctness`, `trust`, `speed`, `frontend`, `quality`, `ops`, `design`, `fleet`), Meta sweeps table, and Reflective passes table.
+2. [ ] **Note any name collisions** — If the repo has npm scripts, folders, or conventions using single-word names matching trigger names (e.g. `docs/`, `tests/`, `config/`, `api/`), add a line in AI Notes clarifying context precedence.
+3. **Confirm:** `grep -c "^## Triggers$" CLAUDE.md` returns `1`. All 8 group tables present. No old single-word triggers (`rev`/`aud`/`start`/`go`) remain.
+
 #### APP_ICONS — Partial → Complete
 
 Reference: `docs/implementations/APP_ICONS.md`
@@ -925,10 +959,12 @@ Reference: `docs/implementations/THEME_DARK_MODE.md` (Uniwind Theme Switching + 
 
 synctone uses Uniwind's `setTheme()` with `classList.add()` — not the DaisyUI `data-theme` approach. The Uniwind mechanism is architecturally different for React Native.
 
+Flash prevention inline script already present in `+html.tsx` (verified 2026-04-17). Remaining items address the dual-layer theming gap.
+
 1. [ ] **Add `data-theme` attribute** (web platform) — Uniwind's `classList.add(name)` doesn't set `data-theme`. For web, add `document.documentElement.setAttribute('data-theme', name)` alongside the Uniwind call so DaisyUI components work correctly.
 2. [ ] **Add `.dark` class toggling** — Set/remove `.dark` on `<html>` for Tailwind's `dark:` variant.
 3. [ ] **Add `color-scheme` CSS rule** — `html.dark { color-scheme: dark; }` for native form inputs and scrollbars.
-4. [ ] **Add flash prevention script** — Inline `<script>` in `+html.tsx` `<head>` that reads persisted theme from localStorage/AsyncStorage and applies both `data-theme` + `.dark` before Expo mounts.
+4. [ ] **Extend flash prevention script** — Current inline script handles theme fallback. Extend to also apply both `data-theme` + `.dark` class before Expo mounts.
 5. [ ] **Add `@custom-variant dark`** — Tailwind v4's class-based dark mode configuration in CSS.
 6. **Confirm:** Reload with non-default theme — no flash. Toggle dark/light — instant. Native select dropdowns match theme on web.
 
@@ -952,21 +988,24 @@ synctone uses Expo with a custom `sw.js` — not vite-plugin-pwa. Adapt the hash
 
 ## Cross-Cutting Gaps (most common across repos)
 
-Updated 2026-04-16 after code audit. canva-grid, budgy-ting, and repo-tor have resolved all original 9 pattern gaps. All repos still need the new ICON_CACHE_BUST pattern, HISTORY.md removal, and Communication section propagation. Only glow-props is fully clean.
+Updated 2026-04-17 after re-audit via GitHub API. canva-grid, budgy-ting, and repo-tor have resolved all original 9 pattern gaps; budgy-ting also resolved BURGER_MENU and DEBUG_SYSTEM partial gaps. repo-tor has already removed HISTORY.md. Only glow-props is fully clean on everything.
+
+Also 2026-04-17: glow-props CLAUDE.md Triggers section redesigned from 9 single-word commands to 48 triggers across 8 groups + 6 cadence meta sweeps + 7 reflective passes with scope modifiers. All 10 downstream repos need their Triggers sections replaced.
 
 These gaps appear in 4+ repos and represent the highest-leverage improvements:
 
-1. **CLAUDE.md alignment** — 3 Pass on original scope (repo-tor, canva-grid, budgy-ting), 7 Missing. All 10 downstream repos still need the new Communication section added. Must be done first — removes inline patterns and local copies, ensures all repos fetch from glow-props and have consistent communication rules. Worst offenders for inline patterns: few-lap (~620 lines), four-ems (~630 lines), sun-sea-o (~470 lines), see-veo (~318 lines), synctone (8 local files in `docs/implementations/`).
-2. **HISTORY.md removal** — New cross-fleet policy 2026-04-16. Missing in all 10 downstream repos. Delete `docs/HISTORY.md`, remove from CLAUDE.md Documentation rules, update TODO wording.
-3. **PWA_ICON_CACHE_BUST** — New pattern added 2026-04-16. Missing in all 9 repos with PWA (canva-grid, budgy-ting, see-veo, repo-tor, few-lap, sun-sea-o, graphiki, four-ems, synctone). N/A for glow-props (static) and model-pear (no PWA yet). Expo repos (few-lap, synctone) need stack-specific adaptation.
-4. **EVENT_BUS** — N/A in 3 repos (canva-grid, budgy-ting, repo-tor decided against). graphiki has partial. 7 repos still need evaluate decision.
-5. **DEBUG_SYSTEM: console interception** — Done in canva-grid, budgy-ting, repo-tor. Still missing in 5/8 repos with debug systems (see-veo, few-lap, sun-sea-o, four-ems, synctone).
-6. **DEBUG_SYSTEM: pre-React inline pill** — Done in canva-grid, budgy-ting, repo-tor. Still missing in 5/8 repos.
-7. **DEBUG_SYSTEM: inline styles** — Done in repo-tor and canva-grid. Others still use Tailwind/DaisyUI.
-8. **DEBUG_SYSTEM: PWA Diagnostics tab** — Done in canva-grid, budgy-ting, repo-tor. Still missing in 5/8 repos.
-9. **PWA_SYSTEM: visibility-based update checks** — Done in canva-grid, budgy-ting, repo-tor, glow-props. Still missing in 4/8 repos.
-10. **PWA_SYSTEM: 30-second suppression** — Done in canva-grid, budgy-ting, repo-tor, glow-props. Still missing in 4/8 repos.
-11. **PWA_SYSTEM: module singleton** — Done in canva-grid, budgy-ting, glow-props, repo-tor. Still missing in 4/8 repos.
-12. **BURGER_MENU: focus hooks extraction** — Done in canva-grid (`useEscapeKey`) and repo-tor (`useDisclosureFocus` + `useFocusTrap`). Still missing in other repos with menus.
-13. **THEME_DARK_MODE** — Missing in 4/11 repos (model-pear, see-veo, sun-sea-o, four-ems have no theming). budgy-ting and repo-tor now have full DaisyUI systems.
-14. **Z_INDEX_SCALE** — 4 Pass (glow-props, canva-grid, budgy-ting, repo-tor), 1 Partial (graphiki), 6 Missing.
+1. **CLAUDE.md alignment** — 3 Pass on original scope (repo-tor, canva-grid, budgy-ting), model-pear now Partial (Implementation Patterns section exists), few-lap "Suggested Implementations" section already deleted. Worst remaining offenders for inline patterns: four-ems (~630 lines), sun-sea-o (~470 lines), see-veo (~285 lines), graphiki (~180 lines), synctone (8 local files in `docs/implementations/`). All 10 downstream repos still need the Communication section added.
+2. **Triggers redesign** — Cross-fleet policy 2026-04-17. glow-props CLAUDE.md now has 48 triggers in 8 groups + 6 cadence meta sweeps + 7 reflective passes, replacing the older 9-trigger single-word set. Missing in all 10 downstream repos — each needs its existing `## Triggers` section replaced with the new version verbatim.
+3. **HISTORY.md removal** — Cross-fleet policy 2026-04-16. Already done in repo-tor. Missing in 9 downstream repos.
+4. **PWA_ICON_CACHE_BUST** — Partial in canva-grid + repo-tor (core plumbing done, missing test + user communication). Missing in 7 other PWA repos. N/A for glow-props (static) and model-pear (no PWA yet). Expo repos (few-lap, synctone) need stack-specific adaptation.
+5. **EVENT_BUS** — N/A in 3 repos (canva-grid, budgy-ting, repo-tor decided against). graphiki has partial. 7 repos still need evaluate decision.
+6. **DEBUG_SYSTEM: console interception** — Done in canva-grid, budgy-ting, repo-tor. Still missing in 5 repos (see-veo, few-lap, sun-sea-o, four-ems, synctone).
+7. **DEBUG_SYSTEM: pre-React inline pill** — Done in canva-grid, budgy-ting, repo-tor, sun-sea-o. Still missing in 4 repos.
+8. **DEBUG_SYSTEM: inline styles** — Done in repo-tor and canva-grid. Others still use Tailwind/DaisyUI.
+9. **DEBUG_SYSTEM: PWA Diagnostics tab** — Done in canva-grid, budgy-ting, repo-tor, see-veo. Still missing in 4 repos.
+10. **PWA_SYSTEM: visibility-based update checks** — Done in canva-grid, budgy-ting, repo-tor, glow-props. Still missing in 4 repos.
+11. **PWA_SYSTEM: 30-second suppression** — Done in canva-grid, budgy-ting, repo-tor, glow-props, four-ems. Still missing in 3 repos.
+12. **PWA_SYSTEM: module singleton** — Done in canva-grid, budgy-ting, glow-props, repo-tor, graphiki (install prompt). Still missing in 3 repos.
+13. **BURGER_MENU: focus hooks extraction** — Done in canva-grid (`useEscapeKey`) and repo-tor (`useDisclosureFocus` + `useFocusTrap`). Still missing in other repos with menus.
+14. **THEME_DARK_MODE** — Missing in 4/11 repos (model-pear, see-veo, sun-sea-o, four-ems have no theming). budgy-ting and repo-tor now have full DaisyUI systems. Flash prevention inline script present in few-lap + synctone.
+15. **Z_INDEX_SCALE** — 4 Pass (glow-props, canva-grid, budgy-ting, repo-tor), 1 Partial (graphiki), 6 Missing.
