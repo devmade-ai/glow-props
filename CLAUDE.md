@@ -374,35 +374,36 @@ Examples:
 | 25 | `complexity` | `cpx` | Function length, nesting depth, cyclomatic complexity hotspots |
 | 26 | `hacks` | `hck` | `TODO`/`FIXME`/`HACK`/`XXX` markers, `@ts-ignore`/`@ts-expect-error`, `any` escapes framed as temporary, `setTimeout` for timing fixes, quick patches waiting to be done properly |
 | 27 | `simplify` | `smp` | Reinvented framework features, over-engineered abstractions, custom code that could be 1–2 stdlib/library calls, unnecessary layers |
-| 28 | `back-compat` | `bck` | Orphaned feature flags, deprecated branches with no callers, `legacy*` exports, backcompat shims outliving their purpose, `// kept for compatibility` blocks |
-| 29 | `comments` | `cmt` | Code comments against repo rules — WHY not WHAT, no PR-reference rot, no AI narration, no commented-out blocks unless `// KEEP:` annotated |
+| 28 | `reuse` | `rus` | Custom-vs-stdlib balance: how much is hand-written that shouldn't be; logic that should be extracted for reuse but isn't; abstractions generalized for a single caller; speculative parameters, defensive checks for impossible states, and configurability serving no real need |
+| 29 | `back-compat` | `bck` | Orphaned feature flags, deprecated branches with no callers, `legacy*` exports, backcompat shims outliving their purpose, `// kept for compatibility` blocks |
+| 30 | `comments` | `cmt` | Code comments against repo rules — WHY not WHAT, no PR-reference rot, no AI narration, no commented-out blocks unless `// KEEP:` annotated |
 
 ### Operational — group `ops`
 
 | # | Trigger | Alias | Looks for |
 |---|---------|-------|-----------|
-| 30 | `deps` | `dep` | Outdated, unused, vulnerable, license-risky dependencies |
-| 31 | `observability` | `obs` | Log coverage, metric hygiene, trace completeness, debug-pill surfaces |
-| 32 | `reliability` | `rel` | Retries, timeouts, idempotency, graceful degradation, offline handling |
-| 33 | `config` | `cfg` | Env var handling, secret management, config schema drift |
-| 34 | `migration` | `mig` | DB migration safety, API versioning, rollback plan, backward compatibility |
-| 35 | `ci` | `ci` | Pipeline health, build speed, cache effectiveness, flake rate |
+| 31 | `deps` | `dep` | Outdated, unused, vulnerable, license-risky dependencies |
+| 32 | `observability` | `obs` | Log coverage, metric hygiene, trace completeness, debug-pill surfaces |
+| 33 | `reliability` | `rel` | Retries, timeouts, idempotency, graceful degradation, offline handling |
+| 34 | `config` | `cfg` | Env var handling, secret management, config schema drift |
+| 35 | `migration` | `mig` | DB migration safety, API versioning, rollback plan, backward compatibility |
+| 36 | `ci` | `ci` | Pipeline health, build speed, cache effectiveness, flake rate |
 
 ### Design-level — group `design`
 
 | # | Trigger | Alias | Looks for |
 |---|---------|-------|-----------|
-| 36 | `architecture` | `arch` | Coupling, layering violations, abstraction leaks, module boundaries |
-| 37 | `api` | `api` | Interface consistency, versioning, deprecation, contract clarity |
-| 38 | `state` | `sta` | Where state lives, derivation vs storage, single-source-of-truth violations |
-| 39 | `data-model` | `dat` | Schema normalization, foreign-key integrity, nullable discipline |
+| 37 | `architecture` | `arch` | Coupling, layering violations, abstraction leaks, module boundaries |
+| 38 | `api` | `api` | Interface consistency, versioning, deprecation, contract clarity |
+| 39 | `state` | `sta` | Where state lives, derivation vs storage, single-source-of-truth violations |
+| 40 | `data-model` | `dat` | Schema normalization, foreign-key integrity, nullable discipline |
 
 ### Fleet alignment — group `fleet`
 
 | # | Trigger | Alias | Looks for |
 |---|---------|-------|-----------|
-| 40 | `align` | `aln` | Drift between this repo's CLAUDE.md and glow-props CLAUDE.md — missing sections, stale rules, divergent conventions |
-| 41 | `pattern-audit` | `pa` | Every glow-props implementation pattern: implemented / partial / missing / deviates — with diff notes for each |
+| 41 | `align` | `aln` | Drift between this repo's CLAUDE.md and glow-props CLAUDE.md — missing sections, stale rules, divergent conventions |
+| 42 | `pattern-audit` | `pa` | Every glow-props implementation pattern: implemented / partial / missing / deviates — with diff notes for each |
 
 ### Meta sweeps
 
