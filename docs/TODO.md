@@ -18,7 +18,7 @@
 
 ## Per-Repo Pattern Implementation Gaps
 
-Audited 2026-04-06 against updated `docs/implementations/*.md` pattern docs. Updated 2026-04-10 with Z_INDEX_SCALE (9 patterns). Re-audited 2026-04-10 against actual repo code — corrected stale statuses for canva-grid, budgy-ting, see-veo, few-lap, four-ems, repo-tor. Added PWA_ICON_CACHE_BUST pattern 2026-04-16 (10 patterns).
+Audited 2026-04-06 against updated `docs/implementations/*.md` pattern docs. Updated 2026-04-10 with Z_INDEX_SCALE (9 patterns). Re-audited 2026-04-16 against actual repo code — corrected stale statuses for canva-grid, budgy-ting, see-veo, few-lap, four-ems, repo-tor. repo-tor re-audited same day and confirmed fully compliant on original 9 patterns. Added PWA_ICON_CACHE_BUST pattern 2026-04-16 (10 patterns).
 
 Legend: **Pass** = compliant, **Partial** = has the feature but with gaps, **Missing** = not implemented, **N/A** = not applicable
 
@@ -44,9 +44,9 @@ Legend: **Pass** = compliant, **Partial** = has the feature but with gaps, **Mis
 
 ### canva-grid
 
-React + Vite app. **Fully compliant** across all 8 applicable patterns (verified 2026-04-10). Only HISTORY.md removal pending.
+React + Vite app. All original 9 patterns resolved (verified 2026-04-10). Remaining: HISTORY.md removal, Communication section, and new ICON_CACHE_BUST pattern.
 
-EVENT_BUS: Decided against — canva-grid uses React Context dispatch for component communication, which is sufficient for its architecture. No service-layer pub/sub needed.
+EVENT_BUS: Decided against — React Context dispatch is sufficient for its architecture.
 
 #### HISTORY.md — Remove (cross-fleet policy 2026-04-16)
 
@@ -58,9 +58,30 @@ Git history already tracks completions; a separate changelog is redundant.
 4. [ ] Remove HISTORY.md from README.md file tree (if listed)
 5. [ ] Delete any `[x]` completed items from `docs/TODO.md`
 
+#### CLAUDE.md — Add Communication section (cross-fleet policy 2026-04-16)
+
+glow-props CLAUDE.md now has a top-level `## Communication` section between Principles and Code Standards. Downstream repos must add it.
+
+1. [ ] **Add `## Communication` section** — Copy from glow-props CLAUDE.md (lines 32-46). Place between Principles and Code Standards.
+2. [ ] **Update header line** — Add COMMUNICATION to the `# READ AND FOLLOW...` line.
+3. [ ] **Remove duplicate bullets from AI Notes** — If "ASK before assuming" or "Communication style" bullets exist in AI Notes, remove them (now covered by the Communication section).
+
+#### ICON_CACHE_BUST — Missing → Implement
+
+Reference: `docs/implementations/PWA_ICON_CACHE_BUST.md` (fetch from glow-props)
+
+canva-grid uses vite-plugin-pwa with Approach B (pdf-lib) for export. PWA icons are served with stable filenames.
+
+1. [ ] **Add `iconVersion()` + `iconCacheBustHtml()` to `vite.config.js`** — Content-hash each icon file, inject `?v=<hash>` into HTML link tags. Plugin must be wired before `VitePWA()`.
+2. [ ] **Version manifest icon URLs** — Pass `versioned()` paths to `VitePWA({ manifest: { icons: [...] } })`.
+3. [ ] **Add `ignoreURLParametersMatching: [/^v$/]`** to workbox config — Required so Workbox precache matches versioned URLs.
+4. [ ] **Add tripwire test** — Source-level and dist-level assertions per the pattern doc.
+5. [ ] **Add user communication** — "Already installed and the icon looks outdated?" collapsible in install modal.
+6. **Confirm:** Build, verify `dist/manifest.webmanifest` icons have `?v=` hashes, `dist/index.html` link tags have `?v=` hashes, `dist/sw.js` has `ignoreURLParametersMatching` with `/^v$/`.
+
 ### budgy-ting
 
-Vue + Vite app. Mostly compliant (verified 2026-04-10). CLAUDE.md, APP_ICONS, PWA_SYSTEM, THEME_DARK_MODE, and Z_INDEX_SCALE are now fully passing. Remaining gaps: BURGER_MENU (minor), DEBUG_SYSTEM (minor), DOWNLOAD_PDF (needs print button).
+Vue + Vite app. Mostly compliant (verified 2026-04-10). CLAUDE.md, APP_ICONS, PWA_SYSTEM, THEME_DARK_MODE, and Z_INDEX_SCALE are now fully passing. Remaining gaps: BURGER_MENU (minor), DEBUG_SYSTEM (minor), DOWNLOAD_PDF (needs print button), plus cross-fleet items (HISTORY.md removal, Communication section, ICON_CACHE_BUST).
 
 Previous gaps now confirmed done: CLAUDE.md URLs updated, 400 DPI + separate maskable icon, visibility-based update checks + 30-second suppression + module singleton, full DaisyUI combo-based theme system with flash prevention + cross-tab sync, z-index scale documented and applied.
 
@@ -101,6 +122,27 @@ Reference: `docs/implementations/DOWNLOAD_PDF.md`
 1. [ ] **Add `window.print()` trigger button** — Print CSS already exists (`.no-print` class, `@media print` rules, `beforeprint`/`afterprint` dark mode handlers). Add a "Save as PDF" button in the UI that calls `window.print()`.
 2. **Confirm:** Click button, verify print preview shows clean output with no interactive elements.
 
+#### CLAUDE.md — Add Communication section (cross-fleet policy 2026-04-16)
+
+glow-props CLAUDE.md now has a top-level `## Communication` section between Principles and Code Standards. Downstream repos must add it.
+
+1. [ ] **Add `## Communication` section** — Copy from glow-props CLAUDE.md (lines 32-46). Place between Principles and Code Standards.
+2. [ ] **Update header line** — Add COMMUNICATION to the `# READ AND FOLLOW...` line.
+3. [ ] **Remove duplicate bullets from AI Notes** — If "ASK before assuming" or "Communication style" bullets exist in AI Notes, remove them (now covered by the Communication section).
+
+#### ICON_CACHE_BUST — Missing → Implement
+
+Reference: `docs/implementations/PWA_ICON_CACHE_BUST.md` (fetch from glow-props)
+
+budgy-ting uses vite-plugin-pwa. Icons served with stable filenames.
+
+1. [ ] **Add `iconVersion()` + `iconCacheBustHtml()` to `vite.config.ts`** — Content-hash each icon file, inject `?v=<hash>` into HTML link tags. Plugin must be wired before `VitePWA()`.
+2. [ ] **Version manifest icon URLs** — Pass `versioned()` paths to `VitePWA({ manifest: { icons: [...] } })`.
+3. [ ] **Add `ignoreURLParametersMatching: [/^v$/]`** to workbox config.
+4. [ ] **Add tripwire test** — Source-level and dist-level assertions per the pattern doc.
+5. [ ] **Add user communication** — "Already installed and the icon looks outdated?" collapsible in install modal.
+6. **Confirm:** Build, verify versioned URLs in manifest + HTML + SW config.
+
 #### EVENT_BUS — Evaluate if needed
 
 - [ ] **Decide:** Does budgy-ting have service-layer pub/sub needs? If yes, follow `docs/implementations/EVENT_BUS.md`. If not, skip.
@@ -126,7 +168,8 @@ No local `docs/implementations/` folder (correct). No inline patterns. Has a sta
 1. [ ] **Replace stale AI Note** — Remove the "Shared conventions with glow-props" block (~lines 215-219) that references "suggested implementations" in glow-props CLAUDE.md. Replace with: `**Implementation patterns — always fetch from glow-props.** Never look for local copies of implementation pattern files (e.g., docs/implementations/*.md) in downstream repos. They do not exist locally — the single source of truth is the docs/implementations/ folder in the glow-props repo. Fetch the latest version before every implementation task.`
 2. [ ] **Add "Implementation Patterns (Source of Truth)" section** — Add the standard section from glow-props CLAUDE.md with fetch instructions (GitHub Pages URL, GitHub API URL, listing command) and rules.
 3. [ ] **Add prohibition** — Add to Prohibitions: "Create local copies of implementation pattern files in any repo — always fetch from glow-props".
-4. **Confirm:** No references to "suggested implementations in glow-props CLAUDE.md" remain. Standard pattern source section exists.
+4. [ ] **Add `## Communication` section** — Copy from glow-props CLAUDE.md (lines 32-46). Place between Principles and Code Standards. Update header line to include COMMUNICATION. Remove any duplicate "ASK before assuming" or "Communication style" bullets from AI Notes.
+5. **Confirm:** No references to "suggested implementations in glow-props CLAUDE.md" remain. Standard pattern source section exists. Communication section exists between Principles and Code Standards.
 
 #### APP_ICONS — Missing → Implement
 
@@ -227,7 +270,8 @@ No local `docs/implementations/` folder (correct). Has **~280 lines of hardcoded
 2. [ ] **Add "Implementation Patterns (Source of Truth)" section** — Replace deleted section with the standard glow-props reference block (source location, fetch via GitHub Pages/API, listing command, rules).
 3. [ ] **Add AI Note** — Add: `**Implementation patterns — always fetch from glow-props.** Never look for local copies of implementation pattern files (e.g., docs/implementations/*.md) in downstream repos. They do not exist locally — the single source of truth is the docs/implementations/ folder in the glow-props repo. Fetch the latest version before every implementation task.`
 4. [ ] **Add prohibition** — Add to Prohibitions: "Create local copies of implementation pattern files in any repo — always fetch from glow-props".
-5. **Confirm:** CLAUDE.md is ~280 lines shorter. No inline code examples for patterns remain. Standard fetch commands point to glow-props.
+5. [ ] **Add `## Communication` section** — Copy from glow-props CLAUDE.md (lines 32-46). Place between Principles and Code Standards. Update header line to include COMMUNICATION. Remove any duplicate "ASK before assuming" or "Communication style" bullets from AI Notes.
+6. **Confirm:** CLAUDE.md is ~280 lines shorter. No inline code examples for patterns remain. Standard fetch commands point to glow-props. Communication section exists between Principles and Code Standards.
 
 #### APP_ICONS — Partial → Complete
 
@@ -297,17 +341,30 @@ Reference: `docs/implementations/Z_INDEX_SCALE.md`
 1. [ ] **Audit and normalize all z-index values** — Run the audit command from the pattern doc. Align all values to the standard scale.
 2. **Confirm:** All z-index values map to the standard scale.
 
+#### ICON_CACHE_BUST — Missing → Implement
+
+Reference: `docs/implementations/PWA_ICON_CACHE_BUST.md` (fetch from glow-props)
+
+see-veo uses vite-plugin-pwa. Icons served with stable filenames.
+
+1. [ ] **Add `iconVersion()` + `iconCacheBustHtml()` to `vite.config.{js|ts}`** — Content-hash each icon file, inject `?v=<hash>` into HTML link tags. Plugin must be wired before `VitePWA()`.
+2. [ ] **Version manifest icon URLs** — Pass `versioned()` paths to `VitePWA({ manifest: { icons: [...] } })`.
+3. [ ] **Add `ignoreURLParametersMatching: [/^v$/]`** to workbox config.
+4. [ ] **Add tripwire test** — Source-level and dist-level assertions per the pattern doc.
+5. [ ] **Add user communication** — "Already installed and the icon looks outdated?" collapsible in install modal.
+6. **Confirm:** Build, verify versioned URLs in manifest + HTML + SW config.
+
 #### EVENT_BUS — Evaluate if needed
 
 - [ ] **Decide:** Minimal resume site — likely not needed. Skip unless service-layer pub/sub becomes necessary.
 
 ### repo-tor
 
-React + Vite dashboard app. **Fully compliant** across all 8 applicable patterns (verified 2026-04-16). No remaining gaps.
+React + Vite dashboard app. All original 9 patterns resolved (verified 2026-04-16). Remaining: HISTORY.md removal, Communication section, and new ICON_CACHE_BUST pattern.
 
-All previous gaps implemented: 180px Apple touch icon + favicon.ico generation, z-index scale normalized (inline pill now uses z-80), full debugLog module with pub/sub + console interception + #debug-root + React DebugPill (3 tabs) + clipboard fallbacks + URL redaction, DaisyUI v5 migration with 8 curated themes + data-theme + flash prevention + cross-tab sync via storage event + meta theme-color + generate-theme-meta script, useDisclosureFocus + useFocusTrap wired to menu + Home/End keys + disabled items + theme UI in burger menu.
+All previous gaps implemented: 180px Apple touch icon + favicon.ico, z-index scale normalized, full debugLog module with pub/sub + console interception + #debug-root + React DebugPill (3 tabs) + clipboard fallbacks + URL redaction, DaisyUI v5 with 8 themes + data-theme + flash prevention + cross-tab sync + meta theme-color, useDisclosureFocus + useFocusTrap + Home/End keys + disabled items + theme UI in burger menu.
 
-EVENT_BUS: Not needed — React Context dispatch + useReducer pattern in AppContext.jsx is sufficient. No service-layer pub/sub required.
+EVENT_BUS: Not needed — React Context dispatch + useReducer in AppContext.jsx is sufficient.
 
 #### HISTORY.md — Remove (cross-fleet policy 2026-04-16)
 
@@ -318,6 +375,27 @@ Git history already tracks completions; a separate changelog is redundant.
 3. [ ] Change "move completed items to HISTORY.md" → "delete completed items (git history tracks them)" in CLAUDE.md
 4. [ ] Remove HISTORY.md from README.md file tree (if listed)
 5. [ ] Delete any `[x]` completed items from `docs/TODO.md`
+
+#### CLAUDE.md — Add Communication section (cross-fleet policy 2026-04-16)
+
+glow-props CLAUDE.md now has a top-level `## Communication` section between Principles and Code Standards. Downstream repos must add it.
+
+1. [ ] **Add `## Communication` section** — Copy from glow-props CLAUDE.md (lines 32-46). Place between Principles and Code Standards.
+2. [ ] **Update header line** — Add COMMUNICATION to the `# READ AND FOLLOW...` line.
+3. [ ] **Remove duplicate bullets from AI Notes** — If "ASK before assuming" or "Communication style" bullets exist in AI Notes, remove them (now covered by the Communication section).
+
+#### ICON_CACHE_BUST — Missing → Implement
+
+Reference: `docs/implementations/PWA_ICON_CACHE_BUST.md` (fetch from glow-props)
+
+repo-tor uses vite-plugin-pwa with a mature PWA setup. Icons are served with stable filenames.
+
+1. [ ] **Add `iconVersion()` + `iconCacheBustHtml()` to `vite.config.js`** — Content-hash each icon file, inject `?v=<hash>` into HTML link tags. Plugin must be wired before `VitePWA()`.
+2. [ ] **Version manifest icon URLs** — Pass `versioned()` paths to `VitePWA({ manifest: { icons: [...] } })`.
+3. [ ] **Add `ignoreURLParametersMatching: [/^v$/]`** to workbox config.
+4. [ ] **Add tripwire test** — Source-level and dist-level assertions per the pattern doc.
+5. [ ] **Add user communication** — "Already installed and the icon looks outdated?" collapsible in install modal.
+6. **Confirm:** Build, verify versioned URLs in manifest + HTML + SW config.
 
 ### few-lap
 
@@ -342,7 +420,8 @@ No local `docs/implementations/` folder (correct). Has **~620 lines of hardcoded
 3. [ ] **Update AI Note reference** — Near line 525, change `httpsGet() CONNECT tunnel pattern from Suggested Implementations` to reference fetching the HTTPS_PROXY pattern from glow-props.
 4. [ ] **Add AI Note** — Add the standard implementation patterns note about always fetching from glow-props.
 5. [ ] **Add prohibition** — Add to Prohibitions: "Create local copies of implementation pattern files in any repo — always fetch from glow-props".
-6. **Confirm:** CLAUDE.md is ~620 lines shorter. No inline code examples for patterns remain. All pattern references point to glow-props.
+6. [ ] **Add `## Communication` section** — Copy from glow-props CLAUDE.md (lines 32-46). Place between Principles and Code Standards. Update header line to include COMMUNICATION. Remove any duplicate "ASK before assuming" or "Communication style" bullets from AI Notes.
+7. **Confirm:** CLAUDE.md is ~620 lines shorter. No inline code examples for patterns remain. All pattern references point to glow-props. Communication section exists between Principles and Code Standards.
 
 #### APP_ICONS — Partial → Complete
 
@@ -414,6 +493,18 @@ Reference: `docs/implementations/Z_INDEX_SCALE.md`
 1. [ ] **Audit and normalize all z-index values** — Run the audit command from the pattern doc. Align all values to the standard scale.
 2. **Confirm:** All z-index values map to the standard scale.
 
+#### ICON_CACHE_BUST — Missing → Implement
+
+Reference: `docs/implementations/PWA_ICON_CACHE_BUST.md` (fetch from glow-props)
+
+few-lap uses Expo with a custom `sw.js` — not vite-plugin-pwa. Adapt the hash computation and HTML injection to the Expo/Metro build pipeline. See the "Adapting to other stacks" table in the pattern doc for the Expo / Metro column.
+
+1. [ ] **Compute content hash of icon files** — In a prebuild script, SHA-256 hash each icon PNG and expose versioned paths.
+2. [ ] **Inject versioned URLs into `+html.tsx`** — Update `<link rel="icon">` and `<link rel="apple-touch-icon">` tags with `?v=<hash>`.
+3. [ ] **Update `sw.js` precache** — Ensure the custom service worker handles versioned icon URLs (strip `?v=` on cache lookup or precache the versioned URL directly).
+4. [ ] **Add user communication** — "Already installed and the icon looks outdated?" collapsible in install UI.
+5. **Confirm:** Build, verify versioned URLs in HTML link tags. Test offline icon loading.
+
 #### EVENT_BUS — Evaluate if needed
 
 - [ ] **Decide:** Does few-lap have service-layer pub/sub needs? If yes, follow `docs/implementations/EVENT_BUS.md`. If not, skip.
@@ -441,7 +532,8 @@ No local `docs/implementations/` folder (correct). Has **~470 lines of hardcoded
 3. [ ] **Update "Shared References" section** — Near lines 6-20, update the fetch URL from `raw.githubusercontent.com/.../CLAUDE.md` to the GitHub Pages URL for `docs/implementations/`. Remove the hardcoded list of "adopted patterns" and replace with the listing command to discover patterns dynamically.
 4. [ ] **Add AI Note** — Add the standard implementation patterns note about always fetching from glow-props.
 5. [ ] **Add prohibition** — Add to Prohibitions: "Create local copies of implementation pattern files in any repo — always fetch from glow-props".
-6. **Confirm:** CLAUDE.md is ~470 lines shorter. No inline code examples for patterns remain. Shared References points to `docs/implementations/`.
+6. [ ] **Add `## Communication` section** — Copy from glow-props CLAUDE.md (lines 32-46). Place between Principles and Code Standards. Update header line to include COMMUNICATION. Remove any duplicate "ASK before assuming" or "Communication style" bullets from AI Notes.
+7. **Confirm:** CLAUDE.md is ~470 lines shorter. No inline code examples for patterns remain. Shared References points to `docs/implementations/`. Communication section exists between Principles and Code Standards.
 
 #### APP_ICONS — Partial → Complete
 
@@ -520,6 +612,19 @@ Hardcoded slate color scheme only. Ground-up implementation.
 6. [ ] **Migrate hardcoded slate colors** — Replace with DaisyUI semantic classes. Follow migration guide Phase 1-3.
 7. **Confirm:** Toggle dark/light. Cross-tab sync. Fresh visit falls back to OS preference.
 
+#### ICON_CACHE_BUST — Missing → Implement
+
+Reference: `docs/implementations/PWA_ICON_CACHE_BUST.md` (fetch from glow-props)
+
+sun-sea-o uses vite-plugin-pwa. Icons served with stable filenames.
+
+1. [ ] **Add `iconVersion()` + `iconCacheBustHtml()` to `vite.config.{js|ts}`** — Content-hash each icon file, inject `?v=<hash>` into HTML link tags. Plugin must be wired before `VitePWA()`.
+2. [ ] **Version manifest icon URLs** — Pass `versioned()` paths to `VitePWA({ manifest: { icons: [...] } })`.
+3. [ ] **Add `ignoreURLParametersMatching: [/^v$/]`** to workbox config.
+4. [ ] **Add tripwire test** — Source-level and dist-level assertions per the pattern doc.
+5. [ ] **Add user communication** — "Already installed and the icon looks outdated?" collapsible in install modal.
+6. **Confirm:** Build, verify versioned URLs in manifest + HTML + SW config.
+
 #### EVENT_BUS — Evaluate if needed
 
 - [ ] **Decide:** If service-layer pub/sub needs emerge, follow `docs/implementations/EVENT_BUS.md`. Otherwise skip.
@@ -546,7 +651,8 @@ No local `docs/implementations/` folder (correct). Has **~180 lines of hardcoded
 2. [ ] **Add "Implementation Patterns (Source of Truth)" section** — Replace deleted section with the standard glow-props reference block (source location, fetch via GitHub Pages/API, listing command, rules).
 3. [ ] **Add AI Note** — Add the standard implementation patterns note about always fetching from glow-props.
 4. [ ] **Add prohibition** — Add to Prohibitions: "Create local copies of implementation pattern files in any repo — always fetch from glow-props".
-5. **Confirm:** CLAUDE.md is ~180 lines shorter. No inline code examples for patterns remain. Standard fetch commands point to glow-props.
+5. [ ] **Add `## Communication` section** — Copy from glow-props CLAUDE.md (lines 32-46). Place between Principles and Code Standards. Update header line to include COMMUNICATION. Remove any duplicate "ASK before assuming" or "Communication style" bullets from AI Notes.
+6. **Confirm:** CLAUDE.md is ~180 lines shorter. No inline code examples for patterns remain. Standard fetch commands point to glow-props. Communication section exists between Principles and Code Standards.
 
 #### BURGER_MENU — Evaluate if needed
 
@@ -594,6 +700,19 @@ Reference: `docs/implementations/Z_INDEX_SCALE.md`
 1. [ ] **Audit and normalize all z-index values** — Run the audit command from the pattern doc. Fix any values outside the standard scale.
 2. **Confirm:** All z-index values map to the standard scale.
 
+#### ICON_CACHE_BUST — Missing → Implement
+
+Reference: `docs/implementations/PWA_ICON_CACHE_BUST.md` (fetch from glow-props)
+
+graphiki uses vite-plugin-pwa. Icons served with stable filenames.
+
+1. [ ] **Add `iconVersion()` + `iconCacheBustHtml()` to `vite.config.{js|ts}`** — Content-hash each icon file, inject `?v=<hash>` into HTML link tags. Plugin must be wired before `VitePWA()`.
+2. [ ] **Version manifest icon URLs** — Pass `versioned()` paths to `VitePWA({ manifest: { icons: [...] } })`.
+3. [ ] **Add `ignoreURLParametersMatching: [/^v$/]`** to workbox config.
+4. [ ] **Add tripwire test** — Source-level and dist-level assertions per the pattern doc.
+5. [ ] **Add user communication** — "Already installed and the icon looks outdated?" collapsible in install modal.
+6. **Confirm:** Build, verify versioned URLs in manifest + HTML + SW config.
+
 #### EVENT_BUS — Partial → Complete (origin repo)
 
 Reference: `docs/implementations/EVENT_BUS.md`
@@ -625,7 +744,8 @@ No local `docs/implementations/` folder (correct). Has **~630 lines of hardcoded
 2. [ ] **Add "Implementation Patterns (Source of Truth)" section** — Replace deleted section with the standard glow-props reference block (source location, fetch via GitHub Pages/API, listing command, rules).
 3. [ ] **Add AI Note** — Add the standard implementation patterns note about always fetching from glow-props.
 4. [ ] **Add prohibition** — Add to Prohibitions: "Create local copies of implementation pattern files in any repo — always fetch from glow-props".
-5. **Confirm:** CLAUDE.md is ~475 lines shorter. No inline code examples for patterns remain. Standard fetch commands point to glow-props.
+5. [ ] **Add `## Communication` section** — Copy from glow-props CLAUDE.md (lines 32-46). Place between Principles and Code Standards. Update header line to include COMMUNICATION. Remove any duplicate "ASK before assuming" or "Communication style" bullets from AI Notes.
+6. **Confirm:** CLAUDE.md is ~630 lines shorter. No inline code examples for patterns remain. Standard fetch commands point to glow-props. Communication section exists between Principles and Code Standards.
 
 #### APP_ICONS — Partial → Complete
 
@@ -698,6 +818,19 @@ Reference: `docs/implementations/Z_INDEX_SCALE.md`
 1. [ ] **Audit and normalize all z-index values** — Run the audit command from the pattern doc. Align all values to the standard scale.
 2. **Confirm:** All z-index values map to the standard scale.
 
+#### ICON_CACHE_BUST — Missing → Implement
+
+Reference: `docs/implementations/PWA_ICON_CACHE_BUST.md` (fetch from glow-props)
+
+four-ems uses vite-plugin-pwa. Icons served with stable filenames.
+
+1. [ ] **Add `iconVersion()` + `iconCacheBustHtml()` to `vite.config.{js|ts}`** — Content-hash each icon file, inject `?v=<hash>` into HTML link tags. Plugin must be wired before `VitePWA()`.
+2. [ ] **Version manifest icon URLs** — Pass `versioned()` paths to `VitePWA({ manifest: { icons: [...] } })`.
+3. [ ] **Add `ignoreURLParametersMatching: [/^v$/]`** to workbox config.
+4. [ ] **Add tripwire test** — Source-level and dist-level assertions per the pattern doc.
+5. [ ] **Add user communication** — "Already installed and the icon looks outdated?" collapsible in install modal.
+6. **Confirm:** Build, verify versioned URLs in manifest + HTML + SW config.
+
 #### EVENT_BUS — Evaluate if needed
 
 - [ ] **Decide:** If service-layer pub/sub needs emerge, follow `docs/implementations/EVENT_BUS.md`. Otherwise skip.
@@ -725,7 +858,8 @@ Git history already tracks completions; a separate changelog is redundant.
 3. [ ] **Remove Architecture listing** — Remove the `implementations/` entry (~lines 790-798) from the file tree in the Architecture section since the directory will no longer exist.
 4. [ ] **Add "Implementation Patterns (Source of Truth)" section** — Replace deleted section with the standard glow-props reference block (source location, fetch via GitHub Pages/API, listing command, rules).
 5. [ ] **Add AI Note** — Add the standard implementation patterns note about always fetching from glow-props.
-6. **Confirm:** No `docs/implementations/` folder exists. No hardcoded table. Architecture section no longer lists pattern files. Standard fetch commands point to glow-props.
+6. [ ] **Add `## Communication` section** — Copy from glow-props CLAUDE.md (lines 32-46). Place between Principles and Code Standards. Update header line to include COMMUNICATION. Remove any duplicate "ASK before assuming" or "Communication style" bullets from AI Notes.
+7. **Confirm:** No `docs/implementations/` folder exists. No hardcoded table. Architecture section no longer lists pattern files. Standard fetch commands point to glow-props. Communication section exists between Principles and Code Standards.
 
 #### APP_ICONS — Partial → Complete
 
@@ -798,6 +932,18 @@ synctone uses Uniwind's `setTheme()` with `classList.add()` — not the DaisyUI 
 5. [ ] **Add `@custom-variant dark`** — Tailwind v4's class-based dark mode configuration in CSS.
 6. **Confirm:** Reload with non-default theme — no flash. Toggle dark/light — instant. Native select dropdowns match theme on web.
 
+#### ICON_CACHE_BUST — Missing → Implement
+
+Reference: `docs/implementations/PWA_ICON_CACHE_BUST.md` (fetch from glow-props)
+
+synctone uses Expo with a custom `sw.js` — not vite-plugin-pwa. Adapt the hash computation and HTML injection to the Expo/Metro build pipeline. See the "Adapting to other stacks" table in the pattern doc for the Expo / Metro column.
+
+1. [ ] **Compute content hash of icon files** — In a prebuild script, SHA-256 hash each icon PNG and expose versioned paths.
+2. [ ] **Inject versioned URLs into `+html.tsx`** — Update `<link rel="icon">` and `<link rel="apple-touch-icon">` tags with `?v=<hash>`.
+3. [ ] **Update `sw.js` precache** — Ensure the custom service worker handles versioned icon URLs (strip `?v=` on cache lookup or precache the versioned URL directly).
+4. [ ] **Add user communication** — "Already installed and the icon looks outdated?" collapsible in install UI.
+5. **Confirm:** Build, verify versioned URLs in HTML link tags. Test offline icon loading.
+
 #### EVENT_BUS — Evaluate if needed
 
 - [ ] **Decide:** synctone has Zustand stores and React hooks for state. If chat/message/reaction services need decoupled pub/sub communication, follow `docs/implementations/EVENT_BUS.md`. Otherwise skip.
@@ -806,20 +952,21 @@ synctone uses Uniwind's `setTheme()` with `classList.add()` — not the DaisyUI 
 
 ## Cross-Cutting Gaps (most common across repos)
 
-Updated 2026-04-16 after code audit. canva-grid, budgy-ting, and repo-tor have resolved all gaps. 3 repos now fully compliant alongside glow-props.
+Updated 2026-04-16 after code audit. canva-grid, budgy-ting, and repo-tor have resolved all original 9 pattern gaps. All repos still need the new ICON_CACHE_BUST pattern, HISTORY.md removal, and Communication section propagation. Only glow-props is fully clean.
 
 These gaps appear in 4+ repos and represent the highest-leverage improvements:
 
-1. **CLAUDE.md alignment** — 3 Pass (repo-tor, canva-grid, budgy-ting), 7 Missing. Must be done first — removes inline patterns and local copies, ensures all repos fetch from glow-props. Worst offenders: few-lap (~620 lines inline), four-ems (~630 lines), sun-sea-o (~470 lines), see-veo (~318 lines), synctone (8 local files in `docs/implementations/`).
-2. **EVENT_BUS** — N/A in 3 repos (canva-grid, budgy-ting, repo-tor decided against). graphiki has partial. 7 repos still need evaluate decision.
-3. **DEBUG_SYSTEM: console interception** — Done in canva-grid, budgy-ting, repo-tor. Still missing in 5/8 repos with debug systems (see-veo, few-lap, sun-sea-o, four-ems, synctone).
-4. **DEBUG_SYSTEM: pre-React inline pill** — Done in canva-grid, budgy-ting, repo-tor. Still missing in 5/8 repos (see-veo, few-lap, sun-sea-o, four-ems, synctone).
-5. **DEBUG_SYSTEM: inline styles** — Done in repo-tor and canva-grid. Others still use Tailwind/DaisyUI.
-6. **DEBUG_SYSTEM: PWA Diagnostics tab** — Done in canva-grid, budgy-ting, repo-tor. Still missing in 5/8 repos.
-7. **PWA_SYSTEM: visibility-based update checks** — Done in canva-grid, budgy-ting, repo-tor, glow-props. Still missing in 4/8 repos.
-8. **PWA_SYSTEM: 30-second suppression** — Done in canva-grid, budgy-ting, repo-tor, glow-props. Still missing in 4/8 repos.
-9. **PWA_SYSTEM: module singleton** — Done in canva-grid, budgy-ting, glow-props, repo-tor. Still missing in 4/8 repos.
-10. **BURGER_MENU: focus hooks extraction** — Done in canva-grid (`useEscapeKey`) and repo-tor (`useDisclosureFocus` + `useFocusTrap`). Still missing in other repos with menus.
-11. **THEME_DARK_MODE** — Missing in 4/11 repos (model-pear, see-veo, sun-sea-o, four-ems have no theming). budgy-ting and repo-tor now have full DaisyUI systems.
-12. **Z_INDEX_SCALE** — 4 Pass (glow-props, canva-grid, budgy-ting, repo-tor), 1 Partial (graphiki), 6 Missing.
-13. **PWA_ICON_CACHE_BUST** — New pattern added 2026-04-16. Missing in all 9 repos with PWA (canva-grid, budgy-ting, see-veo, repo-tor, few-lap, sun-sea-o, graphiki, four-ems, synctone). N/A for glow-props (static) and model-pear (no PWA yet).
+1. **CLAUDE.md alignment** — 3 Pass on original scope (repo-tor, canva-grid, budgy-ting), 7 Missing. All 10 downstream repos still need the new Communication section added. Must be done first — removes inline patterns and local copies, ensures all repos fetch from glow-props and have consistent communication rules. Worst offenders for inline patterns: few-lap (~620 lines), four-ems (~630 lines), sun-sea-o (~470 lines), see-veo (~318 lines), synctone (8 local files in `docs/implementations/`).
+2. **HISTORY.md removal** — New cross-fleet policy 2026-04-16. Missing in all 10 downstream repos. Delete `docs/HISTORY.md`, remove from CLAUDE.md Documentation rules, update TODO wording.
+3. **PWA_ICON_CACHE_BUST** — New pattern added 2026-04-16. Missing in all 9 repos with PWA (canva-grid, budgy-ting, see-veo, repo-tor, few-lap, sun-sea-o, graphiki, four-ems, synctone). N/A for glow-props (static) and model-pear (no PWA yet). Expo repos (few-lap, synctone) need stack-specific adaptation.
+4. **EVENT_BUS** — N/A in 3 repos (canva-grid, budgy-ting, repo-tor decided against). graphiki has partial. 7 repos still need evaluate decision.
+5. **DEBUG_SYSTEM: console interception** — Done in canva-grid, budgy-ting, repo-tor. Still missing in 5/8 repos with debug systems (see-veo, few-lap, sun-sea-o, four-ems, synctone).
+6. **DEBUG_SYSTEM: pre-React inline pill** — Done in canva-grid, budgy-ting, repo-tor. Still missing in 5/8 repos.
+7. **DEBUG_SYSTEM: inline styles** — Done in repo-tor and canva-grid. Others still use Tailwind/DaisyUI.
+8. **DEBUG_SYSTEM: PWA Diagnostics tab** — Done in canva-grid, budgy-ting, repo-tor. Still missing in 5/8 repos.
+9. **PWA_SYSTEM: visibility-based update checks** — Done in canva-grid, budgy-ting, repo-tor, glow-props. Still missing in 4/8 repos.
+10. **PWA_SYSTEM: 30-second suppression** — Done in canva-grid, budgy-ting, repo-tor, glow-props. Still missing in 4/8 repos.
+11. **PWA_SYSTEM: module singleton** — Done in canva-grid, budgy-ting, glow-props, repo-tor. Still missing in 4/8 repos.
+12. **BURGER_MENU: focus hooks extraction** — Done in canva-grid (`useEscapeKey`) and repo-tor (`useDisclosureFocus` + `useFocusTrap`). Still missing in other repos with menus.
+13. **THEME_DARK_MODE** — Missing in 4/11 repos (model-pear, see-veo, sun-sea-o, four-ems have no theming). budgy-ting and repo-tor now have full DaisyUI systems.
+14. **Z_INDEX_SCALE** — 4 Pass (glow-props, canva-grid, budgy-ting, repo-tor), 1 Partial (graphiki), 6 Missing.
