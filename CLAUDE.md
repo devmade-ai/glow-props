@@ -289,42 +289,117 @@ Never:
 
 ## Triggers
 
-Single-word commands that invoke focused analysis passes. Each trigger has a short alias. Type the word or alias to activate.
+Commands that invoke focused analysis passes. Each trigger is a single perspective — what you'd notice that the others wouldn't.
 
-| # | Trigger | Alias | What it does |
-|---|---------|-------|--------------|
-| 1 | `review` | `rev` | Code review — bugs, UI, UX, simplification |
-| 2 | `audit` | `aud` | Code quality — hacks, anti-patterns, latent bugs, race conditions |
-| 3 | `docs` | `doc` | Documentation accuracy vs actual code |
-| 4 | `mobile` | `tap` | Mobile UX — touch targets, viewport, safe areas |
-| 5 | `clean` | `cln` | Hygiene — duplication, refactor candidates, dead code |
-| 6 | `performance` | `perf` | Re-renders, expensive ops, bundle size, DB/API, memory |
-| 7 | `security` | `sec` | Injection, auth gaps, data exposure, insecure defaults, CVEs |
-| 8 | `debug` | `dbg` | Debug pill coverage — missing logs, noise |
-| 9 | `improve` | `imp` | Open-ended — architecture, DX, anything else |
-| 10 | `start` | `go` | Sequential sweep of all 9 above, one at a time |
+### How to invoke
 
-### Trigger behavior
+- **One perspective** — type the trigger name or its alias (e.g. `bugs`, `sec`, `a11y`).
+- **A group** — type the group name (e.g. `correctness`, `frontend`, `ops`).
+- **Everything** — type `all`.
+- **Meta sweep** — type `quick`, `ship`, or `risk` for pre-curated bundles.
 
-- Each trigger runs a single focused pass and reports findings.
-- Findings are listed as numbered text — never interactive prompts or selection UIs.
-- One trigger per response. Never combine multiple triggers in a single response.
+### Scope modifiers (suffix any trigger)
 
-### `start` / `go` behavior
+- *(none)* — whole codebase.
+- `branch` — diff against the branch's base (default: `main`).
+- `branch <base>` — diff against a specified base.
+- `staged` — staged changes only.
+- `file <path>` — single file.
 
-Runs all 9 triggers in priority sequence, one at a time:
+Examples:
+- `bugs` — bugs check across the whole codebase.
+- `bugs branch` — bugs check on the current branch's diff vs main.
+- `correctness branch main` — every correctness trigger against the branch diff.
+- `all staged` — every applicable trigger against staged files.
 
-`rev` → `aud` → `doc` → `tap` → `cln` → `perf` → `sec` → `dbg` → `imp`
+### Behavior rules
 
-After each trigger completes and findings are presented, the user responds with one of:
-1. `fix` — apply the suggested fixes, then move to the next trigger
-2. `skip` — skip this trigger's findings and move to the next trigger
-3. `stop` — end the sweep entirely
+- One trigger pass per response. Never combine.
+- Findings are numbered text — never interactive prompts or selection UIs.
+- After each pass, pause. User responds with `fix` / `skip` / `stop`:
+  - `fix` — apply the suggested fixes for this trigger, then move on.
+  - `skip` — skip this trigger's findings and move on.
+  - `stop` — end the sweep entirely.
+- Groups, meta sweeps, and `all` run triggers sequentially in table order, pausing after each.
+- If a trigger doesn't apply to this repo (e.g. `database` on a static site), report "N/A for this repo" and move on.
 
-Rules:
-- Always pause after each trigger — never auto-advance to the next one.
-- Never run multiple triggers in one response.
-- Wait for the user's explicit `fix`, `skip`, or `stop` before proceeding.
+### Correctness — group `correctness`
+
+| # | Trigger | Alias | Looks for |
+|---|---------|-------|-----------|
+| 1 | `bugs` | `bug` | Logic errors, off-by-ones, null/undefined paths, wrong default branches, stale assumptions |
+| 2 | `errors` | `err` | Missing try/catch, swallowed failures, unhelpful error surfaces to user and dev |
+| 3 | `race` | `rac` | Concurrency, stale closures, async ordering, event leaks, double-fire guards |
+| 4 | `types` | `typ` | `any`/`as` abuse, unsafe casts, missing generics, runtime-vs-compile-time gaps |
+| 5 | `edges` | `edg` | Empty/null/zero/max/unicode/timezone boundary cases; 0-item, 1-item, 10k-item behavior |
+
+### Security / trust — group `trust`
+
+| # | Trigger | Alias | Looks for |
+|---|---------|-------|-----------|
+| 6 | `security` | `sec` | Injection, XSS, CSRF, auth gaps, insecure defaults, exposed secrets in code or bundle |
+| 7 | `privacy` | `pri` | PII flow, redaction, retention, client-side data leaks, telemetry overreach |
+| 8 | `supply-chain` | `sup` | Dep integrity, lockfile drift, postinstall hooks, third-party scripts |
+
+### Performance — group `speed`
+
+| # | Trigger | Alias | Looks for |
+|---|---------|-------|-----------|
+| 9 | `performance` | `perf` | Render loops, expensive ops in hot paths, memory leaks, large re-computations |
+| 10 | `network` | `net` | Request count, caching, batching, waterfalls, payload size, compression |
+| 11 | `database` | `db` | N+1, missing indexes, transaction scope, lock contention |
+| 12 | `bundle` | `bun` | Code splitting, tree-shaking, duplicate deps, blocking resources |
+
+### User-facing — group `frontend`
+
+| # | Trigger | Alias | Looks for |
+|---|---------|-------|-----------|
+| 13 | `ux` | `ux` | Friction, cognitive load, missing loading/empty/error states, undiscoverable affordances |
+| 14 | `a11y` | `a11y` | Keyboard nav, screen reader labels, focus order, contrast, ARIA correctness |
+| 15 | `mobile` | `mob` | Touch target size, viewport, safe areas, tap delay, gestures, iOS keyboard handling |
+| 16 | `copy` | `cpy` | Microcopy, voice consistency, jargon, error messages users actually see |
+| 17 | `i18n` | `i18` | Hardcoded strings, RTL readiness, date/number formatting, pluralization |
+| 18 | `dark-mode` | `dm` | Semantic color usage, contrast in both themes, flash-on-load |
+
+### Maintainability — group `quality`
+
+| # | Trigger | Alias | Looks for |
+|---|---------|-------|-----------|
+| 19 | `clean` | `cln` | Dead code, duplication, commented-out blocks, unused imports/exports, leftover TODOs |
+| 20 | `naming` | `nam` | Identifier clarity, consistency with local norms, misleading abbreviations |
+| 21 | `patterns` | `pat` | Deviation from established patterns (fleet-wide glow-props or repo-local), reinvented wheels |
+| 22 | `docs` | `doc` | Docs ↔ code drift, missing docs on public API, outdated README/CLAUDE.md claims |
+| 23 | `tests` | `tst` | Coverage gaps on critical paths, flaky patterns, test smells, missing edge-case tests |
+| 24 | `complexity` | `cpx` | Function length, nesting depth, cyclomatic complexity hotspots |
+
+### Operational — group `ops`
+
+| # | Trigger | Alias | Looks for |
+|---|---------|-------|-----------|
+| 25 | `deps` | `dep` | Outdated, unused, vulnerable, license-risky dependencies |
+| 26 | `observability` | `obs` | Log coverage, metric hygiene, trace completeness, debug-pill surfaces |
+| 27 | `reliability` | `rel` | Retries, timeouts, idempotency, graceful degradation, offline handling |
+| 28 | `config` | `cfg` | Env var handling, secret management, config schema drift |
+| 29 | `migration` | `mig` | DB migration safety, API versioning, rollback plan, backward compatibility |
+| 30 | `ci` | `ci` | Pipeline health, build speed, cache effectiveness, flake rate |
+
+### Design-level — group `design`
+
+| # | Trigger | Alias | Looks for |
+|---|---------|-------|-----------|
+| 31 | `architecture` | `arch` | Coupling, layering violations, abstraction leaks, module boundaries |
+| 32 | `api` | `api` | Interface consistency, versioning, deprecation, contract clarity |
+| 33 | `state` | `sta` | Where state lives, derivation vs storage, single-source-of-truth violations |
+| 34 | `data-model` | `dat` | Schema normalization, foreign-key integrity, nullable discipline |
+
+### Meta sweeps
+
+| Trigger | Alias | What it does |
+|---------|-------|--------------|
+| `quick` | `q` | Fast triad: `bugs` + `security` + `a11y` — the "don't ship this" checks |
+| `ship` | `shp` | Pre-merge set: `correctness` + `trust` + `a11y` + `tests` |
+| `risk` | `rsk` | Worst-case blast radius analysis on the current change |
+| `all` | `*` | Every applicable trigger across every group, in order |
 
 ### REMINDER: READ AND FOLLOW THE TRIGGERS EVERY TIME
 
