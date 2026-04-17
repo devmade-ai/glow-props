@@ -406,15 +406,27 @@ Examples:
 
 ### Meta sweeps
 
+Run multiple triggers sequentially, pausing after each for `fix` / `skip` / `stop`.
+
 | Trigger | Alias | What it does |
 |---------|-------|--------------|
 | `quick` | `q` | Fast triad: `bugs` + `security` + `a11y` — the "don't ship this" checks |
 | `ship` | `shp` | Pre-merge set: `correctness` + `trust` + `a11y` + `tests` |
+| `all` | `*` | Every applicable trigger across every group, in order |
+
+### Reflective passes
+
+Single-pass, no fan-out to other triggers. Each answers one specific question about the recent work.
+
+| Trigger | Alias | What it does |
+|---------|-------|--------------|
 | `risk` | `rsk` | Worst-case blast radius analysis on the current change |
 | `surface` | `srf` | Reflective pass on recent changes: what was decided, what was assumed, what was skipped, what needs human review |
 | `wrap` | `wrp` | Wrap-up pass before moving on — anything to double-check / strengthen / improve, anything discovered / assumed / skipped, anything to cleanup / update / tighten, anything to note / document / clarify |
+| `skipped` | `skp` | What was skipped — including issues noticed outside the current changes that were intentionally left alone. Each item: what it is, where, why skipped |
+| `assumed` | `asm` | What was assumed — explicit assumptions made during the work, including things treated as out of scope. Each item: the assumption, why it was made, what happens if wrong |
+| `approach` | `apr` | Was the fix the best / most proper way? Honest self-review: what shortcuts were taken, what a senior reviewer would flag, what the "proper" version looks like if different |
 | `cold` | `cld` | Fresh-eyes branch audit. Re-read CLAUDE.md from scratch. Review every change on the branch as if this were a new session with no prior context — don't privilege the diffs you just made. List all findings with a fix plan per item. Default scope: `branch` |
-| `all` | `*` | Every applicable trigger across every group, in order |
 
 ### REMINDER: READ AND FOLLOW THE TRIGGERS EVERY TIME
 
