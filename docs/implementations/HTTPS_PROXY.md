@@ -1,3 +1,15 @@
+---
+slug: https-proxy
+title: HTTPS Proxy Support
+badge: Infrastructure
+description: Zero-dependency HTTP CONNECT tunnel for Node.js scripts behind proxies. Transparent fallback to direct connections.
+tags:
+  - Node.js stdlib
+  - HTTP CONNECT
+  - Proxy auth
+order: 6
+---
+
 # HTTPS Proxy Support for Node.js Scripts
 
 Zero-dependency HTTP CONNECT tunnel for Node.js scripts that need to reach external APIs through an HTTPS proxy. Solves the problem that Node.js's built-in `fetch()` (undici) and `https.get()` **do not** respect `HTTP_PROXY`/`HTTPS_PROXY` environment variables.

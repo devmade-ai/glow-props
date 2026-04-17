@@ -1,3 +1,15 @@
+---
+slug: theme-dark-mode
+title: Theme & Dark Mode
+badge: UI
+description: User-controlled dark/light mode with system preference fallback, localStorage persistence, cross-tab sync, and flash prevention.
+tags:
+  - DaisyUI
+  - Tailwind v4
+  - React + React Native
+order: 2
+---
+
 # Theme & Dark Mode (DaisyUI)
 
 User-controlled dark/light mode with DaisyUI theme selection, system preference fallback, persistence, flash prevention, and cross-tab sync.

@@ -83,9 +83,16 @@ const renderer = {
 
 marked.use({ renderer, gfm: true, breaks: false });
 
+function stripFrontmatter(text) {
+  if (!text || !text.startsWith('---\n')) return text;
+  var end = text.indexOf('\n---\n', 4);
+  if (end === -1) return text;
+  return text.slice(end + 5);
+}
+
 function renderMarkdown(text) {
   if (!text) return '';
-  return marked.parse(text);
+  return marked.parse(stripFrontmatter(text));
 }
 
 // Requirement: Copy markdown source with success/failure feedback

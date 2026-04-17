@@ -1,3 +1,15 @@
+---
+slug: burger-menu
+title: Burger Menu
+badge: UI
+description: Accessible dropdown navigation using the WAI-ARIA disclosure pattern. iOS Safari backdrop fix, focus management, and z-index scale.
+tags:
+  - Disclosure pattern
+  - React + React Native
+  - Tailwind
+order: 3
+---
+
 # Burger Menu
 
 Dropdown navigation menu triggered by a hamburger icon. Uses the WAI-ARIA **disclosure pattern** (not `role="menu"`) because a burger nav is a list of links/actions revealed by a toggle, not an application menu (File/Edit/View). Two variants: React (Vite + Tailwind) for web-only projects, React Native (Expo) for cross-platform.

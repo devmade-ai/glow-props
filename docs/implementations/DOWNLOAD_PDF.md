@@ -1,3 +1,15 @@
+---
+slug: download-pdf
+title: Download as PDF
+badge: Feature
+description: Zero-dependency PDF export using window.print(). Print-friendly CSS overrides, no-print utility class, and page break control.
+tags:
+  - window.print()
+  - "@media print"
+  - Zero dependencies
+order: 5
+---
+
 # Download as PDF
 
 Two approaches depending on content type. Choose one per project — or use both if different pages have different needs.

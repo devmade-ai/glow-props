@@ -1,7 +1,7 @@
 import { defineConfig } from 'vite';
 import tailwindcss from '@tailwindcss/vite';
 import { VitePWA } from 'vite-plugin-pwa';
-import { copyFileSync, readFileSync, readdirSync, existsSync, mkdirSync } from 'fs';
+import { copyFileSync, readFileSync, readdirSync, existsSync, mkdirSync, writeFileSync } from 'fs';
 import { resolve, basename } from 'path';
 
 // Requirement: Shared partials across index.html and project.html without duplication
@@ -144,6 +144,102 @@ function validateProjectMeta() {
   };
 }
 
+function parseFrontmatter(text) {
+  if (!text || !text.startsWith('---\n')) return null;
+  var end = text.indexOf('\n---\n', 4);
+  if (end === -1) return null;
+  var block = text.slice(4, end);
+  var attrs = {};
+  var currentKey = null;
+  var lines = block.split('\n');
+  for (var i = 0; i < lines.length; i++) {
+    var line = lines[i];
+    var arrayMatch = line.match(/^  - (.+)$/);
+    if (arrayMatch && currentKey) {
+      if (!Array.isArray(attrs[currentKey])) attrs[currentKey] = [];
+      var val = arrayMatch[1].trim();
+      if (val.startsWith('"') && val.endsWith('"')) val = val.slice(1, -1);
+      attrs[currentKey].push(val);
+      continue;
+    }
+    var kvMatch = line.match(/^(\w+):\s*(.*)$/);
+    if (kvMatch) {
+      currentKey = kvMatch[1];
+      var rawVal = kvMatch[2].trim();
+      if (rawVal === '') continue;
+      if (rawVal.startsWith('"') && rawVal.endsWith('"')) rawVal = rawVal.slice(1, -1);
+      if (/^\d+$/.test(rawVal)) rawVal = parseInt(rawVal, 10);
+      attrs[currentKey] = rawVal;
+    }
+  }
+  return attrs;
+}
+
+function generatePatternManifest() {
+  const implDir = resolve(__dirname, 'docs', 'implementations');
+  const REQUIRED = ['slug', 'title', 'badge', 'description'];
+
+  function buildManifest() {
+    if (!existsSync(implDir)) return { patterns: [] };
+    var files = readdirSync(implDir).filter(f => f.endsWith('.md'));
+    var patterns = [];
+    var slugs = new Set();
+    for (var file of files) {
+      var text = readFileSync(resolve(implDir, file), 'utf-8');
+      var attrs = parseFrontmatter(text);
+      if (!attrs) {
+        console.warn('[pattern-manifest] ' + file + ': missing YAML frontmatter — skipped');
+        continue;
+      }
+      var missing = REQUIRED.filter(f => !attrs[f]);
+      if (missing.length > 0) {
+        console.warn('[pattern-manifest] ' + file + ': missing required fields: ' + missing.join(', ') + ' — skipped');
+        continue;
+      }
+      if (slugs.has(attrs.slug)) {
+        console.warn('[pattern-manifest] ' + file + ': duplicate slug "' + attrs.slug + '" — skipped');
+        continue;
+      }
+      slugs.add(attrs.slug);
+      patterns.push({
+        slug: attrs.slug,
+        file: file,
+        title: attrs.title,
+        badge: attrs.badge,
+        description: attrs.description,
+        tags: attrs.tags || [],
+        order: typeof attrs.order === 'number' ? attrs.order : 999,
+      });
+    }
+    patterns.sort(function (a, b) {
+      if (a.order !== b.order) return a.order - b.order;
+      return a.title.localeCompare(b.title);
+    });
+    return { patterns: patterns };
+  }
+
+  return {
+    name: 'generate-pattern-manifest',
+    configureServer(server) {
+      server.middlewares.use(function (req, res, next) {
+        if (req.url === '/patterns/manifest.json') {
+          var manifest = buildManifest();
+          res.setHeader('Content-Type', 'application/json');
+          res.end(JSON.stringify(manifest, null, 2));
+          return;
+        }
+        next();
+      });
+    },
+    closeBundle() {
+      var distPatterns = resolve(__dirname, 'dist', 'patterns');
+      mkdirSync(distPatterns, { recursive: true });
+      var manifest = buildManifest();
+      writeFileSync(resolve(distPatterns, 'manifest.json'), JSON.stringify(manifest, null, 2));
+    },
+  };
+}
+
 // Requirement: Multi-page site (index.html + project.html + pattern.html)
 // Approach: Vite build.rollupOptions.input for multiple HTML entry points
 // Alternative: Single-page with client-side routing — rejected, unnecessary complexity
@@ -176,7 +272,7 @@ export default defineConfig({
       //   since every page is already precached.
       workbox: {
         cleanupOutdatedCaches: true,
-        globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
+        globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2,json}'],
         navigateFallback: null,
       },
       manifest: {
@@ -213,6 +309,7 @@ export default defineConfig({
       },
     }),
     copyRootFiles(),
+    generatePatternManifest(),
   ],
   build: {
     rollupOptions: {

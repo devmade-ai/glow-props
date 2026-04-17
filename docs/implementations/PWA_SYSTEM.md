@@ -1,3 +1,15 @@
+---
+slug: pwa-system
+title: PWA System
+badge: Infrastructure
+description: Install prompts, service worker updates, offline support. Handles the beforeinstallprompt race condition and browser-specific install instructions.
+tags:
+  - vite-plugin-pwa
+  - React hooks
+  - Cross-browser
+order: 1
+---
+
 # PWA System
 
 Four parts, built on `vite-plugin-pwa` (^1.2.0) with React. Adapt patterns for other frameworks (glow-props uses vanilla JS).

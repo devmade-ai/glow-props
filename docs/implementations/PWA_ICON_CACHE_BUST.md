@@ -1,3 +1,15 @@
+---
+slug: pwa-icon-cache-bust
+title: PWA Icon Cache Busting
+badge: Infrastructure
+description: Content-hashed icon URLs that bust browser, CDN, service worker, and WebAPK caches. Covers all 5 cache layers with build-time assertions.
+tags:
+  - Content hashing
+  - Workbox
+  - Vite plugin
+order: 10
+---
+
 # PWA Icon Cache Busting
 
 ## Problem

@@ -1,3 +1,15 @@
+---
+slug: event-bus
+title: Event Bus
+badge: Architecture
+description: Generic typed event bus factory for service-layer pub/sub. Per-listener error isolation, catch-all changed event, Map-based O(1) lookups.
+tags:
+  - Pub/sub
+  - TypeScript generics
+  - Error isolation
+order: 8
+---
+
 # Event Bus
 
 Generic typed event bus factory for service-layer pub/sub. Each service creates its own bus with a typed event union and a catch-all "changed" event that fires automatically on every emission. Per-listener error isolation prevents one throwing subscriber from breaking others.
