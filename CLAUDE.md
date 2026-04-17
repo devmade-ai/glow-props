@@ -370,40 +370,41 @@ Examples:
 | 21 | `naming` | `nam` | Identifier clarity, consistency with local norms, misleading abbreviations |
 | 22 | `patterns` | `pat` | Deviation from established patterns (fleet-wide glow-props or repo-local), reinvented wheels |
 | 23 | `docs` | `doc` | Docs ↔ code drift, missing docs on public API, outdated README/CLAUDE.md claims |
-| 24 | `tests` | `tst` | Coverage gaps on critical paths, flaky patterns, test smells, missing edge-case tests |
-| 25 | `complexity` | `cpx` | Function length, nesting depth, cyclomatic complexity hotspots |
-| 26 | `hacks` | `hck` | `TODO`/`FIXME`/`HACK`/`XXX` markers, `@ts-ignore`/`@ts-expect-error`, `any` escapes framed as temporary, `setTimeout` for timing fixes, quick patches waiting to be done properly |
-| 27 | `simplify` | `smp` | Reinvented framework features, over-engineered abstractions, custom code that could be 1–2 stdlib/library calls, unnecessary layers |
-| 28 | `reuse` | `rus` | Custom-vs-stdlib balance: how much is hand-written that shouldn't be; logic that should be extracted for reuse but isn't; abstractions generalized for a single caller; speculative parameters, defensive checks for impossible states, and configurability serving no real need |
-| 29 | `back-compat` | `bck` | Orphaned feature flags, deprecated branches with no callers, `legacy*` exports, backcompat shims outliving their purpose, `// kept for compatibility` blocks |
-| 30 | `comments` | `cmt` | Code comments against repo rules — WHY not WHAT, no PR-reference rot, no AI narration, no commented-out blocks unless `// KEEP:` annotated |
+| 24 | `doc-cleanup` | `dcl` | Duplicated content across doc files, stale files no longer relevant, orphaned docs nothing references, superseded files that replaced but didn't delete their predecessor, sections still describing removed features |
+| 25 | `tests` | `tst` | Coverage gaps on critical paths, flaky patterns, test smells, missing edge-case tests |
+| 26 | `complexity` | `cpx` | Function length, nesting depth, cyclomatic complexity hotspots |
+| 27 | `hacks` | `hck` | `TODO`/`FIXME`/`HACK`/`XXX` markers, `@ts-ignore`/`@ts-expect-error`, `any` escapes framed as temporary, `setTimeout` for timing fixes, quick patches waiting to be done properly |
+| 28 | `simplify` | `smp` | Reinvented framework features, over-engineered abstractions, custom code that could be 1–2 stdlib/library calls, unnecessary layers |
+| 29 | `reuse` | `rus` | Custom-vs-stdlib balance: how much is hand-written that shouldn't be; logic that should be extracted for reuse but isn't; abstractions generalized for a single caller; speculative parameters, defensive checks for impossible states, and configurability serving no real need |
+| 30 | `back-compat` | `bck` | Orphaned feature flags, deprecated branches with no callers, `legacy*` exports, backcompat shims outliving their purpose, `// kept for compatibility` blocks |
+| 31 | `comments` | `cmt` | Code comments against repo rules — WHY not WHAT, no PR-reference rot, no AI narration, no commented-out blocks unless `// KEEP:` annotated |
 
 ### Operational — group `ops`
 
 | # | Trigger | Alias | Looks for |
 |---|---------|-------|-----------|
-| 31 | `deps` | `dep` | Outdated, unused, vulnerable, license-risky dependencies |
-| 32 | `observability` | `obs` | Log coverage, metric hygiene, trace completeness, debug-pill surfaces |
-| 33 | `reliability` | `rel` | Retries, timeouts, idempotency, graceful degradation, offline handling |
-| 34 | `config` | `cfg` | Env var handling, secret management, config schema drift |
-| 35 | `migration` | `mig` | DB migration safety, API versioning, rollback plan, backward compatibility |
-| 36 | `ci` | `ci` | Pipeline health, build speed, cache effectiveness, flake rate |
+| 32 | `deps` | `dep` | Outdated, unused, vulnerable, license-risky dependencies |
+| 33 | `observability` | `obs` | Log coverage, metric hygiene, trace completeness, debug-pill surfaces |
+| 34 | `reliability` | `rel` | Retries, timeouts, idempotency, graceful degradation, offline handling |
+| 35 | `config` | `cfg` | Env var handling, secret management, config schema drift |
+| 36 | `migration` | `mig` | DB migration safety, API versioning, rollback plan, backward compatibility |
+| 37 | `ci` | `ci` | Pipeline health, build speed, cache effectiveness, flake rate |
 
 ### Design-level — group `design`
 
 | # | Trigger | Alias | Looks for |
 |---|---------|-------|-----------|
-| 37 | `architecture` | `arch` | Coupling, layering violations, abstraction leaks, module boundaries |
-| 38 | `api` | `api` | Interface consistency, versioning, deprecation, contract clarity |
-| 39 | `state` | `sta` | Where state lives, derivation vs storage, single-source-of-truth violations |
-| 40 | `data-model` | `dat` | Schema normalization, foreign-key integrity, nullable discipline |
+| 38 | `architecture` | `arch` | Coupling, layering violations, abstraction leaks, module boundaries |
+| 39 | `api` | `api` | Interface consistency, versioning, deprecation, contract clarity |
+| 40 | `state` | `sta` | Where state lives, derivation vs storage, single-source-of-truth violations |
+| 41 | `data-model` | `dat` | Schema normalization, foreign-key integrity, nullable discipline |
 
 ### Fleet alignment — group `fleet`
 
 | # | Trigger | Alias | Looks for |
 |---|---------|-------|-----------|
-| 41 | `align` | `aln` | Drift between this repo's CLAUDE.md and glow-props CLAUDE.md — missing sections, stale rules, divergent conventions |
-| 42 | `pattern-audit` | `pa` | Every glow-props implementation pattern: implemented / partial / missing / deviates — with diff notes for each |
+| 42 | `align` | `aln` | Drift between this repo's CLAUDE.md and glow-props CLAUDE.md — missing sections, stale rules, divergent conventions |
+| 43 | `pattern-audit` | `pa` | Every glow-props implementation pattern: implemented / partial / missing / deviates — with diff notes for each |
 
 ### Meta sweeps
 
