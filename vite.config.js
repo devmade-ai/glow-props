@@ -145,10 +145,12 @@ function validateProjectMeta() {
 }
 
 function parseFrontmatter(text) {
-  if (!text || !text.startsWith('---\n')) return null;
-  var end = text.indexOf('\n---\n', 4);
+  if (!text) return null;
+  var normalized = text.replace(/\r\n/g, '\n');
+  if (!normalized.startsWith('---\n')) return null;
+  var end = normalized.indexOf('\n---\n', 4);
   if (end === -1) return null;
-  var block = text.slice(4, end);
+  var block = normalized.slice(4, end);
   var attrs = {};
   var currentKey = null;
   var lines = block.split('\n');
@@ -194,6 +196,10 @@ function generatePatternManifest() {
       var missing = REQUIRED.filter(f => !attrs[f]);
       if (missing.length > 0) {
         console.warn('[pattern-manifest] ' + file + ': missing required fields: ' + missing.join(', ') + ' — skipped');
+        continue;
+      }
+      if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(attrs.slug)) {
+        console.warn('[pattern-manifest] ' + file + ': slug "' + attrs.slug + '" is not URL-safe (use lowercase alphanumeric with hyphens) — skipped');
         continue;
       }
       if (slugs.has(attrs.slug)) {

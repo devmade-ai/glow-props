@@ -339,6 +339,21 @@ All implementation patterns live in the **glow-props** repo and are the single s
 - Fetch via GitHub API: `curl -sf -H "Authorization: token $(printenv GITHUB_ALL_REPO_TOKEN)" "https://api.github.com/repos/devmade-ai/glow-props/contents/docs/implementations/{PATTERN_NAME}.md" | jq -r .content | base64 -d`
 - To list all available patterns: `curl -sf -H "Authorization: token $(printenv GITHUB_ALL_REPO_TOKEN)" "https://api.github.com/repos/devmade-ai/glow-props/contents/docs/implementations" | jq -r '.[].name'`
 
+**Adding a new pattern:** Drop a `.md` file into `docs/implementations/` with YAML frontmatter and it appears in the app automatically. Required frontmatter fields:
+```yaml
+---
+slug: url-safe-slug
+title: Display Title
+badge: Category
+description: One-line description for the card.
+tags:
+  - tag1
+  - tag2
+order: 10
+---
+```
+The `generatePatternManifest` Vite plugin scans the folder at build time, parses frontmatter, validates required fields, and generates `patterns/manifest.json`. Both `index.html` and `pattern.html` consume this manifest — no hardcoded lists.
+
 **Rules:**
 - **Always fetch the latest version** from glow-props before implementing — patterns are continuously improved
 - **Never create local copies** of implementation pattern files in downstream repos
