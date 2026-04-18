@@ -22,6 +22,8 @@ Audited 2026-04-06 against updated `docs/implementations/*.md` pattern docs. Upd
 
 **Re-audited 2026-04-18 via GitHub API (one agent per repo) — completed items deleted from this file. Major deltas:** canva-grid fully resolved except Triggers (ICON_CACHE_BUST tripwire test + install-modal collapsible confirmed). budgy-ting resolved except Triggers + ICON_CACHE_BUST tripwire test (core plumbing + reinstall banner done, EVENT_BUS decided against in CLAUDE.md). repo-tor fully resolved except Triggers (Communication section at line 335, ICON_CACHE_BUST tripwire test + install-modal collapsible done). graphiki HUGE progress: HISTORY.md gone, CLAUDE.md fully aligned (Implementation Patterns + prohibition + Communication), BURGER_MENU upgraded to disclosure component, DEBUG_SYSTEM hardened (console interception + inline styles + PWA tab + pre-React pill), PWA visibility + 30s suppression done, ICON_CACHE_BUST core plumbing done, EVENT_BUS typed payload map done. few-lap CLAUDE.md fully aligned + APP_ICONS + BURGER_MENU fully done. model-pear DEBUG_SYSTEM audit confirmed compliant + prohibition added. **Correction:** synctone flash prevention script was incorrectly marked present on 2026-04-17 — re-audit confirms it is NOT in `+html.tsx`.
 
+**Parallel re-validation 2026-04-18 (10 agents, one per repo) — additional deltas:** canva-grid Triggers now DONE (8 group tables + meta sweeps + reflective passes + name collisions note) — section removed. budgy-ting Triggers + tripwire test (`src/iconCacheBust.test.ts`, 151 lines) both DONE — section removed. few-lap DEBUG_SYSTEM (all 6 items: `#debug-root`, inline styles, console interception, pre-React pill, `DebugDetails` union type, URL redaction) and THEME_DARK_MODE (Uniwind `@variant` blocks cover all DaisyUI tokens; flash prevention present) now DONE; Triggers PARTIAL (8 group tables present but Meta sweeps + Reflective passes tables missing); debug comment text changed to "TEMPORARY: always-on for PWA alpha diagnostics" (same leak risk). graphiki ICON_CACHE_BUST tripwire test DONE (`src/test/icon-cache-bust.test.ts`); user communication still missing. **Correction:** four-ems 30-second suppression claim was wrong — `usePWAUpdate.ts` has a 3-second offline-ready dismissal, not a 30-second update-just-applied suppression; the item is back on the list.
+
 Legend: **Pass** = compliant, **Partial** = has the feature but with gaps, **Missing** = not implemented, **N/A** = not applicable
 
 ### Gap Matrix
@@ -30,11 +32,11 @@ Legend: **Pass** = compliant, **Partial** = has the feature but with gaps, **Mis
 |------|-----------|-----------|-------------|--------------|--------------|------------|-----------------|-----------|---------------|-----------------|
 | glow-props | Pass | Pass | Pass | N/A | Pass | Pass | Pass | N/A | Pass | N/A |
 | canva-grid | Pass | Pass | Pass | Pass | Pass (B) | Pass | Pass | N/A | Pass | Pass |
-| budgy-ting | Pass | Pass | Pass | Pass | Pass | Pass | Pass | N/A | Pass | Partial |
+| budgy-ting | Pass | Pass | Pass | Pass | Pass | Pass | Pass | N/A | Pass | Pass |
 | model-pear | Partial | Pass | Missing | Pass | Partial | Missing | Missing | Missing | Partial | N/A |
 | see-veo | Missing | Partial | Missing | Partial | Partial | Partial | Missing | Missing | Missing | Missing |
 | repo-tor | Pass | Pass | Pass | Pass | Pass | Pass | Pass | N/A | Pass | Pass |
-| few-lap | Pass | Pass | Pass | Partial | Missing | Partial | Partial | Missing | Missing | Missing |
+| few-lap | Pass | Pass | Pass | Pass | Missing | Partial | Pass | Missing | Missing | Missing |
 | sun-sea-o | Missing | Partial | Missing | Partial | Pass | Partial | Missing | Missing | Missing | Missing |
 | graphiki | Pass | Pass | Pass | Pass | Missing | Pass | Pass | Pass | Partial | Partial |
 | four-ems | Missing | Partial | Missing | Partial | Partial | Partial | Missing | Missing | Missing | Missing |
@@ -44,40 +46,13 @@ Legend: **Pass** = compliant, **Partial** = has the feature but with gaps, **Mis
 
 **N/A for ICON_CACHE_BUST**: glow-props (static site, no PWA icons), model-pear (no PWA yet — implement PWA_SYSTEM first)
 
-### canva-grid
+### canva-grid — FULLY RESOLVED (2026-04-18)
 
-React + Vite app. Only Triggers replacement remains (verified 2026-04-18). HISTORY.md removed, Communication section added, ICON_CACHE_BUST fully complete (tripwire test in `src/__tests__/iconCacheBust.test.js` + install-modal collapsible in `InstallInstructionsModal.jsx`).
+React + Vite app. All items complete: HISTORY.md removed, Communication section added, ICON_CACHE_BUST fully complete (tripwire test in `src/__tests__/iconCacheBust.test.js` + install-modal collapsible), EVENT_BUS decided against (React Context dispatch), Triggers replaced (8 group tables + meta sweeps + reflective passes + name collisions note in AI Notes). No pending items.
 
-EVENT_BUS: Decided against — React Context dispatch is sufficient for its architecture.
+### budgy-ting — FULLY RESOLVED (2026-04-18)
 
-#### Triggers — Replace with glow-props version (cross-fleet policy 2026-04-17)
-
-glow-props CLAUDE.md has a redesigned Triggers section: 48 triggers in 8 groups, 6 cadence meta sweeps (`hot` / `quick` / `ship` / `session` / `tidy` / `all`), 7 reflective passes (`risk` / `surface` / `wrap` / `skipped` / `assumed` / `approach` / `cold`), and scope modifiers (`branch` / `staged` / `file <path>`). Replaces the older single-word Triggers section (`rev`/`aud`/`mobile`/`clean`/`start`/etc.).
-
-1. [ ] **Replace the existing `## Triggers` section** — Copy the full new `## Triggers` section from glow-props CLAUDE.md verbatim, including How to invoke, Scope modifiers, Behavior rules, all 8 group tables (`correctness`, `trust`, `speed`, `frontend`, `quality`, `ops`, `design`, `fleet`), Meta sweeps table, and Reflective passes table.
-2. [ ] **Note any name collisions** — If the repo has npm scripts, folders, or conventions using single-word names matching trigger names (e.g. `docs/`, `tests/`, `config/`, `api/`), add a line in AI Notes clarifying context precedence.
-3. **Confirm:** `grep -c "^## Triggers$" CLAUDE.md` returns `1`. All 8 group tables present. No old single-word triggers (`rev`/`aud`/`start`/`go`) remain.
-
-### budgy-ting
-
-Vue + Vite app. Only Triggers replacement + ICON_CACHE_BUST tripwire test remain (verified 2026-04-18). HISTORY.md removed, Communication section added, DOWNLOAD_PDF `handlePrint()` wired in `WorkspaceDetailView.vue`, ICON_CACHE_BUST core plumbing + `useIconRefresh` reinstall banner present. EVENT_BUS decided against (documented in CLAUDE.md "Not Applicable Patterns").
-
-#### Triggers — Replace with glow-props version (cross-fleet policy 2026-04-17)
-
-glow-props CLAUDE.md has a redesigned Triggers section: 48 triggers in 8 groups, 6 cadence meta sweeps (`hot` / `quick` / `ship` / `session` / `tidy` / `all`), 7 reflective passes (`risk` / `surface` / `wrap` / `skipped` / `assumed` / `approach` / `cold`), and scope modifiers (`branch` / `staged` / `file <path>`). Replaces the older single-word Triggers section (`rev`/`aud`/`mobile`/`clean`/`start`/etc.).
-
-1. [ ] **Replace the existing `## Triggers` section** — Copy the full new `## Triggers` section from glow-props CLAUDE.md verbatim, including How to invoke, Scope modifiers, Behavior rules, all 8 group tables (`correctness`, `trust`, `speed`, `frontend`, `quality`, `ops`, `design`, `fleet`), Meta sweeps table, and Reflective passes table.
-2. [ ] **Note any name collisions** — If the repo has npm scripts, folders, or conventions using single-word names matching trigger names (e.g. `docs/`, `tests/`, `config/`, `api/`), add a line in AI Notes clarifying context precedence.
-3. **Confirm:** `grep -c "^## Triggers$" CLAUDE.md` returns `1`. All 8 group tables present. No old single-word triggers (`rev`/`aud`/`start`/`go`) remain.
-
-#### ICON_CACHE_BUST — Partial → Complete
-
-Reference: `docs/implementations/PWA_ICON_CACHE_BUST.md` (fetch from glow-props)
-
-Core plumbing done (verified 2026-04-18): `iconVersion()` + `iconCacheBustHtml()` in `vite.config.ts`, versioned manifest icon URLs, `ignoreURLParametersMatching: [/^v$/]` in workbox config, `useIconRefresh` composable with reinstall banner. Remaining: tripwire test.
-
-1. [ ] **Add tripwire test** — Source-level and dist-level assertions per the pattern doc.
-2. **Confirm:** `dist/manifest.webmanifest` icons have `?v=` hashes; `dist/index.html` link tags have `?v=` hashes; `dist/sw.js` has `ignoreURLParametersMatching` with `/^v$/`.
+Vue + Vite app. All items complete: HISTORY.md removed, Communication section added, DOWNLOAD_PDF `handlePrint()` wired in `WorkspaceDetailView.vue`, ICON_CACHE_BUST fully complete (tripwire test at `src/iconCacheBust.test.ts`, 151 lines, source + dist assertions), EVENT_BUS decided against, Triggers replaced (8 group tables + meta sweeps + reflective passes). No name collisions found (no npm scripts/folders matching trigger names). No pending items.
 
 ### model-pear
 
@@ -297,29 +272,19 @@ glow-props CLAUDE.md has a redesigned Triggers section: 48 triggers in 8 groups,
 
 ### few-lap
 
-React Native (Expo) app (package name `fuelhunt`). Uses Metro bundler (not Vite) and Uniwind for theming. Custom SW approach is correct for Expo. CLAUDE.md fully aligned with glow-props (verified 2026-04-18): Implementation Patterns section, AI Note, prohibition, and Communication section all present. APP_ICONS and BURGER_MENU fully complete.
+React Native (Expo) app (package name `fuelhunt`). Uses Metro bundler (not Vite) and Uniwind for theming. Custom SW approach is correct for Expo. CLAUDE.md fully aligned with glow-props (verified 2026-04-18): Implementation Patterns section, AI Note, prohibition, and Communication section all present. APP_ICONS and BURGER_MENU fully complete. **DEBUG_SYSTEM fully complete 2026-04-18** (`#debug-root`, pure inline styles, `consoleCapture.ts`, pre-React bootPillScript, `DebugDetails = string | Record<string, unknown>` union, `redactUrls()` in report). **THEME_DARK_MODE fully complete 2026-04-18** (Uniwind `@variant` blocks cover all DaisyUI semantic tokens in `src/global.css` incl. `-content` variants; flash prevention script in `+html.tsx`).
 
-**Bonus finding (not a pattern gap):** `src/debug/debugLog.ts` has a leftover `// Revert to if (!__DEV__) return; after testing` comment — production debug-pill leak risk. Restore the `__DEV__` guard.
+**Bonus finding (not a pattern gap):** `src/debug/debugLog.ts` has a leftover `// TEMPORARY: always-on for PWA alpha diagnostics. Restore` comment — production debug-pill leak risk. Restore the `__DEV__` guard.
 
-#### Triggers — Replace with glow-props version (cross-fleet policy 2026-04-17)
+#### Triggers — Replace with glow-props version (cross-fleet policy 2026-04-17) — PARTIAL
 
-glow-props CLAUDE.md has a redesigned Triggers section: 48 triggers in 8 groups, 6 cadence meta sweeps (`hot` / `quick` / `ship` / `session` / `tidy` / `all`), 7 reflective passes (`risk` / `surface` / `wrap` / `skipped` / `assumed` / `approach` / `cold`), and scope modifiers (`branch` / `staged` / `file <path>`). Replaces the older single-word Triggers section (`rev`/`aud`/`mobile`/`clean`/`start`/etc.).
+few-lap has a current `## Triggers` section with 8 group tables matching glow-props group structure, but is **missing the Meta sweeps table and Reflective passes table** (and likely the How to invoke / Scope modifiers / Behavior rules preamble).
 
-1. [ ] **Replace the existing `## Triggers` section** — Copy the full new `## Triggers` section from glow-props CLAUDE.md verbatim, including How to invoke, Scope modifiers, Behavior rules, all 8 group tables (`correctness`, `trust`, `speed`, `frontend`, `quality`, `ops`, `design`, `fleet`), Meta sweeps table, and Reflective passes table.
-2. [ ] **Note any name collisions** — If the repo has npm scripts, folders, or conventions using single-word names matching trigger names (e.g. `docs/`, `tests/`, `config/`, `api/`), add a line in AI Notes clarifying context precedence.
-3. **Confirm:** `grep -c "^## Triggers$" CLAUDE.md` returns `1`. All 8 group tables present. No old single-word triggers (`rev`/`aud`/`start`/`go`) remain.
-
-#### DEBUG_SYSTEM — Partial → Complete
-
-Reference: `docs/implementations/DEBUG_SYSTEM.md`
-
-1. [ ] **Add separate `#debug-root`** — In `+html.tsx`, add a root element for the debug pill outside the app tree so it survives crashes.
-2. [ ] **Switch to inline styles** — DebugPill currently mixes className + StyleSheet + inline style. Replace with pure inline styles.
-3. [ ] **Add console interception** — Patch `console.error`/`console.warn` in `debugLog.ts`.
-4. [ ] **Add pre-React inline pill** — Inline `<script>` in `+html.tsx` with `window.__debugPushError()` and 20-second timeout.
-5. [ ] **Change `details` to `Record<string, unknown>`** — Currently `string`. Structured data enables post-mortem filtering.
-6. [ ] **Add URL query param redaction** — In `debugGenerateReport()`.
-7. **Confirm:** Open app, crash a component — pill survives in separate root. Copy report — URLs redacted.
+1. [ ] **Add Meta sweeps table** — Copy the Meta sweeps table (`hot` / `quick` / `ship` / `session` / `tidy` / `all`) from glow-props CLAUDE.md verbatim.
+2. [ ] **Add Reflective passes table** — Copy the Reflective passes table (`risk` / `surface` / `wrap` / `skipped` / `assumed` / `approach` / `cold`) from glow-props CLAUDE.md verbatim.
+3. [ ] **Verify preamble sections** — Ensure How to invoke, Scope modifiers (`branch` / `staged` / `file <path>`), and Behavior rules are present before the group tables.
+4. [ ] **Note any name collisions** — If the repo has npm scripts, folders, or conventions matching trigger names, add a line in AI Notes.
+5. **Confirm:** All 8 group tables present (already done). Meta sweeps and Reflective passes tables present. All preamble sections present.
 
 #### DOWNLOAD_PDF — Missing → Implement
 
@@ -340,17 +305,6 @@ few-lap uses Expo with a custom `sw.js`, not vite-plugin-pwa — this is the cor
 1. [ ] **Add visibility-based update check pause** — In `usePWAUpdate.ts`, add a `visibilitychange` listener. Pause interval-based checks when tab is hidden, resume and immediately check when visible again.
 2. **Confirm:** Background the tab for a while, bring it back — update check should trigger on visibility change.
 
-#### THEME_DARK_MODE — Partial → Complete
-
-Reference: `docs/implementations/THEME_DARK_MODE.md` (Uniwind Theme Switching + Zustand Store sections)
-
-few-lap uses Uniwind with `@variant` blocks — not `data-theme`. The Uniwind approach is architecturally different but should still cover flash prevention.
-
-Flash prevention script already present in `+html.tsx` (verified 2026-04-17).
-
-1. [ ] **Verify Uniwind `@variant` blocks cover all DaisyUI semantic tokens** — Ensure the CSS variable definitions in each `@variant` block match DaisyUI's expected variables for full component compatibility.
-2. **Confirm:** Reload with a non-default theme saved — no flash. Toggle dark/light — instant switch.
-
 #### Z_INDEX_SCALE — Missing → Implement
 
 Reference: `docs/implementations/Z_INDEX_SCALE.md`
@@ -362,7 +316,7 @@ Reference: `docs/implementations/Z_INDEX_SCALE.md`
 
 Reference: `docs/implementations/PWA_ICON_CACHE_BUST.md` (fetch from glow-props)
 
-few-lap uses Expo with a custom `sw.js` — not vite-plugin-pwa. Adapt the hash computation and HTML injection to the Expo/Metro build pipeline. See the "Adapting to other stacks" table in the pattern doc for the Expo / Metro column.
+few-lap uses Expo with a custom `sw.js` — not vite-plugin-pwa. Adapt the hash computation and HTML injection to the Expo/Metro build pipeline. See the "Adapting to other stacks" table in the pattern doc for the Expo / Metro column. Note: `inject-sw-version.mjs` prebuild script exists (for SW version), could be extended or paired with an icon hash script.
 
 1. [ ] **Compute content hash of icon files** — In a prebuild script, SHA-256 hash each icon PNG and expose versioned paths.
 2. [ ] **Inject versioned URLs into `+html.tsx`** — Update `<link rel="icon">` and `<link rel="apple-touch-icon">` tags with `?v=<hash>`.
@@ -532,11 +486,10 @@ Reference: `docs/implementations/Z_INDEX_SCALE.md`
 
 Reference: `docs/implementations/PWA_ICON_CACHE_BUST.md` (fetch from glow-props)
 
-Core plumbing done (verified 2026-04-18): `iconVersion()` + `iconCacheBustHtml()` in `vite.config.ts`, versioned manifest icon URLs, `ignoreURLParametersMatching: [/^v$/]` in workbox config. Remaining: tripwire test + user communication.
+Core plumbing done: `iconVersion()` + `iconCacheBustHtml()` in `vite.config.ts`, versioned manifest icon URLs, `ignoreURLParametersMatching: [/^v$/]` in workbox config. Tripwire test done 2026-04-18 (`src/test/icon-cache-bust.test.ts` with full source-level assertions). Remaining: user communication.
 
-1. [ ] **Add tripwire test** — Source-level and dist-level assertions per the pattern doc.
-2. [ ] **Add user communication** — "Already installed and the icon looks outdated?" collapsible in install modal.
-3. **Confirm:** Build, verify versioned URLs in manifest + HTML + SW config.
+1. [ ] **Add user communication** — "Already installed and the icon looks outdated?" collapsible in install modal (`usePWAInstall.ts` or the install prompt UI).
+2. **Confirm:** User sees reinstall guidance when a stale cached icon is detected.
 
 ### four-ems
 
@@ -611,14 +564,15 @@ Reference: `docs/implementations/DOWNLOAD_PDF.md`
 
 Reference: `docs/implementations/PWA_SYSTEM.md`
 
-30-second suppression already present in `usePWAUpdate.ts` (verified 2026-04-17).
+**Correction 2026-04-18 parallel re-audit:** Previous note claimed 30-second suppression was present — actually `usePWAUpdate.ts` has a 3-second offline-ready *dismissal* timer, not a 30-second *update-just-applied* suppression. Item added back.
 
 1. [ ] **Convert to module-level singleton** — Move SW state from React hooks to module-scope variables.
 2. [ ] **Add visibility-based update checks** — `visibilitychange` listener.
-3. [ ] **Add `checkForUpdate()` function** — Returns typed result for UI/menu integration.
-4. [ ] **Add `controllerchange` reload guard** — Auto-reload only when user clicked "Update".
-5. [ ] **Add `workbox.cleanupOutdatedCaches: true`** — In vite config.
-6. **Confirm:** Deploy, background tab, return — update detected. Manual "Check for updates" works from menu.
+3. [ ] **Add 30-second suppression** — `sessionStorage` timestamp after user clicks Update, `wasJustUpdated()` guard to prevent re-detection.
+4. [ ] **Add `checkForUpdate()` function** — Returns typed result for UI/menu integration.
+5. [ ] **Add `controllerchange` reload guard** — Auto-reload only when user clicked "Update".
+6. [ ] **Add `workbox.cleanupOutdatedCaches: true`** — In vite config.
+7. **Confirm:** Deploy, background tab, return — update detected. Click Update, reload, no re-detection for 30s.
 
 #### THEME_DARK_MODE — Missing → Implement
 
@@ -784,26 +738,26 @@ synctone uses Expo with a custom `sw.js` — not vite-plugin-pwa. Adapt the hash
 
 ## Cross-Cutting Gaps (most common across repos)
 
-Updated 2026-04-18 after re-audit via GitHub API (one agent per repo).
+Updated 2026-04-18 after parallel re-validation via GitHub API (one agent per repo).
 
-Fully clean on the original 9 patterns + HISTORY.md + Communication: glow-props, canva-grid, budgy-ting, repo-tor, graphiki, few-lap. Each only needs Triggers replacement (plus a handful of trailing items per repo — see per-repo sections above).
-
+Fully clean (no pending items): **canva-grid, budgy-ting**.
+Fully clean on core patterns + HISTORY.md + Communication, trailing items only: glow-props, repo-tor, graphiki, few-lap.
 Still carrying substantial backlogs: see-veo, sun-sea-o, four-ems, synctone, model-pear.
 
 These gaps appear in 4+ repos and represent the highest-leverage improvements:
 
-1. **Triggers redesign** — Cross-fleet policy 2026-04-17. glow-props has 48 triggers in 8 groups + 6 cadence meta sweeps + 7 reflective passes, replacing the older 9-trigger single-word set. **Missing in all 10 downstream repos** — universal outstanding item.
+1. **Triggers redesign** — Cross-fleet policy 2026-04-17. glow-props has 48 triggers in 8 groups + 6 cadence meta sweeps + 7 reflective passes, replacing the older 9-trigger single-word set. **Done in canva-grid + budgy-ting. Partial in few-lap** (8 group tables present but missing Meta sweeps + Reflective passes tables). **Still missing in repo-tor, model-pear, see-veo, sun-sea-o, graphiki, four-ems, synctone** (7 repos).
 2. **CLAUDE.md alignment** — Pass in canva-grid, budgy-ting, repo-tor, graphiki, few-lap. Worst remaining offenders for inline patterns: four-ems (~630 lines), sun-sea-o (~470 lines), see-veo (~285 lines), synctone (8 local files in `docs/implementations/`). model-pear needs Communication section only.
 3. **HISTORY.md removal** — Already done in canva-grid, budgy-ting, repo-tor, graphiki, few-lap (file already absent). Still present in model-pear, see-veo, sun-sea-o, four-ems, synctone.
-4. **PWA_ICON_CACHE_BUST** — Full Pass in canva-grid + repo-tor (core + test + UX). Partial in budgy-ting (missing tripwire test) + graphiki (missing test + user communication). Missing in see-veo, sun-sea-o, four-ems (vite-plugin-pwa repos) and few-lap, synctone (Expo — stack-specific adaptation needed). N/A for glow-props + model-pear.
+4. **PWA_ICON_CACHE_BUST** — Full Pass in canva-grid, budgy-ting (tripwire test `src/iconCacheBust.test.ts` added), repo-tor (core + test + UX). Partial in graphiki (tripwire test `src/test/icon-cache-bust.test.ts` added; user communication missing). Missing in see-veo, sun-sea-o, four-ems (vite-plugin-pwa repos) and few-lap, synctone (Expo — stack-specific adaptation needed). N/A for glow-props + model-pear.
 5. **EVENT_BUS** — N/A in canva-grid, budgy-ting, repo-tor (decided against). Pass in graphiki (typed payload map done). 6 repos still need evaluate decision.
-6. **DEBUG_SYSTEM: console interception** — Done in canva-grid, budgy-ting, repo-tor, graphiki, model-pear. Still missing in see-veo, few-lap, sun-sea-o, four-ems, synctone.
-7. **DEBUG_SYSTEM: pre-React inline pill** — Done in canva-grid, budgy-ting, repo-tor, sun-sea-o, graphiki, model-pear. Still missing in see-veo, few-lap, four-ems, synctone.
-8. **DEBUG_SYSTEM: inline styles** — Done in canva-grid, repo-tor, graphiki, model-pear. Others still use Tailwind/DaisyUI.
+6. **DEBUG_SYSTEM: console interception** — Done in canva-grid, budgy-ting, repo-tor, graphiki, model-pear, few-lap (`consoleCapture.ts`). Still missing in see-veo, sun-sea-o, four-ems, synctone.
+7. **DEBUG_SYSTEM: pre-React inline pill** — Done in canva-grid, budgy-ting, repo-tor, sun-sea-o, graphiki, model-pear, few-lap (`bootPillScript`). Still missing in see-veo, four-ems, synctone.
+8. **DEBUG_SYSTEM: inline styles** — Done in canva-grid, repo-tor, graphiki, model-pear, few-lap. Others still use Tailwind/DaisyUI.
 9. **DEBUG_SYSTEM: PWA Diagnostics tab** — Done in canva-grid, budgy-ting, repo-tor, see-veo, graphiki, model-pear. Still missing in few-lap, sun-sea-o, four-ems, synctone.
 10. **PWA_SYSTEM: visibility-based update checks** — Done in canva-grid, budgy-ting, repo-tor, glow-props, graphiki. Still missing in see-veo, few-lap, sun-sea-o, four-ems, synctone.
-11. **PWA_SYSTEM: 30-second suppression** — Done in canva-grid, budgy-ting, repo-tor, glow-props, four-ems, graphiki. Still missing in see-veo, sun-sea-o, synctone.
+11. **PWA_SYSTEM: 30-second suppression** — Done in canva-grid, budgy-ting, repo-tor, glow-props, graphiki. **Four-ems correction 2026-04-18: earlier claim was wrong — has only a 3s offline-ready dismissal, not 30s update suppression.** Still missing in see-veo, sun-sea-o, four-ems, synctone.
 12. **PWA_SYSTEM: module singleton** — Done in canva-grid, budgy-ting, glow-props, repo-tor, graphiki. Still missing in see-veo, sun-sea-o, four-ems, model-pear.
 13. **BURGER_MENU: focus hooks extraction** — Done in canva-grid, budgy-ting, repo-tor, graphiki, few-lap. Still missing in repos without a full burger menu (model-pear, see-veo, sun-sea-o, four-ems, synctone).
-14. **THEME_DARK_MODE** — Missing in model-pear, see-veo, sun-sea-o, four-ems (no theming). canva-grid, budgy-ting, repo-tor, graphiki have full DaisyUI systems. few-lap + synctone have Uniwind; **synctone correction 2026-04-18: flash prevention script is NOT present** (earlier note was wrong).
+14. **THEME_DARK_MODE** — Missing in model-pear, see-veo, sun-sea-o, four-ems (no theming). canva-grid, budgy-ting, repo-tor, graphiki have full DaisyUI systems. few-lap has Uniwind with `@variant` blocks covering all DaisyUI semantic tokens (Pass). synctone has Uniwind but flash prevention script is missing.
 15. **Z_INDEX_SCALE** — Pass in glow-props, canva-grid, budgy-ting, repo-tor. Partial in graphiki, model-pear. Missing in see-veo, few-lap, sun-sea-o, four-ems, synctone.
