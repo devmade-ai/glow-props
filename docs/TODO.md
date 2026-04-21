@@ -22,7 +22,16 @@ Audited 2026-04-06 against updated `docs/implementations/*.md` pattern docs. Upd
 
 **Re-audited 2026-04-18 via GitHub API (one agent per repo) — completed items deleted from this file. Major deltas:** canva-grid fully resolved except Triggers (ICON_CACHE_BUST tripwire test + install-modal collapsible confirmed). budgy-ting resolved except Triggers + ICON_CACHE_BUST tripwire test (core plumbing + reinstall banner done, EVENT_BUS decided against in CLAUDE.md). repo-tor fully resolved except Triggers (Communication section at line 335, ICON_CACHE_BUST tripwire test + install-modal collapsible done). graphiki HUGE progress: HISTORY.md gone, CLAUDE.md fully aligned (Implementation Patterns + prohibition + Communication), BURGER_MENU upgraded to disclosure component, DEBUG_SYSTEM hardened (console interception + inline styles + PWA tab + pre-React pill), PWA visibility + 30s suppression done, ICON_CACHE_BUST core plumbing done, EVENT_BUS typed payload map done. few-lap CLAUDE.md fully aligned + APP_ICONS + BURGER_MENU fully done. model-pear DEBUG_SYSTEM audit confirmed compliant + prohibition added. **Correction:** synctone flash prevention script was incorrectly marked present on 2026-04-17 — re-audit confirms it is NOT in `+html.tsx`.
 
-**Parallel re-validation 2026-04-18 (10 agents, one per repo) — additional deltas:** canva-grid Triggers now DONE (8 group tables + meta sweeps + reflective passes + name collisions note) — section removed. budgy-ting Triggers + tripwire test (`src/iconCacheBust.test.ts`, 151 lines) both DONE — section removed. few-lap DEBUG_SYSTEM (all 6 items: `#debug-root`, inline styles, console interception, pre-React pill, `DebugDetails` union type, URL redaction) and THEME_DARK_MODE (Uniwind `@variant` blocks cover all DaisyUI tokens; flash prevention present) now DONE; Triggers PARTIAL (8 group tables present but Meta sweeps + Reflective passes tables missing); debug comment text changed to "TEMPORARY: always-on for PWA alpha diagnostics" (same leak risk). graphiki ICON_CACHE_BUST tripwire test DONE (`src/test/icon-cache-bust.test.ts`); user communication still missing. **Correction:** four-ems 30-second suppression claim was wrong — `usePWAUpdate.ts` has a 3-second offline-ready dismissal, not a 30-second update-just-applied suppression; the item is back on the list.
+**Parallel re-validation 2026-04-21 (11 agents: 1 coverage + 10 per-repo) — major progress since 2026-04-18 and a coverage finding:**
+- **Coverage:** `tool-till-tees` surfaced as untracked first-party backend (powers four-ems + Sancio agreements) — added as tracked repo with a placeholder section pending audit. `canva-grid-assets` correctly skipped (asset CDN for canva-grid).
+- **canva-grid, budgy-ting:** FULLY RESOLVED confirmed (no regressions).
+- **repo-tor:** Triggers section VERIFIED DONE (all 8 group tables + Meta sweeps + Reflective passes present in CLAUDE.md) — repo-tor is now fully resolved. New small gap: DOWNLOAD_PDF partial (missing `.no-print` class + dedicated print button).
+- **few-lap:** Triggers DONE (Meta sweeps + Reflective passes present), Z_INDEX_SCALE DONE (`src/constants/zIndex.ts`), ICON_CACHE_BUST DONE (`scripts/inject-icon-hashes.mjs` + `IconCacheDisclosure.tsx`). Remaining: DOWNLOAD_PDF decision, `__DEV__` guard restore, EVENT_BUS evaluate.
+- **model-pear:** Communication section DONE (CLAUDE.md line 365), Z_INDEX_SCALE DONE (Tailwind config extends). HISTORY.md still present — remaining items stand.
+- **graphiki:** Z_INDEX_SCALE DONE (no violations), ICON_CACHE_BUST user communication DONE (collapsible in `InstallInstructionsModal.tsx`). Remaining: Triggers, DOWNLOAD_PDF decision.
+- **sun-sea-o:** MASSIVE PROGRESS — HISTORY.md removed, CLAUDE.md fully aligned (Suggested Implementations deleted, Implementation Patterns + Communication + prohibition present), Triggers replaced, APP_ICONS + apple-touch-icon + favicon.ico done, BurgerMenu implemented, DaisyUI installed, THEME_DARK_MODE framework complete (Approach A), PWA singleton at `src/lib/pwa.ts` with 30s suppression + visibility + reload guard, ICON_CACHE_BUST core plumbing done. Remaining: DEBUG_SYSTEM 6 items, PWA install-modal user comm, theme color migration audit, apple-touch-icon link verify in index.html.
+- **see-veo:** No progress; **regression correction** — the previous TODO note claiming "PWA Diagnostics third tab via `diagnostics.ts` is already present" is FALSE. `DebugBanner.tsx` has only 2 tabs (`type Tab = 'diagnostics' | 'log'`). The `diagnostics.ts` file exists but is consumed by the single "diagnostics" tab, not a third PWA tab. Corrected in section below.
+- **four-ems, synctone:** No progress; all items remain valid.
 
 Legend: **Pass** = compliant, **Partial** = has the feature but with gaps, **Missing** = not implemented, **N/A** = not applicable
 
@@ -33,18 +42,21 @@ Legend: **Pass** = compliant, **Partial** = has the feature but with gaps, **Mis
 | glow-props | Pass | Pass | Pass | N/A | Pass | Pass | Pass | N/A | Pass | N/A |
 | canva-grid | Pass | Pass | Pass | Pass | Pass (B) | Pass | Pass | N/A | Pass | Pass |
 | budgy-ting | Pass | Pass | Pass | Pass | Pass | Pass | Pass | N/A | Pass | Pass |
-| model-pear | Partial | Pass | Missing | Pass | Partial | Missing | Missing | Missing | Partial | N/A |
+| model-pear | Pass | Pass | Missing | Pass | Partial | Missing | Missing | Missing | Pass | N/A |
 | see-veo | Missing | Partial | Missing | Partial | Partial | Partial | Missing | Missing | Missing | Missing |
-| repo-tor | Pass | Pass | Pass | Pass | Pass | Pass | Pass | N/A | Pass | Pass |
-| few-lap | Pass | Pass | Pass | Pass | Missing | Partial | Pass | Missing | Missing | Missing |
-| sun-sea-o | Missing | Partial | Missing | Partial | Pass | Partial | Missing | Missing | Missing | Missing |
-| graphiki | Pass | Pass | Pass | Pass | Missing | Pass | Pass | Pass | Partial | Partial |
+| repo-tor | Pass | Pass | Pass | Pass | Partial | Pass | Pass | N/A | Pass | Pass |
+| few-lap | Pass | Pass | Pass | Pass | Missing | Partial | Pass | Missing | Pass | Pass |
+| sun-sea-o | Pass | Pass | Pass | Partial | Pass | Pass | Partial | Missing | Pass | Partial |
+| graphiki | Pass | Pass | Pass | Pass | Missing | Pass | Pass | Pass | Pass | Pass |
 | four-ems | Missing | Partial | Missing | Partial | Partial | Partial | Missing | Missing | Missing | Missing |
 | synctone | Missing | Partial | Missing | Partial | Missing | Partial | Partial | Missing | Missing | Missing |
+| tool-till-tees | ? | ? | ? | ? | ? | ? | ? | ? | ? | ? |
 
 **(B)** = Approach B (pdf-lib) per `docs/implementations/DOWNLOAD_PDF.md` — correct choice for canvas-heavy content
 
 **N/A for ICON_CACHE_BUST**: glow-props (static site, no PWA icons), model-pear (no PWA yet — implement PWA_SYSTEM first)
+
+**`?` for tool-till-tees**: newly-added tracked repo (2026-04-21) — backend service powering four-ems + Sancio agreements. Pending full audit; matrix cells to be filled in on first pass.
 
 ### canva-grid — FULLY RESOLVED (2026-04-18)
 
@@ -56,7 +68,7 @@ Vue + Vite app. All items complete: HISTORY.md removed, Communication section ad
 
 ### model-pear
 
-SvelteKit app. Improved compliance verified 2026-04-17: APP_ICONS fully done (SVG source + generate-icons.mjs + manifest + HTML links + sharp), DEBUG_SYSTEM foundations done (debugLog.ts + `#debug-root` with inline pill + DebugPill.svelte). Implementation Patterns section exists at line 365. No stale "Shared conventions" AI Note. Still needs: PWA_SYSTEM (no vite-plugin-pwa), THEME_DARK_MODE (no DaisyUI), BURGER_MENU hardening, and cross-fleet items.
+SvelteKit app. APP_ICONS done, DEBUG_SYSTEM foundations done, Implementation Patterns section + prohibition present. **Communication section DONE** (verified 2026-04-21, CLAUDE.md line 365). **Z_INDEX_SCALE DONE** (verified 2026-04-21, Tailwind config extends z-index with z-60/z-70/z-80 custom utilities). Still needs: PWA_SYSTEM (no vite-plugin-pwa), THEME_DARK_MODE (no DaisyUI, `class="dark"` hardcoded), BURGER_MENU hardening, DOWNLOAD_PDF button, HISTORY.md removal, Triggers, EVENT_BUS decision.
 
 #### HISTORY.md — Remove (cross-fleet policy 2026-04-16)
 
@@ -67,13 +79,6 @@ Git history already tracks completions; a separate changelog is redundant.
 3. [ ] Change "move completed items to HISTORY.md" → "delete completed items (git history tracks them)" in CLAUDE.md
 4. [ ] Remove HISTORY.md from README.md file tree (if listed)
 5. [ ] Delete any `[x]` completed items from `docs/TODO.md` (including the "Negotiation Mode" High Priority section which is marked complete)
-
-#### CLAUDE.md — Add Communication section
-
-"Implementation Patterns (Source of Truth)" section + prohibition already present (verified 2026-04-18). Remaining: Communication section.
-
-1. [ ] **Add `## Communication` section** — Copy from glow-props CLAUDE.md. Place between Principles and Code Standards. Update header line to include COMMUNICATION. Remove any duplicate "ASK before assuming" or "Communication style" bullets from AI Notes.
-2. **Confirm:** Communication section exists between Principles and Code Standards.
 
 #### Triggers — Replace with glow-props version (cross-fleet policy 2026-04-17)
 
@@ -128,16 +133,9 @@ model-pear is dark-only with no DaisyUI. This is a ground-up implementation, not
 6. [ ] **Migrate existing styles** — Replace hardcoded dark colors with DaisyUI semantic classes (`bg-base-100`, `text-base-content`, etc.). Follow Phase 1-3 of the migration guide for the audit and mapping process.
 7. **Confirm:** Toggle dark/light. Open two tabs, toggle in one — other follows. Clear localStorage — falls back to OS preference. Check meta theme-color updates in DevTools.
 
-#### Z_INDEX_SCALE — Missing → Implement
-
-Reference: `docs/implementations/Z_INDEX_SCALE.md`
-
-1. [ ] **Audit and normalize all z-index values** — Run the audit command from the pattern doc. Align all values to the standard scale.
-2. **Confirm:** All z-index values map to the standard scale.
-
 #### EVENT_BUS — Evaluate if needed
 
-- [ ] **Decide:** Does model-pear have service-layer needs? If yes, follow `docs/implementations/EVENT_BUS.md`. If not, skip.
+- [ ] **Decide:** Does model-pear have service-layer needs? If yes, follow `docs/implementations/EVENT_BUS.md`. If not, document in CLAUDE.md "Not Applicable Patterns".
 
 ### see-veo
 
@@ -196,7 +194,9 @@ Reference: `docs/implementations/DEBUG_SYSTEM.md`
 8. [ ] **Improve clipboard fallbacks** — Add ClipboardItem Blob as primary method, then writeText, then textarea. Currently only writeText with manual textarea fallback.
 9. **Confirm:** Open app, verify 3 tabs. Crash a component — pill survives. Copy report — URLs are redacted. Test clipboard on mobile PWA.
 
-Note: third tab (PWA Diagnostics via `diagnostics.ts`) is already present (verified 2026-04-17).
+**Correction 2026-04-21:** Previous claim that "third tab (PWA Diagnostics via `diagnostics.ts`) is already present" was WRONG. `DebugBanner.tsx` has only 2 tabs (`type Tab = 'diagnostics' | 'log'`). The `src/utils/diagnostics.ts` file exists but feeds the single "diagnostics" tab — there is no separate PWA Diagnostics third tab. Add as an additional DEBUG_SYSTEM item:
+
+9. [ ] **Add PWA Diagnostics tab as a third tab** — Change `type Tab` to include `'pwa'`, add the tab button + panel in `DebugBanner.tsx`, surface SW registration status, controller, cache names, manifest fetch status, and online status.
 
 #### DOWNLOAD_PDF — Partial → Complete
 
@@ -256,208 +256,97 @@ see-veo uses vite-plugin-pwa. Icons served with stable filenames.
 
 - [ ] **Decide:** Minimal resume site — likely not needed. Skip unless service-layer pub/sub becomes necessary.
 
-### repo-tor
+### repo-tor — FULLY RESOLVED ON CORE PATTERNS (2026-04-21)
 
-React + Vite dashboard app. Only Triggers replacement remains (verified 2026-04-18). All original 9 patterns resolved, HISTORY.md removed, Communication section promoted to top-level (line 335), ICON_CACHE_BUST fully complete (tripwire test in `scripts/__tests__/icon-cache-bust.test.mjs` + install-modal collapsible in `dashboard/js/components/InstallInstructionsModal.jsx`).
+React + Vite dashboard app. All 9 original patterns + Triggers redesign VERIFIED DONE 2026-04-21: HISTORY.md removed, Communication section at line 335, Triggers section at line 393 has all 8 group tables (correctness/trust/speed/frontend/quality/ops/design/fleet) + Meta sweeps + Reflective passes + scope modifiers, ICON_CACHE_BUST complete (tripwire test in `scripts/__tests__/icon-cache-bust.test.mjs` + install-modal collapsible in `dashboard/js/components/InstallInstructionsModal.jsx`), EVENT_BUS decided against (React Context + useReducer in `dashboard/js/AppContext.jsx`).
 
-EVENT_BUS: Not needed — React Context dispatch + useReducer in AppContext.jsx is sufficient.
+**Small gap uncovered 2026-04-21:**
 
-#### Triggers — Replace with glow-props version (cross-fleet policy 2026-04-17)
+#### DOWNLOAD_PDF — Partial → Complete
 
-glow-props CLAUDE.md has a redesigned Triggers section: 48 triggers in 8 groups, 6 cadence meta sweeps (`hot` / `quick` / `ship` / `session` / `tidy` / `all`), 7 reflective passes (`risk` / `surface` / `wrap` / `skipped` / `assumed` / `approach` / `cold`), and scope modifiers (`branch` / `staged` / `file <path>`). Replaces the older single-word Triggers section (`rev`/`aud`/`mobile`/`clean`/`start`/etc.).
+Reference: `docs/implementations/DOWNLOAD_PDF.md`
 
-1. [ ] **Replace the existing `## Triggers` section** — Copy the full new `## Triggers` section from glow-props CLAUDE.md verbatim, including How to invoke, Scope modifiers, Behavior rules, all 8 group tables (`correctness`, `trust`, `speed`, `frontend`, `quality`, `ops`, `design`, `fleet`), Meta sweeps table, and Reflective passes table.
-2. [ ] **Note any name collisions** — If the repo has npm scripts, folders, or conventions using single-word names matching trigger names (e.g. `docs/`, `tests/`, `config/`, `api/`), add a line in AI Notes clarifying context precedence.
-3. **Confirm:** `grep -c "^## Triggers$" CLAUDE.md` returns `1`. All 8 group tables present. No old single-word triggers (`rev`/`aud`/`start`/`go`) remain.
+Print CSS overrides exist in `dashboard/styles.css` (`@media print { body { background: white; color: black; } }`), but two gaps remain:
+
+1. [ ] **Add `.no-print` utility class** — In `dashboard/styles.css`: `.no-print { display: none !important; }`. Currently some elements use `print:hidden` Tailwind utility, but no global class is defined.
+2. [ ] **Add dedicated "Save as PDF" trigger button** — The UI has no button calling `window.print()`. Add one (likely in the burger menu or a settings drawer) so users can discover the export.
+3. [ ] **Apply `.no-print` to nav, buttons, debug pill, and modals** — Where the class is still missing.
+4. **Confirm:** Click "Save as PDF" → print preview shows clean dashboard content with no chrome visible.
 
 ### few-lap
 
-React Native (Expo) app (package name `fuelhunt`). Uses Metro bundler (not Vite) and Uniwind for theming. Custom SW approach is correct for Expo. CLAUDE.md fully aligned with glow-props (verified 2026-04-18): Implementation Patterns section, AI Note, prohibition, and Communication section all present. APP_ICONS and BURGER_MENU fully complete. **DEBUG_SYSTEM fully complete 2026-04-18** (`#debug-root`, pure inline styles, `consoleCapture.ts`, pre-React bootPillScript, `DebugDetails = string | Record<string, unknown>` union, `redactUrls()` in report). **THEME_DARK_MODE fully complete 2026-04-18** (Uniwind `@variant` blocks cover all DaisyUI semantic tokens in `src/global.css` incl. `-content` variants; flash prevention script in `+html.tsx`).
+React Native (Expo) app (package name `fuelhunt`). Metro bundler + Uniwind + custom `sw.js`. CLAUDE.md, APP_ICONS, BURGER_MENU, DEBUG_SYSTEM, THEME_DARK_MODE, PWA visibility pause, **Triggers (Meta sweeps + Reflective passes tables present)**, **Z_INDEX_SCALE (`src/constants/zIndex.ts` typed constants, all callsites reference `Z.*`)**, **ICON_CACHE_BUST (`scripts/inject-icon-hashes.mjs` + `IconCacheDisclosure.tsx` + sw.js handles versioned URLs)** all confirmed DONE 2026-04-21. Three items remain.
 
-**Bonus finding (not a pattern gap):** `src/debug/debugLog.ts` has a leftover `// TEMPORARY: always-on for PWA alpha diagnostics. Restore` comment — production debug-pill leak risk. Restore the `__DEV__` guard.
+**Bonus finding (not a pattern gap — STILL UNADDRESSED):** `src/debug/debugLog.ts` has a leftover `// TEMPORARY: always-on for PWA alpha diagnostics. Restore` comment (line ~218). The `__DEV__` guard is still missing on `debugAdd()` and the global listener registration — production debug-pill leak risk. Restore:
 
-#### Triggers — Replace with glow-props version (cross-fleet policy 2026-04-17) — PARTIAL
+1. [ ] Add `if (!__DEV__) return;` guard at the top of the init/install function in `src/debug/debugLog.ts`.
+2. [ ] Delete the TEMPORARY comment.
+3. **Confirm:** `eas build --profile production` (or equivalent) → debug pill does not render; dev build still works.
 
-few-lap has a current `## Triggers` section with 8 group tables matching glow-props group structure, but is **missing the Meta sweeps table and Reflective passes table** (and likely the How to invoke / Scope modifiers / Behavior rules preamble).
-
-1. [ ] **Add Meta sweeps table** — Copy the Meta sweeps table (`hot` / `quick` / `ship` / `session` / `tidy` / `all`) from glow-props CLAUDE.md verbatim.
-2. [ ] **Add Reflective passes table** — Copy the Reflective passes table (`risk` / `surface` / `wrap` / `skipped` / `assumed` / `approach` / `cold`) from glow-props CLAUDE.md verbatim.
-3. [ ] **Verify preamble sections** — Ensure How to invoke, Scope modifiers (`branch` / `staged` / `file <path>`), and Behavior rules are present before the group tables.
-4. [ ] **Note any name collisions** — If the repo has npm scripts, folders, or conventions matching trigger names, add a line in AI Notes.
-5. **Confirm:** All 8 group tables present (already done). Meta sweeps and Reflective passes tables present. All preamble sections present.
-
-#### DOWNLOAD_PDF — Missing → Implement
+#### DOWNLOAD_PDF — Missing → Implement (conditional)
 
 Reference: `docs/implementations/DOWNLOAD_PDF.md`
 
 1. [ ] **Decide: Is PDF export needed?** FuelHunt is a fuel price tracker — users might want to save price comparisons. If yes, continue.
 2. [ ] **Add `@media print` CSS** — In `src/global.css`: `.no-print { display: none !important; }`, white background, black text, `print-color-adjust: exact`.
 3. [ ] **Add `no-print` class** to interactive elements (nav, buttons, debug pill).
-4. [ ] **Add `window.print()` trigger** — Button in the UI.
+4. [ ] **Add `window.print()` trigger** — Button in the UI (web-only via `Platform.OS === 'web'` guard).
 5. **Confirm:** Click print, verify clean output with no interactive elements.
-
-#### PWA_SYSTEM — Partial → Complete
-
-Reference: `docs/implementations/PWA_SYSTEM.md` (Custom SW section for Expo/Metro)
-
-few-lap uses Expo with a custom `sw.js`, not vite-plugin-pwa — this is the correct approach.
-
-1. [ ] **Add visibility-based update check pause** — In `usePWAUpdate.ts`, add a `visibilitychange` listener. Pause interval-based checks when tab is hidden, resume and immediately check when visible again.
-2. **Confirm:** Background the tab for a while, bring it back — update check should trigger on visibility change.
-
-#### Z_INDEX_SCALE — Missing → Implement
-
-Reference: `docs/implementations/Z_INDEX_SCALE.md`
-
-1. [ ] **Audit and normalize all z-index values** — Run the audit command from the pattern doc. Align all values to the standard scale.
-2. **Confirm:** All z-index values map to the standard scale.
-
-#### ICON_CACHE_BUST — Missing → Implement
-
-Reference: `docs/implementations/PWA_ICON_CACHE_BUST.md` (fetch from glow-props)
-
-few-lap uses Expo with a custom `sw.js` — not vite-plugin-pwa. Adapt the hash computation and HTML injection to the Expo/Metro build pipeline. See the "Adapting to other stacks" table in the pattern doc for the Expo / Metro column. Note: `inject-sw-version.mjs` prebuild script exists (for SW version), could be extended or paired with an icon hash script.
-
-1. [ ] **Compute content hash of icon files** — In a prebuild script, SHA-256 hash each icon PNG and expose versioned paths.
-2. [ ] **Inject versioned URLs into `+html.tsx`** — Update `<link rel="icon">` and `<link rel="apple-touch-icon">` tags with `?v=<hash>`.
-3. [ ] **Update `sw.js` precache** — Ensure the custom service worker handles versioned icon URLs (strip `?v=` on cache lookup or precache the versioned URL directly).
-4. [ ] **Add user communication** — "Already installed and the icon looks outdated?" collapsible in install UI.
-5. **Confirm:** Build, verify versioned URLs in HTML link tags. Test offline icon loading.
 
 #### EVENT_BUS — Evaluate if needed
 
-- [ ] **Decide:** Does few-lap have service-layer pub/sub needs? If yes, follow `docs/implementations/EVENT_BUS.md`. If not, skip.
+- [ ] **Decide:** Does few-lap have service-layer pub/sub needs? If yes, follow `docs/implementations/EVENT_BUS.md`. If not, document decision in CLAUDE.md under "Not Applicable Patterns".
 
 ### sun-sea-o
 
-React + Vite app. DOWNLOAD_PDF is fully compliant. Debug system and PWA have partial implementations with many gaps. No theming or burger menu — hardcoded slate colors.
-
-#### HISTORY.md — Remove (cross-fleet policy 2026-04-16)
-
-Git history already tracks completions; a separate changelog is redundant.
-
-1. [ ] Delete `docs/HISTORY.md`
-2. [ ] Remove `### docs/HISTORY.md` section from CLAUDE.md Documentation rules
-3. [ ] Change "move completed items to HISTORY.md" → "delete completed items (git history tracks them)" in CLAUDE.md
-4. [ ] Remove HISTORY.md from README.md file tree (if listed)
-5. [ ] Delete any `[x]` completed items from `docs/TODO.md`
-
-#### CLAUDE.md — Align with glow-props
-
-No local `docs/implementations/` folder (correct). Has **~470 lines of hardcoded inline patterns** in a "Suggested Implementations" section (~lines 419-888) covering PWA System, Debug System, App Icons, Download as PDF — full code examples. Also has a "Shared References" section (~lines 6-20) that points to `raw.githubusercontent.com/.../CLAUDE.md` instead of `docs/implementations/`.
-
-1. [ ] **Delete entire "Suggested Implementations" section** — Remove ~lines 419-888 (~470 lines of inline pattern code for PWA System, Debug System, App Icons, Download as PDF).
-2. [ ] **Add "Implementation Patterns (Source of Truth)" section** — Replace deleted section with the standard glow-props reference block (source location, fetch via GitHub Pages/API, listing command, rules).
-3. [ ] **Update "Shared References" section** — Near lines 6-20, update the fetch URL from `raw.githubusercontent.com/.../CLAUDE.md` to the GitHub Pages URL for `docs/implementations/`. Remove the hardcoded list of "adopted patterns" and replace with the listing command to discover patterns dynamically.
-4. [ ] **Add AI Note** — Add the standard implementation patterns note about always fetching from glow-props.
-5. [ ] **Add prohibition** — Add to Prohibitions: "Create local copies of implementation pattern files in any repo — always fetch from glow-props".
-6. [ ] **Add `## Communication` section** — Copy from glow-props CLAUDE.md (lines 32-46). Place between Principles and Code Standards. Update header line to include COMMUNICATION. Remove any duplicate "ASK before assuming" or "Communication style" bullets from AI Notes.
-7. **Confirm:** CLAUDE.md is ~470 lines shorter. No inline code examples for patterns remain. Shared References points to `docs/implementations/`. Communication section exists between Principles and Code Standards.
-
-#### Triggers — Replace with glow-props version (cross-fleet policy 2026-04-17)
-
-glow-props CLAUDE.md has a redesigned Triggers section: 48 triggers in 8 groups, 6 cadence meta sweeps (`hot` / `quick` / `ship` / `session` / `tidy` / `all`), 7 reflective passes (`risk` / `surface` / `wrap` / `skipped` / `assumed` / `approach` / `cold`), and scope modifiers (`branch` / `staged` / `file <path>`). Replaces the older single-word Triggers section (`rev`/`aud`/`mobile`/`clean`/`start`/etc.).
-
-1. [ ] **Replace the existing `## Triggers` section** — Copy the full new `## Triggers` section from glow-props CLAUDE.md verbatim, including How to invoke, Scope modifiers, Behavior rules, all 8 group tables (`correctness`, `trust`, `speed`, `frontend`, `quality`, `ops`, `design`, `fleet`), Meta sweeps table, and Reflective passes table.
-2. [ ] **Note any name collisions** — If the repo has npm scripts, folders, or conventions using single-word names matching trigger names (e.g. `docs/`, `tests/`, `config/`, `api/`), add a line in AI Notes clarifying context precedence.
-3. **Confirm:** `grep -c "^## Triggers$" CLAUDE.md` returns `1`. All 8 group tables present. No old single-word triggers (`rev`/`aud`/`start`/`go`) remain.
-
-#### APP_ICONS — Partial → Complete
-
-Reference: `docs/implementations/APP_ICONS.md`
-
-Maskable 1024px already generated (verified 2026-04-17 — manifest references `pwa-1024x1024.png` with maskable purpose).
-
-1. [ ] **Add 400 DPI density** — In `generate-icons.mjs`, change `sharp(svgBuffer).resize()` to `sharp(svgBuffer, { density: 400 }).resize()`.
-2. [ ] **Add 180px Apple touch icon** — Add to generation script output list. Add `<link rel="apple-touch-icon">` to `index.html`.
-3. [ ] **Optional: Add favicon.ico** — For Windows taskbar pinning and older browsers. See pattern's ICO generation section.
-4. **Confirm:** Regenerate all PNGs, verify 180px icon is crisp. Check manifest has `"purpose": "maskable"` on 1024.
-
-#### BURGER_MENU — Missing → Implement
-
-Reference: `docs/implementations/BURGER_MENU.md`
-
-1. [ ] **Create BurgerMenu component** — Disclosure pattern with `aria-expanded`, `aria-controls`, backdrop with `cursor-pointer`.
-2. [ ] **Add focus hooks** — `useDisclosureFocus`, `useEscapeKey`. Extract as reusable hooks.
-3. [ ] **Add keyboard navigation** — ArrowDown/ArrowUp with wrapping, Home/End.
-4. [ ] **Add standard menu items** — Dark mode toggle (once theming is added), app info, install app. See pattern's [Theme UI in Burger Menu](../implementations/BURGER_MENU.md#theme-ui-in-burger-menu) for toggle and picker spec.
-5. **Confirm:** Full keyboard navigation. Escape closes. Backdrop click closes. 44px touch targets. Debug pill renders above menu.
-
-#### Z_INDEX_SCALE — Missing → Implement
-
-Reference: `docs/implementations/Z_INDEX_SCALE.md`
-
-1. [ ] **Audit and normalize all z-index values** — Debug pill currently uses `z-[9999]`. Run the audit command from the pattern doc and fix all violations.
-2. **Confirm:** All z-index values map to the standard scale. Debug pill at z-[80] renders above menu at z-50.
+React + Vite app. **Massive progress 2026-04-21.** HISTORY.md removed, CLAUDE.md fully aligned (Suggested Implementations deleted, Implementation Patterns + Communication + prohibition + AI Note all present), Triggers replaced with glow-props version, BurgerMenu implemented with WAI-ARIA disclosure pattern + focus hooks + arrow/Home/End keyboard nav, DaisyUI 5.5.19 installed, THEME_DARK_MODE framework complete (Approach A, dual-layer, cross-tab sync, OS fallback, dynamic meta theme-color), PWA singleton at `src/lib/pwa.ts` with 30s suppression + visibility + controllerchange reload guard + `onRegisterError`, ICON_CACHE_BUST core plumbing in vite.config.ts (`iconVersion()` + `iconCacheBustHtml()` + workbox `ignoreURLParametersMatching: [/^v$/]`), APP_ICONS complete (400 DPI, apple-touch-icon.png 180px, favicon.ico, maskable 1024px), DebugPill in separate React root with ClipboardItem Blob fallback and pre-React inline pill. Remaining: DEBUG_SYSTEM 6 items, PWA install-modal user comm, theme color migration audit, apple-touch-icon link verify, EVENT_BUS decide.
 
 #### DEBUG_SYSTEM — Partial → Complete
 
 Reference: `docs/implementations/DEBUG_SYSTEM.md`
 
-sun-sea-o's debug system still has many gaps. ClipboardItem Blob fallback and pre-React inline pill are already present (verified 2026-04-17).
+DebugPill has 3 tabs (Log / Env / PWA), inline styles, separate React root, ClipboardItem Blob fallback, and pre-React inline pill — all verified 2026-04-21. Six hardening items remain:
 
 1. [ ] **Add `id` field to entries** — Auto-incrementing numeric ID.
 2. [ ] **Change `details` to `Record<string, unknown>`** — Currently uses `message: string` only.
 3. [ ] **Add `(string & {})` source fallback** — Make `DebugSource` extensible for ad-hoc sources.
-4. [ ] **Switch to inline styles** — Replace Tailwind classes with inline styles.
-5. [ ] **Add PWA Diagnostics tab** — Third tab with active health checks.
-6. [ ] **Move `debugGenerateReport()` to module** — Currently inline in component.
-7. [ ] **Add URL query param redaction** — In report generation.
-8. [ ] **Add HMR guard** — Use `window.__debugLogListenersAttached` flag to prevent duplicate global listeners during dev hot reload. Currently attaches via both `window.onerror` AND `addEventListener`, doubling up.
-9. [ ] **Add subscriber replay** — New subscribers receive existing entries on subscribe.
-10. [ ] **Add subscriber error isolation** — Wrap each subscriber callback in try/catch so one throwing subscriber doesn't break others.
-11. **Confirm:** Open app, verify 3 tabs. HMR reload — no duplicate error entries. New subscriber gets existing log. Copy report — redacted.
+4. [ ] **Move `debugGenerateReport()` to module** — Currently inline in `DebugPill.tsx` as `buildReport`; extract to `src/utils/debugLog.ts`.
+5. [ ] **Add URL query param redaction** — `getEnvironment()` currently includes full `window.location.href` unredacted in reports.
+6. [ ] **Add HMR guard** — `window.__debugLogListenersAttached` flag to prevent duplicate global listeners during dev hot reload.
+7. [ ] **Add subscriber replay** — New subscribers receive existing entries on `subscribe()`.
+8. [ ] **Add subscriber error isolation** — Wrap each subscriber callback in try/catch so one throwing subscriber doesn't break others.
+9. **Confirm:** HMR reload — no duplicate error entries. New subscriber gets existing log. Copy report — URLs redacted.
 
-#### PWA_SYSTEM — Partial → Complete
+#### PWA_SYSTEM — Install-modal user communication
 
-Reference: `docs/implementations/PWA_SYSTEM.md`
+PWA singleton + 30s suppression + visibility + reload guard + `onRegisterError` all verified 2026-04-21. Only remaining gap is icon-cache-bust user communication in the install modal:
 
-sun-sea-o has the most PWA gaps of any partial implementation.
+1. [ ] **Add "Already installed and the icon looks outdated?" collapsible** — Add to the install prompt UI (likely `PwaInstallPrompt.tsx`) with platform-tailored reinstall steps keyed off `navigator.userAgent`.
+2. **Confirm:** User sees reinstall guidance when the icon hash changes.
 
-1. [ ] **Convert to module-level singleton** — Move SW state from React hooks to module-scope variables with pub/sub.
-2. [ ] **Add 30-second suppression** — `sessionStorage` timestamp after update. See pattern's `wasJustUpdated()`.
-3. [ ] **Add visibility-based update checks** — `visibilitychange` listener.
-4. [ ] **Add `controllerchange` reload guard** — Auto-reload only when user clicked "Update".
-5. [ ] **Add `checkForUpdate()` with typed result** — Returns `'no-sw' | 'done' | 'error'` for UI feedback.
-6. [ ] **Add `onRegisterError` handler** — Log to debug system.
-7. [ ] **Add manifest fields** — `id: '/'`, `scope`, `prefer_related_applications: false`.
-8. [ ] **Add workbox config** — `cleanupOutdatedCaches: true`, explicit `globPatterns`.
-9. **Confirm:** Deploy, background tab, return — update detected. Click Update, reload, no re-detection for 30s. Manual "Check for updates" returns typed result.
+#### THEME_DARK_MODE — Phase 3 color migration audit
 
-#### THEME_DARK_MODE — Missing → Implement
+DaisyUI + dual-layer + cross-tab + OS fallback + dynamic meta theme-color all verified 2026-04-21. Hardcoded slate migration partially complete; needs audit.
 
-Reference: `docs/implementations/THEME_DARK_MODE.md`, including **Migration Guide**
+1. [ ] **Run Phase 1 audit** — `grep -rn "slate-\|gray-\|zinc-\|neutral-\|stone-" src/` across all components (excluding `DebugPill.tsx` which hardcodes colors intentionally for stylesheet-load isolation).
+2. [ ] **Map findings to DaisyUI semantic tokens** per Migration Guide Phase 2.
+3. [ ] **Replace in batches** per Phase 3; visually diff light + dark after each batch.
+4. **Confirm:** Zero hardcoded slate-* classes in `src/` (except the documented DebugPill exception). WCAG AA contrast in both themes.
 
-Hardcoded slate color scheme only. Ground-up implementation.
+#### APP_ICONS — Verify apple-touch-icon link
 
-1. [ ] **Install DaisyUI** — `npm install -D daisyui@5`. Configure with 2 themes.
-2. [ ] **Add dual-layer theming** — `@custom-variant dark`, `color-scheme`, flash prevention script.
-3. [ ] **Create theme module** — `applyTheme`, persistence (Approach A or B), cross-tab sync, OS preference fallback.
-4. [ ] **Add dark/light toggle + theme picker** — In burger menu (once built). Follow [Theme UI in Burger Menu](../implementations/BURGER_MENU.md#theme-ui-in-burger-menu) for toggle and picker spec.
-5. [ ] **Add `<meta name="theme-color">`** — Dynamic updates per theme.
-6. [ ] **Migrate hardcoded slate colors** — Replace with DaisyUI semantic classes. Follow migration guide Phase 1-3.
-7. **Confirm:** Toggle dark/light. Cross-tab sync. Fresh visit falls back to OS preference.
+Icon file exists and generate-icons.mjs produces it. Verify the HTML reference:
 
-#### ICON_CACHE_BUST — Missing → Implement
-
-Reference: `docs/implementations/PWA_ICON_CACHE_BUST.md` (fetch from glow-props)
-
-sun-sea-o uses vite-plugin-pwa. Icons served with stable filenames.
-
-1. [ ] **Add `iconVersion()` + `iconCacheBustHtml()` to `vite.config.{js|ts}`** — Content-hash each icon file, inject `?v=<hash>` into HTML link tags. Plugin must be wired before `VitePWA()`.
-2. [ ] **Version manifest icon URLs** — Pass `versioned()` paths to `VitePWA({ manifest: { icons: [...] } })`.
-3. [ ] **Add `ignoreURLParametersMatching: [/^v$/]`** to workbox config.
-4. [ ] **Add tripwire test** — Source-level and dist-level assertions per the pattern doc.
-5. [ ] **Add user communication** — "Already installed and the icon looks outdated?" collapsible in install modal.
-6. **Confirm:** Build, verify versioned URLs in manifest + HTML + SW config.
+1. [ ] **Confirm `<link rel="apple-touch-icon" href="/apple-touch-icon.png" />` in `index.html`** — If missing, add it.
+2. **Confirm:** iOS "Add to Home Screen" picks up the 180px icon.
 
 #### EVENT_BUS — Evaluate if needed
 
-- [ ] **Decide:** If service-layer pub/sub needs emerge, follow `docs/implementations/EVENT_BUS.md`. Otherwise skip.
+- [ ] **Decide:** If service-layer pub/sub needs emerge, follow `docs/implementations/EVENT_BUS.md`. Otherwise document in CLAUDE.md "Not Applicable Patterns".
 
 ### graphiki
 
-React + Vite graph editor. Major progress since last audit (verified 2026-04-18): HISTORY.md removed, CLAUDE.md fully aligned (Implementation Patterns + AI Note + prohibition + Communication all present), BURGER_MENU upgraded to disclosure component, DEBUG_SYSTEM hardened (console interception + inline styles + PWA Diagnostics tab + pre-React inline pill), PWA visibility-based checks + 30s suppression in `usePWAUpdate.ts`, ICON_CACHE_BUST core plumbing in vite.config.ts, EVENT_BUS typed `EventBus<M>` payload map. Remaining: Triggers, DOWNLOAD_PDF decision, Z_INDEX_SCALE audit, ICON_CACHE_BUST tripwire test + user communication.
+React + Vite graph editor. CLAUDE.md fully aligned, BURGER_MENU disclosure, DEBUG_SYSTEM hardened, PWA visibility checks + 30s suppression, EVENT_BUS typed `EventBus<M>`. **Z_INDEX_SCALE DONE** (verified 2026-04-21, all values compliant: Toast `z-[70]`, BurgerMenu `z-49/z-50`, ContextMenu `z-50`). **ICON_CACHE_BUST fully DONE** (verified 2026-04-21, tripwire test at `src/test/icon-cache-bust.test.ts` + user communication in `InstallInstructionsModal.tsx` collapsible). Only 2 items remain: Triggers, DOWNLOAD_PDF decision.
 
 #### Triggers — Replace with glow-props version (cross-fleet policy 2026-04-17)
 
@@ -474,22 +363,6 @@ Reference: `docs/implementations/DOWNLOAD_PDF.md`
 1. [ ] **Decide:** Does a graph editor benefit from PDF export? If users need to export graph views as documents, this is useful. If graph export is handled differently (e.g., SVG/PNG export), skip.
 2. If implementing: **Use Approach B (pdf-lib)** — graph views are canvas/visual content that `window.print()` can't reliably capture. Follow the pdf-lib section: `npm install pdf-lib html-to-image`, capture graph DOM via `toPng()`, compose into PDF pages.
 3. **Confirm:** Export produces a clean PDF with the graph rendered at chosen quality level.
-
-#### Z_INDEX_SCALE — Partial → Complete
-
-Reference: `docs/implementations/Z_INDEX_SCALE.md`
-
-1. [ ] **Audit and normalize all z-index values** — Run the audit command from the pattern doc. Fix any values outside the standard scale.
-2. **Confirm:** All z-index values map to the standard scale.
-
-#### ICON_CACHE_BUST — Partial → Complete
-
-Reference: `docs/implementations/PWA_ICON_CACHE_BUST.md` (fetch from glow-props)
-
-Core plumbing done: `iconVersion()` + `iconCacheBustHtml()` in `vite.config.ts`, versioned manifest icon URLs, `ignoreURLParametersMatching: [/^v$/]` in workbox config. Tripwire test done 2026-04-18 (`src/test/icon-cache-bust.test.ts` with full source-level assertions). Remaining: user communication.
-
-1. [ ] **Add user communication** — "Already installed and the icon looks outdated?" collapsible in install modal (`usePWAInstall.ts` or the install prompt UI).
-2. **Confirm:** User sees reinstall guidance when a stale cached icon is detected.
 
 ### four-ems
 
@@ -734,30 +607,48 @@ synctone uses Expo with a custom `sw.js` — not vite-plugin-pwa. Adapt the hash
 
 - [ ] **Decide:** synctone has Zustand stores and React hooks for state. If chat/message/reaction services need decoupled pub/sub communication, follow `docs/implementations/EVENT_BUS.md`. Otherwise skip.
 
+**Bonus finding 2026-04-21:** synctone's local `docs/implementations/` folder contains 3 patterns that are **NOT in glow-props**: `HTTPS_PROXY.md`, `KEY_LESSONS.md`, `TIMER_LEAKS.md`. Before deletion (per CLAUDE.md alignment task), decide: are any worth upstreaming into glow-props as cross-fleet patterns, or are they synctone-specific? Flag for human review.
+
+### tool-till-tees — NEWLY TRACKED (2026-04-21)
+
+Backend service (Vercel) — three systems: contact/notification endpoint, multi-tenant form-builder API ("Four Ems"), agreement management backend ("Sancio"). Powers features across four-ems + Sancio agreement work.
+
+Surfaced by coverage agent on 2026-04-21 as untracked first-party repo. Added to the tracking list. **Full pattern audit pending** — many glow-props patterns (DEBUG_SYSTEM, PWA_SYSTEM, BURGER_MENU, THEME_DARK_MODE, DOWNLOAD_PDF, ICON_CACHE_BUST) are browser-UI patterns that don't apply to a backend service. Expected applicable patterns: CLAUDE.md alignment, Communication section, Triggers redesign, HTTPS_PROXY (if proxy-env deployment), EVENT_BUS (service-layer pub/sub may fit), plus any backend-specific patterns we choose to add.
+
+1. [ ] **Fetch CLAUDE.md** and assess alignment (Communication section, Implementation Patterns block, prohibition, Triggers redesign).
+2. [ ] **Verify HISTORY.md status** per cross-fleet policy.
+3. [ ] **Classify applicable patterns** — mark each glow-props pattern as Pass / Partial / Missing / **N/A (backend)** in a new row of the Gap Matrix above.
+4. [ ] **Evaluate HTTPS_PROXY applicability** — if deployed behind corporate proxies or into CI environments with proxy-only egress, implement per HTTPS_PROXY.md; otherwise N/A.
+5. [ ] **Evaluate EVENT_BUS applicability** — if services need decoupled pub/sub, implement; otherwise document as "Not Applicable" in CLAUDE.md.
+6. **Confirm:** Gap Matrix `?`s replaced with real values. Tool-till-tees has a proper per-repo section with the subset of items that apply.
+
 ---
 
 ## Cross-Cutting Gaps (most common across repos)
 
-Updated 2026-04-18 after parallel re-validation via GitHub API (one agent per repo).
+Updated 2026-04-21 after parallel full-sweep re-validation (11 agents — 1 coverage + 10 per-repo).
 
 Fully clean (no pending items): **canva-grid, budgy-ting**.
-Fully clean on core patterns + HISTORY.md + Communication, trailing items only: glow-props, repo-tor, graphiki, few-lap.
-Still carrying substantial backlogs: see-veo, sun-sea-o, four-ems, synctone, model-pear.
+Fully clean on core patterns + HISTORY.md + Communication, trailing items only: **glow-props, repo-tor** (Triggers done; only DOWNLOAD_PDF partial remains), **graphiki** (Triggers + DOWNLOAD_PDF remain), **few-lap** (DOWNLOAD_PDF + __DEV__ guard + EVENT_BUS evaluate).
+Mid-backlog: **sun-sea-o** (major progress — core patterns done; DEBUG_SYSTEM 6 items + PWA user-comm + theme migration audit remain), **model-pear** (Communication + Z-index done; still needs PWA, THEME_DARK_MODE, BURGER_MENU, HISTORY.md, Triggers, DOWNLOAD_PDF button, EVENT_BUS).
+Largest backlogs: **see-veo, four-ems, synctone**.
+Pending first audit: **tool-till-tees** (newly tracked backend service — classify applicable patterns).
 
-These gaps appear in 4+ repos and represent the highest-leverage improvements:
+Highest-leverage cross-cutting gaps:
 
-1. **Triggers redesign** — Cross-fleet policy 2026-04-17. glow-props has 48 triggers in 8 groups + 6 cadence meta sweeps + 7 reflective passes, replacing the older 9-trigger single-word set. **Done in canva-grid + budgy-ting. Partial in few-lap** (8 group tables present but missing Meta sweeps + Reflective passes tables). **Still missing in repo-tor, model-pear, see-veo, sun-sea-o, graphiki, four-ems, synctone** (7 repos).
-2. **CLAUDE.md alignment** — Pass in canva-grid, budgy-ting, repo-tor, graphiki, few-lap. Worst remaining offenders for inline patterns: four-ems (~630 lines), sun-sea-o (~470 lines), see-veo (~285 lines), synctone (8 local files in `docs/implementations/`). model-pear needs Communication section only.
-3. **HISTORY.md removal** — Already done in canva-grid, budgy-ting, repo-tor, graphiki, few-lap (file already absent). Still present in model-pear, see-veo, sun-sea-o, four-ems, synctone.
-4. **PWA_ICON_CACHE_BUST** — Full Pass in canva-grid, budgy-ting (tripwire test `src/iconCacheBust.test.ts` added), repo-tor (core + test + UX). Partial in graphiki (tripwire test `src/test/icon-cache-bust.test.ts` added; user communication missing). Missing in see-veo, sun-sea-o, four-ems (vite-plugin-pwa repos) and few-lap, synctone (Expo — stack-specific adaptation needed). N/A for glow-props + model-pear.
-5. **EVENT_BUS** — N/A in canva-grid, budgy-ting, repo-tor (decided against). Pass in graphiki (typed payload map done). 6 repos still need evaluate decision.
-6. **DEBUG_SYSTEM: console interception** — Done in canva-grid, budgy-ting, repo-tor, graphiki, model-pear, few-lap (`consoleCapture.ts`). Still missing in see-veo, sun-sea-o, four-ems, synctone.
-7. **DEBUG_SYSTEM: pre-React inline pill** — Done in canva-grid, budgy-ting, repo-tor, sun-sea-o, graphiki, model-pear, few-lap (`bootPillScript`). Still missing in see-veo, four-ems, synctone.
-8. **DEBUG_SYSTEM: inline styles** — Done in canva-grid, repo-tor, graphiki, model-pear, few-lap. Others still use Tailwind/DaisyUI.
-9. **DEBUG_SYSTEM: PWA Diagnostics tab** — Done in canva-grid, budgy-ting, repo-tor, see-veo, graphiki, model-pear. Still missing in few-lap, sun-sea-o, four-ems, synctone.
-10. **PWA_SYSTEM: visibility-based update checks** — Done in canva-grid, budgy-ting, repo-tor, glow-props, graphiki. Still missing in see-veo, few-lap, sun-sea-o, four-ems, synctone.
-11. **PWA_SYSTEM: 30-second suppression** — Done in canva-grid, budgy-ting, repo-tor, glow-props, graphiki. **Four-ems correction 2026-04-18: earlier claim was wrong — has only a 3s offline-ready dismissal, not 30s update suppression.** Still missing in see-veo, sun-sea-o, four-ems, synctone.
-12. **PWA_SYSTEM: module singleton** — Done in canva-grid, budgy-ting, glow-props, repo-tor, graphiki. Still missing in see-veo, sun-sea-o, four-ems, model-pear.
-13. **BURGER_MENU: focus hooks extraction** — Done in canva-grid, budgy-ting, repo-tor, graphiki, few-lap. Still missing in repos without a full burger menu (model-pear, see-veo, sun-sea-o, four-ems, synctone).
-14. **THEME_DARK_MODE** — Missing in model-pear, see-veo, sun-sea-o, four-ems (no theming). canva-grid, budgy-ting, repo-tor, graphiki have full DaisyUI systems. few-lap has Uniwind with `@variant` blocks covering all DaisyUI semantic tokens (Pass). synctone has Uniwind but flash prevention script is missing.
-15. **Z_INDEX_SCALE** — Pass in glow-props, canva-grid, budgy-ting, repo-tor. Partial in graphiki, model-pear. Missing in see-veo, few-lap, sun-sea-o, four-ems, synctone.
+1. **Triggers redesign** — Cross-fleet policy 2026-04-17. **Done in canva-grid, budgy-ting, repo-tor, few-lap, sun-sea-o.** Still missing in **model-pear, see-veo, graphiki, four-ems, synctone** (5 repos). tool-till-tees pending audit.
+2. **CLAUDE.md alignment** — Pass in canva-grid, budgy-ting, repo-tor, graphiki, few-lap, **model-pear** (Communication landed), **sun-sea-o** (Suggested Implementations deleted). Worst remaining: four-ems (~630 lines of inline patterns), see-veo (~285 lines), synctone (8 local pattern files in `docs/implementations/`).
+3. **HISTORY.md removal** — Already done in canva-grid, budgy-ting, repo-tor, graphiki, few-lap, **sun-sea-o**. Still present in **model-pear, see-veo, four-ems, synctone**.
+4. **PWA_ICON_CACHE_BUST** — Full Pass in canva-grid, budgy-ting, repo-tor, **graphiki** (tripwire + user comm done), **few-lap** (Expo/Metro adaptation done). Partial in **sun-sea-o** (core plumbing done; user communication missing). Missing in see-veo, four-ems, synctone. N/A for glow-props + model-pear.
+5. **EVENT_BUS** — N/A in canva-grid, budgy-ting, repo-tor. Pass in graphiki. 6 repos still need an evaluate decision.
+6. **DEBUG_SYSTEM: console interception** — Done in canva-grid, budgy-ting, repo-tor, graphiki, model-pear, few-lap, **sun-sea-o** (via global error/rejection listeners). Still missing in see-veo, four-ems, synctone.
+7. **DEBUG_SYSTEM: pre-React inline pill** — Done in canva-grid, budgy-ting, repo-tor, sun-sea-o, graphiki, model-pear, few-lap. Still missing in see-veo, four-ems, synctone.
+8. **DEBUG_SYSTEM: inline styles** — Done in canva-grid, repo-tor, graphiki, model-pear, few-lap, **sun-sea-o**. Others still use Tailwind/DaisyUI.
+9. **DEBUG_SYSTEM: PWA Diagnostics tab** — Done in canva-grid, budgy-ting, repo-tor, graphiki, model-pear, **sun-sea-o** (Log/Env/PWA). **see-veo correction 2026-04-21: previous claim of "third tab present" was false — only 2 tabs**. Still missing in see-veo, few-lap, four-ems, synctone.
+10. **PWA_SYSTEM: visibility-based update checks** — Done in canva-grid, budgy-ting, repo-tor, glow-props, graphiki, **few-lap, sun-sea-o**. Still missing in see-veo, four-ems, synctone.
+11. **PWA_SYSTEM: 30-second suppression** — Done in canva-grid, budgy-ting, repo-tor, glow-props, graphiki, **sun-sea-o**. Still missing in see-veo, few-lap, four-ems (3s offline dismiss only, not 30s suppression), synctone.
+12. **PWA_SYSTEM: module singleton** — Done in canva-grid, budgy-ting, glow-props, repo-tor, graphiki, **sun-sea-o** (`src/lib/pwa.ts`). Still missing in see-veo, four-ems, model-pear.
+13. **BURGER_MENU: focus hooks extraction** — Done in canva-grid, budgy-ting, repo-tor, graphiki, few-lap, **sun-sea-o** (WAI-ARIA disclosure). Still missing in model-pear, see-veo, four-ems, synctone.
+14. **THEME_DARK_MODE** — Full in canva-grid, budgy-ting, repo-tor, graphiki, **sun-sea-o** (Approach A, dual-layer). few-lap has Uniwind (Pass). Missing in model-pear, see-veo, four-ems (no theming). synctone has Uniwind but flash prevention script missing.
+15. **Z_INDEX_SCALE** — Pass in glow-props, canva-grid, budgy-ting, repo-tor, **graphiki, model-pear, few-lap, sun-sea-o**. Missing in see-veo, four-ems, synctone.
+16. **DOWNLOAD_PDF** — New small gap surfaced 2026-04-21 in **repo-tor** (missing `.no-print` utility class + dedicated trigger button). Also still Partial in see-veo, model-pear, four-ems, few-lap (decision). Evaluate/skip in graphiki, synctone.
