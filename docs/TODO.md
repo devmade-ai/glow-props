@@ -44,19 +44,19 @@ Legend: **Pass** = compliant, **Partial** = has the feature but with gaps, **Mis
 | budgy-ting | Pass | Pass | Pass | Pass | Pass | Pass | Pass | N/A | Pass | Pass |
 | model-pear | Pass | Pass | Missing | Pass | Partial | Missing | Missing | Missing | Pass | N/A |
 | see-veo | Missing | Partial | Missing | Partial | Partial | Partial | Missing | Missing | Missing | Missing |
-| repo-tor | Pass | Pass | Pass | Pass | Partial | Pass | Pass | N/A | Pass | Pass |
-| few-lap | Pass | Pass | Pass | Pass | Missing | Partial | Pass | Missing | Pass | Pass |
+| repo-tor | Pass | Pass | Pass | Pass | Pass | Pass | Pass | N/A | Pass | Pass |
+| few-lap | Pass | Pass | Pass | Pass | Missing | Partial | Pass | N/A | Pass | Pass |
 | sun-sea-o | Pass | Pass | Pass | Pass | Pass | Pass | Pass | N/A | Pass | Pass |
 | graphiki | Pass | Pass | Pass | Pass | Missing | Pass | Pass | Pass | Pass | Pass |
 | four-ems | Missing | Partial | Missing | Partial | Partial | Partial | Missing | Missing | Missing | Missing |
 | synctone | Missing | Partial | Missing | Partial | Missing | Partial | Partial | Missing | Missing | Missing |
-| tool-till-tees | ? | ? | ? | ? | ? | ? | ? | ? | ? | ? |
+| tool-till-tees | Missing | Partial | N/A | N/A | N/A | N/A | ? | ? | N/A | N/A |
 
 **(B)** = Approach B (pdf-lib) per `docs/implementations/DOWNLOAD_PDF.md` — correct choice for canvas-heavy content
 
 **N/A for ICON_CACHE_BUST**: glow-props (static site, no PWA icons), model-pear (no PWA yet — implement PWA_SYSTEM first)
 
-**`?` for tool-till-tees**: newly-added tracked repo (2026-04-21) — backend service powering four-ems + Sancio agreements. Pending full audit; matrix cells to be filled in on first pass.
+**`?` for tool-till-tees**: two cells pending a decision (THEME_DARK_MODE — does the minimal landing page need theming? EVENT_BUS — does the backend API need internal pub/sub?). Most other cells are `N/A` because tool-till-tees is a hybrid backend-API + minimal landing page, not a user-facing PWA.
 
 ### canva-grid — FULLY RESOLVED (2026-04-18)
 
@@ -256,31 +256,25 @@ see-veo uses vite-plugin-pwa. Icons served with stable filenames.
 
 - [ ] **Decide:** Minimal resume site — likely not needed. Skip unless service-layer pub/sub becomes necessary.
 
-### repo-tor — FULLY RESOLVED ON CORE PATTERNS (2026-04-21)
+### repo-tor — FULLY RESOLVED (2026-04-21, corrected)
 
-React + Vite dashboard app. All 9 original patterns + Triggers redesign VERIFIED DONE 2026-04-21: HISTORY.md removed, Communication section at line 335, Triggers section at line 393 has all 8 group tables (correctness/trust/speed/frontend/quality/ops/design/fleet) + Meta sweeps + Reflective passes + scope modifiers, ICON_CACHE_BUST complete (tripwire test in `scripts/__tests__/icon-cache-bust.test.mjs` + install-modal collapsible in `dashboard/js/components/InstallInstructionsModal.jsx`), EVENT_BUS decided against (React Context + useReducer in `dashboard/js/AppContext.jsx`).
+React + Vite dashboard app. All patterns compliant. Verified 2026-04-21:
+- HISTORY.md removed; Communication section at CLAUDE.md line 335.
+- Triggers section at line 393 has all 8 group tables (correctness/trust/speed/frontend/quality/ops/design/fleet) + Meta sweeps + Reflective passes + scope modifiers.
+- ICON_CACHE_BUST complete (tripwire test in `scripts/__tests__/icon-cache-bust.test.mjs` + install-modal collapsible in `dashboard/js/components/InstallInstructionsModal.jsx`).
+- EVENT_BUS decided against (React Context + useReducer in `dashboard/js/AppContext.jsx`).
+- DOWNLOAD_PDF complete: `Header.jsx:187` has `{ label: 'Save as PDF', action: () => window.print() }`; `dashboard/styles.css` has `@media print` element overrides; JSX consumers use Tailwind's `print:hidden` variant on chrome they want hidden (documented design choice in the CSS file's header comment — intentionally no `.no-print` utility class, so my earlier "partial" flag was wrong).
 
-**Small gap uncovered 2026-04-21:**
-
-#### DOWNLOAD_PDF — Partial → Complete
-
-Reference: `docs/implementations/DOWNLOAD_PDF.md`
-
-Print CSS overrides exist in `dashboard/styles.css` (`@media print { body { background: white; color: black; } }`), but two gaps remain:
-
-1. [ ] **Add `.no-print` utility class** — In `dashboard/styles.css`: `.no-print { display: none !important; }`. Currently some elements use `print:hidden` Tailwind utility, but no global class is defined.
-2. [ ] **Add dedicated "Save as PDF" trigger button** — The UI has no button calling `window.print()`. Add one (likely in the burger menu or a settings drawer) so users can discover the export.
-3. [ ] **Apply `.no-print` to nav, buttons, debug pill, and modals** — Where the class is still missing.
-4. **Confirm:** Click "Save as PDF" → print preview shows clean dashboard content with no chrome visible.
+No pending items.
 
 ### few-lap
 
-React Native (Expo) app (package name `fuelhunt`). Metro bundler + Uniwind + custom `sw.js`. CLAUDE.md, APP_ICONS, BURGER_MENU, DEBUG_SYSTEM, THEME_DARK_MODE, PWA visibility pause, **Triggers (Meta sweeps + Reflective passes tables present)**, **Z_INDEX_SCALE (`src/constants/zIndex.ts` typed constants, all callsites reference `Z.*`)**, **ICON_CACHE_BUST (`scripts/inject-icon-hashes.mjs` + `IconCacheDisclosure.tsx` + sw.js handles versioned URLs)** all confirmed DONE 2026-04-21. Three items remain.
+React Native (Expo) app (package name `fuelhunt`). Metro bundler + Uniwind + custom `sw.js`. CLAUDE.md, APP_ICONS, BURGER_MENU, DEBUG_SYSTEM, THEME_DARK_MODE, PWA visibility pause, Triggers, Z_INDEX_SCALE (`src/constants/zIndex.ts`), ICON_CACHE_BUST (`scripts/inject-icon-hashes.mjs` + `IconCacheDisclosure.tsx` + sw.js handles versioned URLs), and **EVENT_BUS** (Not Applicable — documented in `CLAUDE.md:747-751` with rationale 2026-04-18) all confirmed DONE 2026-04-21. Two items remain.
 
-**Bonus finding (not a pattern gap — STILL UNADDRESSED):** `src/debug/debugLog.ts` has a leftover `// TEMPORARY: always-on for PWA alpha diagnostics. Restore` comment (line ~218). The `__DEV__` guard is still missing on `debugAdd()` and the global listener registration — production debug-pill leak risk. Restore:
+**Bonus finding (not a pattern gap — STILL UNADDRESSED):** `src/debug/debugLog.ts` has a leftover `// TEMPORARY: always-on for PWA alpha diagnostics. Restore` comment (lines 6, 218, 353). The `__DEV__` guard is still missing on `debugAdd()` and the global listener registration — production debug-pill leak risk. Restore:
 
-1. [ ] Add `if (!__DEV__) return;` guard at the top of the init/install function in `src/debug/debugLog.ts`.
-2. [ ] Delete the TEMPORARY comment.
+1. [ ] Add `if (!__DEV__) return;` guard at the top of the init/install function in `src/debug/debugLog.ts` (and the SW-registration path at line ~353).
+2. [ ] Delete the 3 TEMPORARY comment blocks.
 3. **Confirm:** `eas build --profile production` (or equivalent) → debug pill does not render; dev build still works.
 
 #### DOWNLOAD_PDF — Missing → Implement (conditional)
@@ -292,10 +286,6 @@ Reference: `docs/implementations/DOWNLOAD_PDF.md`
 3. [ ] **Add `no-print` class** to interactive elements (nav, buttons, debug pill).
 4. [ ] **Add `window.print()` trigger** — Button in the UI (web-only via `Platform.OS === 'web'` guard).
 5. **Confirm:** Click print, verify clean output with no interactive elements.
-
-#### EVENT_BUS — Evaluate if needed
-
-- [ ] **Decide:** Does few-lap have service-layer pub/sub needs? If yes, follow `docs/implementations/EVENT_BUS.md`. If not, document decision in CLAUDE.md under "Not Applicable Patterns".
 
 ### sun-sea-o — FULLY RESOLVED (2026-04-21, corrected)
 
@@ -576,18 +566,69 @@ synctone uses Expo with a custom `sw.js` — not vite-plugin-pwa. Adapt the hash
 
 **Bonus finding 2026-04-21:** synctone's local `docs/implementations/` folder contains 3 patterns that are **NOT in glow-props**: `HTTPS_PROXY.md`, `KEY_LESSONS.md`, `TIMER_LEAKS.md`. Before deletion (per CLAUDE.md alignment task), decide: are any worth upstreaming into glow-props as cross-fleet patterns, or are they synctone-specific? Flag for human review.
 
-### tool-till-tees — NEWLY TRACKED (2026-04-21)
+### tool-till-tees — NEWLY TRACKED (2026-04-21, first-pass audited)
 
-Backend service (Vercel) — three systems: contact/notification endpoint, multi-tenant form-builder API ("Four Ems"), agreement management backend ("Sancio"). Powers features across four-ems + Sancio agreement work.
+**Hybrid repo:** Vercel-hosted Node.js API (`api/`) + a minimal React 19 / Vite landing page (`src/App.tsx`, `src/main.tsx`, `index.css`). Backs three systems: contact/notification endpoint, Four Ems form-builder API, Sancio agreement management — all backed by Supabase. Serves 4 frontend consumers (four-ems, glow-props, see-veo, sun-sea-o) per CORS allowlist in `lib/cors.ts`.
 
-Surfaced by coverage agent on 2026-04-21 as untracked first-party repo. Added to the tracking list. **Full pattern audit pending** — many glow-props patterns (DEBUG_SYSTEM, PWA_SYSTEM, BURGER_MENU, THEME_DARK_MODE, DOWNLOAD_PDF, ICON_CACHE_BUST) are browser-UI patterns that don't apply to a backend service. Expected applicable patterns: CLAUDE.md alignment, Communication section, Triggers redesign, HTTPS_PROXY (if proxy-env deployment), EVENT_BUS (service-layer pub/sub may fit), plus any backend-specific patterns we choose to add.
+**First-pass audit 2026-04-21 against live `main`:**
+- CLAUDE.md exists but uses the OLD format: still has "move completed items to HISTORY.md" (line 283), "Communication style" bullet only (line 392 — not the full glow-props Communication section), old "## Triggers" section (line 397 — likely single-word triggers), "## Suggested Implementations" section (line 521 — inline pattern code).
+- `docs/HISTORY.md` EXISTS.
+- Tech stack: React 19 + Vite + Tailwind v4 + Vitest + Supabase + Vercel serverless functions.
 
-1. [ ] **Fetch CLAUDE.md** and assess alignment (Communication section, Implementation Patterns block, prohibition, Triggers redesign).
-2. [ ] **Verify HISTORY.md status** per cross-fleet policy.
-3. [ ] **Classify applicable patterns** — mark each glow-props pattern as Pass / Partial / Missing / **N/A (backend)** in a new row of the Gap Matrix above.
-4. [ ] **Evaluate HTTPS_PROXY applicability** — if deployed behind corporate proxies or into CI environments with proxy-only egress, implement per HTTPS_PROXY.md; otherwise N/A.
-5. [ ] **Evaluate EVENT_BUS applicability** — if services need decoupled pub/sub, implement; otherwise document as "Not Applicable" in CLAUDE.md.
-6. **Confirm:** Gap Matrix `?`s replaced with real values. Tool-till-tees has a proper per-repo section with the subset of items that apply.
+**Gap Matrix classification (updates the `?` row above):**
+
+| Pattern | Status | Reason |
+|---|---|---|
+| CLAUDE.md | Missing | Old format; Suggested Implementations + old HISTORY.md workflow + no Communication section + no Implementation Patterns block + no prohibition |
+| APP_ICONS | Partial | Landing page exists; needs audit of icon generation |
+| BURGER_MENU | N/A | Single-page landing, no navigation needed |
+| DEBUG_SYSTEM | N/A | Tiny landing page + backend service; no user-facing debug surface |
+| DOWNLOAD_PDF | N/A | API + landing page, no printable content |
+| PWA_SYSTEM | N/A | Landing page is brochureware; backend is serverless |
+| THEME_DARK_MODE | ? | Landing page is minimal — verify theming intent |
+| EVENT_BUS | ? | Evaluate for backend service-layer pub/sub (form submissions → email + audit log?) |
+| Z_INDEX_SCALE | N/A | Single-page landing, minimal layered UI |
+| ICON_CACHE_BUST | N/A | No PWA/SW |
+
+#### CLAUDE.md — Align with glow-props
+
+1. [ ] **Delete "## Suggested Implementations" section** (line 521+) — Remove inline pattern code. tool-till-tees has fewer applicable patterns than downstream frontends, so the replacement Implementation Patterns block can be smaller.
+2. [ ] **Add "## Implementation Patterns (Source of Truth)" section** — Standard glow-props reference block (fetch commands, listing command, rules). Note the N/A patterns inline so future sessions don't re-implement them.
+3. [ ] **Add AI Note** — The standard "Implementation patterns — always fetch from glow-props" note.
+4. [ ] **Add prohibition** — "Create local copies of implementation pattern files in any repo — always fetch from glow-props".
+5. [ ] **Promote to `## Communication` section** — Replace the bullet at line 392 with the full glow-props Communication section. Place between Principles (line 147) and Code Standards (line 159).
+6. **Confirm:** Inline pattern code removed. Communication section between Principles and Code Standards. Fetch commands point to glow-props.
+
+#### HISTORY.md — Remove (cross-fleet policy 2026-04-16)
+
+1. [ ] Delete `docs/HISTORY.md`.
+2. [ ] Remove `### docs/HISTORY.md` subsection from CLAUDE.md Documentation rules (~line 293).
+3. [ ] Replace "move completed items to HISTORY.md" with "delete completed items (git history tracks them)" in CLAUDE.md.
+4. [ ] Remove HISTORY.md from README.md file tree if listed.
+
+#### Triggers — Replace with glow-props version
+
+1. [ ] **Replace the "## Triggers" section** (line 397) verbatim with the glow-props version (48 triggers in 8 groups + Meta sweeps + Reflective passes + scope modifiers + behavior rules).
+2. [ ] **Note any name collisions** — Backend context has different vocabulary (`api/`, `supabase/`, `lib/`). If any collide with trigger names, add a line in AI Notes.
+
+#### APP_ICONS — Audit
+
+1. [ ] **Check `scripts/` for icon generation** — if a `generate-icons.mjs` or equivalent exists, ensure it uses `{ density: 400 }` and produces favicon.png + apple-touch-icon.png. If not, decide whether the landing page warrants icon polish.
+2. [ ] **Verify `index.html` icon links** (favicon, apple-touch-icon).
+
+#### THEME_DARK_MODE — Decide
+
+1. [ ] **Decide: does the landing page need light/dark theming?** If it's brochureware with a fixed style, mark N/A with rationale. If it's an admin UI or evolves into one, follow the pattern.
+
+#### EVENT_BUS — Evaluate for backend
+
+1. [ ] **Decide: does the Vercel serverless API benefit from internal pub/sub?** Candidate use cases: form submission → (email + audit log + webhook dispatch) in a single request. Likely NO for now — each serverless function is short-lived and stateless. Document as "Not Applicable" in CLAUDE.md with rationale; revisit if a shared request-scoped event pipeline is needed.
+
+#### Backend-specific (not a glow-props pattern yet)
+
+Tool-till-tees is the first backend service in the fleet. Several patterns *might* belong in glow-props eventually:
+
+1. [ ] **Flag for consideration:** CORS allowlist discipline (`lib/cors.ts`), env-var schema validation (Zod on `process.env`), serverless error surfacing, RLS policy tests, SMTP failure handling. If any becomes a recurring need across backends, propose as a new glow-props pattern.
 
 ---
 
@@ -595,11 +636,11 @@ Surfaced by coverage agent on 2026-04-21 as untracked first-party repo. Added to
 
 Updated 2026-04-21 after parallel full-sweep re-validation (11 agents — 1 coverage + 10 per-repo).
 
-Fully clean (no pending items): **canva-grid, budgy-ting, sun-sea-o**.
-Fully clean on core patterns + HISTORY.md + Communication, trailing items only: **glow-props, repo-tor** (only DOWNLOAD_PDF partial remains), **graphiki** (Triggers + DOWNLOAD_PDF remain), **few-lap** (DOWNLOAD_PDF + __DEV__ guard + EVENT_BUS evaluate).
+Fully clean (no pending items): **canva-grid, budgy-ting, repo-tor, sun-sea-o**.
+Fully clean on core patterns, trailing items only: **glow-props**, **graphiki** (Triggers + DOWNLOAD_PDF decision), **few-lap** (DOWNLOAD_PDF decision + __DEV__ guard restore).
 Mid-backlog: **model-pear** (Communication + Z-index done; still needs PWA, THEME_DARK_MODE, BURGER_MENU, HISTORY.md, Triggers, DOWNLOAD_PDF button, EVENT_BUS).
 Largest backlogs: **see-veo, four-ems, synctone**.
-Pending first audit: **tool-till-tees** (newly tracked backend service — classify applicable patterns).
+First-pass audited: **tool-till-tees** — N/A for most UI patterns; needs CLAUDE.md alignment + HISTORY.md removal + Triggers replacement + THEME + EVENT_BUS decisions.
 
 Highest-leverage cross-cutting gaps:
 
