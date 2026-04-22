@@ -564,7 +564,7 @@ synctone uses Expo with a custom `sw.js` — not vite-plugin-pwa. Adapt the hash
 
 - [ ] **Decide:** synctone has Zustand stores and React hooks for state. If chat/message/reaction services need decoupled pub/sub communication, follow `docs/implementations/EVENT_BUS.md`. Otherwise skip.
 
-**Bonus finding 2026-04-21:** synctone's local `docs/implementations/` folder contains 3 patterns that are **NOT in glow-props**: `HTTPS_PROXY.md`, `KEY_LESSONS.md`, `TIMER_LEAKS.md`. Before deletion (per CLAUDE.md alignment task), decide: are any worth upstreaming into glow-props as cross-fleet patterns, or are they synctone-specific? Flag for human review.
+**Bonus finding 2026-04-21 (corrected 2026-04-22):** synctone's local `docs/implementations/` folder contains 2 patterns that are **NOT in glow-props**: `KEY_LESSONS.md` and `TIMER_LEAKS.md`. (`HTTPS_PROXY.md` IS in glow-props — earlier note incorrectly listed it as synctone-only; synctone's copy is simply stale and can be deleted with the rest of the folder.) Before deletion (per CLAUDE.md alignment task), decide whether to upstream `KEY_LESSONS` / `TIMER_LEAKS` into glow-props as cross-fleet patterns. **TIMER_LEAKS recommendation:** upstream — glow-props currently has no timer/subscription cleanup rule (§Cleanup is cosmetic-only; `hacks` trigger flags `setTimeout` abuse but not cleanup hygiene; no pattern doc covers the mandate). Two-pronged upstream: (a) add `docs/implementations/TIMER_LEAKS.md` with frontmatter, (b) add a "Timer and Subscription Cleanup" bullet-group to glow-props `CLAUDE.md §Code Standards` so every downstream CLAUDE.md inherits the rule at the preferences level, not just as a pattern doc.
 
 ### tool-till-tees — NEWLY TRACKED (2026-04-21, first-pass audited)
 
