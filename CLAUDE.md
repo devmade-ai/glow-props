@@ -82,7 +82,7 @@ Non-trivial code changes must include comments explaining:
 - Every `setTimeout`/`setInterval`/`addEventListener`/`subscribe` needs a matching cleanup (`clearTimeout`/`clearInterval`/`removeEventListener`/unsubscribe handle).
 - Store timer ids in a scope the cleanup can reach. Nested timeouts → array; single-shot → local const or ref.
 - In React: return cleanup from `useEffect`. In plain modules: export a `dispose()` or use `AbortController`.
-- HMR-safe: guard global listener attachment behind a `window.__<featureName>Attached` flag so hot-reload doesn't double-subscribe.
+- HMR-safe: guard global listener attachment behind a `window.__<featureName>Attached` flag so hot-reload doesn't double-subscribe. For frameworks exposing `import.meta.hot`, also release listeners via `import.meta.hot.dispose()`.
 - See [`docs/implementations/TIMER_LEAKS.md`](docs/implementations/TIMER_LEAKS.md) for concrete patterns (nested-timeout array, AbortController, per-effect dispose, HMR guard).
 
 ### Quality Checks
