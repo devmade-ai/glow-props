@@ -162,7 +162,7 @@ if (import.meta.hot) {
 ## Key Lessons
 
 1. **Every registration pairs with a release.** Grep the codebase for `setTimeout|setInterval|addEventListener|\.subscribe(` — every hit needs a matching clear/remove/unsubscribe reachable from the owner's teardown.
-2. **Nested timeouts are the leak you'll actually ship.** The outer-cleanup-only bug is subtle because it tests fine: mount, wait for outer, unmount — the inner never runs because it hadn't been scheduled yet. The leak only shows when unmount happens *between* outer-fire and inner-fire. Use the array pattern every time a callback schedules more work.
+2. **Nested timeouts are the leak you'll actually ship.** The outer-cleanup-only bug passes happy-path tests: if unmount happens *before* outer fires, inner is never scheduled and the cleanup looks fine. The leak only surfaces when unmount lands *between* outer-fire and inner-fire — a timing window most tests don't exercise. Use the array pattern every time a callback schedules more work.
 3. **`AbortController` consolidates cleanup.** If a useEffect has more than one subscription, prefer a single signal over per-listener removals — fewer places to forget.
 4. **Module-level singletons need a named dispose.** Don't rely on GC; unit tests, HMR, and SSR all need deterministic teardown.
 5. **HMR double-subscribes are invisible in production but eat battery in dev.** A global listener guard costs one line and prevents a confusing class of "why does this fire N times?" bugs.

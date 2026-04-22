@@ -27,7 +27,7 @@ Audited 2026-04-06 against updated `docs/implementations/*.md` pattern docs. Upd
 - **canva-grid, budgy-ting:** FULLY RESOLVED confirmed (no regressions).
 - **repo-tor:** Triggers section VERIFIED DONE (all 8 group tables + Meta sweeps + Reflective passes present in CLAUDE.md) — repo-tor is now fully resolved. New small gap: DOWNLOAD_PDF partial (missing `.no-print` class + dedicated print button).
 - **few-lap:** Triggers DONE (Meta sweeps + Reflective passes present), Z_INDEX_SCALE DONE (`src/constants/zIndex.ts`), ICON_CACHE_BUST DONE (`scripts/inject-icon-hashes.mjs` + `IconCacheDisclosure.tsx`). Remaining: DOWNLOAD_PDF decision, `__DEV__` guard restore, EVENT_BUS evaluate.
-- **model-pear:** Communication section DONE (CLAUDE.md line 365), Z_INDEX_SCALE DONE (Tailwind config extends). HISTORY.md still present — remaining items stand.
+- **model-pear:** Z_INDEX_SCALE DONE (Tailwind config extends). HISTORY.md still present and Communication section still missing at top level (agent's earlier "Communication DONE at line 365" claim was wrong — line 365 is `## Implementation Patterns`, not `## Communication`). Remaining items stand.
 - **graphiki:** Z_INDEX_SCALE DONE (no violations), ICON_CACHE_BUST user communication DONE (collapsible in `InstallInstructionsModal.tsx`). Remaining: Triggers, DOWNLOAD_PDF decision.
 - **sun-sea-o:** FULLY RESOLVED (live re-verification 2026-04-21 corrected the agent's stale snapshot — recent push landed DEBUG_SYSTEM hardening, PWA user comm, theme color migration, apple-touch-icon link, and EVENT_BUS "Not Applicable" note). Only `PdfPreview.tsx` uses `print:text-gray-*` utilities — documented intentional print-media exception.
 - **see-veo:** No progress; **regression correction** — the previous TODO note claiming "PWA Diagnostics third tab via `diagnostics.ts` is already present" is FALSE. `DebugBanner.tsx` has only 2 tabs (`type Tab = 'diagnostics' | 'log'`). The `diagnostics.ts` file exists but is consumed by the single "diagnostics" tab, not a third PWA tab. Corrected in section below.
@@ -42,7 +42,7 @@ Legend: **Pass** = compliant, **Partial** = has the feature but with gaps, **Mis
 | glow-props | Pass | Pass | Pass | N/A | Pass | Pass | Pass | N/A | Pass | N/A |
 | canva-grid | Pass | Pass | Pass | Pass | Pass (B) | Pass | Pass | N/A | Pass | Pass |
 | budgy-ting | Pass | Pass | Pass | Pass | Pass | Pass | Pass | N/A | Pass | Pass |
-| model-pear | Pass | Pass | Missing | Pass | Partial | Missing | Missing | Missing | Pass | N/A |
+| model-pear | Partial | Pass | Missing | Pass | Partial | Missing | Missing | Missing | Pass | N/A |
 | see-veo | Missing | Partial | Missing | Partial | Partial | Partial | Missing | Missing | Missing | Missing |
 | repo-tor | Pass | Pass | Pass | Pass | Pass | Pass | Pass | N/A | Pass | Pass |
 | few-lap | Pass | Pass | Pass | Pass | Missing | Partial | Pass | N/A | Pass | Pass |
@@ -68,7 +68,14 @@ Vue + Vite app. All items complete: HISTORY.md removed, Communication section ad
 
 ### model-pear
 
-SvelteKit app. APP_ICONS done, DEBUG_SYSTEM foundations done, Implementation Patterns section + prohibition present. **Communication section DONE** (verified 2026-04-21, CLAUDE.md line 365). **Z_INDEX_SCALE DONE** (verified 2026-04-21, Tailwind config extends z-index with z-60/z-70/z-80 custom utilities). Still needs: PWA_SYSTEM (no vite-plugin-pwa), THEME_DARK_MODE (no DaisyUI, `class="dark"` hardcoded), BURGER_MENU hardening, DOWNLOAD_PDF button, HISTORY.md removal, Triggers, EVENT_BUS decision.
+SvelteKit app. APP_ICONS done, DEBUG_SYSTEM foundations done, Implementation Patterns section at CLAUDE.md line 365, prohibition present. **Z_INDEX_SCALE DONE** (verified 2026-04-21, Tailwind config extends z-index with z-60/z-70/z-80 custom utilities). Still needs: Communication section (verified missing 2026-04-22 — earlier agent claim was wrong), PWA_SYSTEM (no vite-plugin-pwa), THEME_DARK_MODE (no DaisyUI, `class="dark"` hardcoded in `apps/web/src/app.html:2`), BURGER_MENU hardening (button still `p-2` at line 68, has `aria-expanded` but no full disclosure pattern), DOWNLOAD_PDF button, HISTORY.md removal, Triggers, EVENT_BUS decision.
+
+#### CLAUDE.md — Add Communication section
+
+"Implementation Patterns (Source of Truth)" section + prohibition already present. Remaining: Communication section. (Re-verified 2026-04-22 via live fetch: no `^## Communication$` heading exists in model-pear CLAUDE.md — only `## Implementation Patterns (Source of Truth)` at line 365 and `## Triggers` at line 461.)
+
+1. [ ] **Add `## Communication` section** — Copy from glow-props CLAUDE.md. Place between Principles and Code Standards. Update top-of-file header line to include COMMUNICATION. Remove any duplicate "ASK before assuming" or "Communication style" bullets from AI Notes.
+2. **Confirm:** `grep -c "^## Communication$" CLAUDE.md` returns `1`. Section exists between Principles and Code Standards.
 
 #### HISTORY.md — Remove (cross-fleet policy 2026-04-16)
 
@@ -567,7 +574,7 @@ synctone uses Expo with a custom `sw.js` — not vite-plugin-pwa. Adapt the hash
 **Bonus finding 2026-04-21 (corrected 2026-04-22):** synctone's local `docs/implementations/` folder contains 2 patterns that are **NOT in glow-props**: `KEY_LESSONS.md` and `TIMER_LEAKS.md`. (`HTTPS_PROXY.md` IS in glow-props — earlier note incorrectly listed it as synctone-only; synctone's copy is simply stale and can be deleted with the rest of the folder.)
 
 - **TIMER_LEAKS — UPSTREAMED 2026-04-22 (on this branch).** Adds `docs/implementations/TIMER_LEAKS.md` (5 variants + 7 Key Lessons, `badge: Convention`, `order: 11`) and a new `### Timer and Subscription Cleanup` subsection in `CLAUDE.md §Code Standards` (placed between `### Cleanup` and `### Quality Checks`) so every downstream CLAUDE.md inherits the rule at the preferences level. Once this branch merges to `main`, synctone's local `TIMER_LEAKS.md` can be deleted with the rest of the folder as part of its CLAUDE.md alignment chunk.
-- **KEY_LESSONS — pending decision.** Fetch synctone's local `docs/implementations/KEY_LESSONS.md`, assess fleet-wide relevance. If cross-project valuable, upstream with the same two-pronged treatment. If synctone-specific (e.g. chat-app lessons), delete with the folder.
+- **KEY_LESSONS — DECIDED: DELETE (2026-04-22).** Fetched synctone's local `docs/implementations/KEY_LESSONS.md`. All 7 lessons are already covered by existing glow-props pattern docs: lesson 1 (separate maskable icon) and lesson 2 (manifest `id`) are in `APP_ICONS.md` + `PWA_SYSTEM.md`; lesson 3 (`registerType: 'prompt'`) and lesson 7 (single SW per scope) are in `PWA_SYSTEM.md`; lesson 4 (timer cleanup + nested-timeout array) is in the new `TIMER_LEAKS.md`; lessons 5 and 6 (Node ignores proxy env, HTTP CONNECT standard) are in `HTTPS_PROXY.md`. Zero synctone-specific content remains. Delete with the rest of the `docs/implementations/` folder as part of synctone's CLAUDE.md alignment chunk — no upstream work needed.
 
 ### tool-till-tees — NEWLY TRACKED (2026-04-21, first-pass audited)
 
@@ -648,7 +655,7 @@ First-pass audited: **tool-till-tees** — N/A for most UI patterns; needs CLAUD
 Highest-leverage cross-cutting gaps:
 
 1. **Triggers redesign** — Cross-fleet policy 2026-04-17. **Done in canva-grid, budgy-ting, repo-tor, few-lap, sun-sea-o.** Still missing in **model-pear, see-veo, graphiki, four-ems, synctone** (5 repos). tool-till-tees pending audit.
-2. **CLAUDE.md alignment** — Pass in canva-grid, budgy-ting, repo-tor, graphiki, few-lap, **model-pear** (Communication landed), **sun-sea-o**. Worst remaining: four-ems (~630 lines of inline patterns), see-veo (~285 lines), synctone (8 local pattern files in `docs/implementations/`).
+2. **CLAUDE.md alignment** — Pass in canva-grid, budgy-ting, repo-tor, graphiki, few-lap, **sun-sea-o**. Partial in **model-pear** (Implementation Patterns + prohibition present; Communication section still missing — correction 2026-04-22). Worst remaining: four-ems (~630 lines of inline patterns, CLAUDE.md = 957 lines), see-veo (~285 lines, CLAUDE.md = 717 lines), synctone (8 local pattern files in `docs/implementations/`, CLAUDE.md >1600 lines with Suggested Implementations at ~1623).
 3. **HISTORY.md removal** — Already done in canva-grid, budgy-ting, repo-tor, graphiki, few-lap, **sun-sea-o**. Still present in **model-pear, see-veo, four-ems, synctone**.
 4. **PWA_ICON_CACHE_BUST** — Full Pass in canva-grid, budgy-ting, repo-tor, **graphiki, few-lap, sun-sea-o** (core + test/user comm). Missing in see-veo, four-ems, synctone. N/A for glow-props + model-pear.
 5. **EVENT_BUS** — N/A in canva-grid, budgy-ting, repo-tor, **sun-sea-o** (Supabase realtime serves as de-facto bus). Pass in graphiki. 5 repos still need an evaluate decision.
