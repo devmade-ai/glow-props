@@ -17,6 +17,14 @@ import { registerSW } from 'virtual:pwa-register';
 // Cleanup: every timer/listener tracked in module-level scope and torn down by the
 //   import.meta.hot.dispose() block at the bottom. See docs/implementations/TIMER_LEAKS.md
 //   variants 4 (module dispose) + 5 (HMR guard).
+// Note on registerSW + HMR: registerSW is intentionally NOT wrapped in __pwaModuleAttached.
+//   vite-plugin-pwa internally creates a fresh Workbox instance on each call and offers
+//   no public unregister API. Wrapping registerSW behind the guard would prevent HMR'd
+//   changes to onNeedRefresh / onOfflineReady from taking effect (the OLD Workbox
+//   instance would keep firing OLD callbacks against OLD module closures), which breaks
+//   dev UX. The trade-off is one orphaned Workbox instance per HMR cycle — benign
+//   because showUpdateBanner has an `if (existing) return` dedupe guard and the dev
+//   session ends with full page reload anyway. Production has no HMR.
 
 var updateSW = null;
 var CHECK_INTERVAL_MS = 60 * 60 * 1000;
@@ -81,10 +89,17 @@ function showToast(message, type, duration) {
   });
 
   // Nested timeouts — pattern: TIMER_LEAKS.md variant 1 (push every id to a single array).
+  // Splice on fire so the array doesn't grow unboundedly across a long session.
+  function untrack(id) {
+    var i = toastTimeouts.indexOf(id);
+    if (i !== -1) toastTimeouts.splice(i, 1);
+  }
   var exitId = setTimeout(function () {
+    untrack(exitId);
     toast.classList.remove('opacity-100', 'translate-y-0');
     toast.classList.add('opacity-0', 'translate-y-2');
     var removeId = setTimeout(function () {
+      untrack(removeId);
       toast.remove();
     }, 200);
     toastTimeouts.push(removeId);

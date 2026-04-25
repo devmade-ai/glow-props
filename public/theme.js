@@ -4,6 +4,12 @@
 //   name in localStorage. Toggle flips between modes and applies the stored theme.
 // Alternative: Theme combos (curated light/dark pairs) — rejected, users want independent
 //   control over their light and dark theme choices without artificial pairing constraints.
+// Cleanup contract: every module-level addEventListener is captured in a named handler
+//   and registered through trackListener() so window.__theme.dispose() can release it.
+//   Pattern: docs/implementations/TIMER_LEAKS.md variant 4 (plain-module singleton).
+//   This file is served from public/ as a static script — not in Vite's module graph,
+//   no HMR. dispose() exists for tests and future re-init scenarios; the page lifecycle
+//   is the normal teardown boundary.
 
 (function () {
   // ===== Defaults =====
@@ -67,6 +73,17 @@
     luxury:       '#09090b',
     black:        '#000000'
   };
+
+  // ===== Cleanup tracking =====
+  // Every module-level addEventListener flows through trackListener so dispose()
+  // can release them all. Pattern: TIMER_LEAKS.md variant 4. The 1-element array
+  // shape (push a fn that does the removal) handles both window/document/element
+  // listeners and matchMedia listeners with one signature.
+  var cleanups = [];
+  function trackListener(target, type, handler, options) {
+    target.addEventListener(type, handler, options);
+    cleanups.push(function () { target.removeEventListener(type, handler, options); });
+  }
 
   function getMetaColor(themeName) {
     return META_COLORS[themeName] || '#808080';
@@ -203,25 +220,27 @@
   // ===== Dark/Light toggle =====
   // Requirement: Toggle switches mode AND applies the stored theme for the new mode
   var toggle = document.getElementById('theme-toggle');
+  function onToggleClick() {
+    var newDark = !isDark();
+    var theme = getStoredTheme(newDark);
+    applyTheme(newDark, theme);
+  }
   if (toggle) {
-    toggle.addEventListener('click', function () {
-      var newDark = !isDark();
-      var theme = getStoredTheme(newDark);
-      applyTheme(newDark, theme);
-    });
+    trackListener(toggle, 'click', onToggleClick);
   }
 
   // ===== Theme picker =====
   // Requirement: Clicking a theme stores it for the current mode and applies it
   // Approach: Event delegation on [data-theme-pick] buttons — one handler for all themes
-  document.addEventListener('click', function (e) {
+  function onThemePickClick(e) {
     var themeBtn = e.target.closest('[data-theme-pick]');
     if (!themeBtn) return;
     var themeName = themeBtn.getAttribute('data-theme-pick');
     if (themeName) {
       applyTheme(isDark(), themeName);
     }
-  });
+  }
+  trackListener(document, 'click', onThemePickClick);
 
   // ===== Random theme toggle =====
   // Requirement: Toggle that enables random theme selection on each page load
@@ -248,18 +267,19 @@
   // Initialize indicator on page load
   updateRandomIndicator();
 
+  function onRandomToggleClick() {
+    var newState = !isRandomEnabled();
+    safeStorageSet('randomThemeOnLoad', String(newState));
+    updateRandomIndicator();
+  }
   if (randomToggle) {
-    randomToggle.addEventListener('click', function () {
-      var newState = !isRandomEnabled();
-      safeStorageSet('randomThemeOnLoad', String(newState));
-      updateRandomIndicator();
-    });
+    trackListener(randomToggle, 'click', onRandomToggleClick);
   }
 
   // ===== Cross-tab sync =====
   // storage event only fires in other tabs — values already written by
   // the originating tab, so skipPersist avoids redundant writes
-  window.addEventListener('storage', function (e) {
+  function onStorageEvent(e) {
     if (e.key === 'darkMode' || e.key === 'lightTheme' || e.key === 'darkTheme') {
       var dark = safeStorageGet('darkMode') === 'true';
       var theme = getStoredTheme(dark);
@@ -269,16 +289,18 @@
     if (e.key === 'randomThemeOnLoad') {
       updateRandomIndicator();
     }
-  });
+  }
+  trackListener(window, 'storage', onStorageEvent);
 
   // Track OS preference changes when user hasn't made an explicit choice
   var mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
-  mediaQuery.addEventListener('change', function (e) {
+  function onMediaQueryChange(e) {
     if (safeStorageGet('darkMode') === null) {
       var theme = getStoredTheme(e.matches);
       applyTheme(e.matches, theme);
     }
-  });
+  }
+  trackListener(mediaQuery, 'change', onMediaQueryChange);
 
   // ===== Burger Menu =====
   // Requirement: Disclosure-pattern dropdown with Escape, focus management, click-outside
@@ -340,35 +362,57 @@
       return menuOpen;
     }
 
-    trigger.addEventListener('click', function () {
+    function onTriggerClick() {
       if (isOpen()) closeMenu();
       else openMenu();
-    });
+    }
+    trackListener(trigger, 'click', onTriggerClick);
 
     // Requirement: Tap/click outside menu closes it
     // Approach: Document-level click handler checks if target is outside menu+trigger.
-    document.addEventListener('click', function (e) {
+    function onDocumentClickForMenu(e) {
       if (menuOpen && !menu.contains(e.target) && !trigger.contains(e.target)) {
         closeMenu();
       }
-    });
+    }
+    trackListener(document, 'click', onDocumentClickForMenu);
 
     // Close on Escape key
-    document.addEventListener('keydown', function (e) {
+    function onDocumentKeydown(e) {
       if (e.key === 'Escape' && isOpen()) {
         e.preventDefault();
         closeMenu();
       }
-    });
+    }
+    trackListener(document, 'keydown', onDocumentKeydown);
 
-    // Close menu when clicking [data-close] items (nav links, PDF button)
-    // Theme toggle and theme picker do NOT have data-close — menu stays open
-    menu.addEventListener('click', function (e) {
+    // Close menu when clicking [data-close] items (nav links, PDF button).
+    // Theme toggle and theme picker do NOT have data-close — menu stays open.
+    // The click event's default action (anchor navigation, button click) runs after
+    // this handler returns, so closing synchronously here is safe — hiding the menu
+    // via opacity/pointer-events doesn't cancel a pending fragment navigation, and
+    // [data-close] buttons that trigger JS actions have already had their own
+    // handlers fire via bubbling before this delegated one.
+    function onMenuClick(e) {
       var item = e.target.closest('[data-close]');
-      if (item) {
-        // Small delay so anchor navigation or action fires before close
-        setTimeout(closeMenu, 100);
-      }
-    });
+      if (item) closeMenu();
+    }
+    trackListener(menu, 'click', onMenuClick);
   }
+
+  // ===== Public dispose() =====
+  // Pattern: TIMER_LEAKS.md variant 4. Releases every tracked listener and
+  // restores body styles in case the menu was open. Idempotent.
+  function dispose() {
+    cleanups.forEach(function (fn) {
+      try { fn(); } catch (e) { /* tolerate handler-removal errors */ }
+    });
+    cleanups.length = 0;
+    if (typeof document !== 'undefined' && document.body) {
+      document.body.style.overflow = '';
+      document.body.style.scrollbarGutter = '';
+    }
+  }
+
+  window.__theme = { dispose: dispose };
 })();

@@ -291,20 +291,28 @@ Add to existing PWA_SYSTEM items: **hourly polling lacks visibility-aware pause*
 
 Add to existing APP_ICONS items: **maskable 1024px icon lacks safe-zone padding** — `manifest icons` array currently lists `pwa-1024x1024.png` with `purpose: maskable` but the file appears to use the same canvas as the `any` purpose icon. Re-generate with the standard maskable safe-zone (~10% inset) per `docs/implementations/APP_ICONS.md` "Maskable Icons" section.
 
-### repo-tor — FULLY RESOLVED (2026-04-21, re-confirmed 2026-04-25)
+### repo-tor — Resolved on patterns, one doc-alignment touch-up open (2026-04-25)
 
-React + Vite dashboard app. All patterns compliant. Re-confirmed 2026-04-25 against latest commit `cb5931c` (2026-04-19, no commits since the 2026-04-21 audit-correction date):
+React + Vite dashboard app. All implementation patterns compliant. Re-confirmed 2026-04-25 against latest commit `cb5931c` (2026-04-19, no commits since the 2026-04-21 audit-correction date):
 - HISTORY.md removed (HTTP 404); Communication section at `CLAUDE.md:335`.
 - Triggers section at `CLAUDE.md:393` has all 8 group tables (correctness/trust/speed/frontend/quality/ops/design/fleet) + Meta sweeps + Reflective passes + scope modifiers.
 - ICON_CACHE_BUST complete (tripwire test in `scripts/__tests__/icon-cache-bust.test.mjs` + "Already installed and the icon looks outdated?" collapsible at `dashboard/js/components/InstallInstructionsModal.jsx:110`).
 - EVENT_BUS decided against (React Context + useReducer in `dashboard/js/AppContext.jsx` — `createContext` L17, `useReducer` L36, `AppProvider` exported).
 - DOWNLOAD_PDF complete: `dashboard/js/components/Header.jsx:187` has exactly `{ label: 'Save as PDF', action: () => window.print(), icon: icons.pdf, separator: true }`; `dashboard/styles.css:160` has `@media print` element overrides; lines 158-159 carry the design-rationale header comment explaining JSX uses Tailwind `print:hidden` (intentionally no `.no-print` utility class).
 
-No pending items.
+**One doc-alignment item (2026-04-25):**
+
+1. [ ] **Add `### Timer and Subscription Cleanup` subsection to CLAUDE.md Code Standards** — Cross-fleet TIMER_LEAKS pattern was upstreamed to glow-props 2026-04-22 (commit `34607ad`) with a corresponding CLAUDE.md subsection placed between `### Cleanup` and `### Quality Checks`. repo-tor's last commit (`cb5931c`, 2026-04-19) predates this. Fetch the current subsection from glow-props CLAUDE.md and insert at the matching location.
 
 ### few-lap
 
-React Native (Expo) app (package name `fuelhunt`). Metro bundler + Uniwind + custom `sw.js`. CLAUDE.md, APP_ICONS, BURGER_MENU, DEBUG_SYSTEM, THEME_DARK_MODE, PWA visibility pause, Triggers, Z_INDEX_SCALE (`src/constants/zIndex.ts`), ICON_CACHE_BUST (`scripts/inject-icon-hashes.mjs` + `src/components/pwa/IconCacheDisclosure.tsx` + sw.js handles versioned URLs), and **EVENT_BUS** (Not Applicable — documented at `CLAUDE.md:754` with rationale 2026-04-18) all confirmed DONE 2026-04-21, re-confirmed 2026-04-25 against latest commit `da0b8f01` 2026-04-22. Two items remain.
+React Native (Expo) app (package name `fuelhunt`). Metro bundler + Uniwind + custom `sw.js`. CLAUDE.md, APP_ICONS, BURGER_MENU, DEBUG_SYSTEM, THEME_DARK_MODE, PWA visibility pause, Triggers, Z_INDEX_SCALE (`src/constants/zIndex.ts`), ICON_CACHE_BUST (`scripts/inject-icon-hashes.mjs` + `src/components/pwa/IconCacheDisclosure.tsx` + sw.js handles versioned URLs), and **EVENT_BUS** (Not Applicable — documented at `CLAUDE.md:754` with rationale 2026-04-18) all confirmed DONE 2026-04-21, re-confirmed 2026-04-25 against latest commit `da0b8f01` 2026-04-22. Three items remain.
+
+#### CLAUDE.md — Add Timer and Subscription Cleanup subsection (2026-04-25)
+
+Cross-fleet TIMER_LEAKS pattern was upstreamed to glow-props 2026-04-22 with a `### Timer and Subscription Cleanup` subsection in CLAUDE.md Code Standards. few-lap's CLAUDE.md predates this and is missing the subsection.
+
+1. [ ] **Add `### Timer and Subscription Cleanup` subsection** between `### Cleanup` and `### Quality Checks` in CLAUDE.md, fetched verbatim from glow-props.
 
 **Bonus finding (not a pattern gap — STILL UNADDRESSED):** `src/debug/debugLog.ts` has a leftover `// TEMPORARY: always-on for PWA alpha diagnostics. Restore` comment (lines 6, 218, 353). The `__DEV__` guard is still missing on `debugAdd()` and the global listener registration — production debug-pill leak risk. Restore:
 
@@ -544,8 +552,8 @@ Re-classified `Partial → Missing` 2026-04-25. `index.html` is bare (no favicon
 
 Updated 2026-04-25 after parallel full-sweep re-validation (13 agents — 1 coverage + 12 per-repo).
 
-Fully clean (no pending items): **canva-grid, budgy-ting, repo-tor, sun-sea-o, graphiki, synctone, glow-props** (7 repos).
-Fully clean on core patterns, trailing items only: **few-lap** (DOWNLOAD_PDF decision + __DEV__ guard restore).
+Fully clean (no pending items): **canva-grid, budgy-ting, sun-sea-o, graphiki, synctone, glow-props** (6 repos).
+Fully clean on patterns, doc-alignment touch-ups only: **repo-tor** (TIMER_LEAKS subsection in CLAUDE.md), **few-lap** (TIMER_LEAKS subsection + DOWNLOAD_PDF decision + __DEV__ guard restore).
 Mid-backlog: **tool-till-tees** (CLAUDE.md/HISTORY/Triggers DONE via PR #24; remaining: trigger-name collision note, APP_ICONS decision, THEME N/A, EVENT_BUS N/A documentation, backend pattern upstream proposals), **model-pear** (Communication + Z-index done; still needs PWA, THEME_DARK_MODE, BURGER_MENU, HISTORY.md, Triggers, DOWNLOAD_PDF button, EVENT_BUS, TIMER_LEAKS subsection, non-standard headings).
 Largest backlogs: **see-veo, four-ems**.
 
@@ -567,4 +575,4 @@ Highest-leverage cross-cutting gaps (post-2026-04-25):
 14. **THEME_DARK_MODE** — Full in canva-grid, budgy-ting, repo-tor, graphiki, sun-sea-o (Approach A). Uniwind variant in few-lap, **synctone** (now complete with flash prevention + data-theme + .dark + color-scheme + @custom-variant). Missing in model-pear, four-ems. N/A in see-veo. tool-till-tees decision pending.
 15. **Z_INDEX_SCALE** — Pass in glow-props, canva-grid, budgy-ting, repo-tor, graphiki, model-pear, few-lap, sun-sea-o, **synctone** (9 repos). Missing in see-veo, four-ems. N/A in tool-till-tees.
 16. **DOWNLOAD_PDF** — Pass in canva-grid (Approach B pdf-lib), budgy-ting, repo-tor, sun-sea-o. **N/A documented** in graphiki (canvas/SVG editor, JSON export covers data portability — `CLAUDE.md:710`), synctone (chat app declined). Still Partial in see-veo (missing `print-color-adjust: exact`), model-pear, four-ems. Decision pending in few-lap.
-17. **TIMER_LEAKS self-compliance** — glow-props own audit DONE 2026-04-25: `src/pwa.js` SW interval, install-fallback timer, toast nested timeouts, and `window.beforeinstallprompt`/`appinstalled`/`DOMContentLoaded` listeners all now tracked + released via `import.meta.hot.dispose()` (variants 4 + 5). `src/markdown.js` copy-feedback timers tracked + disposed. Downstream repos should still inherit `### Timer and Subscription Cleanup` subsection in their CLAUDE.md Code Standards — confirmed missing in model-pear, likely missing in see-veo + four-ems + tool-till-tees.
+17. **TIMER_LEAKS self-compliance + cross-fleet inheritance** — glow-props own audit DONE 2026-04-25: `src/pwa.js` (variants 1 + 4 + 5 — SW interval, install-fallback timer, toast nested timeouts, `window.beforeinstallprompt`/`appinstalled`/`DOMContentLoaded` listeners all tracked + released via `import.meta.hot.dispose()` + `__pwaModuleAttached` HMR guard), `src/markdown.js` (variant 4 — copy-feedback timers tracked, splice-on-fire), `public/theme.js` (variant 4 — every listener registered through `trackListener()` helper, `window.__theme.dispose()` exposed). Tripwire: `npm run verify:timer-cleanup` (`scripts/verify-timer-cleanup.mjs`). **Cross-fleet `### Timer and Subscription Cleanup` subsection presence verified 2026-04-25:** PRESENT in canva-grid, budgy-ting, sun-sea-o, graphiki, synctone, tool-till-tees, glow-props (7 repos). MISSING in model-pear, see-veo, four-ems, **repo-tor, few-lap** (5 repos — the latter two are flagged "FULLY RESOLVED" elsewhere in this file but predate the 2026-04-22 upstream addition; needs a CLAUDE.md doc-alignment touch-up to inherit the new content).
