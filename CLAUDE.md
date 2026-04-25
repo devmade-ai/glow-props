@@ -277,6 +277,7 @@ These footers are required on every commit. No exceptions.
   - Never clone sibling repos — use the API instead
 - **Discontinued repos — skip entirely:** `plant-fur` and `coin-zapp` are discontinued. Do not check, audit, align, or include them in cross-project operations.
 - **Implementation patterns — always fetch from glow-props.** Never look for local copies of implementation pattern files (e.g., `docs/implementations/*.md`) in downstream repos. They do not exist locally — the single source of truth is the `docs/implementations/` folder in the glow-props repo. Fetch the latest version before every implementation task.
+- **TIMER_LEAKS canonical examples in this repo:** `src/pwa.js` demonstrates variants 1 (nested timeouts in `showToast`), 4 (module dispose via `import.meta.hot.dispose`), and 5 (`window.__pwaModuleAttached` HMR guard for global listeners). `src/markdown.js` demonstrates variant 4. `public/theme.js` demonstrates variant 4 for a static-asset script (no HMR; `window.__theme.dispose()` exposed for tests/manual re-init). New listener/timer registrations in this repo should match one of these shapes; `npm run verify:timer-cleanup` is a static tripwire that fails if a `src/` module gains a registration without an `import.meta.hot.dispose` block.
 
 ### REMINDER: READ AND FOLLOW THE AI NOTES EVERY TIME
 
