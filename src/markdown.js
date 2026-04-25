@@ -97,6 +97,12 @@ function renderMarkdown(text) {
   return marked.parse(stripFrontmatter(text));
 }
 
+// Cleanup tracking — pattern: docs/implementations/TIMER_LEAKS.md variant 4.
+// Copy-feedback timers reset button text after 1500ms. If HMR re-evaluates the
+// module (or a future caller adds an unmount path) before they fire, the array
+// lets the dispose handler clear them all at once.
+var feedbackTimeouts = [];
+
 // Requirement: Copy markdown source with success/failure feedback
 function copyMarkdown(text, buttonId) {
   if (!text) return;
@@ -104,7 +110,8 @@ function copyMarkdown(text, buttonId) {
   function showFeedback(msg) {
     if (btn) {
       btn.textContent = msg;
-      setTimeout(function () { btn.textContent = 'Copy markdown'; }, 1500);
+      var id = setTimeout(function () { btn.textContent = 'Copy markdown'; }, 1500);
+      feedbackTimeouts.push(id);
     }
   }
   clipboardWrite(text, showFeedback);
@@ -116,7 +123,8 @@ function copyCodeBlock(btn) {
   if (!code) return;
   function showFeedback(msg) {
     btn.textContent = msg;
-    setTimeout(function () { btn.textContent = 'Copy'; }, 1500);
+    var id = setTimeout(function () { btn.textContent = 'Copy'; }, 1500);
+    feedbackTimeouts.push(id);
   }
   clipboardWrite(code.textContent, showFeedback);
 }
@@ -152,3 +160,11 @@ window.md = {
   copyMarkdown: copyMarkdown,
   copyCodeBlock: copyCodeBlock,
 };
+
+// HMR teardown — pattern: docs/implementations/TIMER_LEAKS.md variant 4.
+if (import.meta.hot) {
+  import.meta.hot.dispose(function () {
+    feedbackTimeouts.forEach(clearTimeout);
+    feedbackTimeouts.length = 0;
+  });
+}

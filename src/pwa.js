@@ -14,10 +14,20 @@ import { registerSW } from 'virtual:pwa-register';
 //   SW is installed and waiting. onOfflineReady fires when the app is fully cached.
 //   Periodic update checks every 60 minutes for users who keep tabs open (critical
 //   for Safari, which doesn't close backgrounded PWAs).
-// Note: Unlike React hooks, this module runs once — no remount/interval leak concern.
+// Cleanup: every timer/listener tracked in module-level scope and torn down by the
+//   import.meta.hot.dispose() block at the bottom. See docs/implementations/TIMER_LEAKS.md
+//   variants 4 (module dispose) + 5 (HMR guard).
 
 var updateSW = null;
 var CHECK_INTERVAL_MS = 60 * 60 * 1000;
+
+// Cleanup tracking — pattern: docs/implementations/TIMER_LEAKS.md
+var swUpdateIntervalId = null;
+var manualInstallTimeoutId = null;
+var toastTimeouts = [];
+var beforeInstallPromptListener = null;
+var appInstalledListener = null;
+var domContentLoadedListener = null;
 
 updateSW = registerSW({
   onNeedRefresh: function () {
@@ -28,7 +38,7 @@ updateSW = registerSW({
   },
   onRegisteredSW: function (_url, registration) {
     if (registration) {
-      setInterval(function () {
+      swUpdateIntervalId = setInterval(function () {
         registration.update();
       }, CHECK_INTERVAL_MS);
     }
@@ -70,14 +80,16 @@ function showToast(message, type, duration) {
     toast.classList.add('opacity-100', 'translate-y-0');
   });
 
-  setTimeout(function () {
-    // Exit animation
+  // Nested timeouts — pattern: TIMER_LEAKS.md variant 1 (push every id to a single array).
+  var exitId = setTimeout(function () {
     toast.classList.remove('opacity-100', 'translate-y-0');
     toast.classList.add('opacity-0', 'translate-y-2');
-    setTimeout(function () {
+    var removeId = setTimeout(function () {
       toast.remove();
     }, 200);
+    toastTimeouts.push(removeId);
   }, duration);
+  toastTimeouts.push(exitId);
 }
 
 // ===== Update Banner =====
@@ -238,28 +250,35 @@ if (window.__pwaInstallPromptEvent) {
   delete window.__pwaInstallPromptEvent;
 }
 
-// Fallback listener — first-visit case where SW registers after module loads
-window.addEventListener('beforeinstallprompt', function (e) {
-  e.preventDefault();
-  deferredPrompt = e;
-  updateInstallMenuVisibility();
-});
+// Module-level listeners attached behind a window flag so HMR doesn't double-subscribe.
+// Pattern: TIMER_LEAKS.md variant 5. Paired teardown in the import.meta.hot.dispose() block at end.
+if (typeof window !== 'undefined' && !window.__pwaModuleAttached) {
+  window.__pwaModuleAttached = true;
 
-// Requirement: Clean up install state when the app is actually installed
-// Approach: Listen for appinstalled event. Clear deferred prompt and hide menu item.
-// Without this, the install menu item stays visible even after successful install.
-window.addEventListener('appinstalled', function () {
-  deferredPrompt = null;
-  isStandalone = true;
-  updateInstallMenuVisibility();
-});
+  // Fallback listener — first-visit case where SW registers after module loads
+  beforeInstallPromptListener = function (e) {
+    e.preventDefault();
+    deferredPrompt = e;
+    updateInstallMenuVisibility();
+  };
+  window.addEventListener('beforeinstallprompt', beforeInstallPromptListener);
+
+  // Requirement: Clean up install state when the app is actually installed.
+  // Without this, the install menu item stays visible even after successful install.
+  appInstalledListener = function () {
+    deferredPrompt = null;
+    isStandalone = true;
+    updateInstallMenuVisibility();
+  };
+  window.addEventListener('appinstalled', appInstalledListener);
+}
 
 // For Safari/Firefox: show manual instructions after 1s if no native prompt fires
 // Requirement: Non-Chromium browsers can still install PWAs manually; showing
 //   instructions is better than hiding the feature entirely.
 // Approach: 1-second timeout gives beforeinstallprompt time to fire first.
 if (!isStandalone && !dismissed && supportsManualInstall) {
-  setTimeout(function () {
+  manualInstallTimeoutId = setTimeout(function () {
     if (!deferredPrompt) {
       updateInstallMenuVisibility();
     }
@@ -286,7 +305,8 @@ function updateInstallMenuVisibility() {
 
 // Initialize visibility after DOM is ready
 if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', updateInstallMenuVisibility);
+  domContentLoadedListener = updateInstallMenuVisibility;
+  document.addEventListener('DOMContentLoaded', domContentLoadedListener);
 } else {
   updateInstallMenuVisibility();
 }
@@ -465,3 +485,28 @@ window.__pwa = {
   triggerInstall: triggerInstall,
   dismissInstall: dismissInstall,
 };
+
+// ===== HMR teardown =====
+// Vite re-evaluates this module on hot reload. Without explicit cleanup the old
+// copy's setInterval, setTimeout, and global listeners stay attached and a fresh
+// set is added on top — visible as duplicate update checks and console noise in dev.
+// Pattern: docs/implementations/TIMER_LEAKS.md variants 4 + 5.
+if (import.meta.hot) {
+  import.meta.hot.dispose(function () {
+    if (swUpdateIntervalId !== null) clearInterval(swUpdateIntervalId);
+    if (manualInstallTimeoutId !== null) clearTimeout(manualInstallTimeoutId);
+    toastTimeouts.forEach(clearTimeout);
+    toastTimeouts.length = 0;
+    if (beforeInstallPromptListener) {
+      window.removeEventListener('beforeinstallprompt', beforeInstallPromptListener);
+    }
+    if (appInstalledListener) {
+      window.removeEventListener('appinstalled', appInstalledListener);
+    }
+    if (domContentLoadedListener) {
+      document.removeEventListener('DOMContentLoaded', domContentLoadedListener);
+    }
+    closeInstallModal();  // closes any open modal + clears its escape listener
+    window.__pwaModuleAttached = false;
+  });
+}
