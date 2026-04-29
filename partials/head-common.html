@@ -1,3 +1,18 @@
+<!-- Google Analytics 4 (gtag.js)
+     Requirement: Aggregate visitor metrics for the portfolio.
+     Approach: Standard GA4 loader. Async, so it doesn't block flash-prevention
+       (which is the synchronous script below this block) or first paint.
+     CSP: hosts allowlisted in index.html / project.html / pattern.html
+       (script-src + connect-src). Updating CSP without updating the snippet
+       (or vice versa) silently breaks tracking — keep the two in sync. -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-MJWQS453DP"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-MJWQS453DP');
+</script>
+
 <!-- Requirement: Prevent dark mode flash on page load
      Approach: Inline classic script reads localStorage and sets both .dark class
        (for Tailwind dark: variant) and data-theme (for DaisyUI component colors)
