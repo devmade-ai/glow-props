@@ -291,18 +291,19 @@ Add to existing PWA_SYSTEM items: **hourly polling lacks visibility-aware pause*
 
 Add to existing APP_ICONS items: **maskable 1024px icon lacks safe-zone padding** — `manifest icons` array currently lists `pwa-1024x1024.png` with `purpose: maskable` but the file appears to use the same canvas as the `any` purpose icon. Re-generate with the standard maskable safe-zone (~10% inset) per `docs/implementations/APP_ICONS.md` "Maskable Icons" section.
 
-### repo-tor — Resolved on patterns, one doc-alignment touch-up open (2026-04-25)
+### repo-tor — FULLY RESOLVED (2026-04-29)
 
-React + Vite dashboard app. All implementation patterns compliant. Re-confirmed 2026-04-25 against latest commit `cb5931c` (2026-04-19, no commits since the 2026-04-21 audit-correction date):
-- HISTORY.md removed (HTTP 404); Communication section at `CLAUDE.md:335`.
-- Triggers section at `CLAUDE.md:393` has all 8 group tables (correctness/trust/speed/frontend/quality/ops/design/fleet) + Meta sweeps + Reflective passes + scope modifiers.
-- ICON_CACHE_BUST complete (tripwire test in `scripts/__tests__/icon-cache-bust.test.mjs` + "Already installed and the icon looks outdated?" collapsible at `dashboard/js/components/InstallInstructionsModal.jsx:110`).
-- EVENT_BUS decided against (React Context + useReducer in `dashboard/js/AppContext.jsx` — `createContext` L17, `useReducer` L36, `AppProvider` exported).
-- DOWNLOAD_PDF complete: `dashboard/js/components/Header.jsx:187` has exactly `{ label: 'Save as PDF', action: () => window.print(), icon: icons.pdf, separator: true }`; `dashboard/styles.css:160` has `@media print` element overrides; lines 158-159 carry the design-rationale header comment explaining JSX uses Tailwind `print:hidden` (intentionally no `.no-print` utility class).
+React + Vite dashboard app. All implementation patterns compliant. Re-verified 2026-04-29 against `73efc7807a` (PR #117 "align-components" merged 2026-04-29) — original alignment from commit `cb5931c` (2026-04-19) holds, line numbers below reflect current state:
+- HISTORY.md removed (HTTP 404 at both `/HISTORY.md` and `/docs/HISTORY.md`); changelog policy documented at `CLAUDE.md:50`.
+- Communication section at `CLAUDE.md:344`.
+- Triggers section at `CLAUDE.md:403` has all 8 group tables: correctness L439, trust L449, speed L457, frontend L466, quality L480, ops L499, design L511, fleet L520 + Meta sweeps L527 + Reflective passes L540 + scope modifiers L414.
+- Implementation Patterns (Source of Truth) at `CLAUDE.md:558` with "Never create local copies" rule at L582; reinforced as prohibition at L618.
+- ICON_CACHE_BUST complete (tripwire test in `scripts/__tests__/icon-cache-bust.test.mjs` HTTP 200 + "Already installed and the icon looks outdated?" collapsible at `dashboard/js/components/InstallInstructionsModal.jsx:108-110`).
+- EVENT_BUS decided against (React Context + useReducer in `dashboard/js/AppContext.jsx` — `createContext` L17, `useReducer` L36, `AppProvider` exported at L35).
+- DOWNLOAD_PDF complete: `dashboard/js/components/Header.jsx:187` has exactly `{ label: 'Save as PDF', action: () => window.print(), icon: icons.pdf, separator: true }`; `dashboard/styles.css:160` has `@media print` element overrides; the design-rationale header comment at L159 explains JSX uses Tailwind `print:hidden` (intentionally no `.no-print` utility class).
+- **TIMER_LEAKS subsection now present** at `CLAUDE.md:133` (`### Timer and Subscription Cleanup` inside Code Standards) — added in PR #117, closing the only remaining doc-alignment gap.
 
-**One doc-alignment item (2026-04-25):**
-
-1. [ ] **Add `### Timer and Subscription Cleanup` subsection to CLAUDE.md Code Standards** — Cross-fleet TIMER_LEAKS pattern was upstreamed to glow-props 2026-04-22 (commit `34607ad`) with a corresponding CLAUDE.md subsection placed between `### Cleanup` and `### Quality Checks`. repo-tor's last commit (`cb5931c`, 2026-04-19) predates this. Fetch the current subsection from glow-props CLAUDE.md and insert at the matching location.
+No pending items.
 
 ### few-lap
 
@@ -557,8 +558,8 @@ Re-classified `Partial → Missing` 2026-04-25; **still bare 2026-04-29**. `inde
 
 Updated 2026-04-25 after parallel full-sweep re-validation (13 agents — 1 coverage + 12 per-repo).
 
-Fully clean (no pending items): **canva-grid, budgy-ting, sun-sea-o, graphiki, synctone, glow-props** (6 repos).
-Fully clean on patterns, doc-alignment touch-ups only: **repo-tor** (TIMER_LEAKS subsection in CLAUDE.md), **few-lap** (TIMER_LEAKS subsection + DOWNLOAD_PDF decision + __DEV__ guard restore).
+Fully clean (no pending items): **canva-grid, budgy-ting, sun-sea-o, graphiki, synctone, glow-props, repo-tor** (7 repos — repo-tor's TIMER_LEAKS subsection landed in PR #117 2026-04-29).
+Fully clean on patterns, doc-alignment touch-ups only: **few-lap** (TIMER_LEAKS subsection + DOWNLOAD_PDF decision + __DEV__ guard restore).
 Mid-backlog: **tool-till-tees** (CLAUDE.md/HISTORY/Triggers DONE via PR #24; remaining: trigger-name collision note, APP_ICONS decision, THEME N/A, EVENT_BUS N/A documentation, backend pattern upstream proposals), **model-pear** (Communication + Z-index done; still needs PWA, THEME_DARK_MODE, BURGER_MENU, HISTORY.md, Triggers, DOWNLOAD_PDF button, EVENT_BUS, TIMER_LEAKS subsection, non-standard headings).
 Largest backlogs: **see-veo, four-ems**.
 
