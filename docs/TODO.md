@@ -344,12 +344,12 @@ React + Vite app. All 10 glow-props patterns compliant. Re-verified 2026-04-25 a
 
 No pending items.
 
-### graphiki — FULLY RESOLVED (2026-04-25)
+### graphiki — FULLY RESOLVED (2026-04-29)
 
-React + Vite graph editor. All 10 glow-props patterns compliant. Verified 2026-04-25 against latest commit `66b5e7ec6a` 2026-04-23 (PR #53 "review-claude-md"):
-- CLAUDE.md fully aligned (Communication, Implementation Patterns, prohibition, AI Note).
-- **Triggers replaced** at `CLAUDE.md:722` (commit `1241878750`, 2026-04-22 "docs(claude-md): align with glow-props CLAUDE.md") — all 8 group tables: correctness L758, trust L768, speed L776, frontend L785, quality L799, ops L818, design L830, fleet L839 + Meta sweeps L846 + Reflective passes L859 + scope modifiers L733. No old `rev`/`aud`/`start` triggers remain.
-- **DOWNLOAD_PDF intentionally skipped** — documented at `CLAUDE.md:710`: *"PDF export — intentionally skipped. Graphiki is a graph editor with canvas/SVG output — `window.print()` can't reliably capture it, and `pdf-lib` + `html-to-image` adds bundle cost for a niche use case. JSON export covers data portability."* `pdf-lib` and `html-to-image` confirmed absent from `package.json`.
+React + Vite graph editor. All 10 glow-props patterns compliant. Re-verified 2026-04-29 against `9d3c87c9c9` (PR #54 "debug-graphiki-mobile" merged 2026-04-29) — original alignment from PR #53 (`66b5e7ec6a`, 2026-04-23 "review-claude-md") holds; line numbers below reflect current state:
+- CLAUDE.md fully aligned (Communication L343, Implementation Patterns, AI Note L710, prohibition L908).
+- **Triggers replaced** at `CLAUDE.md:721` (commit `1241878750`, 2026-04-22 "docs(claude-md): align with glow-props CLAUDE.md") — all 8 group tables: correctness L757, trust L767, speed L775, frontend L784, quality L798, ops L817, design L829, fleet L838 + Meta sweeps L845 + Reflective passes L858 + scope modifiers L732. No old `rev`/`aud`/`start` triggers remain.
+- **DOWNLOAD_PDF intentionally skipped** — documented at `CLAUDE.md:709`: *"PDF export — intentionally skipped. Graphiki is a graph editor with canvas/SVG output — `window.print()` can't reliably capture it, and `pdf-lib` + `html-to-image` adds bundle cost for a niche use case. JSON export covers data portability."* `pdf-lib` and `html-to-image` confirmed absent from `package.json`.
 - BURGER_MENU disclosure, DEBUG_SYSTEM hardened, PWA visibility checks + 30s suppression (`UPDATE_SUPPRESSION_MS = 30_000` at `usePWAUpdate.ts:15`, `visibilitychange` listener L62-67), EVENT_BUS typed `EventBus<M>`.
 - Z_INDEX_SCALE compliant: Toast `z-[70]`, BurgerMenu `zIndex: 49/50`, ContextMenu `z-50`.
 - ICON_CACHE_BUST tripwire test at `src/test/icon-cache-bust.test.ts` + user communication collapsible at `src/components/pwa/InstallInstructionsModal.tsx:132-134` (`<details><summary>Already installed and the icon looks outdated?</summary>`).
@@ -507,33 +507,38 @@ No pending pattern items.
 
 **Hybrid repo:** Vercel-hosted Node.js API (`api/`) + a minimal React 19 / Vite landing page (`src/App.tsx`, `src/main.tsx`, `index.css`). Backs three systems: contact/notification endpoint, Four Ems form-builder API, Sancio agreement management — all backed by Supabase. Serves 4 frontend consumers (four-ems, glow-props, see-veo, sun-sea-o) per CORS allowlist in `lib/cors.ts`. Tech stack: React 19.2 + Vite + Tailwind v4 + Vitest 4 + Supabase + Vercel serverless functions + bcryptjs + nodemailer.
 
-**Migration COMPLETE 2026-04-23 via PR #24 (commit `f7b2f29`):**
-- HISTORY.md gone (404). No HISTORY references in CLAUDE.md.
+**Migration COMPLETE 2026-04-23 via PR #24 (commit `f7b2f29`); re-verified 2026-04-29 against `99e5172a55` (PR #27 "debug-api-caching" merged 2026-04-29) — alignment intact, line numbers below reflect current state:**
+- HISTORY.md gone (404 at both `/HISTORY.md` and `/docs/HISTORY.md`). No HISTORY references in CLAUDE.md.
 - Suggested Implementations section deleted.
-- Implementation Patterns (Source of Truth) at `CLAUDE.md:594`.
-- AI Note "Implementation patterns — always fetch from glow-props" at `CLAUDE.md:415`.
-- Prohibition "Create local copies of implementation pattern files…" at `CLAUDE.md:425`.
-- Full `## Communication` section at `CLAUDE.md:168-183` (between Principles L156 and Code Standards L185).
-- `## Triggers` at `CLAUDE.md:441` with all 8 groups (Correctness/Trust/Speed/Frontend/Quality/Ops/Design/Fleet) + Meta sweeps + Reflective passes + Scope modifiers + Behavior rules.
+- Implementation Patterns (Source of Truth) at `CLAUDE.md:621`.
+- AI Note "Implementation patterns — always fetch from glow-props" at `CLAUDE.md:444`.
+- Prohibition "Create local copies of implementation pattern files…" at `CLAUDE.md:453`.
+- Full `## Communication` section at `CLAUDE.md:194-210` (between Principles L182 and Code Standards L211).
+- `## Triggers` at `CLAUDE.md:468` with all 8 groups (Correctness L504 / Trust L514 / Speed L522 / Frontend L531 / Quality L545 / Ops L564 / Design L576 / Fleet L585) + Meta sweeps L592 + Reflective passes L605 + Scope modifiers L479 + Behavior rules L493.
+- **TIMER_LEAKS subsection present** at `CLAUDE.md:243` (`### Timer and Subscription Cleanup` between `### Cleanup` and `### Quality Checks`).
 
-**Remaining open items 2026-04-25:**
+**Remaining open items 2026-04-29:**
 
 #### Triggers — name-collision AI Note
 
-1. [ ] **Add backend trigger-name collision note** — Trigger names like `api`, `db` collide with `api/`, `supabase/`, `lib/` directory names in this backend repo. Add a line in AI Notes clarifying that these single-word triggers refer to trigger names, not directories, when invoked at the start of a message.
+1. [ ] **Add backend trigger-name collision note** — Trigger names like `api`, `db` collide with `api/`, `supabase/`, `lib/` directory names in this backend repo. Add a line in AI Notes clarifying that these single-word triggers refer to trigger names, not directories, when invoked at the start of a message. **Verified missing 2026-04-29.**
 
 #### APP_ICONS — Decide
 
-Re-classified `Partial → Missing` 2026-04-25. `index.html` is bare (no favicon, no apple-touch-icon, no manifest, no theme-color), and there's no `scripts/` directory with an icon generator.
+Re-classified `Partial → Missing` 2026-04-25; **still bare 2026-04-29**. `index.html` has no favicon, no apple-touch-icon, no manifest, no theme-color. There's no `scripts/` directory.
 
 1. [ ] **Decide: does the landing page warrant icon polish?** If the landing page is customer-facing (it is — referenced from four-ems/glow-props/see-veo/sun-sea-o per CORS allowlist), at minimum add a favicon and meta description. If brochureware-only, mark N/A in CLAUDE.md with rationale.
 2. [ ] If implementing: add `scripts/generate-icons.mjs` with `sharp({ density: 400 })`, generate favicon.png + apple-touch-icon.png + maskable variants. Add `<link rel="icon">` and `<link rel="apple-touch-icon">` to `index.html`.
 
 #### THEME_DARK_MODE — Decide
 
+**Verified absent 2026-04-29:** no `data-theme`, `prefers-color-scheme`, or `@plugin "daisyui"` references in CLAUDE.md.
+
 1. [ ] **Decide: does the landing page need light/dark theming?** Given it's a minimal landing for backend services, fixed style is likely correct — mark N/A in CLAUDE.md with rationale ("brochureware landing for backend API; users transiently here, theming overhead unjustified").
 
 #### EVENT_BUS — Document as N/A
+
+**Verified missing 2026-04-29:** no `### Not Applicable Patterns` subsection or EVENT_BUS rationale in CLAUDE.md.
 
 1. [ ] **Document EVENT_BUS Not Applicable in CLAUDE.md** — Each Vercel serverless function is short-lived and stateless; the candidate use case (form submission → email + audit log + webhook dispatch in a single request) doesn't justify a pub/sub. Document with rationale; revisit if a shared request-scoped event pipeline is needed.
 
@@ -541,10 +546,10 @@ Re-classified `Partial → Missing` 2026-04-25. `index.html` is bare (no favicon
 
 1. [ ] **Propose to glow-props if recurring:** CORS allowlist discipline (`lib/cors.ts`), env-var schema validation (Zod on `process.env`), serverless error surfacing, RLS policy tests, SMTP failure handling. If any becomes a recurring need across backends, propose as a new glow-props pattern.
 
-**New gaps spotted 2026-04-25:**
-- `index.html` lacks `<meta name="description">`, Open Graph tags, favicon, and `theme-color` — even brochureware should have these for link previews and browser-tab clarity.
-- `docs/SPEC_API_NAMING_CONSISTENCY.md` and `docs/BACKEND_SPEC.md` are non-standard doc files not referenced in CLAUDE.md Documentation section. Either reference them (with purpose + when-to-read + when-to-update) or fold their content into `docs/USER_GUIDE.md` / `docs/API.md`.
-- Verify recent commits include the full glow-props commit footer block (Tags/Complexity/Urgency/Impact/Risk/Debt/Epic/Semver) per Code Standards.
+**New gaps spotted 2026-04-25, status as of 2026-04-29:**
+- `index.html` still lacks `<meta name="description">`, Open Graph tags, favicon, and `theme-color` — even brochureware should have these for link previews and browser-tab clarity. (Same finding as APP_ICONS — fixing one fixes both.)
+- `docs/SPEC_API_NAMING_CONSISTENCY.md` and `docs/BACKEND_SPEC.md` are non-standard doc files not referenced in CLAUDE.md Documentation section. Either reference them (with purpose + when-to-read + when-to-update) or fold their content into `docs/USER_GUIDE.md` / `docs/API.md`. (Both files confirmed present 2026-04-29.)
+- ~~Verify recent commits include the full glow-props commit footer block (Tags/Complexity/Urgency/Impact/Risk/Debt/Epic/Semver) per Code Standards.~~ **Resolved 2026-04-29:** spot-check of last 5 non-merge commits shows all 4 carry the full footer block.
 
 ---
 
