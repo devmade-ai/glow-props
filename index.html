@@ -18,9 +18,10 @@
   <meta name="theme-color" content="#261b25" media="(prefers-color-scheme: dark)">
   <!-- Requirement: Defense-in-depth against XSS — restrict script/style sources
        Approach: CSP meta tag allowing self, inline scripts (required for flash prevention),
-         and Google Fonts. No eval, no external script sources.
+         Google Fonts, and Google Analytics (gtag.js + GA4 beacons).
+         GA hosts must be kept in sync with the snippet in partials/head-common.html.
        Alternative: HTTP header — rejected, GitHub Pages doesn't allow custom headers -->
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: https:; connect-src 'self';">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://www.googletagmanager.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: https:; connect-src 'self' https://www.googletagmanager.com https://*.google-analytics.com https://*.analytics.google.com https://stats.g.doubleclick.net;">
   <link rel="canonical" href="https://devmade-ai.github.io/glow-props/">
   <title>devmade-ai</title>
   <meta name="description" content="Software projects, internal tools, and reusable engineering patterns by devmade-ai.">

@@ -43,7 +43,7 @@ Also hosts `CLAUDE.md` — a comprehensive AI assistant ruleset used as a refere
 
 The site documents reusable implementation patterns. Each pattern has YAML frontmatter — drop a `.md` file into `docs/implementations/` and it appears in the app automatically via the `generatePatternManifest` Vite plugin.
 
-Currently 10 patterns: PWA System, Theme & Dark Mode, Burger Menu, App Icons from SVG, Download as PDF, HTTPS Proxy Support, Debug System, Event Bus, Z-Index Scale, PWA Icon Cache Busting.
+Currently 11 patterns: PWA System, Theme & Dark Mode, Burger Menu, App Icons from SVG, Download as PDF, HTTPS Proxy Support, Debug System, Event Bus, Z-Index Scale, PWA Icon Cache Busting, Timer & Subscription Cleanup.
 
 Full pattern reference: [CLAUDE.md](https://devmade-ai.github.io/glow-props/CLAUDE.md)
 
@@ -84,7 +84,7 @@ glow-props/
     AI_MISTAKES.md              # Learnings from past AI errors
     USER_ACTIONS.md             # Manual tasks requiring user intervention
     PROJECT_DOCS.md             # Status tracker and update guide for mirrored docs
-    implementations/            # Implementation patterns (10 files, YAML frontmatter)
+    implementations/            # Implementation patterns (11 files, YAML frontmatter)
   .github/
     workflows/
       deploy.yml                # GitHub Pages deployment on push to main
@@ -119,3 +119,11 @@ npm run generate-icons
 Automated via GitHub Actions. Pushes to `main` trigger a build and deploy to GitHub Pages.
 
 **Setup:** In repo Settings > Pages, set the source to **GitHub Actions**.
+
+## Analytics
+
+This site uses Google Analytics 4 (measurement ID `G-MJWQS453DP`) to track aggregate visitor metrics — page views, referrers, geography. The loader is in `partials/head-common.html` and is loaded async on every page. The CSP in `index.html`, `project.html`, and `pattern.html` allowlists `googletagmanager.com` and `*.google-analytics.com` / `*.analytics.google.com`.
+
+**Privacy posture:** No consent banner is shown. EU/UK visitors are tracked the moment they load any page. If the site starts attracting meaningful EU traffic, add Google Consent Mode v2 (denied-by-default) plus a small banner — see `docs/TODO.md`.
+
+To disable analytics locally, comment out the `<script>` block at the top of `partials/head-common.html`. To remove entirely, also strip the `googletagmanager.com` / `google-analytics.com` entries from the three CSP meta tags.

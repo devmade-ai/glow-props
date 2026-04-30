@@ -60,8 +60,6 @@ function copyRootFiles() {
   return {
     name: 'copy-root-files',
     // Requirement: Serve pattern docs during dev so pattern.html works locally
-    // Approach: Dev server middleware rewrites /patterns/*.md to docs/implementations/*.md
-    // Requirement: Serve pattern docs during dev so pattern.html works locally
     // Approach: Dev server middleware rewrites /patterns/*.md to docs/implementations/*.md.
     //   Uses basename() to prevent path traversal (e.g., /patterns/../../../etc/passwd).
     configureServer(server) {
