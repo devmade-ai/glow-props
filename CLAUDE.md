@@ -279,17 +279,6 @@ These footers are required on every commit. No exceptions.
 - **Discontinued repos — skip entirely:** `plant-fur` and `coin-zapp` are discontinued. Do not check, audit, align, or include them in cross-project operations.
 - **Implementation patterns — always fetch from glow-props.** Never look for local copies of implementation pattern files (e.g., `docs/implementations/*.md`) in downstream repos. They do not exist locally — the single source of truth is the `docs/implementations/` folder in the glow-props repo. Fetch the latest version before every implementation task.
 - **TIMER_LEAKS canonical examples in this repo:** `src/pwa.js` demonstrates variants 1 (nested timeouts in `showToast`), 4 (module dispose via `import.meta.hot.dispose`), and 5 (`window.__pwaModuleAttached` HMR guard for global listeners). `src/markdown.js` demonstrates variant 4. `public/theme.js` demonstrates variant 4 for a static-asset script (no HMR; `window.__theme.dispose()` exposed for tests/manual re-init). New listener/timer registrations in this repo should match one of these shapes; `npm run verify:timer-cleanup` is a static tripwire that fails if a `src/` module gains a registration without an `import.meta.hot.dispose` block.
-- **DaisyUI is the styling system in DaisyUI-installed repos. No exceptions. No "documented why we rolled custom" escape hatches.** If `daisyui` is in `package.json`:
-  - **Tokens.** No overrides of `--color-*`, `--radius-selector` / `--radius-field` / `--radius-box`, `--border`, `--depth`, `--size-*`, `--noise`. No inline `style={{ borderRadius: ... }}`, no arbitrary `rounded-[Xpx]`. Use `rounded-box` / `rounded-field` / `rounded-selector` and DaisyUI's size scale.
-  - **Components.** Every `<button>` is `btn` + variant. Form inputs are `input input-bordered` / `select select-bordered` / `textarea textarea-bordered` / `checkbox` / `radio` / `range` / `file-input`. Cards/panels are `card` + `card-body`. Status is `badge` / `alert` / `toast`. Overlays are `modal` / `drawer` / `dropdown`. Tabs are `tabs` + `tab`. Tooltips are `tooltip`.
-  - **Colors.** DaisyUI semantic tokens only — `bg-base-100`/`200`/`300`, `text-base-content`, `text-primary`/`bg-primary` (+ `-content`), `text-secondary` / `accent` / `info` / `success` / `warning` / `error`. No `bg-white`, `bg-gray-*`, `text-gray-*`, `text-blue-*`, etc. No `dark:` color pairs — DaisyUI's `data-theme` switches both layers automatically.
-  - **Borders.** `border-base-300` / `border-base-content/20`. No `border-gray-*` / `border-zinc-*` / `border-slate-*`.
-  - **Shadows.** DaisyUI shadows only. No arbitrary `shadow-[...]`.
-  - **Inline hex.** None. No `style={{ color: '#...' }}` / `style={{ background: '#...' }}`.
-  - **Build integrity.** Theme-meta generator is idempotent (second run produces zero diff). `GEN:` markers in `index.html` stay intact. Theme catalog stays in sync with `daisyui/theme/object.js`.
-  - **If you think DaisyUI can't express something: stop and ask the user.** Don't roll custom. Don't write a justification comment. Don't add it to a "documented exceptions" list.
-  - **When auditing existing code: violations are fixed, not justified.** Don't rationalize a hand-rolled component as "intentional because…". Replace it.
-  - N/A only when `daisyui` is not in `package.json`.
 
 ### REMINDER: READ AND FOLLOW THE AI NOTES EVERY TIME
 
@@ -310,7 +299,6 @@ Never:
 - Mention branches, pull requests, squashing, rebasing, merging, or force-pushing unless the user raises the topic first. When the user does raise one, answer the specific question and stop — do not volunteer opinions on what they should do process-wise.
 - Frame any work as "out of scope" or "deferred as out of scope". Work is either doable (do it) or blocked on missing user input (say exactly what input is needed). "Scope" is a process concept, not a reason to skip work.
 - Offer opinions on git history editing, branch strategy, PR size or shape, review flow, or commit structure. Follow instructions; don't editorialize on how the work should be organized.
-- Document an "exception" or "intentional deviation" from DaisyUI in a DaisyUI-installed repo. Hand-rolled components, token overrides, raw Tailwind colors, `dark:` pairs, arbitrary radii/shadows, inline hex — all are violations to be fixed, never justified. If DaisyUI seems insufficient, ask the user. Don't write a "we rolled custom because…" comment.
 
 ### REMINDER: READ AND FOLLOW THE PROHIBITIONS EVERY TIME
 
@@ -391,63 +379,52 @@ Examples:
 | 20 | `dark-mode` | `dm` | Semantic color usage, contrast in both themes, flash-on-load |
 | 21 | `visual` | `vis` | Layout/spacing/alignment, visual hierarchy, brand consistency, dark-vs-light visual parity, inconsistent corner radii/shadows/type scale |
 
-### DaisyUI discipline — group `daisyui`
-
-Findings are fixed, not justified. No "documented exceptions" carve-outs. All four are N/A only when `daisyui` is not in `package.json`.
-
-| # | Trigger | Alias | Looks for |
-|---|---------|-------|-----------|
-| 22 | `daisyui-tokens` | `dst` | Token overrides in CSS — `--color-*`, `--radius-selector` / `--radius-field` / `--radius-box`, `--border`, `--depth`, `--size-*`, `--noise`. Arbitrary `rounded-[Xpx]`, inline `style={{ borderRadius: ... }}`. `@plugin "daisyui"` config sanity — theme list, `--default` / `--prefersdark`, `@custom-variant dark`, `color-scheme`. |
-| 23 | `daisyui-components` | `dsc` | Hand-rolled where DaisyUI has a class — `<button>` not `btn`, inputs not `input input-bordered` (etc.), panels not `card` + `card-body`, status not `badge` / `alert` / `toast`, overlays not `modal` / `drawer` / `dropdown`, tabs not `tabs` + `tab`, custom tooltips not `tooltip`. |
-| 24 | `daisyui-utilities` | `dsu` | Raw Tailwind colors where semantic tokens fit — `bg-white`, `bg-gray-*`, `text-gray-*`, `text-blue-*`. Non-semantic borders — `border-gray-*` / `border-zinc-*` / `border-slate-*`. Arbitrary `shadow-[...]`. Inline hex — `style={{ color: '#...' }}` / `style={{ background: '#...' }}`. `dark:` color pairs that should collapse to a single semantic token. |
-| 25 | `daisyui-build` | `dsb` | Theme-meta generator non-idempotent (second run produces a diff). `GEN:` markers in `index.html` stripped, moved, or formatted away. Theme catalog out of sync with `daisyui/theme/object.js` (DaisyUI bumped a color, regen missed). |
-
 ### Maintainability — group `quality`
 
 | # | Trigger | Alias | Looks for |
 |---|---------|-------|-----------|
-| 26 | `clean` | `cln` | Dead code, duplication, commented-out blocks, unused imports/exports, leftover TODOs |
-| 27 | `naming` | `nam` | Identifier clarity, consistency with local norms, misleading abbreviations |
-| 28 | `patterns` | `pat` | Deviation from established patterns (fleet-wide glow-props or repo-local), reinvented wheels |
-| 29 | `docs` | `doc` | Docs ↔ code drift, missing docs on public API, outdated README/CLAUDE.md claims |
-| 30 | `doc-cleanup` | `dcl` | Duplicated content across doc files, stale files no longer relevant, orphaned docs nothing references, superseded files that replaced but didn't delete their predecessor, sections still describing removed features |
-| 31 | `tests` | `tst` | Coverage gaps on critical paths, flaky patterns, test smells, missing edge-case tests |
-| 32 | `complexity` | `cpx` | Function length, nesting depth, cyclomatic complexity hotspots |
-| 33 | `hacks` | `hck` | `TODO`/`FIXME`/`HACK`/`XXX` markers, `@ts-ignore`/`@ts-expect-error`, `any` escapes framed as temporary, `setTimeout` for timing fixes, quick patches waiting to be done properly |
-| 34 | `simplify` | `smp` | Reinvented framework features, over-engineered abstractions, custom code that could be 1–2 stdlib/library calls, unnecessary layers |
-| 35 | `reuse` | `rus` | Custom-vs-stdlib balance: how much is hand-written that shouldn't be; logic that should be extracted for reuse but isn't; abstractions generalized for a single caller; speculative parameters, defensive checks for impossible states, and configurability serving no real need |
-| 36 | `back-compat` | `bck` | Orphaned feature flags, deprecated branches with no callers, `legacy*` exports, backcompat shims outliving their purpose, `// kept for compatibility` blocks |
-| 37 | `comments` | `cmt` | Code comments against repo rules — WHY not WHAT, no PR-reference rot, no AI narration, no commented-out blocks unless `// KEEP:` annotated |
-| 38 | `dx` | `dx` | Developer experience: README/setup clarity, dev-error message quality, source map/stack trace usefulness, debug-surface ergonomics, contribution path friction |
-| 39 | `undone` | `und` | Started-but-unfinished work — partial implementations, half-wired features, WIP branches of logic, features only reachable from dev but not production |
+| 22 | `clean` | `cln` | Dead code, duplication, commented-out blocks, unused imports/exports, leftover TODOs |
+| 23 | `naming` | `nam` | Identifier clarity, consistency with local norms, misleading abbreviations |
+| 24 | `patterns` | `pat` | Deviation from established patterns (fleet-wide glow-props or repo-local), reinvented wheels |
+| 25 | `docs` | `doc` | Docs ↔ code drift, missing docs on public API, outdated README/CLAUDE.md claims |
+| 26 | `doc-cleanup` | `dcl` | Duplicated content across doc files, stale files no longer relevant, orphaned docs nothing references, superseded files that replaced but didn't delete their predecessor, sections still describing removed features |
+| 27 | `tests` | `tst` | Coverage gaps on critical paths, flaky patterns, test smells, missing edge-case tests |
+| 28 | `complexity` | `cpx` | Function length, nesting depth, cyclomatic complexity hotspots |
+| 29 | `hacks` | `hck` | `TODO`/`FIXME`/`HACK`/`XXX` markers, `@ts-ignore`/`@ts-expect-error`, `any` escapes framed as temporary, `setTimeout` for timing fixes, quick patches waiting to be done properly |
+| 30 | `simplify` | `smp` | Reinvented framework features, over-engineered abstractions, custom code that could be 1–2 stdlib/library calls, unnecessary layers |
+| 31 | `reuse` | `rus` | Custom-vs-stdlib balance: how much is hand-written that shouldn't be; logic that should be extracted for reuse but isn't; abstractions generalized for a single caller; speculative parameters, defensive checks for impossible states, and configurability serving no real need |
+| 32 | `back-compat` | `bck` | Orphaned feature flags, deprecated branches with no callers, `legacy*` exports, backcompat shims outliving their purpose, `// kept for compatibility` blocks |
+| 33 | `comments` | `cmt` | Code comments against repo rules — WHY not WHAT, no PR-reference rot, no AI narration, no commented-out blocks unless `// KEEP:` annotated |
+| 34 | `dx` | `dx` | Developer experience: README/setup clarity, dev-error message quality, source map/stack trace usefulness, debug-surface ergonomics, contribution path friction |
+| 35 | `undone` | `und` | Started-but-unfinished work — partial implementations, half-wired features, WIP branches of logic, features only reachable from dev but not production |
 
 ### Operational — group `ops`
 
 | # | Trigger | Alias | Looks for |
 |---|---------|-------|-----------|
-| 40 | `deps` | `dep` | Outdated, unused, vulnerable, license-risky dependencies |
-| 41 | `observability` | `obs` | Log coverage, metric hygiene, trace completeness, debug-pill surfaces |
-| 42 | `reliability` | `rel` | Retries, timeouts, idempotency, graceful degradation, offline handling |
-| 43 | `config` | `cfg` | Env var handling, secret management, config schema drift |
-| 44 | `migration` | `mig` | DB migration safety, API versioning, rollback plan, backward compatibility |
-| 45 | `ci` | `ci` | Pipeline health, build speed, cache effectiveness, flake rate |
-| 46 | `pwa` | `pwa` | Service worker correctness, manifest validity, install prompt handling, update flow, offline behavior, icon cache-busting, standalone-mode quirks |
+| 36 | `deps` | `dep` | Outdated, unused, vulnerable, license-risky dependencies |
+| 37 | `observability` | `obs` | Log coverage, metric hygiene, trace completeness, debug-pill surfaces |
+| 38 | `reliability` | `rel` | Retries, timeouts, idempotency, graceful degradation, offline handling |
+| 39 | `config` | `cfg` | Env var handling, secret management, config schema drift |
+| 40 | `migration` | `mig` | DB migration safety, API versioning, rollback plan, backward compatibility |
+| 41 | `ci` | `ci` | Pipeline health, build speed, cache effectiveness, flake rate |
+| 42 | `pwa` | `pwa` | Service worker correctness, manifest validity, install prompt handling, update flow, offline behavior, icon cache-busting, standalone-mode quirks |
 
 ### Design-level — group `design`
 
 | # | Trigger | Alias | Looks for |
 |---|---------|-------|-----------|
-| 47 | `architecture` | `arch` | Coupling, layering violations, abstraction leaks, module boundaries |
-| 48 | `api` | `api` | Interface consistency, versioning, deprecation, contract clarity |
-| 49 | `state` | `sta` | Where state lives, derivation vs storage, single-source-of-truth violations |
-| 50 | `data-model` | `dat` | Schema normalization, foreign-key integrity, nullable discipline |
+| 43 | `architecture` | `arch` | Coupling, layering violations, abstraction leaks, module boundaries |
+| 44 | `api` | `api` | Interface consistency, versioning, deprecation, contract clarity |
+| 45 | `state` | `sta` | Where state lives, derivation vs storage, single-source-of-truth violations |
+| 46 | `data-model` | `dat` | Schema normalization, foreign-key integrity, nullable discipline |
 
 ### Fleet alignment — group `fleet`
 
 | # | Trigger | Alias | Looks for |
 |---|---------|-------|-----------|
-| 51 | `align` | `aln` | Drift between this repo's CLAUDE.md and glow-props CLAUDE.md — missing sections, stale rules, divergent conventions |
-| 52 | `pattern-audit` | `pa` | Every glow-props implementation pattern: implemented / partial / missing / deviates — with diff notes for each |
+| 47 | `align` | `aln` | Drift between this repo's CLAUDE.md and glow-props CLAUDE.md — missing sections, stale rules, divergent conventions |
+| 48 | `pattern-audit` | `pa` | Every glow-props implementation pattern: implemented / partial / missing / deviates — with diff notes for each |
 
 ### Meta sweeps
 
@@ -459,7 +436,7 @@ Run multiple triggers sequentially, pausing after each for `fix` / `skip` / `sto
 | `quick` | `q` | pre-push | `bugs` + `security` + `a11y` — the "don't ship this" triad |
 | `ship` | `shp` | pre-merge | `correctness` + `trust` + `a11y` + `tests` — full pre-merge check |
 | `session` | `ses` | end of session | `surface` + `wrap` + `undone` + `skipped` — "what state am I leaving this in?" |
-| `tidy` | `tdy` | weekly | `clean` + `doc-cleanup` + `hacks` + `deps` + `undone` + `dx` + `daisyui` — maintenance / hygiene sweep |
+| `tidy` | `tdy` | weekly | `clean` + `doc-cleanup` + `hacks` + `deps` + `undone` + `dx` — maintenance / hygiene sweep |
 | `all` | `*` | quarterly | Every applicable trigger across every group, in order |
 
 ### Reflective passes

@@ -306,7 +306,7 @@ export function useEscapeKey(active, onEscape) {
 
 ## React Web (`BurgerMenu.jsx`)
 
-Disclosure-pattern dropdown with backdrop, keyboard navigation, and icon support. Tailwind CSS + DaisyUI for styling.
+Disclosure-pattern dropdown with backdrop, keyboard navigation, and icon support. Styled with Tailwind CSS (and DaisyUI, if the app uses it).
 
 ```jsx
 import { useState, useRef, useCallback, useEffect, useId } from 'react'
@@ -492,7 +492,7 @@ export function BurgerMenu({ items, id, version }) {
 - **`useId()` for unique IDs**: Prevents `aria-controls` collisions if multiple BurgerMenu instances exist on the same page.
 - **`cursor-pointer` on backdrop**: iOS Safari does not fire click events on empty `<div>` elements. Without `cursor-pointer`, tapping outside the menu on iPhone/iPad silently fails to close it.
 - **Externalized backdrop**: If the parent header uses `backdrop-filter`, render the backdrop outside the header stacking context (in the parent layout) to avoid `backdrop-blur-sm` clipping fixed children.
-- **DaisyUI `menu` classes**: `menu menu-sm` provides theme-aware hover states, padding, and focus indicators automatically.
+- **DaisyUI `menu` classes** (if the app uses DaisyUI): `menu menu-sm` provides theme-aware hover states, padding, and focus indicators automatically.
 - **`min-h-11` (44px) touch targets**: Meets Apple HIG and Material Design minimum touch target guidelines.
 - **`overscroll-contain`**: Prevents scroll chaining without touching `document.body.style.overflow`.
 - **`max-w-[calc(100vw-2rem)]`**: Prevents the dropdown from overflowing the viewport on narrow screens.

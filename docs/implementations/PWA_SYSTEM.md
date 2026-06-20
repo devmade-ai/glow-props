@@ -667,7 +667,7 @@ function ToastContainer({ toasts, onRemove }: { toasts: Toast[]; onRemove: (id: 
 
 **Key design decisions:**
 - **Context-based** — `useToast()` accessible from any component without prop drilling. Wrap `<App>` in `<ToastProvider>`.
-- **DaisyUI semantic colors** — `bg-success`, `bg-error`, etc. work across all themes automatically.
+- **Semantic theme colors** — if the app uses DaisyUI, `bg-success`/`bg-error` work across themes automatically; otherwise map these to the app's own status colors.
 - **iOS safe area** — `env(safe-area-inset-bottom)` prevents toasts from being hidden behind the home indicator on notched iPhones.
 - **Stacking** — multiple toasts stack with `flex-col-reverse` (newest on top).
 - **Exit animation** — 200ms fade-out before DOM removal for visual polish.
@@ -1021,7 +1021,7 @@ Generate `version.json` at build time with `{ "buildTime": "2026-04-06T12:00:00Z
 
 ### UI Patterns
 26. **Use a context-based Toast system** — `ToastProvider` + `useToast()` replaces one-off DOM-injected banners. Reusable for PWA events and general app feedback.
-27. **DaisyUI semantic colors for toasts** — `bg-success`, `bg-error` etc. work across all themes. Never hardcode colors like `bg-brand-600`.
+27. **Use semantic theme colors for toasts** — e.g. with DaisyUI, `bg-success`/`bg-error` work across themes. Avoid hardcoding fixed colors like `bg-brand-600`.
 28. **iOS safe area on toasts/banners** — `env(safe-area-inset-bottom)` prevents content from hiding behind the home indicator.
 
 ### Non-Vite Projects

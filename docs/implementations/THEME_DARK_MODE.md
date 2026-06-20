@@ -10,9 +10,13 @@ tags:
 order: 2
 ---
 
-# Theme & Dark Mode (DaisyUI)
+# Theme & Dark Mode
 
-User-controlled dark/light mode with DaisyUI theme selection, system preference fallback, persistence, flash prevention, and cross-tab sync.
+User-controlled dark/light mode with system preference fallback, persistence, flash prevention, cross-tab sync, and a matching PWA status-bar colour.
+
+**Two decoupled layers:**
+- **The mechanics** — system fallback, localStorage persistence, flash prevention, cross-tab sync, `<meta name="theme-color">` updates — are **framework-agnostic**. They apply whether you style with raw Tailwind, custom CSS variables, or a component library.
+- **The palette** (how a "theme" maps to colours) is per-app. **DaisyUI** is one implementation, used by several fleet apps because its `data-theme` + named themes make multi-theme trivial; **raw Tailwind** (`dark:` utilities) and **custom CSS variables** are equally valid. The DaisyUI-specific sections below are optional — skip them if the app isn't on DaisyUI.
 
 **Related patterns:**
 - [Z_INDEX_SCALE.md](Z_INDEX_SCALE.md) — Migration Phase 4 normalizes z-index values to the standard scale
@@ -28,7 +32,7 @@ Project variants demonstrating this pattern:
 - **few-lap**: React Native (Expo) + Uniwind, named combos (light/dark pairs), CSS variable themes
 - **synctone**: React Native (Expo) + Zustand + Uniwind, combo presets with per-side meta colors
 
-All use DaisyUI's semantic color system. The old custom CSS variable token approach (`--color-text-default`, `--color-surface`, etc.) is not used in any project.
+The apps above happen to use DaisyUI's semantic color system, but that's a per-app choice, not a requirement. Custom CSS variable tokens (`--color-text-default`, `--color-surface`, etc.) and plain Tailwind `dark:` utilities are equally valid — pick whatever fits the app's design.
 
 ## Dual-Layer Theming
 
@@ -93,9 +97,9 @@ function applyTheme(dark, themeName, skipPersist) {
 
 The `skipPersist` parameter is used by the cross-tab sync handler — the values already came from another tab's localStorage write, so writing them back is redundant.
 
-## Migration Guide: Custom CSS Variables → DaisyUI
+## Optional: Migrating to DaisyUI (from Custom CSS Variables)
 
-For repos currently using custom `:root`/`.dark` CSS variables (repo-tor, budgy-ting, sun-sea-o, four-ems) or no theming at all (model-pear, see-veo). This section walks through migrating to the DaisyUI dual-layer architecture described above.
+**DaisyUI is optional** — raw Tailwind `dark:` utilities and custom CSS variables are equally valid, and there's no fleet requirement to adopt it. *If* you choose DaisyUI for an app (e.g. one currently on custom `:root`/`.dark` variables, or with no theming yet), this section walks through migrating to its dual-layer architecture.
 
 ### Phase 0: Prerequisites
 
@@ -295,9 +299,9 @@ After migration, verify with this checklist:
 
 ### Migration Audit Prompt Template
 
-Use this prompt with an AI assistant to audit a codebase for remaining migration work. Adapt the file types and exception list to your project:
+For an app that has standardized on DaisyUI, use this prompt with an AI assistant to audit for remaining migration work. Adapt the file types and exception list to your project:
 
-> In the [project] codebase (src/), DaisyUI v5 is the CSS component framework. Find places where the code uses custom CSS/Tailwind utilities instead of proper DaisyUI component classes, or where DaisyUI classes are misused.
+> In the [project] codebase (src/), DaisyUI v5 is the chosen CSS component framework. Find places where the code uses custom CSS/Tailwind utilities instead of proper DaisyUI component classes, or where DaisyUI classes are misused.
 >
 > Look for: (1) Custom overlay/backdrop → DaisyUI modal/drawer, (2) Custom button styling → btn classes, (3) Custom form input styling → input/select/textarea classes, (4) Custom badge/tag → badge class, (5) Custom alert/notification → alert class, (6) Custom tab styling → tab classes, (7) DaisyUI class misuse (e.g., "modal" without "modal-open"), (8) Custom tooltip implementations, (9) Custom card/panel → card class, (10) Hardcoded hex/rgb values → DaisyUI semantic tokens.
 >
