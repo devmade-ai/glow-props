@@ -1,19 +1,44 @@
-// Requirement: PWA service worker registration, update prompts, and install detection
-// Approach: Import vite-plugin-pwa's virtual module for SW registration. Handle update
-//   prompts (user-controlled via registerType: 'prompt'), install prompt capture, and
-//   browser-specific install instructions. All vanilla JS — no React.
+// Requirement: PWA service worker registration, fleet-standard update policy, and
+//   install detection
+// Approach: Import vite-plugin-pwa's virtual module for SW registration
+//   (registerType: 'prompt' — the mechanism that exposes the waiting worker to app
+//   code). On top of it, the fleet-standard auto-on-launch update policy
+//   (docs/implementations/PWA_SYSTEM.md "Update Application Policy"): a worker
+//   already waiting at launch auto-applies (safe — nothing typed yet); updates that
+//   land mid-session only arm the banner and apply on next launch; a persisted
+//   "Automatic updates" toggle (default ON) opts out to tap-only. All vanilla JS.
 // Alternative: Manual SW registration — rejected, vite-plugin-pwa handles caching strategy
 // Alternative: autoUpdate — rejected, silently refreshes mid-browsing
+// Alternative: tap-only prompt (previous behavior) — rejected, clients that never tap
+//   run stale code indefinitely (see the canva-grid stale-GA incident in the pattern doc)
 
 import { registerSW } from 'virtual:pwa-register';
 
 // ===== Service Worker Registration & Update Detection =====
-// Requirement: Users must be notified when a new version is available and control
-//   when the update applies (registerType: 'prompt').
+// Requirement: Fleet-standard auto-on-launch update policy —
+//   1. A worker already waiting when registration first resolves auto-applies
+//      (skipWaiting + one reload) behind a brief "Updating…" toast, unless the
+//      user turned "Automatic updates" off or an update was applied <30s ago.
+//   2. Updates detected mid-session (hourly poll, manual check) never reload —
+//      they arm the update banner; the waiting worker applies on next launch.
 // Approach: registerSW returns an update function. onNeedRefresh fires when a new
 //   SW is installed and waiting. onOfflineReady fires when the app is fully cached.
 //   Periodic update checks every 60 minutes for users who keep tabs open (critical
 //   for Safari, which doesn't close backgrounded PWAs).
+// Why launch-apply is triggered from onNeedRefresh, not onRegisteredSW: in
+//   vite-plugin-pwa's prompt-mode client, the reload-on-'controlling' listener is
+//   installed inside the 'waiting' event handler (which then calls onNeedRefresh).
+//   workbox-window dispatches 'waiting' for an already-waiting worker on a 200ms
+//   timer AND cancels that timer if the worker starts activating first — so calling
+//   updateSW(true) straight from onRegisteredSW can skipWaiting before any reload
+//   listener exists, leaving a stale page under the new SW (precache mismatch).
+//   Instead onRegisteredSW only records launch eligibility (registration.waiting
+//   present); the apply runs when onNeedRefresh fires ~200ms later, after
+//   vite-plugin-pwa has installed its reload listener. Deterministic: onRegisteredSW
+//   resolves on a microtask, the waiting event is a 200ms macrotask.
+// Alternative: own controllerchange listener + postMessage SKIP_WAITING from
+//   onRegisteredSW (the React repos' shape) — rejected, duplicates the reload
+//   wiring vite-plugin-pwa already provides in prompt mode and risks double reload.
 // Cleanup: every timer/listener tracked in module-level scope and torn down by the
 //   import.meta.hot.dispose() block at the bottom. See docs/implementations/TIMER_LEAKS.md
 //   variants 4 (module dispose) + 5 (HMR guard).
@@ -29,16 +54,124 @@ import { registerSW } from 'virtual:pwa-register';
 var updateSW = null;
 var CHECK_INTERVAL_MS = 60 * 60 * 1000;
 
+// Storage keys follow this file's existing pwa- kebab convention ('pwa-install-dismissed').
+var AUTO_UPDATE_KEY = 'pwa-auto-update';       // localStorage: 'true' | 'false', absent = ON
+var UPDATED_AT_KEY = 'pwa-updated-at';         // sessionStorage: timestamp of last applied update
+var JUST_UPDATED_WINDOW_MS = 30 * 1000;        // fleet-standard false-re-detection suppression
+var LAUNCH_APPLY_WINDOW_MS = 10 * 1000;        // how long launch eligibility stays valid
+var UPDATE_CHECK_SETTLE_MS = 1500;             // fleet-standard settle after registration.update()
+
+// Update-policy state
+var swRegistration = null;      // set once registration resolves; null = 'no-sw' for checks
+var updateAvailable = false;    // armed by onNeedRefresh; read by checkForUpdates()
+var launchApplyUntil = 0;       // epoch ms deadline while a launch-apply is pending, else 0
+var checkPromise = null;        // in-flight checkForUpdates() promise (re-entrancy guard)
+
 // Cleanup tracking — pattern: docs/implementations/TIMER_LEAKS.md
 var swUpdateIntervalId = null;
 var manualInstallTimeoutId = null;
+var checkSettleTimeoutId = null;
 var toastTimeouts = [];
 var beforeInstallPromptListener = null;
 var appInstalledListener = null;
 var domContentLoadedListener = null;
 
+// ===== Safe storage helpers =====
+// Requirement: Preference + suppression reads/writes must not throw in sandboxed
+//   iframes / private browsing (localStorage access itself can throw there).
+// Approach: Tiny try/catch wrappers referencing the storage global INSIDE the try,
+//   so even the property access is guarded. Same shape as theme.js's helpers.
+// Alternative: Inline try/catch per call site (previous shape) — rejected, now
+//   four keys need it; the repetition invited drift.
+
+function safeLocalGet(key) {
+  try { return localStorage.getItem(key); } catch (e) { return null; }
+}
+
+function safeLocalSet(key, value) {
+  try { localStorage.setItem(key, value); } catch (e) { /* unavailable — no persistence */ }
+}
+
+function safeSessionGet(key) {
+  try { return sessionStorage.getItem(key); } catch (e) { return null; }
+}
+
+function safeSessionSet(key, value) {
+  try { sessionStorage.setItem(key, value); } catch (e) { /* unavailable — no persistence */ }
+}
+
+// ===== "Automatic updates" preference =====
+// Requirement: Persisted user toggle, default ON when absent. OFF = never auto-apply;
+//   every update waits for an explicit tap (the old prompt behavior).
+// Approach: localStorage 'true'/'false'; only the literal 'false' opts out, so a
+//   missing or corrupted value keeps the fleet default (ON).
+
+function isAutoUpdateEnabled() {
+  return safeLocalGet(AUTO_UPDATE_KEY) !== 'false';
+}
+
+function setAutoUpdateEnabled(on) {
+  safeLocalSet(AUTO_UPDATE_KEY, String(on));
+  updateAutoUpdateIndicator();
+}
+
+function toggleAutoUpdate() {
+  setAutoUpdateEnabled(!isAutoUpdateEnabled());
+}
+
+// Menu indicator (mirrors the random-theme toggle's On/Off indicator shape)
+function updateAutoUpdateIndicator() {
+  var indicator = document.getElementById('pwa-auto-update-indicator');
+  if (indicator) indicator.textContent = isAutoUpdateEnabled() ? 'On' : 'Off';
+}
+
+// ===== "Just updated" suppression =====
+// Requirement: Applying an update must not loop — after the launch-apply reload,
+//   a still-settling SW state must not trigger another apply.
+// Approach: sessionStorage timestamp, honored for 30s. sessionStorage is the right
+//   scope: it survives the reload we trigger (same tab) but dies with the tab, so a
+//   genuine next launch is never suppressed.
+// Alternative: localStorage — rejected, would suppress launch-apply across tabs and
+//   across real next-launches within the window.
+
+function markUpdateApplied() {
+  safeSessionSet(UPDATED_AT_KEY, String(Date.now()));
+}
+
+function wasJustUpdated() {
+  var raw = safeSessionGet(UPDATED_AT_KEY);
+  if (!raw) return false;
+  var appliedAt = Number(raw);
+  return isFinite(appliedAt) && (Date.now() - appliedAt) < JUST_UPDATED_WINDOW_MS;
+}
+
+// ===== Apply (shared by launch-apply and the banner's Update button) =====
+// Both paths: record suppression, brief "Updating…" toast (the app's affordance —
+// the reload that follows cuts it short), then skipWaiting + reload via
+// vite-plugin-pwa's own controlling listener (updateSW(true)).
+
+function applyUpdate() {
+  markUpdateApplied();
+  showToast('Updating to the latest version…', 'info');
+  if (updateSW) updateSW(true);
+}
+
 updateSW = registerSW({
   onNeedRefresh: function () {
+    updateAvailable = true;
+    // Launch-apply: onRegisteredSW found a worker already waiting and recorded a
+    // short eligibility window. This onNeedRefresh is that same worker's deferred
+    // 'waiting' event — apply now (reload listener is installed, see header note).
+    // The window guard keeps a genuinely mid-session update from inheriting the
+    // flag in the degenerate case where the launch waiting event never fired.
+    if (launchApplyUntil !== 0 && Date.now() < launchApplyUntil) {
+      launchApplyUntil = 0;
+      applyUpdate();
+      return;
+    }
+    launchApplyUntil = 0;
+    // Mid-session (poll / manual check / toggle off): never reload — arm the
+    // banner only; the waiting worker auto-applies on next launch.
     showUpdateBanner();
   },
   onOfflineReady: function () {
@@ -46,12 +179,64 @@ updateSW = registerSW({
   },
   onRegisteredSW: function (_url, registration) {
     if (registration) {
+      swRegistration = registration;
+      // Launch-apply eligibility: worker already waiting when registration first
+      // resolved + auto-update ON + not within the 30s post-apply suppression.
+      if (registration.waiting && isAutoUpdateEnabled() && !wasJustUpdated()) {
+        launchApplyUntil = Date.now() + LAUNCH_APPLY_WINDOW_MS;
+      }
       swUpdateIntervalId = setInterval(function () {
         registration.update();
       }, CHECK_INTERVAL_MS);
     }
   },
 });
+
+// ===== Manual update check =====
+// Requirement: "Check for updates" menu action with the fleet-standard typed result
+//   'no-sw' | 'up-to-date' | 'update-available' | 'error', surfaced via toasts.
+// Approach: registration.update(), then a ~1500ms settle so a byte-different SW has
+//   time to install and fire onNeedRefresh, then read the updateAvailable flag.
+//   'update-available' re-shows the banner instead of toasting — the banner IS the
+//   surface for that state, and both are bottom-anchored so a toast would cover it.
+//   A short "Checking…" toast (1200ms < settle) gives immediate feedback without
+//   overlapping the result toast.
+// Alternative: resolve straight from registration.update() — rejected, update() only
+//   means the check finished, not that the new worker reached waiting; the settle is
+//   what makes the middle two results distinguishable.
+
+function checkForUpdates() {
+  if (checkPromise) return checkPromise;   // re-entrancy: share the in-flight result
+  if (!swRegistration) {
+    showToast('Update checks aren\'t available in this browser.', 'info');
+    return Promise.resolve('no-sw');
+  }
+  showToast('Checking for updates…', 'info', 1200);
+  checkPromise = swRegistration.update()
+    .then(function () {
+      return new Promise(function (resolve) {
+        checkSettleTimeoutId = setTimeout(function () {
+          checkSettleTimeoutId = null;
+          resolve(updateAvailable ? 'update-available' : 'up-to-date');
+        }, UPDATE_CHECK_SETTLE_MS);
+      });
+    })
+    .catch(function () {
+      return 'error';
+    })
+    .then(function (result) {
+      checkPromise = null;
+      if (result === 'update-available') {
+        showUpdateBanner();   // dedupes internally; re-shows if previously dismissed
+      } else if (result === 'up-to-date') {
+        showToast('You\'re on the latest version.', 'success');
+      } else if (result === 'error') {
+        showToast('Couldn\'t check for updates. Please try again later.', 'error');
+      }
+      return result;
+    });
+  return checkPromise;
+}
 
 // ===== Toast System =====
 // Requirement: Non-blocking feedback notifications (offline ready, errors, etc.)
@@ -108,10 +293,11 @@ function showToast(message, type, duration) {
 }
 
 // ===== Update Banner =====
-// Requirement: Non-intrusive banner when a new version is available
-// Approach: Fixed bottom banner with "Update" and "Later" actions.
-//   User controls when the update applies — no silent refresh.
-//   Safe area inset on bottom for iPhone home indicator in standalone mode.
+// Requirement: Non-intrusive banner for updates detected MID-SESSION (the deferred
+//   half of the auto-on-launch policy — never force-reload over in-progress reading).
+// Approach: Fixed bottom banner with "Update" and "Later" actions. "Later" is safe
+//   to tap: the waiting worker auto-applies on next launch anyway (when the toggle
+//   is on). Safe area inset on bottom for iPhone home indicator in standalone mode.
 // Alternative: Auto-dismissing toast — rejected, updates are too important to miss.
 
 function showUpdateBanner() {
@@ -133,7 +319,7 @@ function showUpdateBanner() {
   document.body.appendChild(banner);
 
   document.getElementById('pwa-update-accept').addEventListener('click', function () {
-    if (updateSW) updateSW(true);
+    applyUpdate();
   });
   document.getElementById('pwa-update-dismiss').addEventListener('click', function () {
     banner.remove();
@@ -254,10 +440,7 @@ var isStandalone = window.matchMedia('(display-mode: standalone)').matches ||
   navigator.standalone === true;
 var supportsAutoInstall = browser === 'chrome' || browser === 'edge' || browser === 'brave';
 var supportsManualInstall = browser === 'safari' || browser === 'firefox';
-var dismissed = false;
-try { dismissed = localStorage.getItem('pwa-install-dismissed') === 'true'; } catch (e) {
-  // localStorage unavailable (sandboxed iframe, private browsing) — default to not dismissed
-}
+var dismissed = safeLocalGet('pwa-install-dismissed') === 'true';
 
 // Consume early-captured event (repeat visits where SW fires before module loads)
 if (window.__pwaInstallPromptEvent) {
@@ -318,12 +501,17 @@ function updateInstallMenuVisibility() {
   });
 }
 
-// Initialize visibility after DOM is ready
+// Initialize menu state (install visibility + auto-update indicator) after DOM is ready
+function initMenuState() {
+  updateInstallMenuVisibility();
+  updateAutoUpdateIndicator();
+}
+
 if (document.readyState === 'loading') {
-  domContentLoadedListener = updateInstallMenuVisibility;
+  domContentLoadedListener = initMenuState;
   document.addEventListener('DOMContentLoaded', domContentLoadedListener);
 } else {
-  updateInstallMenuVisibility();
+  initMenuState();
 }
 
 // ===== Install Action =====
@@ -354,9 +542,7 @@ function triggerInstall() {
 
 function dismissInstall() {
   dismissed = true;
-  try { localStorage.setItem('pwa-install-dismissed', 'true'); } catch (e) {
-    // localStorage unavailable — dismiss will not persist across reloads
-  }
+  safeLocalSet('pwa-install-dismissed', 'true');
   updateInstallMenuVisibility();
 }
 
@@ -495,10 +681,12 @@ function showInstallModal() {
 }
 
 // ===== Expose to global scope =====
-// theme.js burger menu calls these via onclick handlers
+// The navbar partial's burger-menu items call these via onclick handlers
 window.__pwa = {
   triggerInstall: triggerInstall,
   dismissInstall: dismissInstall,
+  toggleAutoUpdate: toggleAutoUpdate,
+  checkForUpdates: checkForUpdates,
 };
 
 // ===== HMR teardown =====
@@ -510,6 +698,9 @@ if (import.meta.hot) {
   import.meta.hot.dispose(function () {
     if (swUpdateIntervalId !== null) clearInterval(swUpdateIntervalId);
     if (manualInstallTimeoutId !== null) clearTimeout(manualInstallTimeoutId);
+    // Clearing the settle timeout leaves an in-flight checkForUpdates() promise
+    // unresolved — benign: it belongs to the old module closure being discarded.
+    if (checkSettleTimeoutId !== null) clearTimeout(checkSettleTimeoutId);
     toastTimeouts.forEach(clearTimeout);
     toastTimeouts.length = 0;
     if (beforeInstallPromptListener) {

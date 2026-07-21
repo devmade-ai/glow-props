@@ -61,7 +61,7 @@ glow-props/
   main.css                      # Tailwind directives, DaisyUI config, custom animations, markdown renderer styles
   partials/
     head-common.html            # Shared <head> content (bootstrap, fonts, CSS)
-    navbar.html                 # Shared navbar with burger menu, theme picker, PWA install
+    navbar.html                 # Shared navbar with burger menu, theme picker, PWA install + update controls
     skip-link.html              # Accessibility skip-to-content link
   public/
     theme.js                    # Per-mode theme picker, dark/light toggle, burger menu behavior

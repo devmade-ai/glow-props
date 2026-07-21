@@ -1,4 +1,4 @@
-<!-- Requirement: Shared navbar with burger menu, theme picker, PWA install, and Save as PDF
+<!-- Requirement: Shared navbar with burger menu, theme picker, PWA install + updates, and Save as PDF
      This partial is injected by the htmlPartials Vite plugin at build time.
      Each page sets {{NAV_PREFIX}} to control nav link hrefs:
        index.html: "" (same-page anchors)
@@ -64,6 +64,27 @@
                              min-h-11 flex items-center justify-between">
             <span>Random theme on load</span>
             <span id="random-theme-indicator" class="text-xs text-base-content/40">Off</span>
+          </button></li>
+          <!-- Fleet-standard update policy (docs/implementations/PWA_SYSTEM.md):
+               toggle default ON (indicator corrected from localStorage by src/pwa.js on load);
+               no data-close on the toggle (matches theme/random toggles — menu stays open);
+               check action closes the menu so its toast/banner result isn't obscured. -->
+          <li><button type="button"
+                      onclick="window.__pwa && window.__pwa.toggleAutoUpdate()"
+                      class="w-full text-left px-4 py-2.5 text-sm text-base-content
+                             hover:bg-base-200 transition-colors cursor-pointer
+                             focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-[-2px]
+                             min-h-11 flex items-center justify-between">
+            <span>Automatic updates</span>
+            <span id="pwa-auto-update-indicator" class="text-xs text-base-content/40">On</span>
+          </button></li>
+          <li><button type="button" data-close
+                      onclick="window.__pwa && window.__pwa.checkForUpdates()"
+                      class="block w-full text-left px-4 py-2.5 text-sm text-base-content
+                             hover:bg-base-200 transition-colors cursor-pointer
+                             focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-[-2px]
+                             min-h-11 flex items-center">
+            Check for updates
           </button></li>
           <li class="pwa-install-item hidden"><button type="button" data-close
                       onclick="window.__pwa && window.__pwa.triggerInstall()"
