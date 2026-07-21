@@ -81,7 +81,7 @@ VitePWA({
 })
 ```
 
-- **`registerType: 'prompt'`**: Users control when updates apply. `autoUpdate` silently refreshes mid-work. **Never switch from `autoUpdate` to `prompt` in production** — users with the auto-updating SW already installed will never see the prompt-based code because the old SW silently replaces itself before the new registration logic runs.
+- **`registerType: 'prompt'`**: Always use `'prompt'` as the config value — it is the mechanism that exposes the waiting worker to app code. The *behavior* on top of it is the fleet-standard **auto-on-launch** policy (see "Update Application Policy" below): auto-apply at launch, defer mid-session, user toggle. Never use raw `autoUpdate` (silently refreshes mid-work) and never ship tap-only prompt (stale clients never converge). **Never switch from `autoUpdate` to tap-only `prompt` in production** — users with the auto-updating SW already installed will never see the prompt-based code because the old SW silently replaces itself before the new registration logic runs (switching to auto-on-launch is safe — see the policy's migration note).
 - **`workbox.cleanupOutdatedCaches`**: Removes caches from incompatible older Workbox major versions. Without this, stale caches accumulate across deployments.
 - **`workbox.globPatterns`**: Explicit precache patterns. The default may miss font or image types your app uses.
 - **`navigateFallback`**: Only set for SPAs. For multi-page apps (multiple HTML entry points), omit this — it would incorrectly serve `index.html` for all navigation requests.
@@ -106,6 +106,78 @@ Inline classic (non-module) script before any `<script type="module">`:
 ```
 
 Executes synchronously during HTML parse. Stashes the event for the React hook to consume. `e.preventDefault()` suppresses the browser's default mini-infobar. The hook's fallback `useEffect` listener handles first-visit timing (SW registers after mount). Neither alone covers both cases.
+
+## Update Application Policy — fleet standard: auto-on-launch
+
+Every devmade-ai PWA applies updates the same way. One model, no per-app tiering:
+
+1. **Auto-apply at launch (default).** When the app starts and a new service worker is
+   already **waiting** (`registration.waiting` present when registration first resolves),
+   apply it immediately: skipWaiting → one reload, behind the app's brief "Updating…"
+   affordance. This moment is always safe — the user hasn't typed anything yet.
+2. **Defer mid-session.** An update that installs *while the app is open* (hourly poll,
+   visibilitychange check) never force-reloads. Surface the app's existing banner/toast
+   with an explicit "Restart now" action; otherwise the waiting worker persists and
+   auto-applies on the **next launch**. A fresh deploy therefore converges in at most
+   two visits — visit 1 installs + arms, visit 2 launch-applies — with zero risk to
+   unsaved work.
+3. **"Automatic updates" toggle.** A persisted user setting in the app's menu/settings
+   surface, **default ON**. OFF = never auto-apply; every update waits for an explicit
+   tap (the old `prompt` behavior). Storage key follows the repo's key convention
+   (e.g. `graphiki:pwaAutoUpdate`, `kl-pwa-auto-update`, `intxt_pwa_auto_update`),
+   value `'true' | 'false'`, absent = ON, read through the repo's safeStorage wrapper.
+   Plain-language label: "Automatic updates" with helper copy like "Updates apply
+   automatically when the app opens."
+4. **"Check for updates" action.** A menu/settings item everywhere. Runs
+   `registration.update()` (plus the `version.json` comparison where the repo has one),
+   waits a ~1500ms settle, and surfaces a typed result as a toast/banner. Canonical
+   union: `'no-sw' | 'up-to-date' | 'update-available' | 'error'` — after the settle,
+   read the update flag to distinguish the middle two. Repos with an existing coarser
+   union (`'done'`) should upgrade to the canonical one.
+
+**Why this model (and not the alternatives):**
+- *Immediate mid-session auto-apply* (plain `autoUpdate`): silently reloads while the
+  user works — destroys unsaved designs/forms/drafts in the editor apps. Rejected as
+  the fleet default.
+- *Tap-only `prompt`*: users who never tap run stale code indefinitely. Real incident:
+  canva-grid swapped its GA measurement ID and months later the **old** property was
+  still receiving traffic from precached shells of never-updated clients. Rejected.
+- *Auto-on-launch* keeps both guarantees: never reloads over in-progress work, and
+  every client converges by its next visit.
+
+**Implementation deltas on the singleton below** (the hook otherwise stays as written):
+
+```typescript
+// Persisted preference — default ON when absent
+export function isAutoUpdateEnabled(): boolean {
+  return safeGet(AUTO_UPDATE_KEY) !== 'false'
+}
+export function setAutoUpdateEnabled(on: boolean): void {
+  safeSet(AUTO_UPDATE_KEY, String(on)); notifyListeners()
+}
+
+// In onRegistered(r): launch-apply a worker that is ALREADY waiting.
+// (A worker that reaches waiting later in the session is mid-session — defer.)
+if (r.waiting && isAutoUpdateEnabled() && !wasJustUpdated()) {
+  _userClickedUpdate = true            // reuse the controllerchange reload latch
+  markUpdateApplied()                  // 30s false-re-detection suppression
+  r.waiting.postMessage({ type: 'SKIP_WAITING' })  // or updateServiceWorker(true)
+  return                               // reload arrives via controllerchange
+}
+
+// onNeedRefresh() is unchanged: it only arms hasUpdate → banner. No reload.
+```
+
+**Custom-SW repos (Expo/Metro):** identical semantics over their own plumbing —
+launch-apply posts `SKIP_WAITING` to `registration.waiting` at startup; a `version.json`
+mismatch found during the startup check triggers one plain reload guarded by a
+sessionStorage one-shot flag (never loop). Mid-session detections arm the existing
+update button/banner only.
+
+**Migration note:** moving a deployed app from `autoUpdate` (or from immediate
+auto-apply) to this model is safe — installed clients still converge at their next
+launch. The long-standing warning below about `autoUpdate` → tap-only `prompt` remains
+true; auto-on-launch is exempt because launch-apply preserves unattended convergence.
 
 ## Service Worker Updates (`usePWAUpdate.ts`)
 
@@ -764,8 +836,10 @@ export default memo(function InstallInstructionsModal({ isOpen, onClose, instruc
 | **Inline button** | Fits within existing page layout | sync-tone |
 
 **Update notifications** should use the Toast system for consistency:
-- `hasUpdate` → show a persistent toast or inline banner with "Update" button
+- `hasUpdate` (mid-session) → show a persistent toast or inline banner with a "Restart now" / "Update" button; the update also applies automatically on next launch (see Update Application Policy)
 - `offlineReady` → show auto-dismissing success toast (3s)
+
+**Standard menu/settings items** (every PWA): "Automatic updates" toggle (default ON) and "Check for updates" action, alongside the existing "Install app" item.
 
 **Install flow:**
 - `canInstall` (Chromium) → "Install" button calls `install()` which triggers native prompt
@@ -980,7 +1054,7 @@ Generate `version.json` at build time with `{ "buildTime": "2026-04-06T12:00:00Z
 
 **Workbox timing heuristic:** If you rebuild and re-register the service worker within one minute of the last registration, `workbox-window` treats the update as an "external event" rather than a normal update, potentially showing "offline ready" instead of "update available." Always test with full production builds served from a static file server.
 
-**Never switch `autoUpdate` → `prompt` in production:** Users who already have the auto-updating SW installed will never see the prompt-based code — the old SW silently replaces itself before the new registration logic runs.
+**Never switch `autoUpdate` → tap-only `prompt` in production:** Users who already have the auto-updating SW installed will never see the prompt-based code — the old SW silently replaces itself before the new registration logic runs. Switching `autoUpdate` → **auto-on-launch** is safe: launch-apply preserves unattended convergence (see Update Application Policy).
 
 **Expo Web incompatibility:** vite-plugin-pwa is not compatible with Expo Web (Expo Router uses Metro, not Vite). For Expo Web PWAs, use `workbox-cli generateSW` as a post-build step and manually wire up SW registration and update detection.
 
@@ -1003,10 +1077,10 @@ Generate `version.json` at build time with `{ "buildTime": "2026-04-06T12:00:00Z
 12. **Focus trap the install modal** — keyboard users must be able to Tab within the modal without escaping to background content.
 
 ### Service Worker Updates
-13. **`registerType: 'prompt'`** gives users control. `autoUpdate` silently refreshes mid-work.
+13. **Auto-on-launch is the fleet update policy** — `registerType: 'prompt'` as the mechanism, auto-apply at launch + defer mid-session + "Automatic updates" toggle (default ON) + "Check for updates" action as the behavior. Raw `autoUpdate` reloads over unsaved work; tap-only prompt leaves stale clients forever (the canva-grid GA-tail incident).
 14. **Module-level singleton for update state** — survives component mount/unmount cycles. Hook-local state re-initializes on remount, causing false "update available" re-detection.
 15. **Visibility-based update checks** — on `visibilitychange`, trigger `registration.update()` when the page regains focus. Catches updates faster than hourly polling alone.
-16. **`controllerchange` reload guard** — auto-reload when new SW takes control, but ONLY if the user explicitly clicked "Update". Prevents unexpected reloads from background SW lifecycle events.
+16. **`controllerchange` reload guard** — auto-reload when new SW takes control, but ONLY if the apply latch was set (user clicked "Update", or the launch-apply path set it). Prevents unexpected reloads from background SW lifecycle events, e.g. another tab updating.
 17. **30-second `wasJustUpdated()` suppression** — prevents false re-detection after applying an update. The browser's SW lifecycle may not have fully settled after reload.
 18. **Manual `checkForUpdate()` with typed result** — returns `'no-sw' | 'done' | 'error'` for toast feedback from burger menu "Check for Updates" action.
 19. **Debug log all PWA lifecycle events** — SW registration, updates, offline-ready, install events, and errors routed to the debug system.
