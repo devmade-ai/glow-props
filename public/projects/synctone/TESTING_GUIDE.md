@@ -1,14 +1,13 @@
 # Testing Guide
 
-Manual test scenarios for SyncTone. Step-by-step actions, expected results, and regression checklist.
+Manual test scenarios for inTXT. Step-by-step actions, expected results, and a regression checklist.
 
 ---
 
 ## Prerequisites
 
 - Two devices/browsers (or one browser with two incognito windows)
-- App running locally (`npm run web`) or deployed to Vercel
-- Each device/window gets its own anonymous identity (appID)
+- Each device/window gets its own anonymous identity
 
 ---
 
@@ -16,11 +15,11 @@ Manual test scenarios for SyncTone. Step-by-step actions, expected results, and 
 
 | Step | Action | Expected Result |
 |------|--------|-----------------|
-| 1 | Open app for the first time | Tutorial modal appears automatically |
-| 2 | Navigate through all 9 steps | Each step shows correct content, progress bar advances |
-| 3 | Complete tutorial | Modal closes, home screen visible |
-| 4 | Reload page | Tutorial does NOT reappear |
-| 5 | Open Settings > Help & Tutorial | Tutorial reappears from step 1 |
+| 1 | Open the app for the first time | Tutorial appears automatically |
+| 2 | Step through all 4 slides | Each slide shows correct content; the dots indicator advances |
+| 3 | Finish the tutorial | It closes; the home screen is visible |
+| 4 | Reload | Tutorial does NOT reappear |
+| 5 | Open the You tab → Help & tutorial | Tutorial reappears from the first slide |
 
 ---
 
@@ -28,12 +27,11 @@ Manual test scenarios for SyncTone. Step-by-step actions, expected results, and 
 
 | Step | Action | Expected Result |
 |------|--------|-----------------|
-| 1 | Tap "Create Chat" | Create screen appears |
-| 2 | Optionally enter display name (max 50 chars) | Name accepted, truncated at 50 |
-| 3 | Tap "Create" | Chat code generated (adjective-noun format, e.g., "happy-tiger") |
-| 4 | Tap "Share Link" | Native share sheet opens with join URL |
-| 5 | Tap "Copy Code" | Code copied to clipboard, toast confirmation shown |
-| 6 | Return to home screen | New chat appears in list with code as title (or display name if set) |
+| 1 | Open the new-chat sheet → Start new | A chat code is generated (adjective-noun, e.g., "happy-tiger") |
+| 2 | Optionally enter a display name (max 50 chars) | Name accepted, truncated at 50 |
+| 3 | Tap "Share link" | Native share sheet opens with the join link |
+| 4 | Tap "Copy code" | Code copied to clipboard, toast confirmation shown |
+| 5 | Return to home | New chat appears in the list with the code (or display name if set) as title |
 
 ---
 
@@ -41,18 +39,17 @@ Manual test scenarios for SyncTone. Step-by-step actions, expected results, and 
 
 | Step | Action | Expected Result |
 |------|--------|-----------------|
-| 1 | Tap "Join Chat" | Join screen appears |
-| 2 | Enter valid chat code | Join button enabled |
-| 3 | Tap "Join Chat" | Navigates to chat screen |
-| 4 | Enter invalid/nonexistent code | Error message shown in plain language |
-| 5 | Try to join already-full chat (2 participants) | Error: chat is full |
+| 1 | Open the new-chat sheet → Join, enter a valid code | Join button enabled |
+| 2 | Tap "Join chat" | Navigates to the chat screen |
+| 3 | Enter an invalid/nonexistent code | Plain-language error shown |
+| 4 | Try to join an already-full chat (2 participants) | Error: chat is full |
 
 ### Join via Link
 
 | Step | Action | Expected Result |
 |------|--------|-----------------|
-| 1 | Click shared link (`/join/happy-tiger`) | Join screen with code pre-filled |
-| 2 | Tap "Join Chat" | Navigates to chat screen |
+| 1 | Open a shared link (`intxt.app/join#happy-tiger`) | Join screen with the code pre-filled and auto-validated |
+| 2 | Tap "Join chat" | Navigates to the chat screen |
 
 ---
 
@@ -60,35 +57,33 @@ Manual test scenarios for SyncTone. Step-by-step actions, expected results, and 
 
 | Step | Action | Expected Result |
 |------|--------|-----------------|
-| 1 | Type message, tap send | Message appears in chat with single gray checkmark (sent) |
-| 2 | Other user opens home screen | Checkmarks change to double gray (delivered) |
-| 3 | Other user enters chat | Checkmarks change to double blue (read) |
-| 4 | Send message with 10,000+ characters | Message rejected or truncated at limit |
-| 5 | Send empty message | Send button disabled, nothing sent |
+| 1 | Type a message, tap send | Message appears with a single ✓ (sent) |
+| 2 | Other user enters the chat | The ✓ becomes ✓✓ (read) |
+| 3 | Send a message over 10,000 characters | Rejected or truncated at the limit |
+| 4 | Send an empty message | Send button disabled, nothing sent |
 
-### Pull-to-Refresh
+### Pagination & Refresh
 
 | Step | Action | Expected Result |
 |------|--------|-----------------|
-| 1 | Pull up from bottom of chat | Page refreshes |
-| 2 | Pull down from top of chat | Loads older messages (pagination) |
+| 1 | Tap the header refresh button | Conversation refetches |
+| 2 | Pull down from the top of the chat | Loads older messages |
 
 ---
 
-## 5. Tone Tags
+## 5. Intention Tags
 
 | Step | Action | Expected Result |
 |------|--------|-----------------|
-| 1 | Send a message | Message appears without tones |
-| 2 | Tap "tap to add tones" hint below own message | ToneEditModal opens |
-| 3 | Select 1 tone from defaults | Tone tag appears on message |
-| 4 | Select 2 tones | Both tags shown, max reached |
-| 5 | Try selecting a 3rd tone | Not allowed (max 2) |
-| 6 | Type custom tone in input | Validates: letters/hyphens only, max 15 chars |
-| 7 | Save tones | Modal closes, tones visible on message |
-| 8 | Other user enters chat | Tones automatically revealed |
-| 9 | Wait 15+ minutes, try changing tones | Action unavailable (window expired) |
-| 10 | Change tones 5 times, try again | Action unavailable (limit reached) |
+| 1 | While composing, tap the tag icon next to send | An inline intention picker opens above the input |
+| 2 | Pick 1 intention | It appears as a removable chip above the input |
+| 3 | Pick a 2nd intention | Both chips shown; max reached |
+| 4 | Try a 3rd intention | Not allowed (max 2) |
+| 5 | Type a custom word | Validates: letters/hyphens only, max 15 chars |
+| 6 | Send | The message shows its intention tags immediately, to both people (no reveal step) |
+| 7 | On an already-sent, untagged message, tap "tap to add intentions" | The intention editor opens |
+| 8 | Wait 15+ minutes, try changing intentions | Action unavailable (window expired) |
+| 9 | Change intentions 5 times, try again | Action unavailable (limit reached) |
 
 ---
 
@@ -96,12 +91,12 @@ Manual test scenarios for SyncTone. Step-by-step actions, expected results, and 
 
 | Step | Action | Expected Result |
 |------|--------|-----------------|
-| 1 | Long-press/tap own message | Action sheet appears with "Edit Message" |
+| 1 | Long-press your own message | Action sheet appears with "Edit message" |
 | 2 | Edit text, save | Message updated, "(edited)" label appears |
-| 3 | Edit 5 times | Each edit succeeds, edit count tracks |
-| 4 | Try 6th edit | Action unavailable (limit reached) |
+| 3 | Edit 5 times | Each edit succeeds |
+| 4 | Try a 6th edit | Action unavailable (limit reached) |
 | 5 | Wait 15+ minutes, try editing | Action unavailable (window expired) |
-| 6 | Try editing other user's message | "Edit" option not shown |
+| 6 | Try editing the other user's message | "Edit" option not shown |
 
 ---
 
@@ -109,11 +104,11 @@ Manual test scenarios for SyncTone. Step-by-step actions, expected results, and 
 
 | Step | Action | Expected Result |
 |------|--------|-----------------|
-| 1 | Long-press any message > "React" | Reaction picker shows 12 emojis |
-| 2 | Tap an emoji | Reaction appears below message with count |
-| 3 | Other user reacts with same emoji | Count increments to 2 |
-| 4 | Tap own reaction again | Reaction removed (toggle off) |
-| 5 | Both users react differently | Both reactions shown with individual counts |
+| 1 | Long-press a message | The action sheet shows a quick row of 6 reactions |
+| 2 | Tap "More" | The full grouped emoji set expands in the sheet |
+| 3 | Tap an emoji | Reaction appears below the message with a count |
+| 4 | Other user reacts with the same emoji | Count increments to 2 |
+| 5 | Tap your own reaction again | Reaction removed (toggle off) |
 
 ---
 
@@ -121,18 +116,10 @@ Manual test scenarios for SyncTone. Step-by-step actions, expected results, and 
 
 | Step | Action | Expected Result |
 |------|--------|-----------------|
-| 1 | Swipe message horizontally (60px+) | Reply preview bar appears in compose area |
-| 2 | Type reply, send | Message shows reply reference with snippet |
-| 3 | Tap reply reference on message | Chat scrolls to original message |
+| 1 | Swipe a message horizontally (60px+) | Reply preview bar appears in the composer |
+| 2 | Type a reply, send | Message shows a reply reference with a snippet |
+| 3 | Tap the reply reference | Chat scrolls to the original message |
 | 4 | Reply to a reply | References the original, not the intermediate reply (1-level deep) |
-
-### Gesture Variants
-
-| Platform | Gesture | Expected Result |
-|----------|---------|-----------------|
-| Mobile web | Swipe left or right | Reply triggered at 60px threshold |
-| Desktop web | Right-click > Reply | Reply preview bar appears |
-| Native | Swipe with visual feedback | Animated translateX, reply icon fades in |
 
 ---
 
@@ -142,17 +129,16 @@ Manual test scenarios for SyncTone. Step-by-step actions, expected results, and 
 
 | Step | Action | Expected Result |
 |------|--------|-----------------|
-| 1 | Long-press message > "Delete for Me" | Confirmation dialog shown |
-| 2 | Confirm | Message disappears from your view |
-| 3 | Check other user's view | Message still visible to them |
+| 1 | Long-press a message → "Delete for me" | Confirmation dialog shown |
+| 2 | Confirm | Message disappears from your view; still visible to the other person |
 
 ### Delete for Everyone (Hard Delete)
 
 | Step | Action | Expected Result |
 |------|--------|-----------------|
-| 1 | Long-press own message (< 1 hour old) > "Delete for Everyone" | Confirmation with clear warning |
+| 1 | Long-press your own message (< 1 hour old) → "Delete for everyone" | Confirmation with a clear warning |
 | 2 | Confirm | Message replaced with "[Message deleted]" for both users |
-| 3 | Try on message > 1 hour old | Option not available |
+| 3 | Try on a message > 1 hour old | Option not available |
 
 ---
 
@@ -160,70 +146,77 @@ Manual test scenarios for SyncTone. Step-by-step actions, expected results, and 
 
 | Step | Action | Expected Result |
 |------|--------|-----------------|
-| 1 | Long-press message > "Message Info" | Modal shows sent/delivered/read timestamps, tones, reactions |
-| 2 | Long-press message > "Report" | Report modal with category selection |
-| 3 | Select category, submit | Confirmation toast, report saved |
-| 4 | Report 3+ times in an hour | Rate limit error shown |
+| 1 | Long-press a message → "Message info" | Shows sent/read timestamps, intentions, reactions |
+| 2 | Long-press a message → "Report" | Report sheet with category selection |
+| 3 | Pick a category, submit | Confirmation toast, report saved |
+| 4 | Report 3+ times in an hour | Rate-limit error shown |
 
 ---
 
-## 11. Notifications
-
-See also: `docs/NOTIFICATION_TEST_PLAN.md` for detailed notification testing.
+## 11. Message Scheduling
 
 | Step | Action | Expected Result |
 |------|--------|-----------------|
-| 1 | Open Settings (gear icon) | Notification toggle(s) visible |
+| 1 | Type a draft, tap the clock icon in the composer | Schedule presets appear (e.g. In 1 hour, This evening, Tomorrow) |
+| 2 | Pick a time (or "Pick a date & time…") | The message is queued, not sent now |
+| 3 | Open the chat menu → "Scheduled" | The pending message is listed |
+| 4 | Edit or cancel a pending message | Change/cancel takes effect; cancelled messages leave the list |
+| 5 | Wait until the send time | The message is delivered and a notification fires |
+
+---
+
+## 12. Notifications
+
+| Step | Action | Expected Result |
+|------|--------|-----------------|
+| 1 | Open the You tab → Settings | A single "Notifications" row is visible |
 | 2 | Enable notifications | Browser permission prompt (web) or system prompt (native) |
-| 3 | Receive message while app in background | Push notification appears |
-| 4 | Tap notification | Opens relevant chat |
-| 5 | Receive message while app in foreground | In-app banner slides in from top (4s auto-dismiss) |
-| 6 | Verify bell icon in header | Reflects actual notification state (not just permission) |
+| 3 | Receive a message while the app is in the background | A push notification appears |
+| 4 | Tap the notification | Opens the relevant chat |
+| 5 | Receive a message while the app is in the foreground | An in-app banner slides in from the top (auto-dismisses after 4s) |
+| 6 | Turn on "Message previews" | Notifications include the message text + intention tags (off by default) |
 
 ---
 
-## 12. PWA Installation (Web Only)
+## 13. PWA Installation (Web)
 
 | Step | Action | Expected Result |
 |------|--------|-----------------|
-| 1 | Open in Chrome (not installed) | "Install" button visible in header |
-| 2 | Tap "Install" | Browser install prompt appears |
-| 3 | Accept install | App opens in standalone mode, install button hidden |
-| 4 | Open in Safari | "Install" shows with manual instructions |
-| 5 | Open in Firefox | "Install" shows with manual instructions |
-| 6 | Check installed PWA for updates | "Update" button appears when new SW version available |
+| 1 | Open in Chrome (not installed) | An "Install" affordance is available |
+| 2 | Install | App opens in standalone mode; install affordance hidden |
+| 3 | Open in Safari / Firefox | Manual install instructions shown |
+| 4 | After a new version deploys | An "Update" affordance appears for installed users |
 
 ---
 
-## 13. Desktop Layout (Web, > 768px)
+## 14. Desktop Layout (Web, > 768px)
 
 | Step | Action | Expected Result |
 |------|--------|-----------------|
-| 1 | Open on wide screen (> 768px) | Side-by-side layout: chat list (left), chat panel (right) |
-| 2 | Click a chat in sidebar | Chat opens in right panel (no navigation) |
-| 3 | Click "Create Chat" | Modal opens centered (400px width) |
-| 4 | Resize window to < 768px | Switches to mobile stack navigation |
-| 5 | Resize back to > 768px | Returns to side-by-side layout |
+| 1 | Open on a wide screen (> 768px) | Side-by-side layout: chat list (left), conversation (right) |
+| 2 | Click a chat in the sidebar | It opens in the right panel (no navigation) |
+| 3 | Resize below 768px | Switches to mobile stack navigation |
+| 4 | Resize back above 768px | Returns to side-by-side |
 
 ---
 
-## 14. Chat Management
+## 15. Chat Management
 
 | Step | Action | Expected Result |
 |------|--------|-----------------|
-| 1 | Open chat header menu | Options: Edit Name, Copy Code, Share Link, End Chat |
-| 2 | Edit display name | Name updated in chat list and header |
-| 3 | End chat | Chat disappears from your list, other user unaffected |
+| 1 | Open the chat header menu | Options: Edit name, Copy code, Share link, Scheduled, End chat |
+| 2 | Edit the display name | Name updated in the chat list and header |
+| 3 | End the chat (confirm) | The chat is removed for BOTH participants (ending is mutual and irreversible) |
 
 ---
 
-## 15. Rate Limiting
+## 16. Rate Limiting
 
 | Step | Action | Expected Result |
 |------|--------|-----------------|
-| 1 | Send 30+ messages in 1 minute | Rate limit error after 30th |
-| 2 | Create 15+ chats in 1 hour | Rate limit error after 15th |
-| 3 | Report 3+ messages in 1 hour | Rate limit error after 3rd |
+| 1 | Send 30+ messages in 1 minute | Rate-limit error after the 30th |
+| 2 | Create 15+ chats in 1 hour | Rate-limit error after the 15th |
+| 3 | Report 3+ messages in 1 hour | Rate-limit error after the 3rd |
 
 ---
 
@@ -231,20 +224,21 @@ See also: `docs/NOTIFICATION_TEST_PLAN.md` for detailed notification testing.
 
 Run through before any release:
 
-- [ ] First launch tutorial completes without errors
-- [ ] Create chat generates valid code
-- [ ] Join chat works with manual code and shared link
-- [ ] Messages send, deliver, and show read receipts
-- [ ] Tone tags can be added, changed (within limits), and auto-reveal
-- [ ] Message editing works within 15-min / 5-edit constraints
-- [ ] Emoji reactions add, remove, and show counts correctly
-- [ ] Reply with swipe gesture works on mobile and desktop
-- [ ] Soft delete hides message for one user only
-- [ ] Hard delete shows tombstone for both users
-- [ ] Push notifications work in background (web and native)
-- [ ] In-app notifications work in foreground
-- [ ] PWA installs correctly on Chrome, shows instructions on Safari/Firefox
-- [ ] Desktop layout switches correctly at 768px breakpoint
-- [ ] Pull-to-refresh works on home screen and chat
+- [ ] First-launch tutorial completes without errors
+- [ ] Create chat generates a valid code
+- [ ] Join works with a manual code and a shared link
+- [ ] Messages send and show ✓ / ✓✓ read receipts
+- [ ] Intention tags can be added while composing and after sending, and display to both people immediately
+- [ ] Message editing works within the 15-min / 5-edit limits
+- [ ] Emoji reactions (quick 6 + More) add, remove, and show counts
+- [ ] Reply with a swipe gesture works on mobile and desktop
+- [ ] Soft delete hides a message for one user only
+- [ ] Hard delete shows a tombstone for both users
+- [ ] Scheduled messages send at the chosen time
+- [ ] Push notifications work in the background (web and native)
+- [ ] In-app notifications work in the foreground
+- [ ] PWA installs on Chrome, shows instructions on Safari/Firefox
+- [ ] Desktop layout switches correctly at the 768px breakpoint
+- [ ] Ending a chat removes it for both participants
 - [ ] Rate limits enforce correctly
-- [ ] No console errors in production build
+- [ ] No console errors in the production build
