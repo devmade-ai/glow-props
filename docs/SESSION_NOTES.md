@@ -1,22 +1,42 @@
 # Session Notes
 
 ## Worked on
-Implemented the fleet-standard PWA update policy (auto-on-launch) in glow-props itself, on `claude/projects-missing-analytics-vla4ja` — the branch whose prior commit added the policy spec to `docs/implementations/PWA_SYSTEM.md` ("Update Application Policy — fleet standard: auto-on-launch").
+Refreshing the projects catalog — it was out of date — on branch
+`claude/google-analytics-setup-34ltdy`.
 
 ## Accomplished
-- `src/pwa.js`: launch-apply (a worker already waiting when registration resolves auto-applies behind an "Updating to the latest version…" toast, then one reload), 30s `pwa-updated-at` sessionStorage suppression, persisted `pwa-auto-update` localStorage toggle (default ON, only literal `'false'` opts out), `checkForUpdates()` with the canonical `'no-sw' | 'up-to-date' | 'update-available' | 'error'` union (1500ms settle after `registration.update()`), shared `applyUpdate()` for launch + banner paths, safe local/session storage helpers (existing `pwa-install-dismissed` inline try/catch refactored onto them). Mid-session detections unchanged: banner only, never reload.
-- `partials/navbar.html`: "Automatic updates" toggle (On/Off indicator, no `data-close`, mirrors the random-theme toggle shape) + "Check for updates" action (`data-close`, result via toast/banner). Shared partial → all three pages get them.
-- `README.md`: navbar tree-comment line updated ("PWA install + update controls").
-- Verified: `npm run verify:timer-cleanup` OK; `./node_modules/.bin/vite build` clean; all three built pages carry the new menu items; policy tokens present in the built pwa bundle.
+Projects render in three hardcoded places, all updated:
+- **`index.html`** (the homepage cards): `SyncTone` → **inTXT** (heading,
+  description rewritten to intention tags with no reveal mechanic, live URL →
+  `intxt.app`); FuelHunt live URL → `fuelhunt.app`; budgy card heading
+  `Cashflow Tracker` → **Farlume** (rebrand). Added three new user-facing cards:
+  **knowless** (kl-website, `knowless.net`), **redline** (web-arch — knowless
+  sub-brand), **devmade** (dm-website, now live at `www.devmade.app`).
+- **`README.md`** (the featured-projects table): same fixes + the 3 new rows;
+  also aligned display names to brands (few-lap→FuelHunt, sun-sea-o→Sancio).
+- **`public/projects/*/meta.json`** (the detail-page data): rewrote
+  `synctone/meta.json` (title/description/liveUrl → intxt, tech NativeWind →
+  Uniwind, OneSignal → Web Push, useCases/dataPrivacy de-toned); `few-lap`
+  liveUrl → fuelhunt.app; **created** `kl-website/`, `web-arch/`, `dm-website/`
+  meta.json (rich meta, `docs: {}` so no scrubbed doc files are required).
 
 ## Current state
-- Branch `claude/projects-missing-analytics-vla4ja`, committed and pushed. Not merged to main, no PR.
-- `registerType: 'prompt'` retained in `vite.config.js` (the policy rides on it — no config change needed).
-- CLAUDE.md untouched: its only pwa.js claim (TIMER_LEAKS canonical variants 1/4/5) is still accurate after the change.
+- `./node_modules/.bin/vite build` clean — `validateProjectMeta` accepted all 15
+  metas; dist carries the 3 new project dirs + all five brand names; zero stale
+  strings (`SyncTone` / `Cashflow Tracker` / old vercel URLs) in built index.html.
+- Committed on `claude/google-analytics-setup-34ltdy` (not merged).
 
 ## Key context
-- **Non-obvious mechanism (documented in the src/pwa.js header):** launch-apply is *detected* in `onRegisteredSW` (`registration.waiting` present → 10s eligibility window) but *executed* from `onNeedRefresh`. In vite-plugin-pwa 1.2.0 prompt mode, the reload-on-`controlling` listener is installed only inside the `waiting` event handler (dispatched on a 200ms timer for a pre-waiting worker, and cancelled if the worker starts activating first) — calling `updateSW(true)` straight from `onRegisteredSW` could skipWaiting before any reload listener exists, stranding a stale page under the new SW.
-- `updateSW(true)`'s reload comes from vite-plugin-pwa's internal `controlling` listener; the boolean arg is ignored in prompt mode (kept for interface clarity).
-- `checkForUpdates()` on `'update-available'` re-shows the banner instead of toasting (both are bottom-anchored; the banner is the actionable surface). The 1200ms "Checking…" toast deliberately undercuts the 1500ms settle so toasts never overlap.
-- Stale TODO.md line noticed, left alone (dated audit narrative, convention is not to back-edit): the 2026-04-18 "glow-props (self) TIMER_LEAKS self-compliance" bullet — long since done (dispose blocks + `verify:timer-cleanup` tripwire exist).
-- Pre-existing, unrelated build notices: `<script src="theme.js">` "can't be bundled without type=module" on index/pattern — intentional static-asset script, not in Vite's module graph.
+- The `?name=` slug and GitHub repo names are UNCHANGED (`?name=synctone`,
+  `?name=budgy-ting`) — only the brand-facing fields moved. The repos are still
+  named `synctone` / `budgy-ting` on GitHub, so the slugs stay.
+- **Known follow-up (not done):** inTXT's Details page renders the SCRUBBED
+  `public/projects/synctone/{README,USER_GUIDE,TESTING_GUIDE,TUTORIAL}.md`, which
+  still say "SyncTone"/"tone". Those deep scrubbed mirrors weren't rewritten this
+  pass (large, and secondary to the catalog fix). The 3 new dirs have no scrubbed
+  docs yet (`docs: {}`) — add them if the detail pages should carry doc links.
+- Ground truth for "what's deployed" came from querying each scoped repo's GitHub
+  `homepage`/`has_pages` directly — the account-wide `/user/repos` API is blocked
+  (sessions are repo-scoped), and `illuminAI-select` can't be enumerated from here.
+- Two pre-existing build notices (`<script src="theme.js">` not bundled) are the
+  intentional classic static-asset script — unrelated.

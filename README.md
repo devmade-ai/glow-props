@@ -20,15 +20,18 @@ Also hosts `CLAUDE.md` — a comprehensive AI assistant ruleset used as a refere
 
 | Project | Description | Stack |
 |---------|-------------|-------|
-| [budgy-ting](https://budgy-ting.vercel.app/) | Household cashflow tracker | JS, Vue 3, Vite, IndexedDB |
+| [Farlume](https://budgy-ting.vercel.app/) | Household cashflow tracker | JS, Vue 3, Vite, IndexedDB |
 | [canva-grid](https://canva-grid.vercel.app/) | Visual design tool | JS, Vite, Tailwind |
 | [graphiki](https://graphiki.vercel.app/) | Graph-based knowledge workspace | TS, Cytoscape.js |
 | [model-pear](https://model-pear-web.vercel.app/) | B2B software pricing tool | TS, React, Vite |
 | [see-veo](https://see-veo.vercel.app/) | Personal CV/resume as PWA | TS, React, Tailwind |
-| [few-lap](https://few-lap.vercel.app) | Fuel station finder (SA) | TS, Expo, Supabase, Mapbox |
-| [synctone](https://synctone.vercel.app) | Anonymous tone-tagged messaging | TS, Expo, Supabase |
-| [sun-sea-o](https://sun-sea-o.vercel.app) | Module-based agreement builder | TS, React, Supabase |
+| [FuelHunt](https://fuelhunt.app) | Fuel station finder (SA) | TS, Expo, Supabase, Mapbox |
+| [inTXT](https://intxt.app) | Anonymous intention-tagged messaging | TS, Expo, Supabase |
+| [Sancio](https://sun-sea-o.vercel.app) | Module-based agreement builder | TS, React, Supabase |
 | [four-ems](https://four-ems.vercel.app/) | Self-hosted form builder | TS, React, Supabase |
+| [knowless](https://knowless.net) | Investigative journalism reader | TS, React, PWA |
+| [redline](https://web-arch.vercel.app) | Archived-page diff viewer (knowless) | JS, React, Wayback |
+| [devmade](https://www.devmade.app) | devmade studio front-door | TS, React, Cloudflare |
 
 ### Internal Tools
 

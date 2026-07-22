@@ -1,0 +1,30 @@
+{
+  "name": "kl-website",
+  "title": "Investigative Journalism Reader",
+  "description": "A mobile-first reader for independent investigative journalism — long-form reporting with offline saving, section browsing, search, and an encrypted way for sources to send tips.",
+  "category": "user-facing",
+  "badge": "Reader",
+  "status": "active",
+  "repo": "private",
+  "liveUrl": "https://knowless.net/",
+  "tech": [
+    "TypeScript",
+    "React",
+    "Vite",
+    "PWA",
+    "Supabase"
+  ],
+  "audience": "Readers who follow independent investigative reporting, and sources who need a private, encrypted way to pass on information.",
+  "useCases": [
+    "A reader opens the app to today’s investigations and saves a long piece to read offline on the commute",
+    "Someone browses by beat to catch up on a running story, then searches for an earlier related report",
+    "A source with sensitive information uses the secure-tip flow to reach the newsroom without leaving a trail",
+    "A returning reader installs the app to the home screen and reads in a clean, distraction-free reader view"
+  ],
+  "dataPrivacy": {
+    "storage": "Saved articles and preferences are kept on-device. Content is served over the network; no account is needed to read.",
+    "authentication": "None required for reading.",
+    "tips": "The secure-tip flow is designed so sources can reach the newsroom privately."
+  },
+  "docs": {}
+}

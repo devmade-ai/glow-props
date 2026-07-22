@@ -1,33 +1,33 @@
 {
   "name": "synctone",
-  "title": "Anonymous Tone-Tagged Messaging",
-  "description": "Anonymous messaging where senders tag the intended tone of each message. Tones are revealed when the receiver opens the chat.",
+  "title": "Anonymous Intention-Tagged Messaging",
+  "description": "Anonymous messaging where senders tag the intention of each message. The tag shows on the message itself, so meaning is never misread.",
   "category": "user-facing",
   "badge": "Messaging",
   "status": "active",
   "repo": "private",
-  "liveUrl": "https://synctone.vercel.app/",
+  "liveUrl": "https://intxt.app/",
   "tech": [
     "TypeScript",
     "Expo",
     "React Native",
     "Supabase",
-    "NativeWind",
+    "Uniwind",
     "Zustand"
   ],
-  "audience": "Anyone who has been misunderstood in text \u2014 remote workers, couples, friends, managers, or anyone in a situation where a message could land wrong without the right context.",
+  "audience": "Anyone who has been misunderstood in text — remote workers, couples, friends, managers, or anyone in a situation where a message could land wrong without the right context.",
   "useCases": [
-    "A manager sends critical feedback to a remote employee \u2014 tags it as 'supportive' so the receiver knows the intent before reading the words",
-    "Two friends are bantering over text \u2014 one tags a sharp reply as 'joking' so it doesn\u2019t accidentally start a fight",
-    "Someone needs to have a hard conversation but wants anonymity \u2014 creates a chat with a random code and shares the link, no accounts or phone numbers involved",
-    "A couple resolves a disagreement over text \u2014 tone tags prevent the 'are you being sarcastic?' spiral by making intent visible upfront"
+    "A manager sends critical feedback to a remote employee — tags it 'sincere' so the intent is clear before the words are read",
+    "Two friends are bantering over text — one tags a sharp reply 'joking' so it doesn’t accidentally start a fight",
+    "Someone needs a hard conversation but wants anonymity — creates a chat with a random code and shares the link, no accounts or phone numbers involved",
+    "A couple resolves a disagreement over text — intention tags prevent the 'are you being sarcastic?' spiral by making meaning visible upfront"
   ],
   "dataPrivacy": {
-    "storage": "Messages stored in cloud database for delivery. Identity is a random device ID \u2014 no email, phone, or account.",
+    "storage": "Messages stored in cloud database for delivery. Identity is a random device ID — no email, phone, or account.",
     "authentication": "Anonymous. Random UUID generated on first launch, stored securely on device.",
     "deletion": "Uninstalling the app permanently deletes your identity. No recovery, no backdoors.",
     "security": "Row-level security policies. Anti-spam rate limiting and auto-flagging. Anonymous reporting for moderation.",
-    "thirdParty": "Supabase for database and realtime. OneSignal for web push notifications."
+    "thirdParty": "Supabase for database and realtime. Web Push (VAPID) for notifications."
   },
   "docs": {
     "readme": true,

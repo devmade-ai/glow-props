@@ -1,0 +1,30 @@
+{
+  "name": "web-arch",
+  "title": "Archived-Page Diff Viewer",
+  "description": "See how a web page — a privacy policy or terms of service — has quietly changed over time. Finds the points where the wording actually changed and explains each in plain language. A sub-brand of knowless, called redline.",
+  "category": "user-facing",
+  "badge": "Archive",
+  "status": "active",
+  "repo": "private",
+  "liveUrl": "https://web-arch.vercel.app/",
+  "tech": [
+    "JavaScript",
+    "React",
+    "Vite",
+    "Wayback Machine API",
+    "jsdiff"
+  ],
+  "audience": "Anyone who wants to know what changed in a document they rarely re-read — privacy policies, terms of service, and similar legal or policy pages.",
+  "useCases": [
+    "A user pastes a company’s privacy-policy URL and sees the most recent change first — what was added, removed, or reworded",
+    "A journalist tracks how a platform’s terms of service shifted over the last two years, ranked worst-first",
+    "Someone checks a claim against the record — what a page said before versus what it says now, both sourced to real archived captures",
+    "A reader turns on the plain-language layer to get a one-line summary and a significance score for each change"
+  ],
+  "dataPrivacy": {
+    "storage": "No account. Lookups run against the public Wayback Machine; results are cached in the browser session only.",
+    "authentication": "None required.",
+    "thirdParty": "Internet Archive Wayback Machine for captures; an optional LLM (via OpenRouter, server-side) for the plain-language summaries."
+  },
+  "docs": {}
+}
