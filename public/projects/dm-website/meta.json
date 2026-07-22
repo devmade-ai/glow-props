@@ -1,0 +1,30 @@
+{
+  "name": "dm-website",
+  "title": "devmade Studio Front-Door",
+  "description": "The public homepage for the devmade studio — introduces the studio and its two product lines, with case studies and a build log, and routes visitors to the right product.",
+  "category": "user-facing",
+  "badge": "Brand",
+  "status": "active",
+  "repo": "private",
+  "liveUrl": "https://www.devmade.app/",
+  "tech": [
+    "TypeScript",
+    "React",
+    "Vite",
+    "React Router",
+    "Cloudflare Workers"
+  ],
+  "audience": "Prospective clients and visitors looking for the devmade studio — its vibe-rescue service, its apps-for-business subscription, and its work.",
+  "useCases": [
+    "A prospective client lands on the hub, reads what devmade does, and follows the call-to-action into the vibe-rescue intake",
+    "A visitor browses case studies and the build log to gauge the studio’s work before reaching out",
+    "Someone interested in the apps-for-business line opens that page and subscribes via the intake form",
+    "A reader clicks through from a product to the deeper portfolio and pattern library"
+  ],
+  "dataPrivacy": {
+    "storage": "Static marketing site; no user accounts.",
+    "forms": "The intake and subscribe forms post to the shared utilities API to deliver an email; a hidden honeypot field screens bots.",
+    "hosting": "Served from Cloudflare Workers static assets."
+  },
+  "docs": {}
+}
