@@ -29,8 +29,8 @@ Project variants demonstrating this pattern:
 - **glow-props**: Vanilla HTML/CSS/JS + Vite, full 35-theme catalog, per-mode independent selection (3 keys: `darkMode`, `lightTheme`, `darkTheme`)
 - **canva-grid**: React + Vite, combo-based selection with curated presets (2 keys: `darkMode`, `themeCombo`)
 - **graphiki**: React + Vite, combo-based with DaisyUI v5, auto-generated meta colors
-- **few-lap**: React Native (Expo) + Uniwind, named combos (light/dark pairs), CSS variable themes
-- **synctone**: React Native (Expo) + Zustand + Uniwind, combo presets with per-side meta colors
+- **fh-fuelhunt**: React Native (Expo) + Uniwind, named combos (light/dark pairs), CSS variable themes
+- **intxt**: React Native (Expo) + Zustand + Uniwind, combo presets with per-side meta colors
 
 The apps above happen to use DaisyUI's semantic color system, but that's a per-app choice, not a requirement. Custom CSS variable tokens (`--color-text-default`, `--color-surface`, etc.) and plain Tailwind `dark:` utilities are equally valid — pick whatever fits the app's design.
 
@@ -139,7 +139,7 @@ If migrating from **Tailwind v3**, the `darkMode: 'class'` option in `tailwind.c
 
 **Incremental migration is possible.** DaisyUI semantic classes and custom CSS variables can coexist during transition. You don't need a big-bang swap — migrate component by component, verifying each. DaisyUI's `data-theme` won't interfere with existing `var(--color-*)` references until you remove the variable definitions.
 
-> **React Native / Expo projects** (few-lap, synctone): This migration guide assumes web + Vite. Expo projects use Uniwind's `setTheme()` with `@variant` blocks in CSS instead of `data-theme`. The audit and mapping steps still apply, but the mechanism differs — see the [Uniwind Theme Switching](#uniwind-theme-switching-react-native) and [Zustand Store Pattern](#zustand-store-pattern-react-native) sections for the target architecture.
+> **React Native / Expo projects** (fh-fuelhunt, intxt): This migration guide assumes web + Vite. Expo projects use Uniwind's `setTheme()` with `@variant` blocks in CSS instead of `data-theme`. The audit and mapping steps still apply, but the mechanism differs — see the [Uniwind Theme Switching](#uniwind-theme-switching-react-native) and [Zustand Store Pattern](#zustand-store-pattern-react-native) sections for the target architecture.
 
 ### Phase 1: Audit — Find What Needs to Change
 
@@ -343,7 +343,7 @@ function persistTheme(dark, themeName) {
 }
 ```
 
-### Approach B: Named Combos (canva-grid, graphiki, few-lap, synctone)
+### Approach B: Named Combos (canva-grid, graphiki, fh-fuelhunt, intxt)
 
 Curated light/dark pairs selected as a unit. The user picks a combo name (e.g. "Mono", "Luxe"); toggling dark/light switches between the combo's paired themes. Simpler UI — one dropdown instead of two full theme pickers. Two localStorage keys:
 
@@ -418,7 +418,7 @@ function persistTheme(dark, comboId) {
 | Design coherence | User might pick clashing themes | Combos are pre-vetted to look good |
 | Storage keys | 3 (`darkMode`, `lightTheme`, `darkTheme`) | 2 (`darkMode`, `themeCombo`) |
 | Mobile suitability | Needs scrollable picker, lots of screen space | Small dropdown, works well on mobile |
-| Used by | glow-props | canva-grid, graphiki, few-lap, synctone |
+| Used by | glow-props | canva-grid, graphiki, fh-fuelhunt, intxt |
 
 ## Theme Catalog
 
@@ -965,7 +965,7 @@ Theme definitions go in `global.css` as `@variant` blocks with DaisyUI oklch val
 
 ## Zustand Store Pattern (React Native)
 
-For React Native apps, Zustand solves the problem where `useState` in hooks gives independent copies across components. All components read from the same store. synctone separates the store (`stores/themeStore.ts`) from the hydration logic (`hooks/useTheme.ts`) — shown combined here for clarity:
+For React Native apps, Zustand solves the problem where `useState` in hooks gives independent copies across components. All components read from the same store. intxt separates the store (`stores/themeStore.ts`) from the hydration logic (`hooks/useTheme.ts`) — shown combined here for clarity:
 
 ```typescript
 import { create } from 'zustand'
