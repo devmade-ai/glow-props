@@ -10,7 +10,7 @@ How to maintain the mirrored project docs on the glow-props portfolio site.
 
 | Project | Repo | README | User Guide | Testing Guide | Tutorial | Notes |
 |---------|------|--------|------------|---------------|----------|-------|
-| budgy-ting | public | Yes | Yes | Yes | Yes | All docs complete |
+| fl-farlume | public | Yes | Yes | Yes | Yes | All docs complete |
 | canva-grid | public | Yes | Yes | Yes | Yes | All docs complete |
 | graphiki | private | Scrubbed | Yes | Yes | Yes | README: removed git clone URL, Getting Started, dev commands, project structure, configuration, internal doc links. |
 | model-pear | public | Yes | **No** | **No** | **No** | Missing user guide, testing guide, tutorial |

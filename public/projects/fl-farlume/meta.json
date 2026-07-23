@@ -1,5 +1,5 @@
 {
-  "name": "budgy-ting",
+  "name": "fl-farlume",
   "title": "Household Cashflow Tracker",
   "description": "Track spending, detect recurring patterns, forecast cashflow with statistical models.",
   "category": "user-facing",
@@ -7,7 +7,7 @@
   "status": "active",
   "repo": "public",
   "liveUrl": "https://budgy-ting.vercel.app/",
-  "repoUrl": "https://github.com/devmade-ai/budgy-ting",
+  "repoUrl": "https://github.com/devmade-ai/fl-farlume",
   "tech": [
     "JavaScript",
     "Vue 3",
