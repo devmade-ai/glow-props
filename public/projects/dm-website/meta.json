@@ -26,5 +26,9 @@
     "forms": "The intake and subscribe forms post to the shared utilities API to deliver an email; a hidden honeypot field screens bots.",
     "hosting": "Served from Cloudflare Workers static assets."
   },
-  "docs": {}
+  "docs": {
+    "readme": true,
+    "userGuide": true,
+    "testingGuide": true
+  }
 }

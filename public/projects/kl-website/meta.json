@@ -26,5 +26,7 @@
     "authentication": "None required for reading.",
     "tips": "The secure-tip flow is designed so sources can reach the newsroom privately."
   },
-  "docs": {}
+  "docs": {
+    "readme": true
+  }
 }

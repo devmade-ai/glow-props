@@ -26,5 +26,9 @@
     "authentication": "None required.",
     "thirdParty": "Internet Archive Wayback Machine for captures; an optional LLM (via OpenRouter, server-side) for the plain-language summaries."
   },
-  "docs": {}
+  "docs": {
+    "readme": true,
+    "userGuide": true,
+    "testingGuide": true
+  }
 }
