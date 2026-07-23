@@ -1,45 +1,46 @@
 # Session Notes
 
 ## Worked on
-Rebranding the synctone project's scrubbed detail-page docs from the stale
-SyncTone/tone content to inTXT — the follow-up flagged after the catalog refresh
-(PR #50, merged). Branch `claude/google-analytics-setup-34ltdy`, restarted from
-`main` (the prior PR was already merged, so this is a fresh change, not stacked).
+Adding scrubbed detail-page docs for the three project dirs that shipped with
+the catalog refresh (PR #50) carrying `docs: {}` (no doc files):
+`kl-website`, `web-arch`, `dm-website`. Branch
+`claude/google-analytics-setup-34ltdy`, restarted from `main` (prior PR #51 was
+already merged, so this is a fresh change, not stacked).
 
 ## Accomplished
-Rewrote all four `public/projects/synctone/*.md` files (the Details page renders
-`README.md`; the others are linked from it) to accurately describe the current
-product, sourced from the live `synctone` repo's own docs (which are already
-rebranded to inTXT):
-- **README.md** — scrubbed rewrite: intention tags (no reveal step), ✓/✓✓ read
-  receipts, quick-6 + More reactions, scheduling, share target, Uniwind + Web
-  Push in the tech table, `intxt.app` links, ~42,000 codes. Dropped the dev-only
-  sections (DB schema, Quick Start, local URLs, dev commands, code conventions).
-- **USER_GUIDE.md** — mirrored the current repo's user guide verbatim (it's
-  already accurate + user-facing; grep-clean of secrets/local URLs).
-- **TESTING_GUIDE.md** — rewritten at portfolio altitude (the live 561-line
-  source is dev-command-heavy): first-launch/create/join/messaging/intention
-  tags/editing/reactions/reply/deletion/info/scheduling/notifications/PWA/desktop/
-  chat-management/rate-limiting + regression checklist, all corrected (no reveal,
-  no "delivered" tick, quick-6+More, 4-slide tutorial, mutual end-chat, `#`-frag
-  join links, merged Notifications setting).
-- **TUTORIAL.md** — rewritten to the current 4 slides (anonymous / tag-what-you-
-  mean / on-your-terms / private-by-default).
+Created scrubbed markdown under each project dir and flipped its `meta.json`
+`docs` flags so the Details page renders the doc tabs:
+- **kl-website** — `README.md` only (source repo has just a README).
+  `docs: { readme }`. The knowless reader (four tabs, reader overlay,
+  save-for-offline, install, night theme), tech at portfolio altitude.
+- **web-arch (redline)** — `README.md` + `USER_GUIDE.md` + `TESTING_GUIDE.md`.
+  `docs: { readme, userGuide, testingGuide }`. README + USER_GUIDE scrubbed from
+  the live repo's own docs; TESTING_GUIDE freshly rewritten at portfolio altitude
+  (source was dev-command/headless-harness heavy).
+- **dm-website** — `README.md` + `USER_GUIDE.md` + `TESTING_GUIDE.md`.
+  `docs: { readme, userGuide, testingGuide }`. README reframed as **live at
+  www.devmade.app** (the source README's "Not yet deployed" line was stale —
+  the site is deployed); USER_GUIDE kept faithful; TESTING_GUIDE stripped of the
+  localhost/CORS/env intro + the npm-tooling regression bullet.
+
+Scrub rule applied throughout: no `npm run`/`npm install`, no localhost/`:5173`,
+no `VITE_*` / `OPENROUTER_API_KEY` / `SUPABASE_*`, no `wrangler`/`npx`/`supabase`
+commands, no DB schema/RLS, no deploy internals, no source-tree/CLAUDE.md refs.
 
 ## Current state
-- `./node_modules/.bin/vite build` clean — `validateProjectMeta` still green
-  (synctone keeps `docs: {readme,userGuide,testingGuide,tutorial}` all true; all
-  four files exist). Residual-term sweep across the four files: no `SyncTone` /
-  `tone tag` / `revealed` / `NativeWind` / `OneSignal` / 9-step / 12-emoji.
+- `./node_modules/.bin/vite build` clean — `validateProjectMeta` green (all three
+  dirs' declared `docs` files exist; no warnings). Doc files + flipped flags
+  verified copied into `dist/projects/*/`.
+- Grep sweep of the six new files for scrub targets: CLEAN (zero matches).
 - Committed on `claude/google-analytics-setup-34ltdy` (fresh branch off main).
 
 ## Key context
-- Source of truth for the rewrite = the live `synctone` repo docs (README +
-  docs/USER_GUIDE + docs/TESTING_GUIDE) + its CLAUDE.md, all already inTXT.
-- The `?name=synctone` slug and the GitHub repo name are unchanged — only the
-  brand-facing content moved (the repo is still `synctone` on GitHub).
-- The three project dirs added in PR #50 (`kl-website`, `web-arch`, `dm-website`)
-  still carry `docs: {}` (no scrubbed doc files) — add them if those Details pages
-  should carry doc links.
-- Pre-existing `<script src="theme.js">` build notices are the intentional classic
-  static-asset script — unrelated.
+- The Details page (`project.html`) renders one labeled tab per `meta.docs.<key>:
+  true` (Overview / User Guide / Testing Guide / Tutorial), fetching the matching
+  file from `public/projects/<slug>/`. `validateProjectMeta` in `vite.config.js`
+  warns if a declared doc file is missing (`DOC_FILE_MAP`: readme→README.md,
+  userGuide→USER_GUIDE.md, testingGuide→TESTING_GUIDE.md, tutorial→TUTORIAL.md).
+- `?name=<slug>` slugs stay the GitHub repo names (`kl-website` / `web-arch` /
+  `dm-website`); redline is web-arch's brand, knowless is kl-website's.
+- `synctone`'s four docs (from the earlier PR #51) remain the reference for the
+  scrub altitude; these three now match that treatment.
