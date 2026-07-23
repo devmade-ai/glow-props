@@ -10,13 +10,13 @@ How to maintain the mirrored project docs on the glow-props portfolio site.
 
 | Project | Repo | README | User Guide | Testing Guide | Tutorial | Notes |
 |---------|------|--------|------------|---------------|----------|-------|
-| budgy-ting | public | Yes | Yes | Yes | Yes | All docs complete |
+| fl-farlume | public | Yes | Yes | Yes | Yes | All docs complete |
 | canva-grid | public | Yes | Yes | Yes | Yes | All docs complete |
 | graphiki | private | Scrubbed | Yes | Yes | Yes | README: removed git clone URL, Getting Started, dev commands, project structure, configuration, internal doc links. |
 | model-pear | public | Yes | **No** | **No** | **No** | Missing user guide, testing guide, tutorial |
 | see-veo | public | Yes | **No** | **No** | **No** | Missing user guide, testing guide, tutorial |
-| few-lap | private | Scrubbed | Yes | Scrubbed | Yes | README: removed env vars, local URLs, project structure. Testing guide: removed SQL queries, database setup. |
-| synctone | private | Scrubbed | Yes | Yes | Yes | README: removed database schema, local URLs, setup commands, RLS details. |
+| fh-fuelhunt | private | Scrubbed | Yes | Scrubbed | Yes | README: removed env vars, local URLs, project structure. Testing guide: removed SQL queries, database setup. |
+| intxt | private | Scrubbed | Yes | Yes | Yes | README: removed database schema, local URLs, setup commands, RLS details. |
 | sun-sea-o | private | Scrubbed | Yes | Yes | **No** | README: removed env vars, localhost, setup commands, project structure, internal doc refs. No TutorialModal in source. |
 | four-ems | private | Scrubbed | Yes | Yes | **No** | README: removed env vars, setup commands. User Guide and Testing Guide copied as-is. No TutorialModal in source. |
 
@@ -255,4 +255,4 @@ All URLs must end with a trailing slash (`/`).
 
 ## Private Repos
 
-Currently private: graphiki, few-lap, synctone, tool-till-tees, sun-sea-o, four-ems
+Currently private: graphiki, fh-fuelhunt, intxt, tool-till-tees, sun-sea-o, four-ems

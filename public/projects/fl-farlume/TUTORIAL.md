@@ -2,7 +2,7 @@
 
 In-app walkthrough shown on first visit. Access anytime via "How it works" in the menu.
 
-## Step 1: Welcome to budgy-ting
+## Step 1: Welcome to Farlume
 
 A simple tool to track your spending and forecast your cashflow. Everything stays on your device — no accounts, no cloud.
 

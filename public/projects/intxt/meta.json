@@ -1,5 +1,5 @@
 {
-  "name": "synctone",
+  "name": "intxt",
   "title": "Anonymous Intention-Tagged Messaging",
   "description": "Anonymous messaging where senders tag the intention of each message. The tag shows on the message itself, so meaning is never misread.",
   "category": "user-facing",

@@ -122,7 +122,7 @@ const icoBuffer = await pngToIco(favicon32);
 writeFileSync(join(IMAGES_DIR, 'favicon.ico'), icoBuffer);
 ```
 
-**Manual ICO packing** (budgy-ting) — zero dependencies, stable binary format:
+**Manual ICO packing** (fl-farlume) — zero dependencies, stable binary format:
 
 ```javascript
 const favicon32 = await sharp(svgBuffer, { density: SVG_DENSITY })

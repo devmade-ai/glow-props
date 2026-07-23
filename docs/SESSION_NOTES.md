@@ -42,5 +42,5 @@ commands, no DB schema/RLS, no deploy internals, no source-tree/CLAUDE.md refs.
   userGuide→USER_GUIDE.md, testingGuide→TESTING_GUIDE.md, tutorial→TUTORIAL.md).
 - `?name=<slug>` slugs stay the GitHub repo names (`kl-website` / `web-arch` /
   `dm-website`); redline is web-arch's brand, knowless is kl-website's.
-- `synctone`'s four docs (from the earlier PR #51) remain the reference for the
+- `intxt`'s four docs (from the earlier PR #51) remain the reference for the
   scrub altitude; these three now match that treatment.
