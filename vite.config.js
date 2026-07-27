@@ -271,15 +271,27 @@ function prerenderPatternPages() {
     const title = escapeAttr(pattern.title + ' — devmade-ai');
     const desc = escapeAttr(pattern.description);
     const url = SITE + 'patterns/' + pattern.slug + '/';
-    var GENERIC_DESC = 'Reusable engineering patterns by devmade-ai — implementation guides shared across every project.';
+    const GENERIC_DESC = 'Reusable engineering patterns by devmade-ai — implementation guides shared across every project.';
     // Pairs, not an object: several of these keys are built by concatenation,
     // which an object literal cannot take without bracket syntax.
+    //
+    // Every entry REPLACES a tag the template already carries. Nothing here
+    // may introduce a tag that the template also has: the description was
+    // originally injected alongside og:title, which left the generic one in
+    // place and shipped all 12 pages with two <meta name="description">
+    // tags — a crawler then picks one and we do not get to say which.
+    // Replacing in place also means the fail-loud guard below covers the
+    // description too, so a reworded template breaks the build instead of
+    // quietly restoring the generic copy.
     return [
       ['<title>Loading... — devmade-ai</title>', '<title>' + title + '</title>'],
       [
+        '<meta name="description" content="' + GENERIC_DESC + '">',
+        '<meta name="description" content="' + desc + '">',
+      ],
+      [
         '<meta property="og:title" content="devmade-ai — Pattern Details">',
         '<link rel="canonical" href="' + url + '">\n  ' +
-        '<meta name="description" content="' + desc + '">\n  ' +
         '<meta property="og:title" content="' + title + '">',
       ],
       [

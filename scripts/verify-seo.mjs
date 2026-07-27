@@ -222,6 +222,33 @@ if (existsSync(distPatternsDir)) {
     if (html.includes('href="./')) {
       fail(`dist/patterns/${slug}/: has root-relative "./" links that break from a nested URL`)
     }
+
+    // Each identity tag must appear EXACTLY once. Prerendering rewrites a
+    // template that already carries a full set, so the failure mode is not a
+    // missing tag but a second one: the generic value survives next to the
+    // specific one and the crawler picks whichever it likes. Every check above
+    // is satisfied by a duplicate — `includes()` finds the good value and
+    // `match()` returns the first — which is exactly how all 12 pages shipped
+    // with two <meta name="description"> tags and every assertion still passed.
+    const headHtml = html.slice(0, html.indexOf('</head>'))
+    const identityTags = [
+      ['<title', '<title>'],
+      ['description', '<meta name="description"'],
+      ['og:title', '<meta property="og:title"'],
+      ['og:description', '<meta property="og:description"'],
+      ['og:url', '<meta property="og:url"'],
+      ['og:image', '<meta property="og:image"'],
+      ['twitter:title', '<meta name="twitter:title"'],
+      ['twitter:description', '<meta name="twitter:description"'],
+      ['canonical', '<link rel="canonical"'],
+    ]
+    for (const [label, literal] of identityTags) {
+      const count = headHtml.split(literal).length - 1
+      if (count !== 1) {
+        fail(`dist/patterns/${slug}/: <head> has ${count} ${label} tags, expected exactly 1 — ` +
+          'a prerender step is adding a tag instead of replacing the template\'s')
+      }
+    }
   }
 }
 
