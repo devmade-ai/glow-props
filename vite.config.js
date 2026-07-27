@@ -175,6 +175,10 @@ function parseFrontmatter(text) {
   return attrs;
 }
 
+// Hoisted so generateSitemap() can list the same patterns the site serves,
+// rather than keeping a second copy of the frontmatter parsing.
+let buildPatternManifestForSitemap = () => ({ patterns: [] });
+
 function generatePatternManifest() {
   const implDir = resolve(__dirname, 'docs', 'implementations');
   const REQUIRED = ['slug', 'title', 'badge', 'description'];
@@ -222,6 +226,8 @@ function generatePatternManifest() {
     return { patterns: patterns };
   }
 
+  buildPatternManifestForSitemap = buildManifest;
+
   return {
     name: 'generate-pattern-manifest',
     configureServer(server) {
@@ -240,6 +246,63 @@ function generatePatternManifest() {
       mkdirSync(distPatterns, { recursive: true });
       var manifest = buildManifest();
       writeFileSync(resolve(distPatterns, 'manifest.json'), JSON.stringify(manifest, null, 2));
+    },
+  };
+}
+
+// Requirement: the sitemap listed two URLs — the landing and a bare
+//   project.html — while the site's real content is every pattern and every
+//   project, each at its own "?name=" URL. A hand-maintained file also goes
+//   stale the moment a pattern is added, which is the failure the pattern
+//   manifest already avoids by being generated.
+// Approach: build the sitemap at bundle close from the same two sources the
+//   site itself reads — the pattern frontmatter and the project directories.
+// Alternative: keep public/sitemap.xml by hand — rejected, it was already
+//   wrong when this was written.
+// See docs/implementations/DISCOVERABILITY.md.
+function generateSitemap() {
+  const SITE = 'https://devmade-ai.github.io/glow-props/';
+  const projectsDir = resolve(__dirname, 'public', 'projects');
+
+  function projectSlugs() {
+    if (!existsSync(projectsDir)) return [];
+    // A directory is a project only if it carries the meta.json the page
+    // fetches — public/projects also holds asset-only folders.
+    return readdirSync(projectsDir).filter(
+      (d) => existsSync(resolve(projectsDir, d, 'meta.json')),
+    );
+  }
+
+  return {
+    name: 'generate-sitemap',
+    closeBundle() {
+      var urls = [{ loc: SITE, priority: '1.0' }];
+      for (var p of buildPatternManifestForSitemap().patterns) {
+        urls.push({ loc: SITE + 'pattern.html?name=' + p.slug, priority: '0.8' });
+      }
+      for (var slug of projectSlugs()) {
+        urls.push({ loc: SITE + 'project.html?name=' + slug, priority: '0.8' });
+      }
+
+      var body = urls
+        .map(function (u) {
+          // & is legal in a URL and illegal raw in XML; these have none today,
+          // but a sitemap that silently becomes invalid is worth one escape.
+          var loc = u.loc.replace(/&/g, '&amp;');
+          return '  <url>\n    <loc>' + loc + '</loc>\n    <changefreq>weekly</changefreq>\n    <priority>' + u.priority + '</priority>\n  </url>';
+        })
+        .join('\n');
+
+      writeFileSync(
+        resolve(__dirname, 'dist', 'sitemap.xml'),
+        '<?xml version="1.0" encoding="UTF-8"?>\n' +
+        '<!-- Generated at build time by generateSitemap() in vite.config.js.\n' +
+        '     Do not edit by hand — it is rebuilt from docs/implementations/\n' +
+        '     and public/projects/ on every build. -->\n' +
+        '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n' +
+        body + '\n</urlset>\n',
+      );
+      console.log('[generate-sitemap] ' + urls.length + ' URLs');
     },
   };
 }
@@ -314,6 +377,7 @@ export default defineConfig({
     }),
     copyRootFiles(),
     generatePatternManifest(),
+    generateSitemap(),
   ],
   build: {
     rollupOptions: {

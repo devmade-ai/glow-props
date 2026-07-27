@@ -99,6 +99,7 @@ glow-props/
 npm install
 npm run dev          # Start dev server
 npm run build        # Production build → dist/
+npm run verify:seo   # Static check on the discoverability setup
 ```
 
 ## Tech Stack
@@ -116,6 +117,25 @@ All icons are generated from a single SVG source at 400 DPI:
 ```bash
 npm run generate-icons
 ```
+
+## Discoverability
+
+This site is meant to be found, so it follows the public column of
+[DISCOVERABILITY.md](docs/implementations/DISCOVERABILITY.md): `robots.txt`
+allows crawling and points at the sitemap, every page carries a canonical and a
+full Open Graph / Twitter set, and links unfurl with a 1200×630 card rather than
+a cropped app icon.
+
+```bash
+npm run generate:og-image   # Rebuild the card from assets/icon-source.svg
+npm run verify:seo          # Fails if any of it drifts
+```
+
+`sitemap.xml` is **generated at build** from `docs/implementations/` and
+`public/projects/` — do not add one to `public/`, it would shadow the real file.
+The canonical on `pattern.html` and `project.html` is set at runtime
+(`src/seoMeta.js`), because their content is chosen by `?name=` and a static one
+would point every item at the same URL.
 
 ## Deployment
 
