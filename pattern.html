@@ -9,10 +9,21 @@
   <!-- CSP: GA hosts kept in sync with the gtag snippet in partials/head-common.html -->
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://www.googletagmanager.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: https:; connect-src 'self' https://www.googletagmanager.com https://*.google-analytics.com https://*.analytics.google.com https://stats.g.doubleclick.net;">
   <title>Loading... — devmade-ai</title>
-  <meta property="og:title" content="devmade-ai — Pattern Details">
-  <meta property="og:description" content="Reusable engineering patterns by devmade-ai.">
-  <meta property="og:image" content="https://devmade-ai.github.io/glow-props/assets/images/icon-512.png">
   <meta property="og:type" content="website">
+  <meta property="og:site_name" content="devmade-ai">
+  <meta property="og:title" content="devmade-ai — Pattern Details">
+  <meta property="og:description" content="Reusable engineering patterns by devmade-ai — implementation guides shared across every project.">
+  <meta property="og:url" content="https://devmade-ai.github.io/glow-props/pattern.html">
+  <meta property="og:image" content="https://devmade-ai.github.io/glow-props/assets/images/og-image.png">
+  <meta property="og:image:type" content="image/png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="The devmade-ai mark: four rounded squares in blue, emerald, amber and violet.">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="devmade-ai — Pattern Details">
+  <meta name="twitter:description" content="Reusable engineering patterns by devmade-ai — implementation guides shared across every project.">
+  <meta name="twitter:image" content="https://devmade-ai.github.io/glow-props/assets/images/og-image.png">
+  <meta name="description" content="Reusable engineering patterns by devmade-ai — implementation guides shared across every project.">
   <link rel="icon" type="image/png" href="assets/images/favicon.png">
   <link rel="apple-touch-icon" href="assets/images/apple-touch-icon.png">
 
@@ -47,21 +58,35 @@
          just the markdown content with copy and raw file buttons.
        Note: type="module" ensures this runs after markdown.js (modules execute in order). -->
   <script type="module">
+    import { applyPageSeo } from './src/seoMeta.js';
     (function () {
       var app = document.getElementById('app');
+
+      // Requirement: this page is served from two URLs — the prerendered
+      //   /patterns/<slug>/ (canonical, one static file per pattern) and the
+      //   legacy pattern.html?name=<slug>. Both have to work.
+      // Approach: prefer the query parameter when present, otherwise read the
+      //   slug from the path. Every fetch and in-page link is resolved against
+      //   BASE rather than the document, because a relative path means
+      //   something different two directories down.
+      var BASE = import.meta.env.BASE_URL;
       var params = new URLSearchParams(window.location.search);
       var patternName = params.get('name');
+      if (!patternName) {
+        var fromPath = window.location.pathname.match(/\/patterns\/([a-z0-9-]+)\/?$/);
+        if (fromPath) patternName = fromPath[1];
+      }
       var renderMarkdown = md.renderMarkdown;
       var escapeHtml = md.escapeHtml;
       var rawMarkdown = null;
 
       function showError(title, body, retry) {
         var retryHtml = retry ? '<p class="mt-2"><button onclick="location.reload()" class="btn btn-primary btn-sm">Retry</button></p>' : '';
-        app.innerHTML = '<div class="text-center py-16"><h1 class="text-2xl font-bold mb-2">' + title + '</h1><p class="text-base-content/60">' + body + '</p>' + retryHtml + '<p class="mt-2"><a href="./#patterns" class="link link-primary">Back to patterns</a></p></div>';
+        app.innerHTML = '<div class="text-center py-16"><h1 class="text-2xl font-bold mb-2">' + title + '</h1><p class="text-base-content/60">' + body + '</p>' + retryHtml + '<p class="mt-2"><a href="' + BASE + '#patterns" class="link link-primary">Back to patterns</a></p></div>';
       }
 
       function headerHtml(pattern) {
-        return '<p class="text-sm mb-4"><a href="./#patterns" class="link link-primary">&larr; All patterns</a></p>' +
+        return '<p class="text-sm mb-4"><a href="' + BASE + '#patterns" class="link link-primary">&larr; All patterns</a></p>' +
           '<header class="mb-6 animate-fade-in-up">' +
             '<div class="flex items-center gap-3 flex-wrap">' +
               '<h1 class="text-3xl font-bold">' + escapeHtml(pattern.title) + '</h1>' +
@@ -75,7 +100,7 @@
       var manifestController = new AbortController();
       var manifestTimeout = setTimeout(function () { manifestController.abort(); }, 10000);
 
-      fetch('patterns/manifest.json', { signal: manifestController.signal })
+      fetch(BASE + 'patterns/manifest.json', { signal: manifestController.signal })
         .then(function (r) {
           clearTimeout(manifestTimeout);
           if (!r.ok) throw new Error('HTTP ' + r.status);
@@ -85,8 +110,14 @@
           var pattern = manifest.patterns.find(function (p) { return p.slug === patternName; });
           if (!pattern) { showError('Pattern not found', ''); return; }
 
-          var filePath = 'patterns/' + pattern.file;
-          document.title = pattern.title + ' — devmade-ai';
+          var filePath = BASE + 'patterns/' + pattern.file;
+          applyPageSeo({
+            title: pattern.title,
+            description: pattern.description,
+            // The clean URL is canonical — the ?name= form is the legacy
+            // entry point and must not compete with it for the same content.
+            path: 'patterns/' + encodeURIComponent(pattern.slug) + '/',
+          });
           app.innerHTML = headerHtml(pattern) +
             '<div class="card bg-base-200/50 border border-base-300"><div class="card-body"><p class="text-center py-8 text-base-content/40">Loading...</p></div></div>';
 

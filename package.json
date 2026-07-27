@@ -9,7 +9,9 @@
     "preview": "vite preview",
     "generate-icons": "node scripts/generate-icons.mjs",
     "generate:meta-colors": "node scripts/generate-meta-colors.mjs",
-    "verify:timer-cleanup": "node scripts/verify-timer-cleanup.mjs"
+    "verify:timer-cleanup": "node scripts/verify-timer-cleanup.mjs",
+    "verify:seo": "node scripts/verify-seo.mjs",
+    "generate:og-image": "node scripts/generate-og-image.mjs"
   },
   "devDependencies": {
     "@tailwindcss/vite": "^4.2.2",
