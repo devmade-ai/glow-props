@@ -159,9 +159,78 @@ const distSitemap = join(ROOT, 'dist/sitemap.xml')
 if (existsSync(distSitemap)) {
   const xml = readFileSync(distSitemap, 'utf8')
   const patternCount = readdirSync(join(ROOT, 'docs/implementations')).filter((f) => f.endsWith('.md')).length
-  const listed = (xml.match(/pattern\.html\?name=/g) ?? []).length
+  const listed = (xml.match(/glow-props\/patterns\/[a-z0-9-]+\//g) ?? []).length
   if (listed !== patternCount) {
     fail(`dist/sitemap.xml lists ${listed} patterns, docs/implementations has ${patternCount}`)
+  }
+}
+
+// --- prerendered pattern pages ----------------------------------------------
+
+// Each pattern gets a real HTML file so it has its own crawlable content AND
+// its own link preview. Runtime tags cover neither: unfurlers do not run JS.
+if (!/^\s*prerenderPatternPages\(\),\s*$/m.test(viteConfig)) {
+  fail('vite.config.js defines prerenderPatternPages() but does not register it in the plugins array')
+}
+
+const patternFiles = readdirSync(join(ROOT, 'docs/implementations')).filter((f) => f.endsWith('.md'))
+const distPatternsDir = join(ROOT, 'dist/patterns')
+
+if (existsSync(distPatternsDir)) {
+  const slugs = []
+  for (const file of patternFiles) {
+    const md = readFileSync(join(ROOT, 'docs/implementations', file), 'utf8')
+    const slug = md.match(/^slug:\s*(\S+)/m)?.[1]
+    const title = md.match(/^title:\s*(.+)$/m)?.[1]?.trim()
+    if (slug) slugs.push({ slug, title })
+  }
+
+  for (const { slug, title } of slugs) {
+    const page = join(distPatternsDir, slug, 'index.html')
+    if (!existsSync(page)) {
+      fail(`dist/patterns/${slug}/index.html missing — the pattern has no page of its own`)
+      continue
+    }
+    const html = readFileSync(page, 'utf8')
+
+    // The whole point: its OWN copy, not the template's placeholder.
+    if (html.includes('devmade-ai — Pattern Details')) {
+      fail(`dist/patterns/${slug}/: still carries the generic og:title — every pattern would unfurl the same`)
+    }
+    if (html.includes('<title>Loading... — devmade-ai</title>')) {
+      fail(`dist/patterns/${slug}/: still carries the template's placeholder <title>`)
+    }
+    const canonical = html.match(/<link rel="canonical" href="([^"]+)"/)?.[1]
+    if (canonical !== `${SITE}patterns/${slug}/`) {
+      fail(`dist/patterns/${slug}/: canonical is ${canonical}, expected ${SITE}patterns/${slug}/`)
+    }
+    // Content, not just tags — a crawler that does not run JS must find the
+    // document, which is the reason these files exist at all.
+    //
+    // Checked INSIDE #app, not across the whole file: the title also appears
+    // in <title> and og:title, so a whole-file search passes happily on a page
+    // whose body was never injected. Fault injection is what exposed that.
+    const appBody = html.match(/<div id="app"[^>]*>([\s\S]*?)<\/main>/)?.[1] ?? ''
+    if (!/<h1[\s>]/.test(appBody)) {
+      fail(`dist/patterns/${slug}/: #app has no prerendered content — a crawler that does not run JS sees an empty page`)
+    }
+    if (title && !appBody.includes(title.replace(/&/g, '&amp;'))) {
+      fail(`dist/patterns/${slug}/: prerendered body does not contain the pattern's own heading`)
+    }
+    // Nav links are stamped for a root-level page; two directories down they
+    // would all resolve inside patterns/<slug>/.
+    if (html.includes('href="./')) {
+      fail(`dist/patterns/${slug}/: has root-relative "./" links that break from a nested URL`)
+    }
+  }
+}
+
+// The clean URL is canonical, so that is what the sitemap must list — the
+// ?name= form is the legacy entry point and would be duplicate content.
+if (existsSync(distSitemap)) {
+  const xml = readFileSync(distSitemap, 'utf8')
+  if (xml.includes('pattern.html?name=')) {
+    fail('dist/sitemap.xml lists pattern.html?name= URLs; the prerendered patterns/<slug>/ URLs are canonical')
   }
 }
 

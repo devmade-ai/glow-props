@@ -9,9 +9,11 @@
 //   document.title assignment already relies on.
 // Alternatives:
 //   - Static canonical per page: rejected, see above — actively harmful.
-//   - Prerendering one HTML file per pattern: the better answer for crawling,
-//     and a real option later, but a build-architecture change rather than a
-//     head-tag fix. Noted in docs/TODO.md.
+//   - Prerendering one HTML file per item: DONE for patterns — see
+//     prerenderPatternPages() in vite.config.js, which gives each pattern its
+//     own file, head tags and crawlable body at /patterns/<slug>/. This module
+//     still runs there (harmlessly, setting the same values) and is what covers
+//     project.html, which is not prerendered.
 //
 // NOT a fix for link previews. Unfurlers (WhatsApp, Slack, Signal, iMessage)
 // do not run JS, so they see the generic tags in the HTML and nothing this

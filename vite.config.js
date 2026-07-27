@@ -250,6 +250,128 @@ function generatePatternManifest() {
   };
 }
 
+// Requirement: every pattern was served from pattern.html?name=<slug>. That is
+//   one HTML file standing in for twelve pages, so each pattern had the same
+//   generic <title> and og: copy in its markup — a link to any of them unfurled
+//   as "Pattern Details", and a crawler that does not run JS saw no content at
+//   all. Runtime tags fix the first problem for Google and nothing for anyone
+//   else, because unfurlers do not run JS.
+// Approach: write one real HTML file per pattern at build, derived from the
+//   BUILT pattern.html so every asset URL is already correct. Each gets its own
+//   head tags and its markdown rendered into #app — which the page's own render
+//   then overwrites on mount, so there is no shell to tear down and no way for
+//   the two to disagree about what is on screen.
+// Alternative: a full static-site generator — rejected, this is one template
+//   and a folder of markdown.
+// See docs/implementations/DISCOVERABILITY.md.
+function prerenderPatternPages() {
+  const SITE = 'https://devmade-ai.github.io/glow-props/';
+
+  function head(pattern) {
+    const title = escapeAttr(pattern.title + ' — devmade-ai');
+    const desc = escapeAttr(pattern.description);
+    const url = SITE + 'patterns/' + pattern.slug + '/';
+    var GENERIC_DESC = 'Reusable engineering patterns by devmade-ai — implementation guides shared across every project.';
+    // Pairs, not an object: several of these keys are built by concatenation,
+    // which an object literal cannot take without bracket syntax.
+    return [
+      ['<title>Loading... — devmade-ai</title>', '<title>' + title + '</title>'],
+      [
+        '<meta property="og:title" content="devmade-ai — Pattern Details">',
+        '<link rel="canonical" href="' + url + '">\n  ' +
+        '<meta name="description" content="' + desc + '">\n  ' +
+        '<meta property="og:title" content="' + title + '">',
+      ],
+      [
+        '<meta property="og:description" content="' + GENERIC_DESC + '">',
+        '<meta property="og:description" content="' + desc + '">',
+      ],
+      [
+        '<meta property="og:url" content="' + SITE + 'pattern.html">',
+        '<meta property="og:url" content="' + url + '">',
+      ],
+      [
+        '<meta name="twitter:title" content="devmade-ai — Pattern Details">',
+        '<meta name="twitter:title" content="' + title + '">',
+      ],
+      [
+        '<meta name="twitter:description" content="' + GENERIC_DESC + '">',
+        '<meta name="twitter:description" content="' + desc + '">',
+      ],
+    ];
+  }
+
+  function escapeAttr(text) {
+    return String(text).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  }
+
+  return {
+    name: 'prerender-pattern-pages',
+    async closeBundle() {
+      const distDir = resolve(__dirname, 'dist');
+      const templatePath = resolve(distDir, 'pattern.html');
+      if (!existsSync(templatePath)) {
+        console.warn('[prerender-patterns] dist/pattern.html missing — skipped');
+        return;
+      }
+      const template = readFileSync(templatePath, 'utf-8');
+      // marked is a runtime dependency of the site, so the build renders the
+      // same markdown with the same library the browser will.
+      const { marked } = await import('marked');
+
+      const patterns = buildPatternManifestForSitemap().patterns;
+      for (const pattern of patterns) {
+        const mdPath = resolve(__dirname, 'docs', 'implementations', pattern.file);
+        if (!existsSync(mdPath)) continue;
+        // Strip the YAML frontmatter — it is metadata for the manifest, not
+        // page content, and marked would render it as a paragraph of keys.
+        const body = readFileSync(mdPath, 'utf-8').replace(/^---\n[\s\S]*?\n---\n/, '');
+
+        let html = template;
+        for (const [from, to] of head(pattern)) {
+          if (!html.includes(from)) {
+            throw new Error(
+              '[prerender-patterns] expected literal not found in built pattern.html: ' + from +
+              '\nThe head tags changed — update prerenderPatternPages() in vite.config.js to match.',
+            );
+          }
+          html = html.replace(from, to);
+        }
+
+        // Into #app, which the page's own render overwrites on mount. No
+        // separate shell to remove, and nothing that can outlive the handoff.
+        html = html.replace(
+          '<div id="app"',
+          '<div id="app" data-prerendered="true"',
+        ).replace(
+          /(<div id="app"[^>]*>)/,
+          '$1\n' + marked.parse(body),
+        );
+
+        // The navbar partial is stamped with NAV_PREFIX="./" for a root-level
+        // page. Two directories down, "./#patterns" resolves to
+        // patterns/<slug>/#patterns and every nav link is dead. These are the
+        // only "./" hrefs in the template — they exist BECAUSE of that token —
+        // so rewriting them to the site base is exact rather than a guess.
+        const navLinks = (html.match(/href="\.\//g) || []).length;
+        if (navLinks === 0) {
+          throw new Error(
+            '[prerender-patterns] no "./" nav links found in built pattern.html. ' +
+            'NAV_PREFIX changed shape — re-check that nav links still resolve from ' +
+            'patterns/<slug>/ before removing this guard.',
+          );
+        }
+        html = html.replace(/href="\.\//g, 'href="/glow-props/');
+
+        const outDir = resolve(distDir, 'patterns', pattern.slug);
+        mkdirSync(outDir, { recursive: true });
+        writeFileSync(resolve(outDir, 'index.html'), html);
+      }
+      console.log('[prerender-patterns] ' + patterns.length + ' pages');
+    },
+  };
+}
+
 // Requirement: the sitemap listed two URLs — the landing and a bare
 //   project.html — while the site's real content is every pattern and every
 //   project, each at its own "?name=" URL. A hand-maintained file also goes
@@ -278,7 +400,7 @@ function generateSitemap() {
     closeBundle() {
       var urls = [{ loc: SITE, priority: '1.0' }];
       for (var p of buildPatternManifestForSitemap().patterns) {
-        urls.push({ loc: SITE + 'pattern.html?name=' + p.slug, priority: '0.8' });
+        urls.push({ loc: SITE + 'patterns/' + p.slug + '/', priority: '0.8' });
       }
       for (var slug of projectSlugs()) {
         urls.push({ loc: SITE + 'project.html?name=' + slug, priority: '0.8' });
@@ -377,6 +499,7 @@ export default defineConfig({
     }),
     copyRootFiles(),
     generatePatternManifest(),
+    prerenderPatternPages(),
     generateSitemap(),
   ],
   build: {

@@ -131,11 +131,20 @@ npm run generate:og-image   # Rebuild the card from assets/icon-source.svg
 npm run verify:seo          # Fails if any of it drifts
 ```
 
+Every pattern is **prerendered to its own file** at `patterns/<slug>/` — real
+content and its own title, description and canonical in the markup, so it
+crawls without JS and unfurls as itself rather than as "Pattern Details". The
+legacy `pattern.html?name=<slug>` still works and canonicalises to the clean
+URL.
+
 `sitemap.xml` is **generated at build** from `docs/implementations/` and
 `public/projects/` — do not add one to `public/`, it would shadow the real file.
-The canonical on `pattern.html` and `project.html` is set at runtime
-(`src/seoMeta.js`), because their content is chosen by `?name=` and a static one
-would point every item at the same URL.
+`project.html` is not prerendered; its canonical is set at runtime
+(`src/seoMeta.js`), because its content is chosen by `?name=` and a static one
+would point every project at the same URL.
+
+Run `npm run build` before `npm run verify:seo` — the checks over generated
+output are only as current as `dist/`.
 
 ## Deployment
 

@@ -211,6 +211,36 @@ transformIndexHtml(html) {
 
 The handoff has three parts — the content, the plugin that injects it, and the mount code that removes it — and breaking any one ships either no crawlable content or a shell that never goes away. Pin all three.
 
+A neat simplification when the app already renders into a container: inject the static content **into that same container**. The app's own first render overwrites it, so there is no removal step to wire, no shell that can outlive the handoff, and no third moving part to break.
+
+### One page per item, when the content is a collection
+
+A page whose content is chosen by a query parameter — `pattern.html?name=x` — is many pages served by one file, and it can only ever carry one set of head tags. Runtime tags fix that for Google and for nobody else, because unfurlers do not run JS: every item unfurls with the same generic title.
+
+Generating one real file per item fixes both at once. Derive them from the **built** template so every asset URL is already correct, and rewrite only what is item-specific:
+
+```js
+async closeBundle() {
+  const template = readFileSync('dist/item.html', 'utf-8')
+  for (const item of items()) {
+    let html = template
+    for (const [from, to] of headTagsFor(item)) {
+      if (!html.includes(from)) throw new Error(`expected literal not found: ${from}`)
+      html = html.replace(from, to)
+    }
+    html = html.replace(/(<div id="app"[^>]*>)/, `$1\n${marked.parse(item.body)}`)
+    mkdirSync(`dist/items/${item.slug}`, { recursive: true })
+    writeFileSync(`dist/items/${item.slug}/index.html`, html)
+  }
+}
+```
+
+Three things bite here, all of them silent:
+
+- **Relative links break two directories down.** A nav stamped `href="./#section"` for a root-level page resolves to `items/<slug>/#section`. Rewrite them to the site base, and throw if none are found — that means the template changed shape and the assumption needs re-checking.
+- **The page must find its own identity without the query string.** Read the slug from the path when the parameter is absent, so both URLs work.
+- **Pick ONE canonical URL and point the other at it.** The clean URL should win; the query form then canonicalises to it, and the sitemap lists only the clean one. Two URLs serving the same content with no canonical is duplicate content you created yourself.
+
 **The prerendered copy and the copy the app renders must not diverge.** If they disagree, the crawled page and the rendered page say different things, which reads as cloaking and wastes the exercise. Hold both in one module and build each from the same strings:
 
 ```ts
@@ -272,6 +302,8 @@ Read the PNG's IHDR directly (8-byte signature, then width and height as big-end
 - [ ] Private: rendering the deployed app with a Googlebot UA, cookieless, shows nothing that shouldn't be indexed
 - [ ] Public: `sitemap.xml` lists the real URLs and `robots.txt` points at it
 - [ ] Public: the prerendered copy and the rendered copy say the same thing
+- [ ] Public: if items are prerendered, each file carries its OWN title, description and canonical — not the template's placeholder
+- [ ] Public: a prerendered page's nav links still work from its nested URL
 - [ ] The built HTML carries absolute `og:image` / `og:url`
 - [ ] Pasting the URL into a chat client shows the card, title and description
 - [ ] The card is 1.91:1, not a cropped app icon
@@ -295,3 +327,5 @@ Read the PNG's IHDR directly (8-byte signature, then width and height as big-end
 - **A square app icon is not a preview card.** Different ratio, different asset.
 - **Keep text out of a generated card** unless the generator can genuinely load the brand font — silently wrong typography is worse than none.
 - **Verify by rendering with a crawler UA.** Reading source cannot tell you what a JS-rendering crawler actually sees.
+- **A dist-level check is only worth as much as the build behind it.** Assertions over generated output pass happily against a stale `dist/`; rebuild before trusting them, and rebuild between fault injections or the check never sees the fault.
+- **Assert prerendered content INSIDE its container.** The item's title is also in `<title>` and `og:title`, so a whole-file search for it passes on a page whose body was never injected.
