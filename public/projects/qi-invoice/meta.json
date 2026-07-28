@@ -1,0 +1,39 @@
+{
+  "name": "qi-invoice",
+  "title": "Quick Invoice",
+  "description": "Fill in an invoice, check it over, and email it. Nothing you type is stored.",
+  "category": "user-facing",
+  "badge": "Invoicing",
+  "status": "active",
+  "repo": "private",
+  "liveUrl": "https://qi-invoice.vercel.app/",
+  "tech": [
+    "TypeScript",
+    "React",
+    "Vite",
+    "Tailwind CSS",
+    "DaisyUI",
+    "Vercel",
+    "Nodemailer",
+    "PWA"
+  ],
+  "audience": "Freelancers, sole traders and small businesses who need to send an occasional invoice and don't want an accounting subscription, an account, or their client list sitting in someone else's database.",
+  "useCases": [
+    "A freelance designer finishes a project and invoices the client from their phone — the client's details are typed once and the invoice is emailed straight away",
+    "A tradesperson invoices for two days of work, subtracts the deposit already paid as a deduction, and adds the materials as an additional item, with the total calculated as they type",
+    "A consultant working across the EU switches VAT on at 21%, marks one out-of-scope line as VAT-exempt, and sends an invoice with the VAT calculated on only the lines it applies to",
+    "Someone who invoices the same way every month opens the app and finds their own details, wording and next invoice number already filled in — remembered by their browser, not by a server"
+  ],
+  "dataPrivacy": {
+    "storage": "None. The invoice is validated, turned into an email and sent. There is no invoice database, no file storage, and no copy retained afterwards.",
+    "personalisation": "The sender's own details, currency, VAT setting, standard wording and next invoice number are kept in the browser's local storage, on the user's device only. They are never transmitted. One menu item clears them. The recipient's details are never kept.",
+    "delivery": "The invoice is emailed to the address the user supplies, with replies directed back to the sender. A copy is BCC'd to the operator's inbox as the only record that a send occurred.",
+    "security": "Input validation on every field, HTML escaping at every interpolation, a honeypot field, layered rate limiting, and a strict origin allowlist. No accounts, so no credentials to lose."
+  },
+  "docs": {
+    "readme": true,
+    "userGuide": true,
+    "testingGuide": true,
+    "tutorial": false
+  }
+}

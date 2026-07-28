@@ -1,46 +1,54 @@
 # Session Notes
 
 ## Worked on
-Adding scrubbed detail-page docs for the three project dirs that shipped with
-the catalog refresh (PR #50) carrying `docs: {}` (no doc files):
-`kl-website`, `web-arch`, `dm-website`. Branch
-`claude/google-analytics-setup-34ltdy`, restarted from `main` (prior PR #51 was
-already merged, so this is a fresh change, not stacked).
+
+Registering the new **qi-invoice** app in the project catalog. All the
+implementation work for that app happened in its own repo; the change here is
+the catalog entry plus its scrubbed docs.
 
 ## Accomplished
-Created scrubbed markdown under each project dir and flipped its `meta.json`
-`docs` flags so the Details page renders the doc tabs:
-- **kl-website** — `README.md` only (source repo has just a README).
-  `docs: { readme }`. The knowless reader (four tabs, reader overlay,
-  save-for-offline, install, night theme), tech at portfolio altitude.
-- **web-arch (redline)** — `README.md` + `USER_GUIDE.md` + `TESTING_GUIDE.md`.
-  `docs: { readme, userGuide, testingGuide }`. README + USER_GUIDE scrubbed from
-  the live repo's own docs; TESTING_GUIDE freshly rewritten at portfolio altitude
-  (source was dev-command/headless-harness heavy).
-- **dm-website** — `README.md` + `USER_GUIDE.md` + `TESTING_GUIDE.md`.
-  `docs: { readme, userGuide, testingGuide }`. README reframed as **live at
-  www.devmade.app** (the source README's "Not yet deployed" line was stale —
-  the site is deployed); USER_GUIDE kept faithful; TESTING_GUIDE stripped of the
-  localhost/CORS/env intro + the npm-tooling regression bullet.
 
-Scrub rule applied throughout: no `npm run`/`npm install`, no localhost/`:5173`,
-no `VITE_*` / `OPENROUTER_API_KEY` / `SUPABASE_*`, no `wrangler`/`npx`/`supabase`
-commands, no DB schema/RLS, no deploy internals, no source-tree/CLAUDE.md refs.
+- **`public/projects/qi-invoice/`** — `meta.json` + `README.md` +
+  `USER_GUIDE.md` + `TESTING_GUIDE.md`, `docs: { readme, userGuide,
+  testingGuide }`.
+  - `meta.json` — category `user-facing`, badge `Invoicing`, private repo, live
+    at `qi-invoice.vercel.app`. `dataPrivacy` carries four keys rather than the
+    usual storage/auth pair, because "storage: none" is the product's defining
+    claim and needed the personalisation and delivery keys beside it to be
+    honest — the browser DOES remember the sender's own details, and a copy of
+    every send DOES reach the operator's inbox.
+  - `README.md` — scrubbed of setup commands, env vars and internal doc links,
+    but the design-decision section was kept deliberately: integer money, the
+    two rounding rules, invoice-level currency and sign-from-section are the
+    interesting part of the project at portfolio altitude.
+  - `USER_GUIDE.md` — copied verbatim. Grepped first; the source guide contains
+    no commands, no localhost, no env vars, nothing to strip.
+  - `TESTING_GUIDE.md` — rewritten. The source version opens with the automated
+    suite, npm scripts, a per-test-file coverage table and env-var manipulation,
+    none of which belongs here. The 13 manual scenarios and the regression
+    checklist carried over.
+- **`docs/PROJECT_DOCS.md`** — new row in the User-Facing Apps table with the
+  per-file scrub notes, and `qi-invoice` added to the private-repo list.
 
 ## Current state
-- `./node_modules/.bin/vite build` clean — `validateProjectMeta` green (all three
-  dirs' declared `docs` files exist; no warnings). Doc files + flipped flags
-  verified copied into `dist/projects/*/`.
-- Grep sweep of the six new files for scrub targets: CLEAN (zero matches).
-- Committed on `claude/google-analytics-setup-34ltdy` (fresh branch off main).
+
+- `npm run build` clean. `validateProjectMeta` green — no warnings, so every
+  declared doc file exists. `[generate-sitemap] 29 URLs` (up from 28; the
+  generator picks the directory up automatically).
+- `npm run verify:seo` and `npm run verify:timer-cleanup` both pass.
 
 ## Key context
-- The Details page (`project.html`) renders one labeled tab per `meta.docs.<key>:
-  true` (Overview / User Guide / Testing Guide / Tutorial), fetching the matching
-  file from `public/projects/<slug>/`. `validateProjectMeta` in `vite.config.js`
-  warns if a declared doc file is missing (`DOC_FILE_MAP`: readme→README.md,
-  userGuide→USER_GUIDE.md, testingGuide→TESTING_GUIDE.md, tutorial→TUTORIAL.md).
-- `?name=<slug>` slugs stay the GitHub repo names (`kl-website` / `web-arch` /
-  `dm-website`); redline is web-arch's brand, knowless is kl-website's.
-- `intxt`'s four docs (from the earlier PR #51) remain the reference for the
-  scrub altitude; these three now match that treatment.
+
+- The Details page (`project.html`) renders one labeled tab per
+  `meta.docs.<key>: true` (Overview / User Guide / Testing Guide / Tutorial),
+  fetching the matching file from `public/projects/<slug>/`.
+  `validateProjectMeta` in `vite.config.js` warns if a declared doc file is
+  missing (`DOC_FILE_MAP`: readme→README.md, userGuide→USER_GUIDE.md,
+  testingGuide→TESTING_GUIDE.md, tutorial→TUTORIAL.md).
+- Scrub rule, unchanged from the previous rounds: no `npm run`/`npm install`, no
+  localhost/`:5173`, no `VITE_*` / `SUPABASE_*` / `SMTP_*`, no `wrangler`/`npx`/
+  `supabase` commands, no DB schema or RLS, no deploy internals, no source-tree
+  or CLAUDE.md references. Features and high-level stack stay.
+- `intxt`'s docs remain the reference for scrub altitude; qi-invoice matches it.
+- No TutorialModal exists in qi-invoice's source, so `tutorial: false` — same
+  position as sun-sea-o and four-ems.
