@@ -131,6 +131,23 @@ file you'll get. Read it through. From here you can:
   the destinations. The page prints as a clean invoice with none of the app's
   buttons or menus on it.
 
+### Choosing a style
+
+Above the invoice is a row of style choices. Pick one and the invoice below
+redraws immediately, so you can compare them before committing. Whichever you
+pick is used for both the downloaded PDF and Print, and it's remembered for next
+time.
+
+The style changes only how the invoice looks — never the figures, the fields, or
+which lines appear.
+
+There are five: a plain one, and a branded design in four paper stocks — a deep
+navy one made for sending on screen, a white one that's the best of them to
+print, a cream one that's easiest to read on real paper, and one with the colour
+taken out for anywhere a coloured invoice would look out of place. The four are
+the same invoice on different paper: the same information sits in the same
+places on all of them.
+
 ### Which of the two should I use?
 
 **Download PDF** for almost everything. It's one press, the filename is right,
@@ -141,6 +158,11 @@ Cyrillic, Chinese, Japanese, Korean, or an emoji. The downloaded PDF uses a
 built-in font that can't draw those, so rather than print the wrong characters
 the app will tell you and ask you to use Print instead, which uses your
 browser's own fonts and handles any language.
+
+One difference to expect on the four branded styles: on screen and via Print
+they use their own lettering, while the downloaded PDF falls back to a standard
+one. The layout, the colours and every figure are the same — only the shapes of
+the letters differ. The plain style looks identical either way.
 
 ## After downloading
 

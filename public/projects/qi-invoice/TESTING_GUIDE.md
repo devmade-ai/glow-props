@@ -63,6 +63,26 @@ each builds on the last.
 2. Compare every figure with the form. **Expect:** identical, to the cent.
 3. **Back to editing**. **Expect:** nothing lost.
 
+## 7a. Invoice style
+
+1. On the review screen, note the **Invoice style** choices above the document.
+2. Switch between them. **Expect:** the invoice redraws immediately — colours,
+   lettering, row spacing and header treatment all change.
+3. **Expect:** every figure is identical across styles, to the cent.
+4. Download in one style, switch, download again. **Expect:** the two PDFs look
+   different and carry the same numbers.
+5. Download, then reload the page. **Expect:** your chosen style is remembered.
+6. Tab to the choices and use the keyboard. **Expect:** they behave as a radio
+   group, and the selected one is announced.
+7. On the four branded styles, **expect:** a logo at the top left, deductions and
+   additional items each in their own tinted panel with a coloured left edge, and
+   the payment details sitting beside the totals rather than under them.
+8. On the navy style, download a long enough invoice to run to two pages.
+   **Expect:** the navy is painted on both pages, not just the first.
+9. Clear the due date. **Expect:** the "Due in N days" pill disappears rather
+   than showing something nonsensical. Set it to yesterday and **expect**
+   "Overdue by 1 day"; set it to today and **expect** "Due today".
+
 ## 8. Download PDF
 
 1. Press **Download PDF**.
