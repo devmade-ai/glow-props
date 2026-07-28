@@ -162,10 +162,9 @@ built-in font that can't draw those, so rather than print the wrong characters
 the app will tell you and ask you to use Print instead, which uses your
 browser's own fonts and handles any language.
 
-One difference to expect on the four branded styles: on screen and via Print
-they use their own lettering, while the downloaded PDF falls back to a standard
-one. The layout, the colours and every figure are the same — only the shapes of
-the letters differ. The plain style looks identical either way.
+The branded styles use their own lettering everywhere — on screen, via Print,
+and in the downloaded PDF. The download is not a simplified version of what you
+approved.
 
 ## After downloading
 

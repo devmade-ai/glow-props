@@ -83,6 +83,9 @@ each builds on the last.
    the payment details sitting beside the totals rather than under them.
 10. On the navy style, download a long enough invoice to run to two pages.
     **Expect:** the navy is painted on both pages, not just the first.
+    **Expect** also the same lettering as the screen, with every figure in a
+    monospaced face — and select and copy the total to confirm you get the real
+    digits rather than nonsense.
 11. Clear the due date. **Expect:** the "Due in N days" pill disappears rather
     than showing something nonsensical. Set it to yesterday and **expect**
     "Overdue by 1 day"; set it to today and **expect** "Due today".
