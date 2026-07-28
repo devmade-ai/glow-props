@@ -74,14 +74,18 @@ each builds on the last.
 5. Download, then reload the page. **Expect:** your chosen style is remembered.
 6. Tab to the choices and use the keyboard. **Expect:** they behave as a radio
    group, and the selected one is announced.
-7. On the four branded styles, **expect:** a logo at the top left, deductions and
+7. Clear the saved details and reload. **Expect:** a new user lands on the deep
+   navy branded style, not the plain one.
+8. **Expect** the branded styles to run to two pages where the plain one fits on
+   one. That is the design's spacing, not a fault.
+9. On the four branded styles, **expect:** a logo at the top left, deductions and
    additional items each in their own tinted panel with a coloured left edge, and
    the payment details sitting beside the totals rather than under them.
-8. On the navy style, download a long enough invoice to run to two pages.
-   **Expect:** the navy is painted on both pages, not just the first.
-9. Clear the due date. **Expect:** the "Due in N days" pill disappears rather
-   than showing something nonsensical. Set it to yesterday and **expect**
-   "Overdue by 1 day"; set it to today and **expect** "Due today".
+10. On the navy style, download a long enough invoice to run to two pages.
+    **Expect:** the navy is painted on both pages, not just the first.
+11. Clear the due date. **Expect:** the "Due in N days" pill disappears rather
+    than showing something nonsensical. Set it to yesterday and **expect**
+    "Overdue by 1 day"; set it to today and **expect** "Due today".
 
 ## 8. Download PDF
 
@@ -151,8 +155,10 @@ each builds on the last.
 4. With no theme chosen, change your device's light/dark setting. **Expect:**
    the app follows it. Then choose a theme explicitly and change the device
    setting again. **Expect:** the app keeps your choice.
-5. In dark mode, download a PDF. **Expect:** the PDF is black on white
-   regardless — it is generated, not screenshotted.
+5. In dark mode, download a PDF in the plain style. **Expect:** the PDF is black
+   on white regardless — it is generated, not screenshotted. The app's
+   light/dark setting and the invoice's style are separate: a dark app never
+   darkens the invoice, and the navy stock stays navy in a light app.
 
 ## 15. Installing it
 

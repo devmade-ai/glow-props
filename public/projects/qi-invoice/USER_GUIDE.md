@@ -141,12 +141,15 @@ time.
 The style changes only how the invoice looks — never the figures, the fields, or
 which lines appear.
 
-There are five: a plain one, and a branded design in four paper stocks — a deep
-navy one made for sending on screen, a white one that's the best of them to
-print, a cream one that's easiest to read on real paper, and one with the colour
-taken out for anywhere a coloured invoice would look out of place. The four are
-the same invoice on different paper: the same information sits in the same
-places on all of them.
+There are five. Four are one branded design on different paper stocks — a deep
+navy one that you get unless you change it, made for sending on screen; a white
+one that's the best of them to print; a cream one that's easiest to read on real
+paper; and one with the colour taken out for anywhere a coloured invoice would
+look out of place. The four are the same invoice on different paper: the same
+information sits in the same places on all of them.
+
+The fifth is a plainer style. It's more compact than the other four, so a short
+invoice usually fits on a single sheet, and nothing on it depends on colour.
 
 ### Which of the two should I use?
 
