@@ -19,7 +19,7 @@ How to maintain the mirrored project docs on the glow-props portfolio site.
 | intxt | private | Scrubbed | Yes | Yes | Yes | README: removed database schema, local URLs, setup commands, RLS details. |
 | sun-sea-o | private | Scrubbed | Yes | Yes | **No** | README: removed env vars, localhost, setup commands, project structure, internal doc refs. No TutorialModal in source. |
 | four-ems | private | Scrubbed | Yes | Yes | **No** | README: removed env vars, setup commands. User Guide and Testing Guide copied as-is. No TutorialModal in source. |
-| qi-invoice | private | Scrubbed | Yes | Scrubbed | **No** | README: removed setup commands, env vars, internal doc links; kept the design-decision notes. User Guide copied as-is (it was already free of internal detail). Testing Guide: removed the automated-suite section, npm scripts, file paths and env-var manipulation, keeping the manual scenarios. No TutorialModal in source. |
+| qi-invoice | private | Scrubbed | Yes | Scrubbed | **No** | README: removed setup commands, env vars, internal doc links; kept the design-decision notes, which are the interesting part at portfolio altitude. User Guide copied as-is (grepped first — it contains no commands, paths or env vars). Testing Guide: removed the automated-suite section, npm scripts and file paths, keeping the 16 manual scenarios. No TutorialModal in source. |
 
 ### Internal Tools
 

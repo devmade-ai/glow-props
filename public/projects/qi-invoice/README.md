@@ -1,11 +1,10 @@
 # qi-invoice
 
-Fill in an invoice, check it over, and email it.
+Fill in an invoice, check it over, download it as a PDF.
 
-Nothing you type is stored. The invoice is validated, turned into an email, and
-handed to the mail server — there is no database of invoices, no file on disk,
-and no copy kept afterwards. What the recipient receives, and the copy sent to
-the account inbox, are the only records that exist.
+**Nothing you type leaves your device.** There is no server, no database, no
+account, and no email. The invoice is built in your browser and saved straight
+to your downloads. Close the tab and it is gone.
 
 ## Features
 
@@ -18,33 +17,27 @@ the account inbox, are the only records that exist.
   shows its own subtotal.
 - **Optional VAT** — switch it on, set the percentage, and mark individual lines
   as VAT-applicable or not.
-- **A review step** — the invoice exactly as it will arrive, before anything is
-  sent.
-- **Save as PDF** — from the review step or after sending, using your browser's
-  own print-to-PDF. The result is real text, so it can be searched and copied.
+- **A review step** — the finished invoice, before you commit to anything.
+- **Download PDF** — a real file named after the invoice number, with real text
+  in it, so the amounts can be searched and copied.
+- **Print** — the second route, and the one to use if the invoice contains
+  Greek, Cyrillic, CJK or anything else outside the Latin alphabet.
 - **It remembers you, on your device** — your own details, currency, unit,
-  standard wording and next invoice number come back next time. All of it lives
-  in your browser and none of it is sent anywhere. One menu item clears it.
-- **Install it** — it works as an app on your phone or desktop, and the form
-  keeps working without a connection right up until you press send.
-- **Light and dark** — three themes, following your system until you choose.
+  standard wording and next invoice number come back next time. One menu item
+  clears it.
+- **Install it** — works as an app on a phone or desktop, and works completely
+  offline, because there is nothing for it to reach.
+- **Light and dark** — three themes, following the system until you choose.
 
 ## How it works
 
 ```
-[Your browser]  →  fill in the form  →  review  →  send
-                                                    ↓
-                                          [validate + recompute]
-                                                    ↓
-                                          [format as email]  →  [SMTP]  →  [recipient]
-                                                                              ↓
-                                                                    (copy to account inbox)
+[Your browser]  →  fill in the form  →  review  →  Download PDF
+                                                        ↓
+                                                  [your downloads]
 ```
 
-The totals shown on the review screen and the totals in the email are produced
-by the same code. The server recalculates everything from the raw form data and
-ignores any figures the browser sends, so the numbers in the email are always
-derived from the same inputs you checked.
+That's the whole diagram. There is no second box.
 
 ## Design decisions worth knowing
 
@@ -66,11 +59,26 @@ total impossible. If you genuinely bill in two currencies, that's two invoices.
 deductions subtract because they are deductions. Otherwise "a negative extra"
 and "a deduction" would be two ways of saying the same thing.
 
+**Two renderers, one set of figures.** The invoice on screen and the invoice in
+the downloaded PDF are laid out by separate code — one is a web page, the other
+is drawn in PDF text primitives. They are allowed to look different and cannot
+disagree on a number, because neither of them calculates anything: both read the
+same computed totals.
+
+**The PDF holds real text, not a picture.** Rasterising the screen would
+guarantee a pixel-perfect match, but the amounts would stop being selectable,
+searchable or copyable — the wrong trade for a document whose purpose is to be
+filed.
+
+**Print is not a fallback.** The generated PDF uses a built-in font that covers
+Latin scripts only. Rather than print the wrong characters, the app refuses and
+points at Print, which uses the browser's own fonts and handles any language.
+
 **Updates never interrupt you.** A new version is applied when you next open the
-app, never while you're part-way through typing an invoice — there's nothing to
-save it to.
+app, never while you're part-way through an invoice — there's nothing to save it
+to.
 
 ## Tech
 
-React, Vite, TypeScript, Tailwind CSS with DaisyUI, and a serverless function
-using Nodemailer for delivery. Installable as a PWA.
+React, Vite, TypeScript, Tailwind CSS with DaisyUI, and pdf-lib for the
+generated file. Installable as a PWA. Deploys as static files.

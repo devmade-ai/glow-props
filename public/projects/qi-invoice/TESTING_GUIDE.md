@@ -13,14 +13,15 @@ each builds on the last.
 
 ## 2. A complete invoice
 
-1. Fill in your details (name and email), then the recipient (name and email).
-2. Add an item: "Design work", quantity `2.5`, unit `days`, price `400`.
-3. **Expect:** line total `EUR 1,000.00`, and the bottom bar showing the same.
-4. Add a deduction: "Deposit already paid", quantity `1`, price `250`.
-5. **Expect:** the deduction card is tinted with a coloured left edge, its
+1. Fill in your name, then the recipient's name. Leave both emails blank.
+2. **Expect:** no complaint about the missing emails — they're optional.
+3. Add an item: "Design work", quantity `2.5`, unit `days`, price `400`.
+4. **Expect:** line total `EUR 1,000.00`, and the bottom bar showing the same.
+5. Add a deduction: "Deposit already paid", quantity `1`, price `250`.
+6. **Expect:** the deduction card is tinted with a coloured left edge, its
    subtotal shows `-EUR 250.00`, and the bar now reads `EUR 750.00`.
-6. Add an additional item: "Courier", quantity `1`, price `15`.
-7. **Expect:** total `EUR 765.00`.
+7. Add an additional item: "Courier", quantity `1`, price `15`.
+8. **Expect:** total `EUR 765.00`.
 
 ## 3. VAT
 
@@ -56,45 +57,71 @@ each builds on the last.
    payment are fine.
 4. Tab to it and press Enter. **Expect:** it opens from the keyboard too.
 
-## 7. Review and send
+## 7. Review
 
 1. **Check it over**. **Expect:** the page scrolls to the top of the review.
 2. Compare every figure with the form. **Expect:** identical, to the cent.
 3. **Back to editing**. **Expect:** nothing lost.
-4. **Check it over** again, then **Send the invoice**.
-5. **Expect:** the button reads "Sending…", then a success message and a
-   confirmation panel naming the recipient.
-6. **Check the recipient's inbox.** Expect the invoice, and expect a reply to go
-   back to the sender's own address.
-7. **Check the account inbox.** Expect the same message.
 
-## 8. Save as PDF
+## 8. Download PDF
 
-1. From the review screen, press **Save as PDF**.
-2. **Expect:** no header, no menu, no buttons, no bottom bar in the preview.
+1. Press **Download PDF**.
+2. **Expect:** a file named after the invoice number — `INV-0001.pdf` — with no
+   dialogue in the way, and a confirmation message.
+3. Open it. **Expect:** every figure matches the review screen exactly.
+4. **Expect:** you can select and copy the total. It is text, not a picture.
+5. **Expect:** the invoice number as the document's title, and a footer on each
+   page.
+6. Change the invoice number to `2026/07/12` and download again.
+7. **Expect:** the file is named `2026-07-12.pdf` — slashes replaced, not a
+   folder created.
+
+## 9. A long invoice
+
+1. Add enough lines to run past one page (about 25 items).
+2. Download. **Expect:** several pages, `Page 1 of 3` style footers, and no line
+   split across a page boundary.
+3. **Expect:** the totals block is whole on one page, never split from its VAT
+   line.
+
+## 10. Non-Latin characters
+
+1. Set the recipient's name to something in Greek, Cyrillic or Chinese —
+   `Ελληνικά ΑΕ` will do.
+2. Press **Download PDF**.
+3. **Expect:** a message naming the characters that can't be included and
+   pointing you at Print. **Expect:** no file downloaded, no crash, and the
+   invoice still on screen.
+4. Press **Print** instead. **Expect:** the preview shows the name correctly.
+
+## 11. Print
+
+1. From the review screen, press **Print**.
+2. **Expect:** no header, no menu, no buttons in the preview.
 3. **Expect:** white background and black text even if the app is in dark mode.
 4. **Expect:** the section tints are still visible.
 5. **Expect:** no line-item card and no totals block split across a page break.
 6. **Expect:** the text in the resulting PDF is selectable, not a picture.
 
-## 9. What's remembered
+## 12. What's remembered
 
-1. After a successful send, press **Start another invoice**.
+1. After downloading, press **Start another invoice**.
 2. **Expect:** your own details, currency, VAT setting, unit and wording all
    still there; the recipient card empty; the invoice number advanced by one.
 3. Reload the page entirely. **Expect:** the same.
 4. Menu → **Forget my saved details**, then reload.
 5. **Expect:** a completely fresh form.
+6. Fill in a form but do NOT download. Reload.
+7. **Expect:** the browser warns before leaving, and after reloading the draft
+   is gone — an abandoned draft is not remembered.
 
-## 10. When things go wrong
+## 13. Offline
 
-1. Disconnect from the network and press send.
-2. **Expect:** "You appear to be offline…", and the invoice still on screen.
-3. Reconnect. Send six invoices within an hour from the same connection.
-4. **Expect:** the sixth is refused with a message asking you to wait and try
-   again — and the invoice is still there, not half-sent.
+1. Load the app, then disconnect from the network entirely.
+2. **Expect:** everything still works, including Download PDF. There is nothing
+   for it to reach.
 
-## 11. Theme
+## 14. Theme
 
 1. Switch to dark. **Expect:** no flash of light when the page reloads.
 2. **Expect:** on a phone, the status bar matches the theme and its text stays
@@ -104,8 +131,10 @@ each builds on the last.
 4. With no theme chosen, change your device's light/dark setting. **Expect:**
    the app follows it. Then choose a theme explicitly and change the device
    setting again. **Expect:** the app keeps your choice.
+5. In dark mode, download a PDF. **Expect:** the PDF is black on white
+   regardless — it is generated, not screenshotted.
 
-## 12. Installing it
+## 15. Installing it
 
 1. Menu → **Install app**. On Chrome, Edge or Brave expect the browser's own
    prompt; on Safari or Firefox expect written steps for that browser.
@@ -119,7 +148,7 @@ each builds on the last.
    while you are part-way through an invoice, **expect** only a banner offering
    to restart — never an interruption.
 
-## 13. Keyboard and screen reader
+## 16. Keyboard and screen reader
 
 1. Tab from the top of the page. **Expect:** a "skip to the invoice form" link
    appears first.
@@ -135,8 +164,10 @@ each builds on the last.
 A quick pass after any change:
 
 - [ ] Review-screen totals match the form's bottom bar exactly
-- [ ] The email's totals match the review screen exactly
-- [ ] Save as PDF has no app chrome and no split cards
-- [ ] Sending twice in quick succession is limited, not duplicated
-- [ ] Dark mode has no flash on load
-- [ ] The installed app still opens without a connection
+- [ ] The downloaded PDF's totals match the review screen exactly
+- [ ] The PDF's text is selectable, and the filename matches the invoice number
+- [ ] A long invoice pages cleanly, with no split rows and no split totals block
+- [ ] Non-Latin input is refused with a message pointing at Print, not a crash
+- [ ] Print output has no app chrome and no split cards
+- [ ] Dark mode has no flash on load, and does not affect the PDF
+- [ ] The installed app still works with the network off

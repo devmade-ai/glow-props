@@ -5,12 +5,9 @@ Everything qi-invoice does, in the order you meet it.
 ## Before you start
 
 The app is one page. You fill it in from the top down, check the result, and
-send it. There is no account, nothing to log into, and nothing saved on our
-side — so the invoice only exists while you have the page open, and once it's
-sent we have no copy to re-send or correct.
-
-If you want a file to keep, use **Save as PDF** on the review screen or on the
-confirmation screen afterwards.
+download it. There is no account and nothing to log into. Nothing you type
+leaves your device — there is no server for it to go to — so the invoice only
+exists while you have the page open. Download it before you close the tab.
 
 ## The header menu
 
@@ -34,19 +31,19 @@ Who the invoice is from.
 - **Address** starts with one line. Use *Add another address line* for more, and
   *Remove* to take one away. Blank lines are ignored, so you don't have to tidy
   up before sending.
-- **Email address** is where replies go. When the recipient hits reply, it
-  reaches you, not the app.
+- **Email address** is optional and simply appears on the invoice, so the
+  recipient knows how to reach you.
 - **How you'd like to be paid** appears on the invoice under "How to pay". Bank
   name, account number or IBAN, payment terms — whatever the payer needs.
 
 ## 2. Who it's for
 
-The same fields, for the other side. The invoice is emailed to the address you
-put here, so check it carefully — there is no way to recall it afterwards.
+The same fields, for the other side. Only the name is required; the email
+address is optional and just appears on the document.
 
 Your browser won't offer to autofill this card with your own saved details.
 That's deliberate: filling a client's address with your own is an easy mistake
-to send.
+to miss.
 
 ## 3. Invoice details
 
@@ -103,10 +100,10 @@ invoice.
 Optional, and the one field worth a warning — which is why there's a **What not
 to put here** link above it. Open it once.
 
-Anything you write here goes into the email and can be read by anyone who
-receives or forwards it. Keep it to things you'd be happy for the recipient to
-keep a copy of. Bank details for payment aren't a problem — those go in your
-own payment details further up.
+Anything you write here is printed on the invoice and can be read by anyone the
+PDF is passed on to. Keep it to things you'd be happy for the recipient to keep
+a copy of. Bank details for payment aren't a problem — those go in your own
+payment details further up.
 
 ## 7. Closing message
 
@@ -123,46 +120,67 @@ have to scroll to find out where you've got to.
 **Check it over** takes you to the review screen. If something required is
 missing, you'll get a message saying which field, and you stay on the form.
 
-The review screen shows the invoice exactly as it will arrive — same layout,
-same numbers, same wording. Read it through. From here you can:
+The review screen shows the finished invoice — same numbers, same wording as the
+file you'll get. Read it through. From here you can:
 
 - **Back to editing** — nothing is lost.
-- **Save as PDF** — your browser's print dialogue, set up to produce a clean
-  invoice with none of the app's buttons or menus on it.
-- **Send the invoice** — the button that actually sends.
+- **Download PDF** — saves a file named after the invoice number, for example
+  `INV-0007.pdf`. The text inside is real text, so the amounts can be searched
+  and copied.
+- **Print** — opens your browser's print dialogue, where "Save as PDF" is one of
+  the destinations. The page prints as a clean invoice with none of the app's
+  buttons or menus on it.
 
-## After sending
+### Which of the two should I use?
 
-You get a confirmation naming the address it went to. A copy has gone to the
-account inbox, so there's a record it happened.
+**Download PDF** for almost everything. It's one press, the filename is right,
+and it behaves the same on a phone as on a computer.
 
-Two buttons: **Save as PDF**, if you didn't already — this page is the only copy
-left — and **Start another invoice**, which gives you a fresh form with your own
-details, currency, wording and the next invoice number already filled in.
+**Print** if your invoice contains letters outside the Latin alphabet — Greek,
+Cyrillic, Chinese, Japanese, Korean, or an emoji. The downloaded PDF uses a
+built-in font that can't draw those, so rather than print the wrong characters
+the app will tell you and ask you to use Print instead, which uses your
+browser's own fonts and handles any language.
+
+## After downloading
+
+The buttons stay where they are, so you can download again if you missed the
+file or cancelled by accident. **Start another invoice** appears alongside them
+and gives you a fresh form with your own details, currency, wording and the next
+invoice number already filled in.
 
 ## What's remembered, and where
 
-After a successful send, this browser keeps: your own details, the currency, the
-VAT setting and percentage, the last unit you used, your opening and closing
-wording, and the next invoice number.
+Once you've downloaded or printed an invoice, this browser keeps: your own
+details, the currency, the VAT setting and percentage, the last unit you used,
+your opening and closing wording, and the next invoice number.
 
-It is stored on your device only. It is never sent anywhere, and it isn't shared
-between browsers or devices. **Forget my saved details** in the menu wipes it.
+It is stored on your device only. It is never sent anywhere — there is nowhere
+for it to be sent — and it isn't shared between browsers or devices. **Forget my
+saved details** in the menu wipes it.
 
-The recipient's details are never kept.
+The recipient's details are never kept. Different client each time, and
+pre-filling someone else's details into a fresh invoice is an easy mistake to
+miss.
 
 ## If something goes wrong
 
-Every failure says what happened and what to do next:
+Every message says what happened and what to do next:
 
-- **A missing or wrong field** names the field. Nothing has been sent.
-- **"You appear to be offline"** — your invoice is still on screen. Reconnect
-  and press send again.
-- **"We couldn't reach the server"** — the same; nothing was sent.
-- **"You've sent several invoices in a short time"** — there's a limit on how
-  many can go out from one connection per hour. Wait a little and retry.
-- **"We couldn't send the invoice"** — check the recipient's email address
-  first; that's the usual cause.
+- **A missing field** names the field, and you stay on the form.
+- **"The PDF can't include …"** — your invoice contains letters the downloaded
+  file's font can't draw. Use **Print** instead; it handles any language.
+- **"We couldn't build the PDF"** — something unexpected. Use **Print**, which
+  goes an entirely different route.
 
-In every one of these cases the invoice is still in front of you. Nothing is
-lost, and nothing has been half-sent.
+In every case the invoice is still in front of you. Nothing is lost.
+
+## Two things worth knowing
+
+**Close the tab and the invoice is gone.** There is no server keeping a copy and
+no draft saved anywhere. Download it before you leave. If you try to close the
+page part-way through, your browser will warn you.
+
+**Nothing you type is transmitted.** Not to us, not to anyone. The app works
+with the network switched off entirely — once it's loaded, it never needs it
+again.
