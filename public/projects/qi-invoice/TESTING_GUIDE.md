@@ -79,9 +79,11 @@ each builds on the last.
 8. **Expect** a routine invoice — a couple of items, a deduction, an additional
    item and both messages — to fit on ONE page in every style. Longer invoices
    run to two, which is correct; a second page holding only a line or two is not.
-9. On the four branded styles, **expect:** a logo at the top left, deductions and
-   additional items each in their own tinted panel with a coloured left edge, and
-   the payment details sitting beside the totals rather than under them.
+9. On the four branded styles, **expect:** a logo at the top left, ONE table
+   holding every line, and the payment details sitting beside the totals rather
+   than under them. A deduction row carries a small "deduction" marker beside its
+   description and a minus on its total; an additional row a small "added" marker
+   and a plus. An invoice with only items shows a plain table with no markers.
    **Expect** the column headings above the figures — quantity, unit price, line
    total — to be clearly separated rather than running together.
 10. On the navy style, download a long enough invoice to run to two pages.
