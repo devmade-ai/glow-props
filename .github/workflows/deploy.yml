@@ -24,10 +24,33 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: 22
+          node-version: 24
           cache: npm
       - run: npm ci
+
+      # Source-level, so it runs before the build — no reason to spend a build
+      # on a tree that already fails the check. TIMER_LEAKS.md.
+      - name: Verify timer cleanup (docs/implementations/TIMER_LEAKS.md)
+        run: npm run verify:timer-cleanup
+
       - run: npm run build
+
+      # Gate the publish on the SEO tripwire. It reads dist/, so it has to run
+      # after the build — and before upload-pages-artifact, so a failure stops
+      # the deploy rather than being discovered on the live site.
+      #
+      # This step exists because that is exactly how the last two defects were
+      # found: prerendered pages that all unfurled identically, then all 12
+      # carrying a duplicate <meta name="description">. Both built cleanly and
+      # were only visible in the served HTML. The checker could have caught the
+      # second, but nothing ran it — a tripwire that fires only when someone
+      # remembers to type the command is documentation, not a gate.
+      #
+      # Safe to fail here: the build has already succeeded and nothing is
+      # published yet, so a red run just leaves the previous deploy serving.
+      - name: Verify discoverability (docs/implementations/DISCOVERABILITY.md)
+        run: npm run verify:seo
+
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:
