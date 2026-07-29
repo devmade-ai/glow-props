@@ -24,9 +24,15 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: 22
+          node-version: 24
           cache: npm
       - run: npm ci
+
+      # Source-level, so it runs before the build — no reason to spend a build
+      # on a tree that already fails the check. TIMER_LEAKS.md.
+      - name: Verify timer cleanup (docs/implementations/TIMER_LEAKS.md)
+        run: npm run verify:timer-cleanup
+
       - run: npm run build
 
       # Gate the publish on the SEO tripwire. It reads dist/, so it has to run
