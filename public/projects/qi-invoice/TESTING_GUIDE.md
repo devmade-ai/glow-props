@@ -80,11 +80,14 @@ each builds on the last.
    item and both messages — to fit on ONE page in every style. Longer invoices
    run to two, which is correct; a second page holding only a line or two is not.
 9. On the four branded styles, **expect:** a logo at the top left, ONE table
-   holding every line, and a closing block with the payment details, the general
+   holding every line — sitting in a blue-tinted panel with a strong coloured
+   left edge — and a closing block with the payment details, the general
    instructions and the closing message stacked on the left, beside the totals
    on the right. A deduction row carries a small "deduction" marker beside its
    description and a minus on its total; an additional row a small "added" marker
-   and a plus. An invoice with only items shows a plain table with no markers.
+   and a plus. An invoice with only items shows the same tinted panel with no
+   markers. When the table runs past a page, **expect** the panel to continue on
+   the next page as a clean segment — no gap, no repeated headings.
    **Expect** the column headings above the figures — quantity, unit price, line
    total — to be clearly separated rather than running together.
 10. On the navy style, download a long enough invoice to run to two pages.
