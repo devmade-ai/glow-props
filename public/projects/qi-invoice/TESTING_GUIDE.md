@@ -76,11 +76,14 @@ each builds on the last.
    group, and the selected one is announced.
 7. Clear the saved details and reload. **Expect:** a new user lands on the deep
    navy branded style, not the plain one.
-8. **Expect** the branded styles to run to two pages where the plain one fits on
-   one. That is the design's spacing, not a fault.
+8. **Expect** a routine invoice — a couple of items, a deduction, an additional
+   item and both messages — to fit on ONE page in every style. Longer invoices
+   run to two, which is correct; a second page holding only a line or two is not.
 9. On the four branded styles, **expect:** a logo at the top left, deductions and
    additional items each in their own tinted panel with a coloured left edge, and
    the payment details sitting beside the totals rather than under them.
+   **Expect** the column headings above the figures — quantity, unit price, line
+   total — to be clearly separated rather than running together.
 10. On the navy style, download a long enough invoice to run to two pages.
     **Expect:** the navy is painted on both pages, not just the first.
     **Expect** also the same lettering as the screen, with every figure in a
