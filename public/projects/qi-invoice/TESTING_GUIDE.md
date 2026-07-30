@@ -29,8 +29,8 @@ each builds on the last.
 2. **Expect:** a square preview appears beside the upload control at once, and
    the same image at the top left of the review screen and in the downloaded
    PDF — identical in all three places.
-3. Upload a non-square image. **Expect:** it is trimmed to its centre square,
-   never stretched.
+3. Upload a wide image. **Expect:** the whole image, drawn smaller to fit —
+   never cropped, never stretched.
 4. Upload a file that isn't an image. **Expect:** a plain-language message and
    no crash.
 5. Press **Remove**. **Expect:** the form, the review screen and the next

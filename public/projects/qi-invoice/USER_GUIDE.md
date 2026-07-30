@@ -34,11 +34,12 @@ Who the invoice is from.
 - **Email address** is optional and simply appears on the invoice, so the
   recipient knows how to reach you.
 - **Logo** is optional. Upload a PNG or JPG and it appears at the top of the
-  invoice — square works best, at least 256 × 256 pixels, and the app trims it
-  to a square for you. Pick a version of your logo that shows up on both dark
-  and light backgrounds, or choose a light invoice style. Without one, the
-  invoice simply starts at the title. Your logo is remembered on this device
-  along with your other details.
+  invoice, whatever its shape — at least 256 pixels on the longest side looks
+  sharpest, and nothing gets cut off; a wide logo simply draws a little
+  smaller. Pick a version of your logo that shows up on both dark and light
+  backgrounds, or choose a light invoice style. Without one, the invoice
+  simply starts at the title. Your logo is remembered on this device along
+  with your other details.
 - **How you'd like to be paid** appears on the invoice under "How to pay". Bank
   name, account number or IBAN, payment terms — whatever the payer needs.
 
