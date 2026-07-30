@@ -293,6 +293,40 @@ describe.skipIf(!existsSync('dist'))('after a build', () => {
 
 Read the PNG's IHDR directly (8-byte signature, then width and height as big-endian uint32 at offsets 16 and 20) rather than importing an image library — an assertion about a file shouldn't depend on one.
 
+### Assert each identity tag appears exactly ONCE
+
+Only if you prerender (Step 4). Every assertion above is satisfied by a **duplicate**: `includes()` finds the good value and `match()` returns the first hit, so a second, wrong tag sitting beside a correct one is invisible to all of them.
+
+This is not hypothetical. Prerendering rewrites a template that already carries a complete set of tags, so the failure mode is never a *missing* tag — it is a *surviving* one. A generator that adds `<meta name="description">` instead of replacing the template's shipped 12 pages each carrying two descriptions, with the crawler choosing between them. It built cleanly, passed every check above, and was only visible in the served HTML.
+
+```js
+const head = html.slice(0, html.indexOf('</head>'))
+for (const [label, literal] of [
+  ['description', '<meta name="description"'],
+  ['og:title', '<meta property="og:title"'],
+  ['og:url', '<meta property="og:url"'],
+  ['canonical', '<link rel="canonical"'],
+  // …every identity tag the generator touches
+]) {
+  const count = head.split(literal).length - 1
+  if (count !== 1) fail(`${page}: ${count} ${label} tags, expected exactly 1`)
+}
+```
+
+The generator-side rule that prevents it: **no substitution may introduce a tag the template also carries.** Replace in place, always — which also brings each tag under the generator's fail-loud "expected literal not found" guard, so rewording the template breaks the build instead of silently restoring the generic copy.
+
+### Run it in the deploy job, not by hand
+
+A tripwire that fires only when someone remembers to type the command is documentation. Wire it into whatever actually gates publishing:
+
+```yaml
+- run: npm run build
+- run: npm run verify:seo      # reads dist/, so after build —
+- uses: actions/upload-pages-artifact@v3   # — and before anything publishes
+```
+
+Failing there is safe: the build has already succeeded and nothing is published yet, so a red run leaves the previous deploy serving. If the repo has no PR-time gate at all, the deploy job is the only place this can live — and it is still worth it, because the alternative is finding out from the live site.
+
 ## Verification checklist
 
 - [ ] The posture is written down in `CLAUDE.md`, including what is deliberately absent
@@ -304,6 +338,8 @@ Read the PNG's IHDR directly (8-byte signature, then width and height as big-end
 - [ ] Public: the prerendered copy and the rendered copy say the same thing
 - [ ] Public: if items are prerendered, each file carries its OWN title, description and canonical — not the template's placeholder
 - [ ] Public: a prerendered page's nav links still work from its nested URL
+- [ ] Public: each identity tag appears exactly ONCE per prerendered page — no generic survivor beside the specific one
+- [ ] The tripwire runs in the job that gates publishing, not only on demand
 - [ ] The built HTML carries absolute `og:image` / `og:url`
 - [ ] Pasting the URL into a chat client shows the card, title and description
 - [ ] The card is 1.91:1, not a cropped app icon
@@ -329,3 +365,5 @@ Read the PNG's IHDR directly (8-byte signature, then width and height as big-end
 - **Verify by rendering with a crawler UA.** Reading source cannot tell you what a JS-rendering crawler actually sees.
 - **A dist-level check is only worth as much as the build behind it.** Assertions over generated output pass happily against a stale `dist/`; rebuild before trusting them, and rebuild between fault injections or the check never sees the fault.
 - **Assert prerendered content INSIDE its container.** The item's title is also in `<title>` and `og:title`, so a whole-file search for it passes on a page whose body was never injected.
+- **When you rewrite a template, the bug is a duplicate, not an absence.** Presence checks are all satisfied by a second, wrong tag sitting beside the correct one — assert each identity tag appears exactly once, and never let a substitution *add* a tag the template already has.
+- **An unrun tripwire is documentation.** Wire it into the job that gates publishing; a checker nobody invokes did not fail, it just never ran.
