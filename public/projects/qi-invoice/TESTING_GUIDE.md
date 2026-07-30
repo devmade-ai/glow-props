@@ -23,6 +23,20 @@ each builds on the last.
 7. Add an additional item: "Courier", quantity `1`, price `15`.
 8. **Expect:** total `EUR 765.00`.
 
+## 2a. Your logo
+
+1. In **Your details**, upload a logo — any PNG or JPG.
+2. **Expect:** a square preview appears beside the upload control at once, and
+   the same image at the top left of the review screen and in the downloaded
+   PDF — identical in all three places.
+3. Upload a non-square image. **Expect:** it is trimmed to its centre square,
+   never stretched.
+4. Upload a file that isn't an image. **Expect:** a plain-language message and
+   no crash.
+5. Press **Remove**. **Expect:** the form, the review screen and the next
+   download all drop it, and the invoice header simply starts at the title —
+   no gap where a logo would have been.
+
 ## 3. VAT
 
 1. Tick **Add VAT**, leave it at 21.
@@ -75,11 +89,12 @@ each builds on the last.
 6. Tab to the choices and use the keyboard. **Expect:** they behave as a radio
    group, and the selected one is announced.
 7. Clear the saved details and reload. **Expect:** a new user lands on the deep
-   navy branded style, not the plain one.
+   navy Studio style, not the plain one.
 8. **Expect** a routine invoice — a couple of items, a deduction, an additional
    item and both messages — to fit on ONE page in every style. Longer invoices
    run to two, which is correct; a second page holding only a line or two is not.
-9. On the four branded styles, **expect:** a logo at the top left, ONE table
+9. On the four Studio styles, **expect:** your uploaded logo at the top left
+   (no logo block at all if you haven't added one), ONE table
    holding every line — sitting in a blue-tinted panel with a strong coloured
    left edge — and a closing block with the payment details, the general
    instructions and the closing message stacked on the left, beside the totals
@@ -90,7 +105,7 @@ each builds on the last.
    the next page as a clean segment — no gap, no repeated headings.
    **Expect** the column headings above the figures — quantity, unit price, line
    total — to be clearly separated rather than running together.
-10. On the navy style, download a long enough invoice to run to two pages.
+10. On the navy Studio style, download a long enough invoice to run to two pages.
     **Expect:** the navy is painted on both pages, not just the first, and the
     final page carries the complete closing block — payment details, totals,
     instructions and sign-off together, never a single stray line.

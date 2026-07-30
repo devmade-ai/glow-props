@@ -18,11 +18,14 @@ to your downloads. Close the tab and it is gone.
 - **Optional VAT** — switch it on, set the percentage, and mark individual lines
   as VAT-applicable or not.
 - **A review step** — the finished invoice, before you commit to anything.
-- **Five styles** — a branded design in four paper stocks: a deep navy one (the
+- **Five styles** — the Studio design in four paper stocks: a deep navy one (the
   default, for sending on screen), a white one for printing, a cream one, and one
   with the colour taken out; plus a plainer, more compact style. Switching
   redraws the invoice instantly, applies to the PDF as well as the screen, and
   never changes a figure.
+- **Your own logo** — upload a PNG or JPG and the Studio styles draw it at the
+  top of the invoice, on screen and in the download alike. It's trimmed to a
+  square for you and remembered on your device.
 - **Download PDF** — a real file named after the invoice number, with real text
   in it, so the amounts can be searched and copied.
 - **Print** — the second route, and the one to use if the invoice contains

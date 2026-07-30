@@ -33,6 +33,12 @@ Who the invoice is from.
   up before sending.
 - **Email address** is optional and simply appears on the invoice, so the
   recipient knows how to reach you.
+- **Logo** is optional. Upload a PNG or JPG and it appears at the top of the
+  invoice — square works best, at least 256 × 256 pixels, and the app trims it
+  to a square for you. Pick a version of your logo that shows up on both dark
+  and light backgrounds, or choose a light invoice style. Without one, the
+  invoice simply starts at the title. Your logo is remembered on this device
+  along with your other details.
 - **How you'd like to be paid** appears on the invoice under "How to pay". Bank
   name, account number or IBAN, payment terms — whatever the payer needs.
 
@@ -141,7 +147,7 @@ time.
 The style changes only how the invoice looks — never the figures, the fields, or
 which lines appear.
 
-There are five. Four are one branded design on different paper stocks — a deep
+There are five. Four are the Studio design on different paper stocks — a deep
 navy one that you get unless you change it, made for sending on screen; a white
 one that's the best of them to print; a cream one that's easiest to read on real
 paper; and one with the colour taken out for anywhere a coloured invoice would
@@ -162,7 +168,7 @@ built-in font that can't draw those, so rather than print the wrong characters
 the app will tell you and ask you to use Print instead, which uses your
 browser's own fonts and handles any language.
 
-The branded styles use their own lettering everywhere — on screen, via Print,
+The Studio styles use their own lettering everywhere — on screen, via Print,
 and in the downloaded PDF. The download is not a simplified version of what you
 approved.
 
