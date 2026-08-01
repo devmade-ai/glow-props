@@ -11,6 +11,7 @@
     "generate:meta-colors": "node scripts/generate-meta-colors.mjs",
     "verify:timer-cleanup": "node scripts/verify-timer-cleanup.mjs",
     "verify:seo": "node scripts/verify-seo.mjs",
+    "verify:icons": "node scripts/verify-icon-cache-bust.mjs",
     "generate:og-image": "node scripts/generate-og-image.mjs"
   },
   "devDependencies": {

@@ -17,9 +17,10 @@
        Layout: 4 squares, 360x360 each, 48px gap, 48px corner radius.
          All content within inner 80% safe zone (maskable icon crop). -->
 
-  <!-- No background — transparent so the icon works on any theme.
-       This is a static portfolio site (no PWA maskable icon needed).
-       If maskable is ever needed, add a white rect back here. -->
+  <!-- No background — transparent so the favicon and navbar mark work on any theme.
+       The PWA manifest's maskable icon needs a full-bleed background, so
+       scripts/generate-icons.mjs flattens this render onto white for a separate
+       icon-1024-maskable.png instead of a rect living here. -->
 
   <!-- Top-left: Blue — represents structure, engineering -->
   <rect x="128" y="128" width="360" height="360" rx="48" fill="#3b82f6"/>
