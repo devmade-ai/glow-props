@@ -346,6 +346,8 @@ export function triggerInstall() {
 let visibilityListener = null;
 let beforeInstallPromptListener = null;
 let appInstalledListener = null;
+let displayModeMediaQuery = null;
+let displayModeListener = null;
 let swUpdateIntervalId = null;
 let manualInstallTimeoutId = null;
 let diagnosticTimeoutId = null;
@@ -353,8 +355,8 @@ let diagnosticTimeoutId = null;
 function init() {
   state.browser = detectBrowser();
   state.autoUpdateEnabled = isAutoUpdateEnabled();
-  isStandalone = window.matchMedia('(display-mode: standalone)').matches ||
-    navigator.standalone === true;
+  displayModeMediaQuery = window.matchMedia('(display-mode: standalone)');
+  isStandalone = displayModeMediaQuery.matches || navigator.standalone === true;
   supportsAutoInstall = CHROMIUM_BROWSERS.includes(state.browser);
   supportsManualInstall = state.browser === 'safari' || state.browser === 'firefox';
   dismissed = safeLocalGet('pwa-install-dismissed') === 'true';
@@ -417,6 +419,19 @@ function init() {
   };
   window.addEventListener('appinstalled', appInstalledListener);
 
+  // Install via the browser's own menu doesn't always reach appinstalled —
+  // watching display-mode catches the page flipping into standalone so the
+  // "Install app" item hides mid-session instead of on next launch
+  // (PWA_SYSTEM.md "Display-mode change listener").
+  displayModeListener = (e) => {
+    if (e.matches) {
+      isStandalone = true;
+      deferredPrompt = null;
+      updateInstallVisibility();
+    }
+  };
+  displayModeMediaQuery.addEventListener('change', displayModeListener);
+
   // Catch updates when the user returns to a long-lived tab — the hourly poll
   // alone leaves backgrounded tabs stale (PWA_SYSTEM.md key lesson 15).
   visibilityListener = () => {
@@ -470,6 +485,9 @@ if (import.meta.hot) {
     if (checkSettleTimeoutId !== null) clearTimeout(checkSettleTimeoutId);
     if (beforeInstallPromptListener) window.removeEventListener('beforeinstallprompt', beforeInstallPromptListener);
     if (appInstalledListener) window.removeEventListener('appinstalled', appInstalledListener);
+    if (displayModeMediaQuery && displayModeListener) {
+      displayModeMediaQuery.removeEventListener('change', displayModeListener);
+    }
     if (visibilityListener) document.removeEventListener('visibilitychange', visibilityListener);
     // The early-capture listener lives in partials/head-common.html (inline,
     // pre-bundle); it exposes its handler on window so this dispose can pair it.
