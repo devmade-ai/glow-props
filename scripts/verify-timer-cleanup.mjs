@@ -1,13 +1,17 @@
 #!/usr/bin/env node
 // Tripwire: verify timer/listener cleanup hygiene against docs/implementations/TIMER_LEAKS.md.
 //
-// Approach: static check that every glow-props module registering timers, intervals,
+// Approach: static check that every glow-props script registering timers, intervals,
 // listeners, or subscriptions exposes a documented teardown path:
 //   - Files under src/ ship through Vite's module graph and must declare
 //     import.meta.hot.dispose() so HMR doesn't accumulate stale listeners.
-//   - public/theme.js is a static-asset script (no HMR), so its IIFE must expose
-//     window.__theme.dispose() so tests, manual re-init, and future SSR can release
-//     listeners deterministically.
+//   - Static-asset scripts under public/ (no HMR) must expose a window.__<name>
+//     object with a dispose() so tests, manual re-init, and future SSR can release
+//     listeners deterministically (theme.js's window.__theme.dispose() shape).
+//   - Inline <script> blocks in the HTML entry points and partials must either
+//     register listeners through an AbortController signal, expose the same
+//     window.__<name> dispose shape, or attach behind a window.__<name>Attached
+//     guard; and any setTimeout/setInterval must have a paired clear in the file.
 //
 // Run: node scripts/verify-timer-cleanup.mjs
 // Wired into package.json as `npm run verify:timer-cleanup`.
@@ -17,7 +21,7 @@
 // acceptable (override by adding the anchor as a code comment if a file genuinely
 // has no module-level registrations); false negatives are not.
 
-import { readFileSync, readdirSync, statSync } from 'node:fs';
+import { readFileSync, readdirSync, statSync, existsSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 
@@ -26,7 +30,8 @@ const ROOT = dirname(dirname(__filename));
 
 const REGISTRATION = /\b(setTimeout|setInterval)\s*\(|\.addEventListener\s*\(|\.subscribe\s*\(/;
 const VITE_DISPOSE = /\bimport\.meta\.hot\.dispose\s*\(/;
-const THEME_DISPOSE = /window\.__theme\s*=\s*\{[^}]*\bdispose\b/;
+const GLOBAL_DISPOSE = /window\.__\w+\s*=\s*\{[\s\S]*?\bdispose\b/;
+const ATTACH_GUARD = /window\.__\w+Attached/;
 
 function readUtf8(path) {
   return readFileSync(path, 'utf8');
@@ -45,6 +50,16 @@ function listJsFiles(dir) {
   return out;
 }
 
+// Inline scripts only — <script src=...> bodies are empty and external files are
+// covered by the src/ and public/ walks.
+function inlineScripts(html) {
+  const blocks = [];
+  const re = /<script(?![^>]*\bsrc=)[^>]*>([\s\S]*?)<\/script>/gi;
+  let m;
+  while ((m = re.exec(html)) !== null) blocks.push(m[1]);
+  return blocks.join('\n');
+}
+
 const failures = [];
 
 for (const file of listJsFiles(join(ROOT, 'src'))) {
@@ -54,10 +69,41 @@ for (const file of listJsFiles(join(ROOT, 'src'))) {
   }
 }
 
-const themePath = join(ROOT, 'public', 'theme.js');
-const themeContent = readUtf8(themePath);
-if (REGISTRATION.test(themeContent) && !THEME_DISPOSE.test(themeContent)) {
-  failures.push(`${themePath}: registers listeners but does not expose window.__theme.dispose()`);
+// Every static-asset script, not just theme.js — a future public/analytics.js
+// with listeners must not slip past unchecked.
+for (const file of listJsFiles(join(ROOT, 'public'))) {
+  const content = readUtf8(file);
+  if (REGISTRATION.test(content) && !GLOBAL_DISPOSE.test(content)) {
+    failures.push(`${file}: registers listeners/timers but does not expose a window.__<name> object with dispose()`);
+  }
+}
+
+// HTML entry points and partials carry inline scripts that used to be invisible
+// to this check — that blind spot is where every audited leak lived.
+const htmlFiles = ['index.html', 'pattern.html', 'project.html']
+  .map((f) => join(ROOT, f))
+  .concat(
+    existsSync(join(ROOT, 'partials'))
+      ? readdirSync(join(ROOT, 'partials')).filter((f) => f.endsWith('.html')).map((f) => join(ROOT, 'partials', f))
+      : [],
+  );
+
+for (const file of htmlFiles) {
+  const script = inlineScripts(readUtf8(file));
+  if (!script) continue;
+
+  if (/\.addEventListener\s*\(/.test(script)) {
+    const hasSignal = /\{\s*signal\b/.test(script) || /signal\s*:/.test(script);
+    if (!hasSignal && !GLOBAL_DISPOSE.test(script) && !ATTACH_GUARD.test(script)) {
+      failures.push(`${file}: inline script adds listeners with no AbortController signal, window.__<name> dispose, or window.__<name>Attached guard`);
+    }
+  }
+  if (/\bsetTimeout\s*\(/.test(script) && !/\bclearTimeout\s*\(/.test(script)) {
+    failures.push(`${file}: inline script sets a timeout with no clearTimeout in the same file`);
+  }
+  if (/\bsetInterval\s*\(/.test(script) && !/\bclearInterval\s*\(/.test(script)) {
+    failures.push(`${file}: inline script sets an interval with no clearInterval in the same file`);
+  }
 }
 
 if (failures.length) {

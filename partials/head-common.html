@@ -97,12 +97,19 @@
      Approach: Stash the event on window for pwa.js to consume later.
        On repeat visits with a cached SW, the event fires before any module
        scripts run — if nothing catches it, the install prompt is permanently lost.
+       Named handler + attach guard (TIMER_LEAKS.md variant 5): the handler lives
+       on window so pwa.js's dispose block can remove it, and the guard keeps a
+       re-evaluated partial from double-subscribing.
      Alternative: Listen in pwa.js only — rejected, misses the early-fire case -->
 <script>
-  window.addEventListener('beforeinstallprompt', function (e) {
-    e.preventDefault();
-    window.__pwaInstallPromptEvent = e;
-  });
+  if (!window.__pwaInstallCaptureAttached) {
+    window.__pwaInstallCaptureAttached = true;
+    window.__pwaInstallCapture = function (e) {
+      e.preventDefault();
+      window.__pwaInstallPromptEvent = e;
+    };
+    window.addEventListener('beforeinstallprompt', window.__pwaInstallCapture);
+  }
 </script>
 
 <!-- Fonts: Space Grotesk for headings, Inter for body -->

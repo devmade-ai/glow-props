@@ -43,7 +43,7 @@
     </div>
   </main>
 
-  <footer class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6 text-center border-t border-base-300"
+  <footer class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6 text-center border-t border-base-300 no-print"
           style="padding-bottom: max(1.5rem, env(safe-area-inset-bottom));">
     <p class="text-sm text-base-content/40">
       <a href="https://github.com/devmade-ai" target="_blank" rel="noopener" class="link link-hover text-base-content/40 hover:text-base-content/70">github.com/devmade-ai</a>
@@ -142,6 +142,9 @@
                 '</div></div>';
             })
             .catch(function (err) {
+              // Cleared on BOTH paths — a non-abort rejection otherwise leaves
+              // the 15s abort timer pending (TIMER_LEAKS.md variant 3 pairing).
+              clearTimeout(fetchTimeout);
               var isTimeout = err && err.name === 'AbortError';
               showError(
                 isTimeout ? 'Request timed out' : 'Could not load pattern',
