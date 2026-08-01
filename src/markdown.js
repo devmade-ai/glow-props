@@ -140,13 +140,12 @@ function copyCodeBlock(btn) {
   clipboardWrite(code.textContent, showFeedback);
 }
 
-// Shared clipboard helper — Clipboard API with execCommand fallback
+// Shared clipboard helper — Clipboard API with execCommand fallback.
+// A CASCADE, not a branch: writeText can reject even where navigator.clipboard
+// exists (permissions policy, non-secure context, focus loss), and the old
+// if/else reported "Copy failed" without ever trying the textarea path.
 function clipboardWrite(text, showFeedback) {
-  if (navigator.clipboard) {
-    navigator.clipboard.writeText(text)
-      .then(function () { showFeedback('Copied!'); })
-      .catch(function () { showFeedback('Copy failed'); });
-  } else {
+  function fallbackCopy() {
     try {
       var ta = document.createElement('textarea');
       ta.value = text;
@@ -160,6 +159,14 @@ function clipboardWrite(text, showFeedback) {
     } catch (e) {
       showFeedback('Copy failed');
     }
+  }
+
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(text)
+      .then(function () { showFeedback('Copied!'); })
+      .catch(fallbackCopy);
+  } else {
+    fallbackCopy();
   }
 }
 
