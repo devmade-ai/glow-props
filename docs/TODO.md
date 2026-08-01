@@ -55,7 +55,7 @@ Legend: **Pass** = compliant, **Partial** = has the feature but with gaps, **Mis
 
 | Repo | CLAUDE.md | APP_ICONS | BURGER_MENU | DEBUG_SYSTEM | DOWNLOAD_PDF | PWA_SYSTEM | THEME_DARK_MODE | EVENT_BUS | Z_INDEX_SCALE | ICON_CACHE_BUST |
 |------|-----------|-----------|-------------|--------------|--------------|------------|-----------------|-----------|---------------|-----------------|
-| glow-props | Pass | Pass | Partial | Missing | Pass | Pass | Pass | N/A | Pass | Pass |
+| glow-props | Pass | Pass | Pass | Missing | Pass | Pass | Pass | N/A | Pass | Pass |
 | canva-grid | Pass | Pass | Pass | Pass | Pass (B) | Pass | Pass | N/A | Pass | Pass |
 | fl-farlume | Pass | Pass | Pass | Pass | Pass | Pass | Pass | N/A | Pass | Pass |
 | model-pear | Partial | Pass | Missing | Pass | Partial | Missing | Missing | Missing | Pass | N/A |
@@ -82,6 +82,36 @@ Legend: **Pass** = compliant, **Partial** = has the feature but with gaps, **Mis
 
 **`?` for tool-till-tees**: two cells pending a decision (THEME_DARK_MODE — does the minimal landing page need theming? EVENT_BUS — does the backend API need internal pub/sub?). Most other cells are `N/A` because tool-till-tees is a hybrid backend-API + minimal landing page, not a user-facing PWA. APP_ICONS reclassified `Partial → Missing` 2026-04-25 — `index.html` has no icon links and no `scripts/` directory exists; decision needed.
 
+### glow-props (self) — React conversion 2026-08-01 (same day as the audit fix pass below)
+
+Converted from vanilla JS to **React 19 + Vite, MPA with build-time SSG** — and
+is now the fleet's reference implementation of the patterns' React variants:
+
+- **Architecture:** three entries, one React root each; `prerenderPages()` in
+  `vite.config.js` SSGs the landing page + all 28 item pages by
+  `renderToString`-ing the SAME components the client mounts (nested Vite
+  server + `src/entry-server.jsx`); `createRoot().render()` replaces the SSG
+  markup on mount (render-then-replace, not hydration — pages fetch at
+  runtime). All component links base-absolute; no path rewriting.
+- **BURGER_MENU → Pass:** the reference `BurgerMenu.jsx` + `useDisclosureFocus`
+  / `useFocusTrap` / `useEscapeKey` hooks, arrow/Home/End nav, close-then-act,
+  sun/moon toggle icons, recommended item order, version footer, portaled
+  backdrop (z-20 deviation documented in CLAUDE.md — blurred-navbar stacking
+  context) with `cursor-pointer` for iOS. Remaining nicety: per-theme
+  mood/description tags (needs authored strings for 35 themes).
+- **PWA/Toast/Theme:** `src/lib/pwa.js` module singleton + `PwaManager` bridge,
+  `ToastProvider` per PWA_SYSTEM.md, THEME Approach A in `src/lib/theme.js` +
+  `useTheme`; the three inline head scripts (GA, theme bootstrap, install
+  capture) deliberately stay pre-module.
+- **Tripwires reworked:** `verify:timer-cleanup` now enforces the React
+  contract (pairing rule for react files, dispose blocks for lib singletons);
+  `verify:seo` covers the SSG'd `#root`/`<main>` output and static
+  pattern+project links on the landing page; `verify:icons` checks the
+  `__ICON_VERSIONS__` define that versions the React navbar mark.
+- **Verified:** build + all three tripwires green; Playwright smoke test
+  (menu, theme toggle staying open, theme picking, Escape, prerendered
+  pattern/project pages, legacy `?name=` canonicals, doc tabs) passes.
+
 ### glow-props (self) — full self-audit + fix pass 2026-08-01
 
 12-pattern self-audit found the prior matrix row (all Pass/N-A) inaccurate, including two production breaks. Fixed the same day:
@@ -98,8 +128,8 @@ Legend: **Pass** = compliant, **Partial** = has the feature but with gaps, **Mis
 
 **Open items:**
 
-1. [ ] **DEBUG_SYSTEM — decide: implement or document N/A.** Reclassified `N/A → Missing` (the N/A had no rationale and doesn't survive scrutiny: the pattern ships a vanilla-JS variant for exactly this kind of site, this repo is a PWA, and `window.__pwaInstallPromptEvent` — the exact global the PWA diagnostics probe reads — is already stashed but read by nothing). Real exposure: if a page's module script fails, `#app` shows "Loading..." forever — the vanilla variant's 20s watchdog covers precisely that. Needs an owner decision: a visible debug pill on a public portfolio site is a product call, not a code call.
-2. [ ] **BURGER_MENU optional adornments** (why the cell says Partial): sun/moon icons on the dark/light toggle, per-theme mood tags, recommended item order (theme block contiguous), Tutorial/User Guide help items + version footer, and an iOS whitespace-tap close fix (`cursor: pointer` on body while open, or an externalized backdrop) for the documented no-backdrop deviation.
+1. [ ] **DEBUG_SYSTEM — decide: implement or document N/A.** Reclassified `N/A → Missing` (the N/A had no rationale and doesn't survive scrutiny: this repo is a PWA, and `window.__pwaInstallPromptEvent` — the exact global the PWA diagnostics probe reads — is stashed but read by nothing). Since the React conversion, the natural implementation is the pattern's standard React DebugPill (DEV-gated like four-ems, if a visible pill on a public portfolio is unwanted). Real exposure: if a page's module script fails, the page shows nothing after the SSG markup is replaced — the pattern's load watchdog covers precisely that. Needs an owner decision: a visible debug pill on a public portfolio site is a product call, not a code call.
+2. [ ] **BURGER_MENU mood tags** (only adornment left after the React conversion closed the rest): per-theme description strings ("Cool blue-gray", "Minimal mono") for the 35-theme picker — needs authored copy, not code.
 3. [ ] **PWA_SYSTEM optional hardening:** display-mode `change` listener (detect install via browser menu mid-session), install analytics (`pwa-install-events`), `version.json` comparison.
 4. [ ] **verify:seo minor:** assert `dist/robots.txt` exists alongside the source-level robots checks.
 

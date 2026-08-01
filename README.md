@@ -6,13 +6,13 @@ Portfolio and resource hub for devmade-ai projects. Deployed via GitHub Pages.
 
 ## What It Is
 
-A static site that serves three purposes:
+A React + Vite static site (build-time SSG, no server) that serves three purposes:
 
 1. **Project portfolio** — Showcases user-facing applications with live links and source code
 2. **Internal tools directory** — Lists infrastructure and supporting repositories
 3. **Pattern library** — Reusable engineering patterns extracted from real projects (PWA, dark mode, burger menu, etc.)
 
-Also hosts `CLAUDE.md` — a comprehensive AI assistant ruleset used as a reference across all devmade-ai projects.
+Also hosts `CLAUDE.md` — a comprehensive AI assistant ruleset used as a reference across all devmade-ai projects — and serves as the fleet's **reference implementation of the patterns' React variants** (BurgerMenu + focus hooks, PWA module singleton + hooks, ToastProvider, Theme Approach A).
 
 ## Projects Featured
 
@@ -46,7 +46,7 @@ Also hosts `CLAUDE.md` — a comprehensive AI assistant ruleset used as a refere
 
 The site documents reusable implementation patterns. Each pattern has YAML frontmatter — drop a `.md` file into `docs/implementations/` and it appears in the app automatically via the `generatePatternManifest` Vite plugin.
 
-Currently 11 patterns: PWA System, Theme & Dark Mode, Burger Menu, App Icons from SVG, Download as PDF, HTTPS Proxy Support, Debug System, Event Bus, Z-Index Scale, PWA Icon Cache Busting, Timer & Subscription Cleanup.
+Currently 12 patterns: PWA System, Theme & Dark Mode, Burger Menu, App Icons from SVG, Download as PDF, HTTPS Proxy Support, Debug System, Event Bus, Z-Index Scale, PWA Icon Cache Busting, Timer & Subscription Cleanup, Discoverability.
 
 Full pattern reference: [CLAUDE.md](https://devmade-ai.github.io/glow-props/CLAUDE.md)
 
@@ -56,18 +56,26 @@ Full pattern reference: [CLAUDE.md](https://devmade-ai.github.io/glow-props/CLAU
 glow-props/
   CLAUDE.md                     # AI assistant ruleset (reference for all projects)
   README.md                     # This file
-  package.json                  # Vite + Tailwind + DaisyUI + Sharp (devDependencies)
-  vite.config.js                # Build config (multi-page, Tailwind plugin, copies CLAUDE.md)
-  index.html                    # Portfolio landing page
-  project.html                  # Project detail page (markdown viewer)
-  pattern.html                  # Pattern detail page (markdown viewer + copy)
+  package.json                  # React + Vite + Tailwind + DaisyUI + Sharp
+  vite.config.js                # Build config (MPA entries, SSG prerender, PWA, icon cache-bust)
+  index.html                    # Landing page entry (head tags + React root)
+  project.html                  # Project detail entry (legacy ?name= form)
+  pattern.html                  # Pattern detail entry (legacy ?name= form)
   main.css                      # Tailwind directives, DaisyUI config, custom animations, markdown renderer styles
   partials/
-    head-common.html            # Shared <head> content (bootstrap, fonts, CSS)
-    navbar.html                 # Shared navbar with burger menu, theme picker, PWA install + update controls
-    skip-link.html              # Accessibility skip-to-content link
+    head-common.html            # Shared <head> content — GA, pre-paint theme bootstrap,
+                                #   beforeinstallprompt capture, fonts, CSS (must stay inline)
+  src/
+    main-{home,pattern,project}.jsx  # Client entries (one React root per page)
+    entry-server.jsx            # Build-time SSG renderers (renderToString of the same components)
+    components/                 # Navbar, BurgerMenu, PageShell, Toast, PwaManager, InstallModal, ...
+    hooks/                      # useDisclosureFocus, useFocusTrap, useEscapeKey, useTheme
+    lib/                        # theme, pwa (module singletons), markdown, safeStorage, themeCatalog
+    context/                    # PwaContext (SSR-safe defaults)
+    data/                       # Landing-page card content
+    pages/                      # HomePage, PatternPage, ProjectPage (+ shared Views)
+    seoMeta.js                  # Runtime canonical/OG for the legacy ?name= URLs
   public/
-    theme.js                    # Per-mode theme picker, dark/light toggle, burger menu behavior
     projects/                   # Mirrored docs per project
       {name}/
         meta.json               # Metadata (audience, use cases, privacy, status)
@@ -106,9 +114,10 @@ npm run verify:timer-cleanup # Timer/listener cleanup hygiene
 
 ## Tech Stack
 
-- **CSS Framework:** [Tailwind CSS](https://tailwindcss.com/) v4 + [DaisyUI](https://daisyui.com/) v5 — utility-first CSS with 35 DaisyUI themes (22 light, 13 dark) independently selectable per mode from the burger menu
+- **UI:** [React](https://react.dev/) 19 — three-entry MPA, one root per page, build-time SSG via `renderToString` (no server)
+- **CSS Framework:** [Tailwind CSS](https://tailwindcss.com/) v4 + [DaisyUI](https://daisyui.com/) v5 — utility-first CSS with 35 DaisyUI themes (21 light, 14 dark) independently selectable per mode from the burger menu
 - **Fonts:** [Space Grotesk](https://fonts.google.com/specimen/Space+Grotesk) (headings) + [Inter](https://fonts.google.com/specimen/Inter) (body) via Google Fonts
-- **Build:** Vite 7 with `@tailwindcss/vite` plugin
+- **Build:** Vite 7 with `@vitejs/plugin-react` and `@tailwindcss/vite`
 - **Icons:** Sharp (SVG to PNG at 400 DPI)
 - **Animations:** Scroll-triggered fade-in (Intersection Observer), card hover effects, gradient text
 

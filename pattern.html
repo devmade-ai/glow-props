@@ -24,152 +24,20 @@
   <meta name="twitter:description" content="Reusable engineering patterns by devmade-ai — implementation guides shared across every project.">
   <meta name="twitter:image" content="https://devmade-ai.github.io/glow-props/assets/images/og-image.png">
   <meta name="description" content="Reusable engineering patterns by devmade-ai — implementation guides shared across every project.">
-  <link rel="icon" type="image/png" href="assets/images/favicon.png">
-  <link rel="apple-touch-icon" href="assets/images/apple-touch-icon.png">
+  <!-- Base-absolute so the same head works from prerendered patterns/<slug>/
+       pages without rebasing. ?v= appended at build by iconCacheBustHtml(). -->
+  <link rel="icon" type="image/png" href="/glow-props/assets/images/favicon.png">
+  <link rel="apple-touch-icon" href="/glow-props/assets/images/apple-touch-icon.png">
 
   <!-- Shared <head> content injected from partials/head-common.html by htmlPartials Vite plugin -->
   <!-- HEAD_COMMON -->
 </head>
 <body class="bg-base-100 text-base-content min-h-screen">
 
-  <!-- SKIP_LINK -->
+  <!-- React root. prerenderPatternPages() injects each pattern's SSG'd markup
+       here; createRoot().render() replaces it on mount. -->
+  <div id="root"></div>
 
-  <!-- Navbar injected from partials/navbar.html by htmlPartials Vite plugin.
-       NAV_PREFIX is "./" for pattern.html (cross-page #anchors back to index). -->
-  <!-- NAVBAR:./ -->
-  <main id="main" class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-    <div id="app">
-      <p class="text-center py-16 text-base-content/40">Loading...</p>
-    </div>
-  </main>
-
-  <footer class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6 text-center border-t border-base-300 no-print"
-          style="padding-bottom: max(1.5rem, env(safe-area-inset-bottom));">
-    <p class="text-sm text-base-content/40">
-      <a href="https://github.com/devmade-ai" target="_blank" rel="noopener" class="link link-hover text-base-content/40 hover:text-base-content/70">github.com/devmade-ai</a>
-    </p>
-  </footer>
-
-  <script src="theme.js"></script>
-  <script type="module" src="src/markdown.js"></script>
-  <!-- Requirement: Pattern detail page — renders a single implementation doc with copy button
-       Approach: Fetch markdown file from patterns/ directory, render with marked library
-         (configured in src/markdown.js). Simpler than project.html — no tabs, no meta.json,
-         just the markdown content with copy and raw file buttons.
-       Note: type="module" ensures this runs after markdown.js (modules execute in order). -->
-  <script type="module">
-    import { applyPageSeo } from './src/seoMeta.js';
-    (function () {
-      var app = document.getElementById('app');
-
-      // Requirement: this page is served from two URLs — the prerendered
-      //   /patterns/<slug>/ (canonical, one static file per pattern) and the
-      //   legacy pattern.html?name=<slug>. Both have to work.
-      // Approach: prefer the query parameter when present, otherwise read the
-      //   slug from the path. Every fetch and in-page link is resolved against
-      //   BASE rather than the document, because a relative path means
-      //   something different two directories down.
-      var BASE = import.meta.env.BASE_URL;
-      var params = new URLSearchParams(window.location.search);
-      var patternName = params.get('name');
-      if (!patternName) {
-        var fromPath = window.location.pathname.match(/\/patterns\/([a-z0-9-]+)\/?$/);
-        if (fromPath) patternName = fromPath[1];
-      }
-      var renderMarkdown = md.renderMarkdown;
-      var escapeHtml = md.escapeHtml;
-      var rawMarkdown = null;
-
-      function showError(title, body, retry) {
-        var retryHtml = retry ? '<p class="mt-2"><button onclick="location.reload()" class="btn btn-primary btn-sm">Retry</button></p>' : '';
-        app.innerHTML = '<div class="text-center py-16"><h1 class="text-2xl font-bold mb-2">' + title + '</h1><p class="text-base-content/60">' + body + '</p>' + retryHtml + '<p class="mt-2"><a href="' + BASE + '#patterns" class="link link-primary">Back to patterns</a></p></div>';
-      }
-
-      function headerHtml(pattern) {
-        return '<p class="text-sm mb-4"><a href="' + BASE + '#patterns" class="link link-primary">&larr; All patterns</a></p>' +
-          '<header class="mb-6 animate-fade-in-up">' +
-            '<div class="flex items-center gap-3 flex-wrap">' +
-              '<h1 class="text-3xl font-bold">' + escapeHtml(pattern.title) + '</h1>' +
-              '<span class="badge badge-primary">' + escapeHtml(pattern.badge) + '</span>' +
-            '</div>' +
-          '</header>';
-      }
-
-      if (!patternName) { showError('Pattern not found', ''); return; }
-
-      var manifestController = new AbortController();
-      var manifestTimeout = setTimeout(function () { manifestController.abort(); }, 10000);
-
-      fetch(BASE + 'patterns/manifest.json', { signal: manifestController.signal })
-        .then(function (r) {
-          clearTimeout(manifestTimeout);
-          if (!r.ok) throw new Error('HTTP ' + r.status);
-          return r.json();
-        })
-        .then(function (manifest) {
-          var pattern = manifest.patterns.find(function (p) { return p.slug === patternName; });
-          if (!pattern) { showError('Pattern not found', ''); return; }
-
-          var filePath = BASE + 'patterns/' + pattern.file;
-          applyPageSeo({
-            title: pattern.title,
-            description: pattern.description,
-            // The clean URL is canonical — the ?name= form is the legacy
-            // entry point and must not compete with it for the same content.
-            path: 'patterns/' + encodeURIComponent(pattern.slug) + '/',
-          });
-          app.innerHTML = headerHtml(pattern) +
-            '<div class="card bg-base-200/50 border border-base-300"><div class="card-body"><p class="text-center py-8 text-base-content/40">Loading...</p></div></div>';
-
-          var fetchController = new AbortController();
-          var fetchTimeout = setTimeout(function () { fetchController.abort(); }, 15000);
-
-          fetch(filePath, { signal: fetchController.signal })
-            .then(function (r) {
-              clearTimeout(fetchTimeout);
-              if (!r.ok) throw new Error('HTTP ' + r.status);
-              return r.text();
-            })
-            .then(function (text) {
-              rawMarkdown = text;
-              app.innerHTML = headerHtml(pattern) +
-                '<div class="card bg-base-200/50 border border-base-300"><div class="card-body">' +
-                  '<div class="flex gap-3 mb-4 no-print">' +
-                    '<button id="copy-btn" class="btn btn-outline btn-sm gap-1" onclick="copyPattern()">Copy markdown</button>' +
-                    '<a href="' + filePath + '" class="btn btn-outline btn-sm gap-1" target="_blank">Raw file</a>' +
-                  '</div>' +
-                  '<div class="md-render">' + renderMarkdown(text) + '</div>' +
-                '</div></div>';
-            })
-            .catch(function (err) {
-              // Cleared on BOTH paths — a non-abort rejection otherwise leaves
-              // the 15s abort timer pending (TIMER_LEAKS.md variant 3 pairing).
-              clearTimeout(fetchTimeout);
-              var isTimeout = err && err.name === 'AbortError';
-              showError(
-                isTimeout ? 'Request timed out' : 'Could not load pattern',
-                isTimeout ? 'Could not load pattern data. Check your connection and try again.' : 'The pattern file could not be loaded.',
-                isTimeout
-              );
-            });
-        })
-        .catch(function (err) {
-          clearTimeout(manifestTimeout);
-          var isTimeout = err && err.name === 'AbortError';
-          showError(
-            isTimeout ? 'Request timed out' : 'Could not load patterns',
-            isTimeout ? 'Could not load pattern data. Check your connection and try again.' : 'Failed to load pattern manifest.',
-            isTimeout
-          );
-        });
-
-      window.copyPattern = function () {
-        md.copyMarkdown(rawMarkdown, 'copy-btn');
-      };
-    })();
-  </script>
-
-  <!-- PWA: service worker registration, update prompts, install detection -->
-  <script type="module" src="src/pwa.js"></script>
+  <script type="module" src="src/main-pattern.jsx"></script>
 </body>
 </html>

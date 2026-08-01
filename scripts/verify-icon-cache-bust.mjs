@@ -55,15 +55,29 @@ if (!/ignoreURLParametersMatching:\s*\[[^\]]*\/\^v\$\//.test(viteConfig)) {
 for (const page of ['index.html', 'pattern.html', 'project.html']) {
   const html = readFileSync(join(ROOT, page), 'utf8')
   for (const literal of [
-    'href="assets/images/favicon.png"',
-    'href="assets/images/apple-touch-icon.png"',
+    'href="/glow-props/assets/images/favicon.png"',
+    'href="/glow-props/assets/images/apple-touch-icon.png"',
   ]) {
     if (!html.includes(literal)) {
       fail(`${page}: missing the exact literal ${literal} the cache-bust plugin replaces`)
     }
   }
-  if (html.includes('?v=')) {
-    fail(`${page}: source carries a hardcoded ?v= — versions are appended at build time only`)
+  // href attributes only — prose comments legitimately mention ?v=.
+  if (/href="[^"]*\?v=/.test(html)) {
+    fail(`${page}: source carries a hardcoded ?v= in a link — versions are appended at build time only`)
+  }
+}
+
+// The navbar mark is rendered by React from the __ICON_VERSIONS__ define —
+// the define must exist in the config and the component must consume it, or
+// the mark silently ships un-versioned.
+if (!/define:\s*\{[^}]*__ICON_VERSIONS__/.test(viteConfig)) {
+  fail('vite.config.js: __ICON_VERSIONS__ define missing — the React navbar mark has no version source')
+}
+{
+  const navbar = readFileSync(join(ROOT, 'src/components/Navbar.jsx'), 'utf8')
+  if (!navbar.includes('__ICON_VERSIONS__')) {
+    fail('src/components/Navbar.jsx: does not consume __ICON_VERSIONS__ — the navbar mark ships un-versioned')
   }
 }
 

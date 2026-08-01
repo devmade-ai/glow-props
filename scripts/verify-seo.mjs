@@ -107,12 +107,12 @@ for (const page of PAGES) {
 
 // --- the runtime helper stays wired -----------------------------------------
 
-for (const page of ['pattern.html', 'project.html']) {
-  const html = readFileSync(join(ROOT, page), 'utf8')
-  if (!html.includes("from './src/seoMeta.js'")) {
+for (const page of ['src/pages/PatternPage.jsx', 'src/pages/ProjectPage.jsx']) {
+  const source = readFileSync(join(ROOT, page), 'utf8')
+  if (!source.includes("from '../seoMeta.js'")) {
     fail(`${page}: does not import applyPageSeo — its canonical would never be set`)
   }
-  if (!html.includes('applyPageSeo({')) {
+  if (!source.includes('applyPageSeo({')) {
     fail(`${page}: imports applyPageSeo but never calls it`)
   }
 }
@@ -186,12 +186,13 @@ if (existsSync(distSitemap)) {
   }
 }
 
-// --- prerendered pattern pages ----------------------------------------------
+// --- prerendered pages --------------------------------------------------------
 
-// Each pattern gets a real HTML file so it has its own crawlable content AND
-// its own link preview. Runtime tags cover neither: unfurlers do not run JS.
-if (!/^\s*prerenderPatternPages\(\),\s*$/m.test(viteConfig)) {
-  fail('vite.config.js defines prerenderPatternPages() but does not register it in the plugins array')
+// Each pattern/project gets a real HTML file so it has its own crawlable
+// content AND its own link preview. Runtime tags cover neither: unfurlers do
+// not run JS.
+if (!/^\s*prerenderPages\(\),\s*$/m.test(viteConfig)) {
+  fail('vite.config.js defines prerenderPages() but does not register it in the plugins array')
 }
 
 const patternFiles = readdirSync(join(ROOT, 'docs/implementations')).filter((f) => f.endsWith('.md'))
@@ -228,18 +229,19 @@ if (existsSync(distPatternsDir)) {
     // Content, not just tags — a crawler that does not run JS must find the
     // document, which is the reason these files exist at all.
     //
-    // Checked INSIDE #app, not across the whole file: the title also appears
-    // in <title> and og:title, so a whole-file search passes happily on a page
-    // whose body was never injected. Fault injection is what exposed that.
-    const appBody = html.match(/<div id="app"[^>]*>([\s\S]*?)<\/main>/)?.[1] ?? ''
+    // Checked INSIDE the SSG'd <main>, not across the whole file: the title
+    // also appears in <title> and og:title, so a whole-file search passes
+    // happily on a page whose body was never injected. Fault injection is
+    // what exposed that.
+    const appBody = html.match(/<main[^>]*>([\s\S]*?)<\/main>/)?.[1] ?? ''
     if (!/<h1[\s>]/.test(appBody)) {
-      fail(`dist/patterns/${slug}/: #app has no prerendered content — a crawler that does not run JS sees an empty page`)
+      fail(`dist/patterns/${slug}/: no prerendered content in <main> — a crawler that does not run JS sees an empty page`)
     }
     if (title && !appBody.includes(title.replace(/&/g, '&amp;'))) {
       fail(`dist/patterns/${slug}/: prerendered body does not contain the pattern's own heading`)
     }
-    // Nav links are stamped for a root-level page; two directories down they
-    // would all resolve inside patterns/<slug>/.
+    // Every component link is base-absolute; a document-relative one breaks
+    // two directories down.
     if (html.includes('href="./')) {
       fail(`dist/patterns/${slug}/: has root-relative "./" links that break from a nested URL`)
     }
@@ -275,12 +277,6 @@ if (existsSync(distPatternsDir)) {
 
 // --- prerendered project pages ----------------------------------------------
 
-// Same contract as the pattern pages: every project gets its own file, head
-// tags, and crawlable body at projects/<slug>/.
-if (!/^\s*prerenderProjectPages\(\),\s*$/m.test(viteConfig)) {
-  fail('vite.config.js defines prerenderProjectPages() but does not register it in the plugins array')
-}
-
 const projectsDir = join(ROOT, 'public/projects')
 const distProjectsDir = join(ROOT, 'dist/projects')
 if (existsSync(projectsDir) && existsSync(distProjectsDir)) {
@@ -306,9 +302,9 @@ if (existsSync(projectsDir) && existsSync(distProjectsDir)) {
     if (canonical !== `${SITE}projects/${slug}/`) {
       fail(`dist/projects/${slug}/: canonical is ${canonical}, expected ${SITE}projects/${slug}/`)
     }
-    const appBody = html.match(/<div id="app"[^>]*>([\s\S]*?)<\/main>/)?.[1] ?? ''
+    const appBody = html.match(/<main[^>]*>([\s\S]*?)<\/main>/)?.[1] ?? ''
     if (!/<h1[\s>]/.test(appBody)) {
-      fail(`dist/projects/${slug}/: #app has no prerendered content — a crawler that does not run JS sees an empty page`)
+      fail(`dist/projects/${slug}/: no prerendered content in <main> — a crawler that does not run JS sees an empty page`)
     }
     if (title && !appBody.includes(title.replace(/&/g, '&amp;'))) {
       fail(`dist/projects/${slug}/: prerendered body does not contain the project's own heading`)
@@ -350,15 +346,20 @@ if (existsSync(distSitemap)) {
   }
 }
 
-// Non-JS crawlers must find the pattern pages FROM the landing page, not only
-// via the sitemap — the build injects static cards for exactly that reason.
+// Non-JS crawlers must find the pattern AND project pages FROM the landing
+// page, not only via the sitemap — the build SSGs the full card grid for
+// exactly that reason.
 {
   const distIndex = join(ROOT, 'dist/index.html')
   if (existsSync(distIndex)) {
     const html = readFileSync(distIndex, 'utf8')
-    const patternLinks = (html.match(/href="patterns\/[a-z0-9-]+\/"/g) ?? []).length
+    const patternLinks = new Set(html.match(/href="\/glow-props\/patterns\/[a-z0-9-]+\/"/g) ?? []).size
     if (patternLinks < patternFiles.length) {
       fail(`dist/index.html links ${patternLinks} pattern pages statically, expected ${patternFiles.length} — non-JS crawlers can't discover them`)
+    }
+    const projectLinks = new Set(html.match(/href="\/glow-props\/projects\/[a-z0-9-]+\/"/g) ?? []).size
+    if (projectLinks === 0) {
+      fail('dist/index.html has no static project-page links — non-JS crawlers can\'t discover them')
     }
   }
 }

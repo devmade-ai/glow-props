@@ -3,11 +3,17 @@
 //
 // Approach: static check that every glow-props script registering timers, intervals,
 // listeners, or subscriptions exposes a documented teardown path:
-//   - Files under src/ ship through Vite's module graph and must declare
-//     import.meta.hot.dispose() so HMR doesn't accumulate stale listeners.
+//   - Plain modules under src/ (.js — the lib singletons) that register at module
+//     level must declare import.meta.hot.dispose() so HMR doesn't accumulate
+//     stale listeners.
+//   - React files (.jsx) put registrations inside effects whose cleanup a static
+//     grep can't follow — the checkable contract is PAIRING: every
+//     addEventListener needs a removeEventListener in the same file, every
+//     setTimeout a clearTimeout, every setInterval a clearInterval, every
+//     IntersectionObserver a disconnect.
 //   - Static-asset scripts under public/ (no HMR) must expose a window.__<name>
 //     object with a dispose() so tests, manual re-init, and future SSR can release
-//     listeners deterministically (theme.js's window.__theme.dispose() shape).
+//     listeners deterministically.
 //   - Inline <script> blocks in the HTML entry points and partials must either
 //     register listeners through an AbortController signal, expose the same
 //     window.__<name> dispose shape, or attach behind a window.__<name>Attached
@@ -43,12 +49,20 @@ function listJsFiles(dir) {
     const path = join(dir, name);
     if (statSync(path).isDirectory()) {
       out.push(...listJsFiles(path));
-    } else if (name.endsWith('.js') || name.endsWith('.mjs')) {
+    } else if (name.endsWith('.js') || name.endsWith('.mjs') || name.endsWith('.jsx')) {
       out.push(path);
     }
   }
   return out;
 }
+
+// Pairing rules for React files: registration verb → required release verb.
+const PAIRS = [
+  [/\.addEventListener\s*\(/, /\.removeEventListener\s*\(/, 'addEventListener without removeEventListener'],
+  [/\bsetTimeout\s*\(/, /\bclearTimeout\s*\(/, 'setTimeout without clearTimeout'],
+  [/\bsetInterval\s*\(/, /\bclearInterval\s*\(/, 'setInterval without clearInterval'],
+  [/\bnew IntersectionObserver\s*\(/, /\.disconnect\s*\(/, 'IntersectionObserver without disconnect'],
+];
 
 // Inline scripts only — <script src=...> bodies are empty and external files are
 // covered by the src/ and public/ walks.
@@ -64,8 +78,17 @@ const failures = [];
 
 for (const file of listJsFiles(join(ROOT, 'src'))) {
   const content = readUtf8(file);
-  if (REGISTRATION.test(content) && !VITE_DISPOSE.test(content)) {
-    failures.push(`${file}: uses setTimeout/setInterval/addEventListener/subscribe but has no import.meta.hot.dispose() block`);
+  // React files (components, hooks) register inside effects — the pairing rule
+  // applies. Anything importing react counts, .jsx or not.
+  const isReactFile = file.endsWith('.jsx') || /from 'react'/.test(content);
+  if (isReactFile) {
+    for (const [register, release, message] of PAIRS) {
+      if (register.test(content) && !release.test(content)) {
+        failures.push(`${file}: ${message} in the same file — effects must release what they register`);
+      }
+    }
+  } else if (REGISTRATION.test(content) && !VITE_DISPOSE.test(content)) {
+    failures.push(`${file}: uses setTimeout/setInterval/addEventListener/subscribe at module level but has no import.meta.hot.dispose() block`);
   }
 }
 

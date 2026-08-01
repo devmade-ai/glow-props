@@ -1,4 +1,5 @@
-import { defineConfig } from 'vite';
+import { defineConfig, createServer } from 'vite';
+import react from '@vitejs/plugin-react';
 import tailwindcss from '@tailwindcss/vite';
 import { VitePWA } from 'vite-plugin-pwa';
 import { copyFileSync, readFileSync, readdirSync, existsSync, mkdirSync, writeFileSync } from 'fs';
@@ -38,17 +39,17 @@ const ICON_VERSIONS = Object.fromEntries(ICON_PATHS.map((p) => [p, iconVersion(p
 const versioned = (relPath) => relPath + '?v=' + ICON_VERSIONS[relPath];
 
 // Requirement: every URL surface must carry the icon version — the HTML
-//   <link rel="icon">/<link rel="apple-touch-icon"> tags and the navbar mark
+//   <link rel="icon">/<link rel="apple-touch-icon"> tags
 //   (PWA_ICON_CACHE_BUST.md invariant 2). Missing one leaks stale content.
+//   The navbar mark is rendered by React and gets its version from the
+//   __ICON_VERSIONS__ define below — same hashes, one source.
 // Approach: replace the exact literals in every built page. Fail loud when a
 //   literal is missing — a reformatted tag would otherwise silently ship
 //   un-versioned URLs and only surface weeks later when an icon changes.
-// Runs after htmlPartials (which is order: 'pre') so the navbar img is present.
 function iconCacheBustHtml() {
   const REPLACEMENTS = [
-    ['href', 'assets/images/favicon.png'],
-    ['href', 'assets/images/apple-touch-icon.png'],
-    ['src', 'assets/images/icon-192.png'],
+    ['href', '/glow-props/assets/images/favicon.png', 'assets/images/favicon.png'],
+    ['href', '/glow-props/assets/images/apple-touch-icon.png', 'assets/images/apple-touch-icon.png'],
   ];
   return {
     name: 'icon-cache-bust-html',
@@ -56,15 +57,15 @@ function iconCacheBustHtml() {
       order: 'post',
       handler(html, ctx) {
         let out = html;
-        for (const [attr, relPath] of REPLACEMENTS) {
-          const literal = attr + '="' + relPath + '"';
+        for (const [attr, urlPath, relPath] of REPLACEMENTS) {
+          const literal = attr + '="' + urlPath + '"';
           if (!out.includes(literal)) {
             throw new Error(
               '[icon-cache-bust-html] expected literal not found in ' + ctx.filename + ': ' + literal +
               '\nThe tag changed shape — update the REPLACEMENTS table in vite.config.js to match.',
             );
           }
-          out = out.replaceAll(literal, attr + '="' + versioned(relPath) + '"');
+          out = out.replaceAll(literal, attr + '="' + urlPath + '?v=' + ICON_VERSIONS[relPath] + '"');
         }
         return out;
       },
@@ -72,14 +73,15 @@ function iconCacheBustHtml() {
   };
 }
 
-// Requirement: Shared partials across index.html and project.html without duplication
-// Approach: Custom Vite plugin reads partial files and injects them into HTML at build time.
-//   Supports three partial types:
-//   1. <!-- NAVBAR:prefix --> — navbar with {{NAV_PREFIX}} token replacement
-//   2. <!-- HEAD_COMMON --> — shared <head> content (bootstrap, fonts, CSS)
-//   3. <!-- SKIP_LINK --> — accessibility skip-to-content link
-// Alternative: Vite plugin ecosystem (vite-plugin-handlebars, etc.) — rejected,
-//   adds dependency for simple replacements.
+// Requirement: shared <head> content (GA, pre-paint theme bootstrap,
+//   beforeinstallprompt capture, fonts, main.css) across the three HTML
+//   entries. These MUST stay inline classic scripts in the head — they run
+//   before any module, which is their entire purpose — so they cannot move
+//   into React with the rest of the old partials (navbar and skip link are
+//   components now).
+// Approach: Custom Vite plugin injects the partial at the HEAD_COMMON marker.
+// Alternative: vite-plugin-handlebars etc. — rejected, adds a dependency for
+//   one string replacement.
 function htmlPartials() {
   const partialsDir = resolve(__dirname, 'partials');
   return {
@@ -87,29 +89,12 @@ function htmlPartials() {
     transformIndexHtml: {
       order: 'pre',
       handler(html) {
-        // Navbar partial with prefix token
-        html = html.replace(
-          /<!--\s*NAVBAR:(\S*)\s*-->/g,
-          function (match, prefix) {
-            var navbar = readFileSync(resolve(partialsDir, 'navbar.html'), 'utf-8');
-            return navbar.replace(/\{\{NAV_PREFIX\}\}/g, prefix);
-          }
-        );
-        // Head common partial (bootstrap script, fonts, CSS)
-        html = html.replace(
+        return html.replace(
           /<!--\s*HEAD_COMMON\s*-->/g,
           function () {
             return readFileSync(resolve(partialsDir, 'head-common.html'), 'utf-8');
           }
         );
-        // Skip link partial
-        html = html.replace(
-          /<!--\s*SKIP_LINK\s*-->/g,
-          function () {
-            return readFileSync(resolve(partialsDir, 'skip-link.html'), 'utf-8');
-          }
-        );
-        return html;
       },
     },
   };
@@ -318,43 +303,41 @@ function generatePatternManifest() {
   };
 }
 
-// Requirement: every pattern was served from pattern.html?name=<slug>. That is
-//   one HTML file standing in for twelve pages, so each pattern had the same
-//   generic <title> and og: copy in its markup — a link to any of them unfurled
-//   as "Pattern Details", and a crawler that does not run JS saw no content at
-//   all. Runtime tags fix the first problem for Google and nothing for anyone
-//   else, because unfurlers do not run JS.
-// Approach: write one real HTML file per pattern at build, derived from the
-//   BUILT pattern.html so every asset URL is already correct. Each gets its own
-//   head tags and its markdown rendered into #app — which the page's own render
-//   then overwrites on mount, so there is no shell to tear down and no way for
-//   the two to disagree about what is on screen.
-// Alternative: a full static-site generator — rejected, this is one template
-//   and a folder of markdown.
-// See docs/implementations/DISCOVERABILITY.md.
-function prerenderPatternPages() {
+// Requirement: every pattern, every project, and the landing page must exist
+//   as real crawlable HTML — unfurlers and non-JS crawlers read markup, not
+//   the React tree (DISCOVERABILITY.md "One page per item").
+// Approach: build-time SSG. A nested Vite server ssrLoadModule's
+//   src/entry-server.jsx, which renderToString's the SAME components the
+//   client mounts — the crawlable markup and the live page cannot drift. The
+//   output is injected into each built template's #root, which
+//   createRoot().render() replaces on mount (render-then-replace, not
+//   hydration: the pages fetch their data at runtime, so hydration would
+//   mismatch by design). Every link the components emit is base-absolute, so
+//   nested pages need no path rewriting.
+// Alternative: a full SSG framework — rejected, three templates and two
+//   folders of markdown don't justify one, and the fleet standard is plain
+//   Vite + React.
+function prerenderPages() {
   const SITE = 'https://devmade-ai.github.io/glow-props/';
+  const GENERIC_PATTERN_DESC = 'Reusable engineering patterns by devmade-ai — implementation guides shared across every project.';
+  const GENERIC_PROJECT_DESC = 'Software projects, internal tools, and reusable engineering patterns by devmade-ai.';
 
-  function head(pattern) {
+  function escapeAttr(text) {
+    return String(text).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  }
+
+  // Head pairs: every entry REPLACES a tag the template already carries, so
+  // the fail-loud guard covers all of them and no duplicate identity tags can
+  // ship (the historical failure mode: pages with two <meta name="description">
+  // tags, and the crawler picks whichever it likes).
+  function patternHead(pattern) {
     const title = escapeAttr(pattern.title + ' — devmade-ai');
     const desc = escapeAttr(pattern.description);
     const url = SITE + 'patterns/' + pattern.slug + '/';
-    const GENERIC_DESC = 'Reusable engineering patterns by devmade-ai — implementation guides shared across every project.';
-    // Pairs, not an object: several of these keys are built by concatenation,
-    // which an object literal cannot take without bracket syntax.
-    //
-    // Every entry REPLACES a tag the template already carries. Nothing here
-    // may introduce a tag that the template also has: the description was
-    // originally injected alongside og:title, which left the generic one in
-    // place and shipped all 12 pages with two <meta name="description">
-    // tags — a crawler then picks one and we do not get to say which.
-    // Replacing in place also means the fail-loud guard below covers the
-    // description too, so a reworded template breaks the build instead of
-    // quietly restoring the generic copy.
     return [
       ['<title>Loading... — devmade-ai</title>', '<title>' + title + '</title>'],
       [
-        '<meta name="description" content="' + GENERIC_DESC + '">',
+        '<meta name="description" content="' + GENERIC_PATTERN_DESC + '">',
         '<meta name="description" content="' + desc + '">',
       ],
       [
@@ -363,7 +346,7 @@ function prerenderPatternPages() {
         '<meta property="og:title" content="' + title + '">',
       ],
       [
-        '<meta property="og:description" content="' + GENERIC_DESC + '">',
+        '<meta property="og:description" content="' + GENERIC_PATTERN_DESC + '">',
         '<meta property="og:description" content="' + desc + '">',
       ],
       [
@@ -375,154 +358,166 @@ function prerenderPatternPages() {
         '<meta name="twitter:title" content="' + title + '">',
       ],
       [
-        '<meta name="twitter:description" content="' + GENERIC_DESC + '">',
+        '<meta name="twitter:description" content="' + GENERIC_PATTERN_DESC + '">',
         '<meta name="twitter:description" content="' + desc + '">',
       ],
     ];
   }
 
-  function escapeAttr(text) {
-    return String(text).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  function projectHead(meta, slug) {
+    const title = escapeAttr(meta.title + ' — devmade-ai');
+    const desc = escapeAttr(meta.description);
+    const url = SITE + 'projects/' + slug + '/';
+    return [
+      ['<title>Loading... — devmade-ai</title>', '<title>' + title + '</title>'],
+      [
+        '<meta name="description" content="' + GENERIC_PROJECT_DESC + '">',
+        '<meta name="description" content="' + desc + '">',
+      ],
+      [
+        '<meta property="og:title" content="devmade-ai — Project Details">',
+        '<link rel="canonical" href="' + url + '">\n  ' +
+        '<meta property="og:title" content="' + title + '">',
+      ],
+      [
+        '<meta property="og:description" content="' + GENERIC_PROJECT_DESC + '">',
+        '<meta property="og:description" content="' + desc + '">',
+      ],
+      [
+        '<meta property="og:url" content="' + SITE + 'project.html">',
+        '<meta property="og:url" content="' + url + '">',
+      ],
+      [
+        '<meta name="twitter:title" content="devmade-ai — Project Details">',
+        '<meta name="twitter:title" content="' + title + '">',
+      ],
+      [
+        '<meta name="twitter:description" content="' + GENERIC_PROJECT_DESC + '">',
+        '<meta name="twitter:description" content="' + desc + '">',
+      ],
+    ];
+  }
+
+  function applyHead(html, pairs, label) {
+    for (const [from, to] of pairs) {
+      if (!html.includes(from)) {
+        throw new Error(
+          '[prerender-pages] expected literal not found in ' + label + ': ' + from +
+          '\nThe head tags changed — update prerenderPages() in vite.config.js to match.',
+        );
+      }
+      html = html.replace(from, to);
+    }
+    return html;
+  }
+
+  function injectRoot(html, body, label) {
+    const literal = '<div id="root"></div>';
+    if (!html.includes(literal)) {
+      throw new Error(
+        '[prerender-pages] expected an empty <div id="root"></div> in ' + label +
+        ' — the root markup changed shape; update prerenderPages() to match.',
+      );
+    }
+    return html.replace(literal, '<div id="root">' + body + '</div>');
   }
 
   return {
-    name: 'prerender-pattern-pages',
+    name: 'prerender-pages',
     async closeBundle() {
       const distDir = resolve(__dirname, 'dist');
-      const templatePath = resolve(distDir, 'pattern.html');
-      if (!existsSync(templatePath)) {
-        console.warn('[prerender-patterns] dist/pattern.html missing — skipped');
+      if (!existsSync(resolve(distDir, 'index.html'))) {
+        console.warn('[prerender-pages] dist/index.html missing — skipped');
         return;
       }
-      const template = readFileSync(templatePath, 'utf-8');
-      // marked is a runtime dependency of the site, so the build renders the
-      // same markdown with the same library the browser will.
-      const { marked } = await import('marked');
 
-      const patterns = buildPatternManifestForSitemap().patterns;
-      for (const pattern of patterns) {
-        const mdPath = resolve(__dirname, 'docs', 'implementations', pattern.file);
-        if (!existsSync(mdPath)) continue;
-        // Strip the YAML frontmatter — it is metadata for the manifest, not
-        // page content, and marked would render it as a paragraph of keys.
-        const body = readFileSync(mdPath, 'utf-8').replace(/^---\n[\s\S]*?\n---\n/, '');
+      // Nested server with configFile:false — the full plugin pipeline
+      // (VitePWA, this plugin) must not re-run inside itself. Only what the
+      // SSR transform needs: root, base, and the icon-version define.
+      const server = await createServer({
+        configFile: false,
+        root: __dirname,
+        base: '/glow-props/',
+        logLevel: 'error',
+        appType: 'custom',
+        server: { middlewareMode: true },
+        define: { __ICON_VERSIONS__: JSON.stringify(ICON_VERSIONS) },
+        esbuild: { jsx: 'automatic' },
+        // The dependency scanner crawls the CLIENT entries and trips on
+        // virtual:pwa-register (only the full plugin pipeline provides it).
+        // ssrLoadModule needs no client pre-bundling — turn discovery off.
+        optimizeDeps: { noDiscovery: true },
+      });
 
-        let html = template;
-        for (const [from, to] of head(pattern)) {
-          if (!html.includes(from)) {
-            throw new Error(
-              '[prerender-patterns] expected literal not found in built pattern.html: ' + from +
-              '\nThe head tags changed — update prerenderPatternPages() in vite.config.js to match.',
-            );
+      try {
+        const ssg = await server.ssrLoadModule('/src/entry-server.jsx');
+        const patterns = buildPatternManifestForSitemap().patterns;
+
+        // Landing page — full SSG'd body (hero, project/tool cards, pattern
+        // cards with real links) into the built index.html's #root.
+        const indexPath = resolve(distDir, 'index.html');
+        writeFileSync(indexPath, injectRoot(
+          readFileSync(indexPath, 'utf-8'),
+          ssg.renderHome(patterns),
+          'built index.html',
+        ));
+        console.log('[prerender-pages] index.html');
+
+        // Pattern pages.
+        const patternTemplate = readFileSync(resolve(distDir, 'pattern.html'), 'utf-8');
+        let patternCount = 0;
+        for (const pattern of patterns) {
+          const mdPath = resolve(__dirname, 'docs', 'implementations', pattern.file);
+          if (!existsSync(mdPath)) continue;
+          const raw = readFileSync(mdPath, 'utf-8');
+          let html = applyHead(patternTemplate, patternHead(pattern), 'built pattern.html');
+          html = injectRoot(html, ssg.renderPattern(pattern, raw), 'built pattern.html');
+          const outDir = resolve(distDir, 'patterns', pattern.slug);
+          mkdirSync(outDir, { recursive: true });
+          writeFileSync(resolve(outDir, 'index.html'), html);
+          patternCount++;
+        }
+        console.log('[prerender-pages] ' + patternCount + ' pattern pages');
+
+        // Project pages.
+        const projectTemplate = readFileSync(resolve(distDir, 'project.html'), 'utf-8');
+        let projectCount = 0;
+        for (const slug of listProjectSlugs()) {
+          const metaPath = resolve(__dirname, 'public', 'projects', slug, 'meta.json');
+          let meta;
+          try {
+            meta = JSON.parse(readFileSync(metaPath, 'utf-8'));
+          } catch (e) {
+            console.warn('[prerender-pages] ' + slug + ': invalid meta.json — skipped');
+            continue;
           }
-          html = html.replace(from, to);
+          if (!meta.title || !meta.description) {
+            console.warn('[prerender-pages] ' + slug + ': meta.json missing title/description — skipped');
+            continue;
+          }
+          const readmePath = resolve(__dirname, 'public', 'projects', slug, 'README.md');
+          const readme = meta.docs && meta.docs.readme && existsSync(readmePath)
+            ? readFileSync(readmePath, 'utf-8')
+            : null;
+          let html = applyHead(projectTemplate, projectHead(meta, slug), 'built project.html');
+          html = injectRoot(html, ssg.renderProject(meta, slug, readme), 'built project.html');
+          const outDir = resolve(distDir, 'projects', slug);
+          mkdirSync(outDir, { recursive: true });
+          writeFileSync(resolve(outDir, 'index.html'), html);
+          projectCount++;
         }
-
-        // Into #app, which the page's own render overwrites on mount. No
-        // separate shell to remove, and nothing that can outlive the handoff.
-        html = html.replace(
-          '<div id="app"',
-          '<div id="app" data-prerendered="true"',
-        ).replace(
-          /(<div id="app"[^>]*>)/,
-          '$1\n' + marked.parse(body),
-        );
-
-        // The navbar partial is stamped with NAV_PREFIX="./" for a root-level
-        // page. Two directories down, "./#patterns" resolves to
-        // patterns/<slug>/#patterns and every nav link is dead. These are the
-        // only "./" hrefs in the template — they exist BECAUSE of that token —
-        // so rewriting them to the site base is exact rather than a guess.
-        const navLinks = (html.match(/href="\.\//g) || []).length;
-        if (navLinks === 0) {
-          throw new Error(
-            '[prerender-patterns] no "./" nav links found in built pattern.html. ' +
-            'NAV_PREFIX changed shape — re-check that nav links still resolve from ' +
-            'patterns/<slug>/ before removing this guard.',
-          );
-        }
-        html = html.replace(/href="\.\//g, 'href="/glow-props/');
-        html = rebaseDocumentRelativeAssets(html, 'prerender-patterns');
-
-        const outDir = resolve(distDir, 'patterns', pattern.slug);
-        mkdirSync(outDir, { recursive: true });
-        writeFileSync(resolve(outDir, 'index.html'), html);
-      }
-      console.log('[prerender-patterns] ' + patterns.length + ' pages');
-
-      // Requirement: the landing page's pattern cards were client-rendered, so
-      //   a crawler that does not run JS saw no link to any prerendered pattern
-      //   page — discovery relied on the sitemap alone.
-      // Approach: replace the "Loading patterns..." placeholder in the built
-      //   index.html with static cards; the page's own render overwrites them
-      //   on mount (same into-the-container technique as the page bodies).
-      //   No scroll-animate on these — without JS, nothing would ever lift the
-      //   utility's opacity:0 and the cards would be invisible.
-      const indexPath = resolve(distDir, 'index.html');
-      if (existsSync(indexPath)) {
-        const LOADING = '<p class="text-base-content/40 text-sm col-span-full text-center py-8">Loading patterns...</p>';
-        let indexHtml = readFileSync(indexPath, 'utf-8');
-        if (!indexHtml.includes(LOADING)) {
-          throw new Error(
-            '[prerender-patterns] expected the "Loading patterns..." placeholder in ' +
-            'built index.html. The placeholder changed shape — update prerenderPatternPages().',
-          );
-        }
-        const cards = patterns.map(function (p) {
-          const tagsHtml = p.tags.length > 0
-            ? '<p class="text-xs text-base-content/40">' + p.tags.map(escapeAttr).join(' &middot; ') + '</p>'
-            : '';
-          return '<div class="card bg-base-200/50 border border-base-300 card-interactive">' +
-            '<div class="card-body">' +
-              '<h4 class="font-semibold text-base mb-1">' + escapeAttr(p.title) + '</h4>' +
-              '<p class="text-sm text-base-content/70 grow">' + escapeAttr(p.description) + '</p>' +
-              '<div class="mt-auto pt-2">' + tagsHtml +
-                '<div class="card-links"><a href="patterns/' + encodeURIComponent(p.slug) + '/" class="btn btn-sm btn-primary rounded-full">View pattern</a></div>' +
-              '</div>' +
-            '</div>' +
-          '</div>';
-        }).join('\n');
-        writeFileSync(indexPath, indexHtml.replace(LOADING, cards));
-        console.log('[prerender-patterns] index.html pattern cards injected');
+        console.log('[prerender-pages] ' + projectCount + ' project pages');
+      } finally {
+        // The nested server holds watchers — an unclosed one hangs the build.
+        await server.close();
       }
     },
   };
 }
 
-// Requirement: prerendered pages live two directories down, but the built
-//   template still carries document-relative asset URLs — <script src="theme.js">
-//   and the assets/images/* icon links (Vite only rewrites module-graph assets).
-//   From patterns/<slug>/ those resolve to files that do not exist: the theme
-//   picker and burger menu were dead on every prerendered page, and its favicon
-//   404'd.
-// Approach: rewrite the document-relative forms to the site base, with the same
-//   fail-loud contract as the nav-link rewrite — a template change must break the
-//   build, not quietly ship broken pages.
-function rebaseDocumentRelativeAssets(html, tag) {
-  if (!html.includes('src="theme.js"')) {
-    throw new Error(
-      '[' + tag + '] expected <script src="theme.js"> in the built template. ' +
-      'The tag changed shape — update rebaseDocumentRelativeAssets() to match.',
-    );
-  }
-  html = html.replace('src="theme.js"', 'src="/glow-props/theme.js"');
-
-  // Icon links and the navbar mark (possibly carrying their ?v= cache-bust query).
-  const assetRefs = (html.match(/(?:href|src)="assets\//g) || []).length;
-  if (assetRefs === 0) {
-    throw new Error(
-      '[' + tag + '] no document-relative assets/ references found in the built ' +
-      'template. The head tags changed shape — update rebaseDocumentRelativeAssets().',
-    );
-  }
-  return html
-    .replace(/href="assets\//g, 'href="/glow-props/assets/')
-    .replace(/src="assets\//g, 'src="/glow-props/assets/');
-}
-
 // A directory under public/projects is a project only if it carries the
 // meta.json the page fetches — the folder also holds asset-only directories.
-// Shared by generateSitemap() and prerenderProjectPages().
+// Shared by generateSitemap() and prerenderPages().
 function listProjectSlugs() {
   const projectsDir = resolve(__dirname, 'public', 'projects');
   if (!existsSync(projectsDir)) return [];
@@ -580,135 +575,6 @@ function generateSitemap() {
   };
 }
 
-// Requirement: all 16 projects were served from project.html?name=<slug> — one
-//   HTML file with one generic head, so every project link unfurled as
-//   "Project Details" and non-JS crawlers saw no content
-//   (DISCOVERABILITY.md "One page per item, when the content is a collection").
-//   Runtime tags (src/seoMeta.js) fix this for Google only; unfurlers do not
-//   run JS.
-// Approach: same shape as prerenderPatternPages() — one real HTML file per
-//   project at projects/<slug>/, derived from the BUILT project.html, with its
-//   own head tags and the README rendered into #app, which the page's own
-//   render overwrites on mount. The clean URL is canonical; ?name= still works
-//   and points at it.
-function prerenderProjectPages() {
-  const SITE = 'https://devmade-ai.github.io/glow-props/';
-  const GENERIC_DESC = 'Software projects, internal tools, and reusable engineering patterns by devmade-ai.';
-
-  function escapeAttr(text) {
-    return String(text).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
-  }
-
-  function head(meta, slug) {
-    const title = escapeAttr(meta.title + ' — devmade-ai');
-    const desc = escapeAttr(meta.description);
-    const url = SITE + 'projects/' + slug + '/';
-    // Same contract as prerenderPatternPages(): every entry REPLACES a tag the
-    // template already carries, so the fail-loud guard covers all of them and
-    // no duplicate identity tags can ship.
-    return [
-      ['<title>Loading... — devmade-ai</title>', '<title>' + title + '</title>'],
-      [
-        '<meta name="description" content="' + GENERIC_DESC + '">',
-        '<meta name="description" content="' + desc + '">',
-      ],
-      [
-        '<meta property="og:title" content="devmade-ai — Project Details">',
-        '<link rel="canonical" href="' + url + '">\n  ' +
-        '<meta property="og:title" content="' + title + '">',
-      ],
-      [
-        '<meta property="og:description" content="' + GENERIC_DESC + '">',
-        '<meta property="og:description" content="' + desc + '">',
-      ],
-      [
-        '<meta property="og:url" content="' + SITE + 'project.html">',
-        '<meta property="og:url" content="' + url + '">',
-      ],
-      [
-        '<meta name="twitter:title" content="devmade-ai — Project Details">',
-        '<meta name="twitter:title" content="' + title + '">',
-      ],
-      [
-        '<meta name="twitter:description" content="' + GENERIC_DESC + '">',
-        '<meta name="twitter:description" content="' + desc + '">',
-      ],
-    ];
-  }
-
-  return {
-    name: 'prerender-project-pages',
-    async closeBundle() {
-      const distDir = resolve(__dirname, 'dist');
-      const templatePath = resolve(distDir, 'project.html');
-      if (!existsSync(templatePath)) {
-        console.warn('[prerender-projects] dist/project.html missing — skipped');
-        return;
-      }
-      const template = readFileSync(templatePath, 'utf-8');
-      const { marked } = await import('marked');
-
-      const slugs = listProjectSlugs();
-      for (const slug of slugs) {
-        const metaPath = resolve(__dirname, 'public', 'projects', slug, 'meta.json');
-        let meta;
-        try {
-          meta = JSON.parse(readFileSync(metaPath, 'utf-8'));
-        } catch (e) {
-          console.warn('[prerender-projects] ' + slug + ': invalid meta.json — skipped');
-          continue;
-        }
-        if (!meta.title || !meta.description) {
-          console.warn('[prerender-projects] ' + slug + ': meta.json missing title/description — skipped');
-          continue;
-        }
-
-        let html = template;
-        for (const [from, to] of head(meta, slug)) {
-          if (!html.includes(from)) {
-            throw new Error(
-              '[prerender-projects] expected literal not found in built project.html: ' + from +
-              '\nThe head tags changed — update prerenderProjectPages() in vite.config.js to match.',
-            );
-          }
-          html = html.replace(from, to);
-        }
-
-        // Crawlable body: project header plus the README, into #app — which the
-        // page's own render overwrites on mount, exactly like the pattern pages.
-        let body = '<h1>' + escapeAttr(meta.title) + '</h1>\n<p>' + escapeAttr(meta.description) + '</p>\n';
-        const readmePath = resolve(__dirname, 'public', 'projects', slug, 'README.md');
-        if (meta.docs && meta.docs.readme && existsSync(readmePath)) {
-          body += marked.parse(readFileSync(readmePath, 'utf-8'));
-        }
-        html = html.replace(
-          '<div id="app"',
-          '<div id="app" data-prerendered="true"',
-        ).replace(
-          /(<div id="app"[^>]*>)/,
-          '$1\n' + body,
-        );
-
-        const navLinks = (html.match(/href="\.\//g) || []).length;
-        if (navLinks === 0) {
-          throw new Error(
-            '[prerender-projects] no "./" nav links found in built project.html. ' +
-            'NAV_PREFIX changed shape — re-check that nav links still resolve from ' +
-            'projects/<slug>/ before removing this guard.',
-          );
-        }
-        html = html.replace(/href="\.\//g, 'href="/glow-props/');
-        html = rebaseDocumentRelativeAssets(html, 'prerender-projects');
-
-        const outDir = resolve(distDir, 'projects', slug);
-        mkdirSync(outDir, { recursive: true });
-        writeFileSync(resolve(outDir, 'index.html'), html);
-      }
-      console.log('[prerender-projects] ' + slugs.length + ' pages');
-    },
-  };
-}
-
 // Requirement: Multi-page site (index.html + project.html + pattern.html)
 // Approach: Vite build.rollupOptions.input for multiple HTML entry points
 // Alternative: Single-page with client-side routing — rejected, unnecessary complexity
@@ -717,6 +583,7 @@ export default defineConfig({
   plugins: [
     validateProjectMeta(),
     htmlPartials(),
+    react(),
     tailwindcss(),
     // Before VitePWA() so the icon-URL contract is locked in ahead of manifest
     // generation (PWA_ICON_CACHE_BUST.md "Plugin order").
@@ -830,10 +697,15 @@ export default defineConfig({
     }),
     copyRootFiles(),
     generatePatternManifest(),
-    prerenderPatternPages(),
-    prerenderProjectPages(),
+    prerenderPages(),
     generateSitemap(),
   ],
+  // The navbar mark is rendered by React; it gets the same content-hash
+  // versions the manifest and link tags use, via this define (client build AND
+  // the nested SSG server pass the identical object).
+  define: {
+    __ICON_VERSIONS__: JSON.stringify(ICON_VERSIONS),
+  },
   build: {
     rollupOptions: {
       input: {
