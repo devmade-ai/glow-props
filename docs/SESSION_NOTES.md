@@ -68,9 +68,9 @@ compatible — v6 needs Vite 8).
 
 ## Key context
 
-- **DEBUG_SYSTEM and mood tags: CLOSED later this session** — see the
-  addendum below. The only open repo item is the minor `verify:seo`
-  dist/robots.txt assertion (TODO.md).
+- **DEBUG_SYSTEM and mood tags: CLOSED later this session** — see the first
+  addendum below. **PR #59 review-fix pass also CLOSED** — see the second
+  addendum; no open repo items remain in TODO.md.
 - The smoke test lives in the session scratchpad, not the repo — rerun by
   starting `vite preview` and driving Chromium at the five checks above, or
   promote it into the repo as a real script if it should gate CI.
@@ -104,3 +104,46 @@ compatible — v6 needs Vite 8).
 - Verified: build + three tripwires green; app smoke test green (picker
   selector updated for mood tags); debug smoke test green (pill mounts in dev
   with live diagnostics + funnel, absent in prod, watchdog cleared both).
+
+## Addendum 2 (same session): PR #59 review-fix pass ("fix all")
+
+A 3-agent fresh-context review of PR #59 found 2 HIGH, 7 MEDIUM, ~15 LOW —
+all fixed:
+
+- **HIGH-1 (regression):** tapping a home card wiped `animate-in` (React owns
+  className; the observer's imperative classList write was lost on re-render)
+  → card faded to opacity:0. `useScrollAnimate` now returns a React-state
+  `revealed` Set keyed by `data-reveal-id`; cards AND section headings render
+  `animate-in` from it. Smoke test gained a card-tap regression check.
+- **HIGH-2:** both dev middlewares (`/patterns/*.md`, `/patterns/manifest.json`)
+  matched un-prefixed URLs, but configureServer middlewares run BEFORE Vite
+  strips `/glow-props/` — every dev fetch 404'd. `stripBase()` added; verified
+  live with curl (both 200 under the base).
+- **MEDIUMs:** `$`-expansion killed in applyHead/injectRoot/iconCacheBustHtml
+  (function-replacement form); `validateProjectMeta` now `this.error` (fails
+  the build as its comment promised); InstallModal got role=dialog +
+  aria-modal + labelled title + focus-in on open (the trap never engaged
+  without it); visibilitychange SW update throttled 60s + rejection swallowed;
+  applyUpdate falls back to plain reload when no worker is waiting;
+  suppressed onNeedRefresh still records `updateAvailable`; theme mediaListener
+  passes skipPersist (OS-follow is not a user choice).
+- **LOWs (selection):** Toast viewport always mounted (live region exists
+  before content) + CSS `:has` shift above the update banner; empty project
+  doc → failed state (was eternal Loading); per-fetch AbortControllers with
+  timers cleared after body parse; retry offered on all load failures;
+  isSafeUrl on meta.json hrefs + protocol-relative `//` rejected + image
+  renderer override + relative `X.md` links anchored to `<base>/patterns/`;
+  debug probe reads durable `__pwaPromptCaptured`; pill auto-scroll keyed on
+  last entry id; install-funnel Clear button; watchdog cleared from PageShell
+  effect (post-commit, not module eval) and message differentiates prerendered
+  pages; theme.js rAFs tracked + cancelled in dispose; install analytics via
+  safeStorage; stale comments fixed (main.css, seoMeta.js, pattern/project
+  html, CHROMIUM_BROWSERS).
+- **Tripwires hardened:** verify-icons dropped the meaningless plugin-order
+  assert (VitePWA is enforce:'post'), requires the navbar mark on the SSG'd
+  index, asserts prerendered pages are precached; verify-seo counts only
+  manifest-eligible pattern docs (frontmatter-parsed, quote-stripped) and
+  asserts dist/robots.txt (closing the last TODO item); verify-timer-cleanup
+  checks inline scripts PER BLOCK and pairs requestAnimationFrame.
+- Verified: build + three tripwires green, dev middlewares curl-checked, both
+  smoke suites green (incl. new card-tap + heading-reveal checks).

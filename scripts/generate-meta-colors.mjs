@@ -86,19 +86,6 @@ function wrapArray(varName, arr, indent) {
   return lines.join('\n');
 }
 
-function buildMetaColorsBlock() {
-  const lines = ['  var META_COLORS = {'];
-  const all = [...lightThemes, ...darkThemes];
-  for (let i = 0; i < all.length; i++) {
-    const n = all[i];
-    const comma = i < all.length - 1 ? ',' : '';
-    const pad = n.length < 13 ? ' '.repeat(13 - n.length) : ' ';
-    lines.push(`    ${n}:${pad}'${metaColors[n]}'${comma}`);
-  }
-  lines.push('  };');
-  return lines.join('\n');
-}
-
 function buildBootstrapMc() {
   const all = [...lightThemes, ...darkThemes];
   const entries = all.map(n => `${n}:'${metaColors[n]}'`);

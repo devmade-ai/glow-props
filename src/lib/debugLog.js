@@ -126,7 +126,10 @@ export async function runDiagnostics() {
     || navigator.standalone === true;
   results.push({ label: 'Standalone', status: standalone ? 'pass' : 'warn', detail: String(standalone) });
 
-  const hasPrompt = !!window.__pwaInstallPromptEvent;
+  // __pwaPromptCaptured, not __pwaInstallPromptEvent — src/lib/pwa.js consumes
+  // (deletes) the event object when it takes ownership, so probing the event
+  // itself would report "Not received" on every page where PWA init ran.
+  const hasPrompt = !!(window.__pwaPromptCaptured || window.__pwaInstallPromptEvent);
   results.push({ label: 'Install Prompt', status: hasPrompt ? 'pass' : 'warn', detail: hasPrompt ? 'Captured' : 'Not received' });
 
   return results;

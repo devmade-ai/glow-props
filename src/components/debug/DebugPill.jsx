@@ -10,6 +10,7 @@ import {
   debugGetEntries, debugSubscribe, debugClear, debugGenerateReport, runDiagnostics,
 } from '../../lib/debugLog.js';
 import { clipboardWrite } from '../../lib/markdown.js';
+import { safeLocalGet, safeLocalRemove } from '../../lib/safeStorage.js';
 
 const MAX_ENTRIES = 200;
 
@@ -61,9 +62,12 @@ function formatTime(timestamp) {
 
 function LogTab({ entries }) {
   const endRef = useRef(null);
+  // Keyed on the LAST entry's id, not entries.length — once the circular
+  // buffer is full the length pins at 200 and a length dep stops scrolling.
+  const lastId = entries.length > 0 ? entries[entries.length - 1].id : -1;
   useEffect(() => {
     endRef.current?.scrollIntoView({ block: 'nearest' });
-  }, [entries.length]);
+  }, [lastId]);
 
   if (entries.length === 0) return <div style={{ color: '#64748b' }}>No entries.</div>;
   return (
@@ -102,9 +106,11 @@ function EnvTab() {
   ));
 }
 
+const INSTALL_EVENTS_KEY = 'pwa-install-events';
+
 function readInstallEvents() {
   try {
-    return JSON.parse(localStorage.getItem('pwa-install-events') || '[]');
+    return JSON.parse(safeLocalGet(INSTALL_EVENTS_KEY) || '[]');
   } catch {
     return [];
   }
@@ -112,6 +118,7 @@ function readInstallEvents() {
 
 function PwaTab() {
   const [results, setResults] = useState(null);
+  const [installEvents, setInstallEvents] = useState(readInstallEvents);
   // Monotonic counter for stale-run cancellation — closing and reopening the
   // panel while probes are in flight must drop the stale results.
   const runRef = useRef(0);
@@ -123,8 +130,6 @@ function PwaTab() {
     });
     return () => { runRef.current++; };
   }, []);
-
-  const installEvents = readInstallEvents();
 
   return (
     <>
@@ -139,8 +144,17 @@ function PwaTab() {
           </div>
         ))
       )}
-      <div style={{ color: '#94a3b8', margin: '8px 0 4px' }}>
-        Install funnel ({installEvents.length})
+      <div style={{ color: '#94a3b8', margin: '8px 0 4px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+        <span>Install funnel ({installEvents.length})</span>
+        {installEvents.length > 0 && (
+          <button
+            type="button"
+            style={{ ...S.action, marginLeft: 0 }}
+            onClick={() => { safeLocalRemove(INSTALL_EVENTS_KEY); setInstallEvents([]); }}
+          >
+            Clear
+          </button>
+        )}
       </div>
       {installEvents.length === 0 ? (
         <div style={{ color: '#64748b' }}>No install events recorded.</div>

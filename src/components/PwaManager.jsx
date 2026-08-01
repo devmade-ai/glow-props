@@ -53,7 +53,7 @@ export function PwaManager({ children }) {
         <InstallModal
           instructions={getInstallInstructions()}
           onClose={closeInstallModal}
-          onDismiss={() => { dismissInstall(); }}
+          onDismiss={dismissInstall}
         />
       )}
     </PwaContext.Provider>

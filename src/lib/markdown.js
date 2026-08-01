@@ -10,12 +10,17 @@
 
 import { marked } from 'marked';
 
-// Requirement: Prevent javascript:/data: protocol injection in URLs
+// Requirement: Prevent javascript:/data: protocol injection in URLs.
+//   Trust boundary: the markdown and meta.json this guards are repo-controlled
+//   today, but they're fetched at runtime and rendered as HTML — the guard is
+//   what keeps a compromised or mistaken doc from becoming script execution.
 // Approach: Decode percent-encoded characters FIRST, then allowlist http(s)
-//   and relative URLs.
+//   and relative URLs. Protocol-relative (//evil.com) is rejected — it slips
+//   past a naive "starts with /" relative check while pointing off-site.
 export function isSafeUrl(url) {
   let decoded;
   try { decoded = decodeURIComponent(url); } catch { return false; }
+  if (decoded.startsWith('//')) return false;
   if (/^https?:\/\//i.test(decoded)) return true;
   if (/^[a-z0-9]/i.test(decoded) && !/:/.test(decoded)) return true;
   if (decoded.startsWith('/') || decoded.startsWith('#') || decoded.startsWith('.')) return true;
@@ -53,8 +58,25 @@ const renderer = {
 
   link({ href, tokens }) {
     if (!isSafeUrl(href)) return this.parser.parseInline(tokens);
-    return '<a href="' + escapeHtml(href) + '" class="link link-primary">' +
+    // Pattern docs cross-reference each other with bare filenames
+    // ("TIMER_LEAKS.md"). Relative to a /patterns/<slug>/ page that resolves
+    // to /patterns/<slug>/TIMER_LEAKS.md — a 404. Anchor them to the served
+    // copies under <base>/patterns/ instead, where every doc actually lives.
+    let resolved = href;
+    if (/^[\w.-]+\.md$/i.test(href)) {
+      resolved = import.meta.env.BASE_URL + 'patterns/' + href;
+    }
+    return '<a href="' + escapeHtml(resolved) + '" class="link link-primary">' +
       this.parser.parseInline(tokens) + '</a>';
+  },
+
+  // Explicit override so img src goes through the same URL guard as links —
+  // marked's default renderer does not block javascript:/data: sources.
+  image({ href, title, text }) {
+    if (!isSafeUrl(href)) return escapeHtml(text || '');
+    return '<img src="' + escapeHtml(href) + '" alt="' + escapeHtml(text || '') + '"' +
+      (title ? ' title="' + escapeHtml(title) + '"' : '') +
+      ' class="max-w-full rounded-lg" loading="lazy">';
   },
 
   strong({ tokens }) {

@@ -124,10 +124,16 @@
     };
     window.__debugLoadTimer = setTimeout(function () {
       if (!window.__debugReactMounted) {
+        var root = document.getElementById('root');
+        // Prerendered pages already show real content when the bundle dies —
+        // "taking longer to load" would be untrue there. Say what actually
+        // failed in each case, in plain language.
+        var hasContent = !!(root && root.children.length > 0);
         var warning = document.createElement('p');
         warning.style.cssText = 'color:#b45309;font-size:14px;margin:12px auto;max-width:32rem;text-align:center;font-family:system-ui,sans-serif';
-        warning.textContent = 'This page is taking longer than usual to load. Check your connection and reload the page.';
-        var root = document.getElementById('root');
+        warning.textContent = hasContent
+          ? 'Some parts of this page didn’t finish loading, so menus and buttons may not respond. Check your connection and reload the page.'
+          : 'This page is taking longer than usual to load. Check your connection and reload the page.';
         if (root) root.appendChild(warning);
       }
     }, 20000);
@@ -148,6 +154,9 @@
     window.__pwaInstallCapture = function (e) {
       e.preventDefault();
       window.__pwaInstallPromptEvent = e;
+      // Durable flag for the debug diagnostics probe — pwa.js deletes the
+      // event object when it consumes it, so the probe checks this instead.
+      window.__pwaPromptCaptured = true;
     };
     window.addEventListener('beforeinstallprompt', window.__pwaInstallCapture);
   }

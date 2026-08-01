@@ -23,6 +23,7 @@ const listeners = new Set();
 let storageListener = null;
 let mediaQuery = null;
 let mediaListener = null;
+let switchingRafIds = [];
 
 function notify() {
   listeners.forEach((fn) => {
@@ -68,9 +69,14 @@ export function applyTheme(dark, themeName, skipPersist) {
   root.classList.add('theme-switching');
   root.classList.toggle('dark', dark);
   root.setAttribute('data-theme', themeName);
-  requestAnimationFrame(() => {
-    requestAnimationFrame(() => root.classList.remove('theme-switching'));
-  });
+  // Both frame ids tracked so the dispose block can cancel a mid-flight pair —
+  // an orphaned callback after HMR teardown would still touch the DOM.
+  switchingRafIds = [requestAnimationFrame(() => {
+    switchingRafIds[1] = requestAnimationFrame(() => {
+      switchingRafIds = [];
+      root.classList.remove('theme-switching');
+    });
+  })];
 
   updateMetaThemeColor(themeName);
 
@@ -126,10 +132,13 @@ if (typeof window !== 'undefined' && !window.__themeListenersAttached) {
   window.addEventListener('storage', storageListener);
 
   // OS preference is a fallback only — never override an explicit choice.
+  // skipPersist: following the OS is not a user choice. Persisting here would
+  // turn the first OS flip into a stored darkMode value, and from then on the
+  // user's OS preference would be silently ignored.
   mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
   mediaListener = (e) => {
     if (safeLocalGet('darkMode') === null) {
-      applyTheme(e.matches, getStoredTheme(e.matches));
+      applyTheme(e.matches, getStoredTheme(e.matches), true);
     }
   };
   mediaQuery.addEventListener('change', mediaListener);
@@ -139,6 +148,9 @@ if (import.meta.hot) {
   import.meta.hot.dispose(() => {
     if (storageListener) window.removeEventListener('storage', storageListener);
     if (mediaQuery && mediaListener) mediaQuery.removeEventListener('change', mediaListener);
+    switchingRafIds.forEach((id) => cancelAnimationFrame(id));
+    switchingRafIds = [];
+    document.documentElement.classList.remove('theme-switching');
     listeners.clear();
     window.__themeListenersAttached = false;
   });

@@ -9,24 +9,37 @@ import { HERO, PROJECTS, TOOLS } from '../data/homeContent.js';
 
 const BASE = import.meta.env.BASE_URL;
 
-// Scroll-triggered fade-in: observe every .scroll-animate under the container,
-// add .animate-in on first intersection. Observer disconnected on unmount.
+// Scroll-triggered fade-in. The revealed set is REACT STATE, not an imperative
+// classList write: these elements' className is React-owned (card activation
+// re-renders it), and React's attribute write would wipe any class an observer
+// added behind its back — tapping a card made it fade to opacity:0 until the
+// review caught it. Observer disconnected on unmount; revealed elements are
+// skipped on re-observe (new pattern cards arrive after the manifest loads).
 function useScrollAnimate(containerRef, deps) {
+  const [revealed, setRevealed] = useState(() => new Set());
+  const revealedRef = useRef(revealed);
+  revealedRef.current = revealed;
+
   useEffect(() => {
     const container = containerRef.current;
     if (!container) return;
     const observer = new IntersectionObserver((entries) => {
       entries.forEach((entry) => {
         if (entry.isIntersecting) {
-          entry.target.classList.add('animate-in');
+          const id = entry.target.dataset.revealId;
           observer.unobserve(entry.target);
+          if (id) setRevealed((prev) => (prev.has(id) ? prev : new Set(prev).add(id)));
         }
       });
     }, { threshold: 0.1, rootMargin: '0px 0px -40px 0px' });
-    container.querySelectorAll('.scroll-animate').forEach((el) => observer.observe(el));
+    container.querySelectorAll('[data-reveal-id]').forEach((el) => {
+      if (!revealedRef.current.has(el.dataset.revealId)) observer.observe(el);
+    });
     return () => observer.disconnect();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, deps);
+
+  return revealed;
 }
 
 // Card tap behavior: tapping a card reveals its action links (card-active);
@@ -49,18 +62,20 @@ function useActiveCard() {
   return [activeId, toggle];
 }
 
-function cardClass(animate, active, delay) {
+function cardClass(animate, active, shown) {
   return 'card bg-base-200/50 border border-base-300 card-interactive' +
     (animate ? ' scroll-animate' : '') +
+    (shown ? ' animate-in' : '') +
     (active ? ' card-active' : '');
 }
 
-function ProjectCard({ project, animate, active, onToggle, delay }) {
+function ProjectCard({ project, animate, active, shown, onToggle, delay }) {
   return (
     <div
-      className={cardClass(animate, active)}
+      className={cardClass(animate, active, shown)}
       data-delay={animate ? delay : undefined}
       data-card-id={project.slug}
+      data-reveal-id={animate ? `project-${project.slug}` : undefined}
       onClick={(e) => onToggle(project.slug, e)}
     >
       <div className="card-body">
@@ -90,13 +105,14 @@ function ProjectCard({ project, animate, active, onToggle, delay }) {
   );
 }
 
-function ToolCard({ tool, animate, active, onToggle, delay }) {
+function ToolCard({ tool, animate, active, shown, onToggle, delay }) {
   const id = tool.slug || tool.title;
   return (
     <div
-      className={cardClass(animate, active)}
+      className={cardClass(animate, active, shown)}
       data-delay={animate ? delay : undefined}
       data-card-id={id}
+      data-reveal-id={animate ? `tool-${id}` : undefined}
       onClick={(e) => onToggle(id, e)}
     >
       <div className="card-body py-4">
@@ -124,12 +140,13 @@ function ToolCard({ tool, animate, active, onToggle, delay }) {
   );
 }
 
-function PatternCard({ pattern, animate, active, onToggle, delay }) {
+function PatternCard({ pattern, animate, active, shown, onToggle, delay }) {
   return (
     <div
-      className={cardClass(animate, active)}
+      className={cardClass(animate, active, shown)}
       data-delay={animate ? delay : undefined}
       data-card-id={pattern.slug}
+      data-reveal-id={animate ? `pattern-${pattern.slug}` : undefined}
       onClick={(e) => onToggle(pattern.slug, e)}
     >
       <div className="card-body">
@@ -172,7 +189,11 @@ export function HomePage({ patterns: initialPatterns = null, prerender = false }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  useScrollAnimate(containerRef, [patterns]);
+  const revealed = useScrollAnimate(containerRef, [patterns]);
+  // Section headings share the same reveal mechanism as the cards — a bare
+  // scroll-animate class with no reveal path would stay at opacity:0 forever.
+  const headingClass = (base, id) =>
+    base + (animate ? ' scroll-animate' + (revealed.has(id) ? ' animate-in' : '') : '');
 
   return (
     <div ref={containerRef}>
@@ -186,8 +207,8 @@ export function HomePage({ patterns: initialPatterns = null, prerender = false }
       </header>
 
       <section id="projects" className="mb-12">
-        <h2 className={`text-2xl font-bold mb-2${animate ? ' scroll-animate' : ''}`}>Projects</h2>
-        <p className={`text-base-content/60 mb-6 max-w-xl${animate ? ' scroll-animate' : ''}`}>
+        <h2 className={headingClass('text-2xl font-bold mb-2', 'projects-h')} data-reveal-id={animate ? 'projects-h' : undefined}>Projects</h2>
+        <p className={headingClass('text-base-content/60 mb-6 max-w-xl', 'projects-p')} data-reveal-id={animate ? 'projects-p' : undefined}>
           User-facing applications — each solves a real problem.
         </p>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
@@ -197,6 +218,7 @@ export function HomePage({ patterns: initialPatterns = null, prerender = false }
               project={project}
               animate={animate}
               active={activeId === project.slug}
+              shown={revealed.has(`project-${project.slug}`)}
               onToggle={toggleActive}
               delay={String((i % 3) + 1)}
             />
@@ -205,8 +227,8 @@ export function HomePage({ patterns: initialPatterns = null, prerender = false }
       </section>
 
       <section id="tools" className="mb-12">
-        <h2 className={`text-2xl font-bold mb-2${animate ? ' scroll-animate' : ''}`}>Internal Tools</h2>
-        <p className={`text-base-content/60 mb-6 max-w-xl${animate ? ' scroll-animate' : ''}`}>
+        <h2 className={headingClass('text-2xl font-bold mb-2', 'tools-h')} data-reveal-id={animate ? 'tools-h' : undefined}>Internal Tools</h2>
+        <p className={headingClass('text-base-content/60 mb-6 max-w-xl', 'tools-p')} data-reveal-id={animate ? 'tools-p' : undefined}>
           Infrastructure, analytics, and supporting repositories.
         </p>
         <div className="space-y-3">
@@ -216,6 +238,7 @@ export function HomePage({ patterns: initialPatterns = null, prerender = false }
               tool={tool}
               animate={animate}
               active={activeId === (tool.slug || tool.title)}
+              shown={revealed.has(`tool-${tool.slug || tool.title}`)}
               onToggle={toggleActive}
               delay={String((i % 4) + 1)}
             />
@@ -224,8 +247,8 @@ export function HomePage({ patterns: initialPatterns = null, prerender = false }
       </section>
 
       <section id="patterns" className="mb-12">
-        <h2 className={`text-2xl font-bold mb-2${animate ? ' scroll-animate' : ''}`}>Patterns</h2>
-        <p className={`text-base-content/60 mb-6 max-w-xl${animate ? ' scroll-animate' : ''}`}>
+        <h2 className={headingClass('text-2xl font-bold mb-2', 'patterns-h')} data-reveal-id={animate ? 'patterns-h' : undefined}>Patterns</h2>
+        <p className={headingClass('text-base-content/60 mb-6 max-w-xl', 'patterns-p')} data-reveal-id={animate ? 'patterns-p' : undefined}>
           Reusable implementation patterns extracted from real projects. Each is documented with
           requirements, approach, alternatives considered, and key lessons.{' '}
           <a href={`${BASE}CLAUDE.md`} className="link link-primary">View full reference</a>.
@@ -238,6 +261,7 @@ export function HomePage({ patterns: initialPatterns = null, prerender = false }
                 pattern={pattern}
                 animate={animate}
                 active={activeId === pattern.slug}
+                shown={revealed.has(`pattern-${pattern.slug}`)}
                 onToggle={toggleActive}
                 delay={String((i % 3) + 1)}
               />

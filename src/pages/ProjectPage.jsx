@@ -2,8 +2,8 @@
 // (canonical) and the legacy project.html?name=<slug>. ProjectView is the
 // shared presentational piece: entry-server renders it at build time with the
 // README only; the client render adds the interactive doc tabs.
-import { useEffect, useState } from 'react';
-import { renderMarkdown } from '../lib/markdown.js';
+import { useEffect, useRef, useState } from 'react';
+import { renderMarkdown, isSafeUrl } from '../lib/markdown.js';
 import { applyPageSeo } from '../seoMeta.js';
 import { Markdown, CopyMarkdownButton } from '../components/Markdown.jsx';
 
@@ -69,11 +69,14 @@ export function ProjectView({ meta, slug, docs, currentTab, onTab }) {
           </span>
         </div>
         <p className="text-base-content/60 mt-2">{meta.description}</p>
+        {/* isSafeUrl: meta.json is repo-controlled but fetched at runtime —
+            the same trust boundary the markdown renderer enforces. A
+            javascript: URL here would execute on click. */}
         <div className="flex flex-wrap gap-2 mt-3">
-          {meta.liveUrl && (
+          {meta.liveUrl && isSafeUrl(meta.liveUrl) && (
             <a href={meta.liveUrl} target="_blank" rel="noopener" className="btn btn-outline btn-sm gap-1">Visit app</a>
           )}
-          {meta.repoUrl && (
+          {meta.repoUrl && isSafeUrl(meta.repoUrl) && (
             <a href={meta.repoUrl} target="_blank" rel="noopener" className="btn btn-outline btn-sm gap-1">Source code</a>
           )}
           {!meta.repoUrl && meta.repo === 'private' && (
@@ -207,22 +210,25 @@ export function ProjectPage() {
     }
 
     const basePath = `${BASE}projects/${encodeURIComponent(slug)}/`;
-    const controller = new AbortController();
-    const timers = [];
+    // Every fetch (meta + each doc) gets its own controller, all aborted on
+    // unmount; timers clear in finally — after the body parses, so a stalled
+    // body stream still times out. timedOut distinguishes a timeout abort
+    // (show the error) from an unmount abort (stay silent).
+    const controllers = [];
     let timedOut = false;
-    const withTimeout = (ms) => {
-      const id = setTimeout(() => { timedOut = true; controller.abort(); }, ms);
-      timers.push(id);
-      return id;
+    const fetchWithTimeout = (url, ms, parse) => {
+      const controller = new AbortController();
+      controllers.push(controller);
+      const timer = setTimeout(() => { timedOut = true; controller.abort(); }, ms);
+      return fetch(url, { signal: controller.signal })
+        .then((r) => {
+          if (!r.ok) throw new Error('HTTP ' + r.status);
+          return parse(r);
+        })
+        .finally(() => clearTimeout(timer));
     };
 
-    const metaTimeout = withTimeout(10000);
-    fetch(basePath + 'meta.json', { signal: controller.signal })
-      .then((r) => {
-        clearTimeout(metaTimeout);
-        if (!r.ok) throw new Error('HTTP ' + r.status);
-        return r.json();
-      })
+    fetchWithTimeout(basePath + 'meta.json', 10000, (r) => r.json())
       .then((data) => {
         const meta = normalizeMeta(data, slug);
         applyPageSeo({
@@ -235,22 +241,18 @@ export function ProjectPage() {
         setState({ status: 'loaded', meta, slug });
 
         // Each declared doc fetches independently; a failure marks that tab
-        // failed without sinking the page. 15s per doc, cleared on both paths.
+        // failed without sinking the page.
         DOC_FILES.forEach((doc) => {
           if (!meta.docs[doc.key]) return;
-          const docController = new AbortController();
-          const docTimeout = setTimeout(() => docController.abort(), 15000);
-          timers.push(docTimeout);
-          fetch(basePath + doc.file, { signal: docController.signal })
-            .then((r) => {
-              clearTimeout(docTimeout);
-              return r.ok ? r.text() : null;
-            })
+          fetchWithTimeout(basePath + doc.file, 15000, (r) => r.text())
             .then((text) => {
-              setDocs((current) => ({ ...current, [doc.key]: text ?? null }));
+              // An empty/whitespace file is a failed doc, not content — a bare
+              // '' would satisfy neither the loaded nor the failed branch in
+              // ProjectView and the tab would show "Loading..." forever.
+              setDocs((current) => ({ ...current, [doc.key]: text && text.trim() ? text : null }));
             })
-            .catch(() => {
-              clearTimeout(docTimeout);
+            .catch((err) => {
+              if (err && err.name === 'AbortError' && !timedOut) return;   // unmount
               setDocs((current) => ({ ...current, [doc.key]: null }));
             });
         });
@@ -259,26 +261,36 @@ export function ProjectPage() {
         const isAbort = err && err.name === 'AbortError';
         if (isAbort && !timedOut) return;   // unmount abort — nothing to report
         const isTimeout = isAbort && timedOut;
+        // A 404 is a genuinely missing project; anything else (timeout,
+        // network drop, 5xx) deserves a retry.
+        const isNotFound = !isAbort && /^HTTP 404$/.test(err && err.message || '');
         setState({
           status: 'error',
-          title: isTimeout ? 'Request timed out' : 'Project not found',
-          body: isTimeout
-            ? 'Could not load project data. Check your connection and try again.'
-            : `"${slug}" does not exist.`,
-          retry: isTimeout,
+          title: isTimeout ? 'Request timed out' : isNotFound ? 'Project not found' : 'Could not load project',
+          body: isNotFound
+            ? `"${slug}" does not exist.`
+            : 'Something went wrong loading this project. Check your connection and try again.',
+          retry: !isNotFound,
         });
       });
 
     return () => {
-      timers.forEach(clearTimeout);
-      controller.abort();
+      controllers.forEach((c) => c.abort());
     };
   }, []);
 
   // Screen readers hear the updated content without navigating back to it.
+  // The rAF id lives in a ref so unmount can cancel a mid-flight callback
+  // (TIMER_LEAKS.md — every registration needs a reachable release).
+  const tabFocusRafRef = useRef(null);
+  useEffect(() => () => {
+    if (tabFocusRafRef.current !== null) cancelAnimationFrame(tabFocusRafRef.current);
+  }, []);
   const onTab = (key) => {
     setCurrentTab(key);
-    requestAnimationFrame(() => {
+    if (tabFocusRafRef.current !== null) cancelAnimationFrame(tabFocusRafRef.current);
+    tabFocusRafRef.current = requestAnimationFrame(() => {
+      tabFocusRafRef.current = null;
       const content = document.getElementById('doc-content');
       if (content) {
         content.setAttribute('tabindex', '-1');

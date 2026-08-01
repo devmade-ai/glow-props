@@ -28,9 +28,13 @@ const UPDATED_AT_KEY = 'pwa-updated-at';         // sessionStorage: timestamp of
 const JUST_UPDATED_WINDOW_MS = 30 * 1000;        // fleet-standard false-re-detection suppression
 const LAUNCH_APPLY_WINDOW_MS = 10 * 1000;        // how long launch eligibility stays valid
 const UPDATE_CHECK_SETTLE_MS = 1500;             // fleet-standard settle after registration.update()
+const VISIBILITY_CHECK_MIN_MS = 60 * 1000;       // throttle for visibilitychange update checks
 
-// Single source of truth for which browsers support beforeinstallprompt —
-// shared by supportsAutoInstall and the diagnostic fallback (PWA_SYSTEM.md).
+// Single source of truth for the Chromium-family browsers where the native
+// beforeinstallprompt MAY fire (desktop/Android only — on iOS every browser is
+// WebKit and none of them fire it; the iOS case is handled separately in
+// getInstallInstructions). Shared by supportsAutoInstall and the diagnostic
+// fallback (PWA_SYSTEM.md).
 export const CHROMIUM_BROWSERS = ['chrome', 'edge', 'brave', 'opera', 'samsung', 'vivaldi', 'arc'];
 
 export const BROWSER_DISPLAY_NAMES = {
@@ -109,11 +113,11 @@ function debugHook(severity, event, details) {
 function trackInstallEvent(event) {
   try {
     const key = 'pwa-install-events';
-    const events = JSON.parse(localStorage.getItem(key) || '[]');
+    const events = JSON.parse(safeLocalGet(key) || '[]');
     events.push({ event, timestamp: new Date().toISOString(), browser: state.browser });
     if (events.length > 50) events.splice(0, events.length - 50);
-    localStorage.setItem(key, JSON.stringify(events));
-  } catch { /* best effort */ }
+    safeLocalSet(key, JSON.stringify(events));
+  } catch { /* best effort — analytics must never break the install flow */ }
 }
 
 // Returns an unsubscribe fn — callers store and invoke it on cleanup.
@@ -164,6 +168,15 @@ export function applyUpdate() {
   markUpdateApplied();
   debugHook('info', 'Applying update (skipWaiting + reload)');
   emit({ type: 'toast', message: 'Updating to the latest version…', tone: 'info' });
+  // If the waiting worker is gone (it activated on its own, or the browser
+  // discarded it), updateSW(true) has nothing to skipWaiting on and never
+  // reloads — the Update button would silently do nothing. A plain reload
+  // picks up whatever worker is now controlling.
+  if (swRegistration && !swRegistration.waiting) {
+    dismissUpdateBanner();
+    window.location.reload();
+    return;
+  }
   if (updateSW) updateSW(true);
 }
 
@@ -394,6 +407,9 @@ function init() {
   if (window.__pwaInstallPromptEvent) {
     deferredPrompt = window.__pwaInstallPromptEvent;
     delete window.__pwaInstallPromptEvent;
+    // Durable "the prompt fired" flag for the debug diagnostics probe — the
+    // event object itself is consumed here, so the probe can't test for it.
+    window.__pwaPromptCaptured = true;
     trackInstallEvent('prompted');
   }
 
@@ -403,6 +419,9 @@ function init() {
       // noise — without this guard the banner pops right after the update it
       // announces.
       if (wasJustUpdated()) {
+        // Still record the fact — a manual "Check for updates" during the
+        // suppression window must report update-available, not up-to-date.
+        updateAvailable = true;
         launchApplyUntil = 0;
         return;
       }
@@ -440,6 +459,7 @@ function init() {
   beforeInstallPromptListener = (e) => {
     e.preventDefault();
     deferredPrompt = e;
+    window.__pwaPromptCaptured = true;
     trackInstallEvent('prompted');
     updateInstallVisibility();
   };
@@ -469,9 +489,15 @@ function init() {
 
   // Catch updates when the user returns to a long-lived tab — the hourly poll
   // alone leaves backgrounded tabs stale (PWA_SYSTEM.md key lesson 15).
+  // Throttled: rapid tab-switching would otherwise hammer the server with
+  // update fetches. Rejections swallowed — update() throws offline, and an
+  // unhandled rejection on every offline tab-switch is pure console noise.
+  let lastVisibilityCheck = 0;
   visibilityListener = () => {
-    if (document.visibilityState === 'visible' && swRegistration) {
-      swRegistration.update();
+    if (document.visibilityState === 'visible' && swRegistration &&
+        Date.now() - lastVisibilityCheck > VISIBILITY_CHECK_MIN_MS) {
+      lastVisibilityCheck = Date.now();
+      swRegistration.update().catch(() => { /* offline — the next check retries */ });
     }
   };
   document.addEventListener('visibilitychange', visibilityListener);
@@ -490,7 +516,16 @@ function init() {
     diagnosticTimeoutId = setTimeout(() => {
       diagnosticTimeoutId = null;
       if (!deferredPrompt) {
-        console.warn('[PWA] beforeinstallprompt not received after 5s', {
+        // DEV-only console noise; the debug pill gets it either way. In prod
+        // this state is normal (90-day suppression) — not warning-worthy.
+        if (import.meta.env.DEV) {
+          console.warn('[PWA] beforeinstallprompt not received after 5s', {
+            browser: state.browser,
+            hasManifest: !!document.querySelector('link[rel="manifest"]'),
+            hasSW: !!(navigator.serviceWorker && navigator.serviceWorker.controller),
+          });
+        }
+        debugHook('warn', 'beforeinstallprompt not received after 5s', {
           browser: state.browser,
           hasManifest: !!document.querySelector('link[rel="manifest"]'),
           hasSW: !!(navigator.serviceWorker && navigator.serviceWorker.controller),

@@ -74,26 +74,27 @@ export function PatternPage() {
       return;
     }
 
-    // Timeouts abort the fetch instead of spinning forever; both timers are
-    // cleared on every completion path AND on unmount. timedOut distinguishes
-    // a timeout abort (show the retry error) from an unmount abort (stay
-    // silent — the component is gone).
-    const controller = new AbortController();
-    const timers = [];
+    // Each fetch gets its OWN controller + timeout: a shared controller lets
+    // one request's timeout abort the other mid-flight, and the timer is
+    // cleared in finally — after the BODY parses, not at headers, so a stalled
+    // body stream still times out. timedOut distinguishes a timeout abort
+    // (show the retry error) from an unmount abort (stay silent — the
+    // component is gone).
+    const controllers = [];
     let timedOut = false;
-    const withTimeout = (ms) => {
-      const id = setTimeout(() => { timedOut = true; controller.abort(); }, ms);
-      timers.push(id);
-      return id;
+    const fetchWithTimeout = (url, ms, parse) => {
+      const controller = new AbortController();
+      controllers.push(controller);
+      const timer = setTimeout(() => { timedOut = true; controller.abort(); }, ms);
+      return fetch(url, { signal: controller.signal })
+        .then((r) => {
+          if (!r.ok) throw new Error('HTTP ' + r.status);
+          return parse(r);
+        })
+        .finally(() => clearTimeout(timer));
     };
 
-    const manifestTimeout = withTimeout(10000);
-    fetch(`${BASE}patterns/manifest.json`, { signal: controller.signal })
-      .then((r) => {
-        clearTimeout(manifestTimeout);
-        if (!r.ok) throw new Error('HTTP ' + r.status);
-        return r.json();
-      })
+    fetchWithTimeout(`${BASE}patterns/manifest.json`, 10000, (r) => r.json())
       .then((manifest) => {
         const pattern = manifest.patterns.find((p) => p.slug === slug);
         if (!pattern) {
@@ -107,13 +108,7 @@ export function PatternPage() {
           // point and must not compete with it for the same content.
           path: `patterns/${encodeURIComponent(pattern.slug)}/`,
         });
-        const fetchTimeout = withTimeout(15000);
-        return fetch(`${BASE}patterns/${pattern.file}`, { signal: controller.signal })
-          .then((r) => {
-            clearTimeout(fetchTimeout);
-            if (!r.ok) throw new Error('HTTP ' + r.status);
-            return r.text();
-          })
+        return fetchWithTimeout(`${BASE}patterns/${pattern.file}`, 15000, (r) => r.text())
           .then((text) => {
             setState({ status: 'loaded', pattern, rawMarkdown: text, html: renderMarkdown(text) });
           });
@@ -122,19 +117,18 @@ export function PatternPage() {
         const isAbort = err && err.name === 'AbortError';
         if (isAbort && !timedOut) return;   // unmount abort — nothing to report
         const isTimeout = isAbort && timedOut;
+        // Retry offered on every load failure, not only timeouts — a flaky
+        // connection produces plain network errors just as often.
         setState({
           status: 'error',
           title: isTimeout ? 'Request timed out' : 'Could not load pattern',
-          body: isTimeout
-            ? 'Could not load pattern data. Check your connection and try again.'
-            : 'The pattern file could not be loaded.',
-          retry: isTimeout,
+          body: 'Something went wrong loading this pattern. Check your connection and try again.',
+          retry: true,
         });
       });
 
     return () => {
-      timers.forEach(clearTimeout);
-      controller.abort();
+      controllers.forEach((c) => c.abort());
     };
   }, []);
 

@@ -2,7 +2,7 @@
 //   users, focus-trapped for keyboard accessibility (PWA_SYSTEM.md).
 // Approach: data-driven — renders whatever getInstallInstructions() returned.
 //   Adding a browser is a switch case in src/lib/pwa.js, not a new component.
-import { useRef } from 'react';
+import { useEffect, useRef } from 'react';
 import { useFocusTrap } from '../hooks/useFocusTrap.js';
 import { useEscapeKey } from '../hooks/useEscapeKey.js';
 
@@ -19,8 +19,22 @@ export function InstallModal({ instructions, onClose, onDismiss }) {
   useFocusTrap(contentRef, true);
   useEscapeKey(true, onClose);
 
+  // The trap only cycles focus that is already INSIDE the container — without
+  // moving focus in on open, Tab keeps walking the page underneath and screen
+  // readers never announce the dialog. rAF so the elements exist; cancelled on
+  // unmount (TIMER_LEAKS.md).
+  useEffect(() => {
+    const rafId = requestAnimationFrame(() => {
+      contentRef.current?.querySelector('button')?.focus();
+    });
+    return () => cancelAnimationFrame(rafId);
+  }, []);
+
   return (
     <div
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="install-modal-title"
       className="fixed inset-0 z-60 flex items-center justify-center no-print"
       style={{
         padding: 'max(1rem, env(safe-area-inset-top)) max(1rem, env(safe-area-inset-right)) max(1rem, env(safe-area-inset-bottom)) max(1rem, env(safe-area-inset-left))',
@@ -40,7 +54,7 @@ export function InstallModal({ instructions, onClose, onDismiss }) {
             </svg>
           </div>
           <div>
-            <h3 className="text-lg font-semibold text-base-content">Install Glow Props</h3>
+            <h3 id="install-modal-title" className="text-lg font-semibold text-base-content">Install Glow Props</h3>
             <p className="text-sm text-base-content/70">{instructions.browser}</p>
           </div>
         </div>

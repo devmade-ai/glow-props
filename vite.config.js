@@ -76,7 +76,9 @@ function iconCacheBustHtml() {
             );
           }
           for (const literal of found) {
-            out = out.replaceAll(literal, literal.slice(0, -1) + '?v=' + ICON_VERSIONS[relPath] + '"');
+            // Function form: a string replacement would $-expand ($&, $', $`)
+            // if a literal ever contained one — same rule as applyHead().
+            out = out.replaceAll(literal, () => literal.slice(0, -1) + '?v=' + ICON_VERSIONS[relPath] + '"');
           }
         }
         return out;
@@ -119,6 +121,14 @@ function htmlPartials() {
 // Alternative: Symlink in public/ — rejected, fragile with git across platforms.
 // Alternative: Put patterns in public/ — rejected, they live in docs/implementations/
 //   which is the canonical location referenced by CLAUDE.md.
+// Dev-server requests reach configureServer middlewares BEFORE Vite's own
+// base middleware strips the base — req.url is /glow-props/patterns/x.md, not
+// /patterns/x.md. Both dev middlewares below match on the stripped form.
+function stripBase(url) {
+  if (!url) return url;
+  return url.startsWith('/glow-props/') ? url.slice('/glow-props'.length) : url;
+}
+
 function copyRootFiles() {
   const files = ['CLAUDE.md'];
   const implDir = resolve(__dirname, 'docs', 'implementations');
@@ -127,10 +137,14 @@ function copyRootFiles() {
     // Requirement: Serve pattern docs during dev so pattern.html works locally
     // Approach: Dev server middleware rewrites /patterns/*.md to docs/implementations/*.md.
     //   Uses basename() to prevent path traversal (e.g., /patterns/../../../etc/passwd).
+    //   configureServer middlewares run BEFORE Vite strips the base, so requests
+    //   arrive as /glow-props/patterns/*.md — strip the base prefix first, or
+    //   every dev fetch misses this handler and 404s.
     configureServer(server) {
       server.middlewares.use(function (req, res, next) {
-        if (req.url && req.url.startsWith('/patterns/')) {
-          const fileName = basename(req.url.replace('/patterns/', ''));
+        const url = stripBase(req.url);
+        if (url && url.startsWith('/patterns/')) {
+          const fileName = basename(url.replace('/patterns/', ''));
           if (!fileName.endsWith('.md')) { next(); return; }
           const filePath = resolve(implDir, fileName);
           if (existsSync(filePath)) {
@@ -201,7 +215,9 @@ function validateProjectMeta() {
         }
       }
       if (errors.length > 0) {
-        this.warn('Project metadata validation warnings:\n  ' + errors.join('\n  '));
+        // this.error, not warn — the requirement above says the build fails.
+        // A warning scrolls past and the broken page ships.
+        this.error('Project metadata validation failed:\n  ' + errors.join('\n  '));
       }
     },
   };
@@ -297,7 +313,9 @@ function generatePatternManifest() {
     name: 'generate-pattern-manifest',
     configureServer(server) {
       server.middlewares.use(function (req, res, next) {
-        if (req.url === '/patterns/manifest.json') {
+        // Same base-prefix note as copyRootFiles(): dev requests arrive
+        // un-stripped, so match on the base-stripped form.
+        if (stripBase(req.url) === '/patterns/manifest.json') {
           var manifest = buildManifest();
           res.setHeader('Content-Type', 'application/json');
           res.end(JSON.stringify(manifest, null, 2));
@@ -432,7 +450,10 @@ function prerenderPages() {
           '\nThe head tags changed — update prerenderPages() in vite.config.js to match.',
         );
       }
-      html = html.replace(from, to);
+      // Function form: the replacement carries content-derived text (titles,
+      // descriptions), and String.replace $-expands $&, $', $` in string
+      // replacements — a description containing "$&" would corrupt the head.
+      html = html.replace(from, () => to);
     }
     return html;
   }
@@ -445,7 +466,9 @@ function prerenderPages() {
         ' — the root markup changed shape; update prerenderPages() to match.',
       );
     }
-    return html.replace(literal, '<div id="root">' + body + '</div>');
+    // Function form: body is rendered markdown — literal "$&" in a pattern doc
+    // would $-expand in a string replacement and duplicate the root div.
+    return html.replace(literal, () => '<div id="root">' + body + '</div>');
   }
 
   return {
@@ -489,8 +512,13 @@ function prerenderPages() {
         ));
         console.log('[prerender-pages] index.html');
 
-        // Pattern pages.
-        const patternTemplate = readFileSync(resolve(distDir, 'pattern.html'), 'utf-8');
+        // Pattern pages. Missing templates get a named error instead of a bare
+        // ENOENT — the likely cause is an entry renamed in rollupOptions.input.
+        const patternTemplatePath = resolve(distDir, 'pattern.html');
+        if (!existsSync(patternTemplatePath)) {
+          throw new Error('[prerender-pages] dist/pattern.html missing — was the pattern entry removed from rollupOptions.input?');
+        }
+        const patternTemplate = readFileSync(patternTemplatePath, 'utf-8');
         let patternCount = 0;
         for (const pattern of patterns) {
           const mdPath = resolve(__dirname, 'docs', 'implementations', pattern.file);
@@ -506,7 +534,11 @@ function prerenderPages() {
         console.log('[prerender-pages] ' + patternCount + ' pattern pages');
 
         // Project pages.
-        const projectTemplate = readFileSync(resolve(distDir, 'project.html'), 'utf-8');
+        const projectTemplatePath = resolve(distDir, 'project.html');
+        if (!existsSync(projectTemplatePath)) {
+          throw new Error('[prerender-pages] dist/project.html missing — was the project entry removed from rollupOptions.input?');
+        }
+        const projectTemplate = readFileSync(projectTemplatePath, 'utf-8');
         let projectCount = 0;
         for (const slug of listProjectSlugs()) {
           const metaPath = resolve(__dirname, 'public', 'projects', slug, 'meta.json');
@@ -639,7 +671,9 @@ export default defineConfig({
       //   URL makes workbox-precaching throw add-to-cache-list-conflicting-entries at SW
       //   evaluation, killing the whole precache layer in production.
       // Approach: globIgnores the referenced icon files; their precache entries come
-      //   solely from the versioned manifest/includeAssets injection.
+      //   solely from the versioned manifest/includeAssets injection. icon-1024.png
+      //   is the transparent APP_ICONS master — nothing references it at runtime,
+      //   so it is excluded outright rather than precached.
       workbox: {
         cleanupOutdatedCaches: true,
         globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2,json,md}'],
@@ -690,7 +724,9 @@ export default defineConfig({
         id: '/glow-props/',
         // Matches the coffee (--prefersdark default) base-100 — THEME_DARK_MODE
         // requires the manifest fallback to be a real theme color, and this is the
-        // same value the dark <meta name="theme-color"> ships with.
+        // same value the dark <meta name="theme-color"> ships with. If the default
+        // dark theme changes, re-run `npm run generate:meta-colors` and copy the
+        // coffee value it reports here — the generator does not edit this file.
         theme_color: '#261b25',
         background_color: '#ffffff',
         display: 'standalone',

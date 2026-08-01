@@ -28,16 +28,14 @@ const viteConfig = readFileSync(join(ROOT, 'vite.config.js'), 'utf8')
 if (!/function iconCacheBustHtml\s*\(/.test(viteConfig)) {
   fail('vite.config.js: iconCacheBustHtml() is not defined')
 }
-// Registered BEFORE VitePWA — locks the icon-URL contract in ahead of manifest
-// generation (pattern doc "Plugin order").
+// Registered in the plugins array. No array-ORDER assertion: VitePWA is
+// enforce:'post', so its hooks run after normal-priority plugins regardless of
+// where it sits in the array — asserting on textual position would only ever
+// produce false confidence.
 const pluginsStart = viteConfig.indexOf('plugins: [')
 const iconPluginIdx = viteConfig.indexOf('iconCacheBustHtml()', pluginsStart)
-// 'VitePWA({' — the call with its options object, not prose mentions of the name.
-const vitePwaIdx = viteConfig.indexOf('VitePWA({', pluginsStart)
 if (iconPluginIdx === -1) {
   fail('vite.config.js: iconCacheBustHtml() is defined but not registered in the plugins array')
-} else if (vitePwaIdx !== -1 && iconPluginIdx > vitePwaIdx) {
-  fail('vite.config.js: iconCacheBustHtml() must be registered BEFORE VitePWA()')
 }
 
 if (!/cleanupOutdatedCaches:\s*true/.test(viteConfig)) {
@@ -119,9 +117,16 @@ if (!existsSync(DIST)) {
       const href = link.match(/href="([^"]+)"/)?.[1] ?? ''
       if (!VERSIONED.test(href)) fail(`dist/${rel}: un-versioned icon link leaked through (${href})`)
     }
-    const navMark = html.match(/<img src="([^"]*icon-192[^"]*)"/)?.[1]
+    // Attribute-order-proof: src may not be the first attribute React emits.
+    const navMark = html.match(/<img[^>]*\bsrc="([^"]*icon-192[^"]*)"/)?.[1]
     if (navMark && !VERSIONED.test(navMark)) {
       fail(`dist/${rel}: navbar mark is un-versioned (${navMark})`)
+    }
+    // The SSG'd landing page must actually CARRY the navbar mark — if the
+    // prerender ever drops the navbar, the un-versioned check above would
+    // silently pass on nothing.
+    if (rel === 'index.html' && !navMark) {
+      fail('dist/index.html: no navbar icon-192 mark found in the prerendered markup')
     }
   }
 
@@ -151,6 +156,15 @@ if (!existsSync(DIST)) {
       if (![...seen.keys()].some((u) => u.endsWith('/' + icon))) {
         fail(`dist/sw.js: assets/images/${icon} has no precache entry — the icon is not available offline`)
       }
+    }
+    // The prerendered clean-URL pages must be in the precache too — they're
+    // the canonical URLs, and a glob change that drops them silently breaks
+    // their offline availability.
+    if (!/\{url:"patterns\/[^"]+\/index\.html"/.test(sw)) {
+      fail('dist/sw.js: no patterns/<slug>/index.html precache entries — prerendered pattern pages are offline-broken')
+    }
+    if (!/\{url:"projects\/[^"]+\/index\.html"/.test(sw)) {
+      fail('dist/sw.js: no projects/<slug>/index.html precache entries — prerendered project pages are offline-broken')
     }
   }
 }

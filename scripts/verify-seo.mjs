@@ -26,6 +26,39 @@ const STATIC_CANONICAL_PAGES = ['index.html']
 const failures = []
 const fail = (msg) => failures.push(msg)
 
+// Only docs the pattern manifest actually ACCEPTS count as patterns here — a
+// draft without valid frontmatter is skipped by generatePatternManifest()
+// (and so has no page, no sitemap entry, no landing-page card), and counting
+// raw .md files would fail the build over a page that is deliberately absent.
+// Mirrors the REQUIRED fields + slug rule in vite.config.js. Values are
+// unquoted the same way the manifest parser unquotes them.
+function parsePatternFrontmatter(md) {
+  const norm = md.replace(/\r\n/g, '\n')
+  if (!norm.startsWith('---\n')) return null
+  const end = norm.indexOf('\n---\n', 4)
+  if (end === -1) return null
+  const block = norm.slice(4, end)
+  const get = (key) => {
+    let v = block.match(new RegExp(`^${key}:\\s*(.+)$`, 'm'))?.[1]?.trim()
+    if (v && v.startsWith('"') && v.endsWith('"')) v = v.slice(1, -1)
+    return v
+  }
+  const slug = get('slug')
+  if (!slug || !/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(slug)) return null
+  if (!get('title') || !get('badge') || !get('description')) return null
+  return { slug, title: get('title') }
+}
+
+function eligiblePatterns() {
+  return readdirSync(join(ROOT, 'docs/implementations'))
+    .filter((f) => f.endsWith('.md'))
+    .map((file) => {
+      const attrs = parsePatternFrontmatter(readFileSync(join(ROOT, 'docs/implementations', file), 'utf8'))
+      return attrs ? { file, ...attrs } : null
+    })
+    .filter(Boolean)
+}
+
 function meta(html, attr, key) {
   const m = html.match(new RegExp(`<meta\\s+${attr}="${key}"\\s+content="([^"]*)"`))
   return m ? m[1] : null
@@ -156,6 +189,11 @@ if (!existsSync(robotsPath)) {
     fail('public/robots.txt does not point at the sitemap')
   }
 }
+// The deployed copy, not just the source: public/ files reach dist/ through
+// Vite's copy step, and a rename or publicDir change would drop it silently.
+if (existsSync(join(ROOT, 'dist')) && !existsSync(join(ROOT, 'dist/robots.txt'))) {
+  fail('dist/robots.txt missing — the public/ copy did not reach the build output')
+}
 
 // --- the sitemap is generated, not hand-written -----------------------------
 
@@ -179,10 +217,10 @@ if (!/^\s*generateSitemap\(\),\s*$/m.test(viteConfig)) {
 const distSitemap = join(ROOT, 'dist/sitemap.xml')
 if (existsSync(distSitemap)) {
   const xml = readFileSync(distSitemap, 'utf8')
-  const patternCount = readdirSync(join(ROOT, 'docs/implementations')).filter((f) => f.endsWith('.md')).length
+  const patternCount = eligiblePatterns().length
   const listed = (xml.match(/glow-props\/patterns\/[a-z0-9-]+\//g) ?? []).length
   if (listed !== patternCount) {
-    fail(`dist/sitemap.xml lists ${listed} patterns, docs/implementations has ${patternCount}`)
+    fail(`dist/sitemap.xml lists ${listed} patterns, docs/implementations has ${patternCount} manifest-eligible`)
   }
 }
 
@@ -195,19 +233,11 @@ if (!/^\s*prerenderPages\(\),\s*$/m.test(viteConfig)) {
   fail('vite.config.js defines prerenderPages() but does not register it in the plugins array')
 }
 
-const patternFiles = readdirSync(join(ROOT, 'docs/implementations')).filter((f) => f.endsWith('.md'))
+const patternEntries = eligiblePatterns()
 const distPatternsDir = join(ROOT, 'dist/patterns')
 
 if (existsSync(distPatternsDir)) {
-  const slugs = []
-  for (const file of patternFiles) {
-    const md = readFileSync(join(ROOT, 'docs/implementations', file), 'utf8')
-    const slug = md.match(/^slug:\s*(\S+)/m)?.[1]
-    const title = md.match(/^title:\s*(.+)$/m)?.[1]?.trim()
-    if (slug) slugs.push({ slug, title })
-  }
-
-  for (const { slug, title } of slugs) {
+  for (const { slug, title } of patternEntries) {
     const page = join(distPatternsDir, slug, 'index.html')
     if (!existsSync(page)) {
       fail(`dist/patterns/${slug}/index.html missing — the pattern has no page of its own`)
@@ -354,8 +384,8 @@ if (existsSync(distSitemap)) {
   if (existsSync(distIndex)) {
     const html = readFileSync(distIndex, 'utf8')
     const patternLinks = new Set(html.match(/href="\/glow-props\/patterns\/[a-z0-9-]+\/"/g) ?? []).size
-    if (patternLinks < patternFiles.length) {
-      fail(`dist/index.html links ${patternLinks} pattern pages statically, expected ${patternFiles.length} — non-JS crawlers can't discover them`)
+    if (patternLinks < patternEntries.length) {
+      fail(`dist/index.html links ${patternLinks} pattern pages statically, expected ${patternEntries.length} — non-JS crawlers can't discover them`)
     }
     const projectLinks = new Set(html.match(/href="\/glow-props\/projects\/[a-z0-9-]+\/"/g) ?? []).size
     if (projectLinks === 0) {

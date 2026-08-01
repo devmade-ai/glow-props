@@ -2,6 +2,7 @@
 // all three page roots AND by entry-server for the build-time SSG pass, so it
 // must only import SSR-safe modules (no src/lib/pwa.js — that arrives via
 // PwaContext, which defaults to the SSR-safe shape when no provider exists).
+import { useEffect } from 'react';
 import { Navbar } from './Navbar.jsx';
 
 export function SkipLink() {
@@ -38,6 +39,15 @@ export function Footer() {
 }
 
 export function PageShell({ children }) {
+  // Clears the pre-module 20s load watchdog (partials/head-common.html) from
+  // an effect — i.e. AFTER React has committed the tree — not at entry-module
+  // eval, where a crash during the initial render would still count as
+  // "loaded" and silence the watchdog's plain-language failure message.
+  // Effects never run in renderToString, so this stays SSR-safe.
+  useEffect(() => {
+    if (window.__debugClearLoadTimer) window.__debugClearLoadTimer();
+  }, []);
+
   return (
     <>
       <SkipLink />

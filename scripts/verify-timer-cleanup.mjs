@@ -10,14 +10,16 @@
 //     grep can't follow — the checkable contract is PAIRING: every
 //     addEventListener needs a removeEventListener in the same file, every
 //     setTimeout a clearTimeout, every setInterval a clearInterval, every
-//     IntersectionObserver a disconnect.
+//     IntersectionObserver a disconnect, every requestAnimationFrame a
+//     cancelAnimationFrame.
 //   - Static-asset scripts under public/ (no HMR) must expose a window.__<name>
 //     object with a dispose() so tests, manual re-init, and future SSR can release
 //     listeners deterministically.
-//   - Inline <script> blocks in the HTML entry points and partials must either
-//     register listeners through an AbortController signal, expose the same
-//     window.__<name> dispose shape, or attach behind a window.__<name>Attached
-//     guard; and any setTimeout/setInterval must have a paired clear in the file.
+//   - Inline <script> blocks in the HTML entry points and partials are checked
+//     PER BLOCK: each must register listeners through an AbortController
+//     signal, expose the window.__<name> dispose shape, or attach behind a
+//     window.__<name>Attached guard; and any setTimeout/setInterval must have
+//     a paired clear in the same block.
 //
 // Run: node scripts/verify-timer-cleanup.mjs
 // Wired into package.json as `npm run verify:timer-cleanup`.
@@ -62,16 +64,20 @@ const PAIRS = [
   [/\bsetTimeout\s*\(/, /\bclearTimeout\s*\(/, 'setTimeout without clearTimeout'],
   [/\bsetInterval\s*\(/, /\bclearInterval\s*\(/, 'setInterval without clearInterval'],
   [/\bnew IntersectionObserver\s*\(/, /\.disconnect\s*\(/, 'IntersectionObserver without disconnect'],
+  [/\brequestAnimationFrame\s*\(/, /\bcancelAnimationFrame\s*\(/, 'requestAnimationFrame without cancelAnimationFrame'],
 ];
 
 // Inline scripts only — <script src=...> bodies are empty and external files are
-// covered by the src/ and public/ walks.
+// covered by the src/ and public/ walks. Returned as SEPARATE blocks: each
+// inline script is its own scope-of-trust, and joining them let a guard in one
+// block vouch for an unguarded listener in another (that blind spot is where a
+// fault-injected leak sailed through).
 function inlineScripts(html) {
   const blocks = [];
   const re = /<script(?![^>]*\bsrc=)[^>]*>([\s\S]*?)<\/script>/gi;
   let m;
   while ((m = re.exec(html)) !== null) blocks.push(m[1]);
-  return blocks.join('\n');
+  return blocks;
 }
 
 const failures = [];
@@ -112,21 +118,22 @@ const htmlFiles = ['index.html', 'pattern.html', 'project.html']
   );
 
 for (const file of htmlFiles) {
-  const script = inlineScripts(readUtf8(file));
-  if (!script) continue;
-
-  if (/\.addEventListener\s*\(/.test(script)) {
-    const hasSignal = /\{\s*signal\b/.test(script) || /signal\s*:/.test(script);
-    if (!hasSignal && !GLOBAL_DISPOSE.test(script) && !ATTACH_GUARD.test(script)) {
-      failures.push(`${file}: inline script adds listeners with no AbortController signal, window.__<name> dispose, or window.__<name>Attached guard`);
+  const blocks = inlineScripts(readUtf8(file));
+  blocks.forEach((script, i) => {
+    const where = `${file} (inline script #${i + 1})`;
+    if (/\.addEventListener\s*\(/.test(script)) {
+      const hasSignal = /\{\s*signal\b/.test(script) || /signal\s*:/.test(script);
+      if (!hasSignal && !GLOBAL_DISPOSE.test(script) && !ATTACH_GUARD.test(script)) {
+        failures.push(`${where}: adds listeners with no AbortController signal, window.__<name> dispose, or window.__<name>Attached guard`);
+      }
     }
-  }
-  if (/\bsetTimeout\s*\(/.test(script) && !/\bclearTimeout\s*\(/.test(script)) {
-    failures.push(`${file}: inline script sets a timeout with no clearTimeout in the same file`);
-  }
-  if (/\bsetInterval\s*\(/.test(script) && !/\bclearInterval\s*\(/.test(script)) {
-    failures.push(`${file}: inline script sets an interval with no clearInterval in the same file`);
-  }
+    if (/\bsetTimeout\s*\(/.test(script) && !/\bclearTimeout\s*\(/.test(script)) {
+      failures.push(`${where}: sets a timeout with no clearTimeout in the same script block`);
+    }
+    if (/\bsetInterval\s*\(/.test(script) && !/\bclearInterval\s*\(/.test(script)) {
+      failures.push(`${where}: sets an interval with no clearInterval in the same script block`);
+    }
+  });
 }
 
 if (failures.length) {

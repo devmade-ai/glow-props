@@ -92,8 +92,12 @@
 /* ===== Custom animations =====
    Requirement: Portfolio should feel polished with tasteful motion
    Approach: CSS @keyframes for fade-in-up on scroll, plus utility classes.
-     Intersection Observer in JS triggers .animate-in class.
-   Alternative: Framer Motion — rejected, this is vanilla HTML, no React */
+     An IntersectionObserver in HomePage.jsx records revealed elements in React
+     state, and React renders .animate-in from it — the class must live in the
+     React-owned className, never an imperative classList write, or the next
+     re-render wipes it.
+   Alternative: Framer Motion — rejected, one fade-in doesn't justify a
+     dependency */
 @keyframes fade-in-up {
   from {
     opacity: 0;
@@ -286,14 +290,28 @@
 
 /* ===== Burger menu z-index layer =====
    Follows the scale in docs/implementations/Z_INDEX_SCALE.md. Layers this site
-   uses: base content 0-10 (.code-copy-btn z-10), sticky navbar z-30, skip link
-   z-50 on focus, menu dropdown z-50, modals z-60, toasts z-70. Nothing above
-   z-80 (the scale's debug tier, unused here).
-   Note: No backdrop layer (z-40) — the navbar's backdrop-filter creates a
-   containing block that traps position:fixed children. Click-outside uses
-   a document handler instead. See theme.js burger menu comments. */
+   uses: base content 0-10 (.code-copy-btn z-10), menu backdrop z-20 (portaled
+   to body — see BurgerMenu.jsx), sticky navbar z-30, skip link z-50 on focus,
+   menu dropdown z-50, modals z-60, toasts/update banner z-70, DEV debug pill
+   z-80 (the scale's debug tier; never ships in production bundles).
+   Note: the backdrop sits BELOW the scale's backdrop tier (40) — the navbar's
+   backdrop-filter creates a containing block/stacking context that caps its
+   children at z-30, so a body-level backdrop above 30 would cover the menu
+   itself. See BurgerMenu.jsx. */
 @utility z-dropdown {
   z-index: 50;
+}
+
+/* Toast stack position — a stylesheet rule (not an inline style) so the stack
+   can shift above the update banner when both are on screen: they share the
+   bottom-center slot, and a toast landing on the banner would cover its
+   Update/Later buttons for the toast's lifetime. :has() keeps the coupling in
+   CSS instead of threading banner state through the toast provider. */
+.toast-viewport {
+  bottom: max(1rem, env(safe-area-inset-bottom));
+}
+body:has(.update-banner) .toast-viewport {
+  bottom: calc(max(1rem, env(safe-area-inset-bottom)) + 4.5rem);
 }
 
 /* Requirement: theme switches must swap colors instantly (THEME_DARK_MODE.md

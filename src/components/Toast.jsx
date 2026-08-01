@@ -46,8 +46,6 @@ function ToastItem({ toast, onRemove }) {
         transition-all duration-200
         ${visible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'}
         ${TOAST_STYLES[toast.tone] || TOAST_STYLES.info}`}
-      role={toast.tone === 'error' ? 'alert' : 'status'}
-      aria-live={toast.tone === 'error' ? 'assertive' : 'polite'}
     >
       {toast.message}
     </div>
@@ -68,15 +66,20 @@ export function ToastProvider({ children }) {
   return (
     <ToastContext.Provider value={showToast}>
       {children}
-      {toasts.length > 0 && (
-        <div
-          className="fixed left-1/2 -translate-x-1/2 z-70 flex flex-col-reverse gap-2
-            max-w-sm w-[calc(100%-2rem)] no-print"
-          style={{ bottom: 'max(1rem, env(safe-area-inset-bottom))' }}
-        >
-          {toasts.map((toast) => <ToastItem key={toast.id} toast={toast} onRemove={remove} />)}
-        </div>
-      )}
+      {/* Always mounted: a live region inserted together with its first
+          message is often not announced — screen readers need the region to
+          exist BEFORE content lands in it. The region lives on the container
+          (single announcer), not per toast — nested live regions double-speak.
+          Positioning is in main.css (.toast-viewport) so the stack can shift
+          above the update banner when both are on screen. */}
+      <div
+        className="toast-viewport fixed left-1/2 -translate-x-1/2 z-70 flex flex-col-reverse gap-2
+          max-w-sm w-[calc(100%-2rem)] no-print"
+        role="status"
+        aria-live="polite"
+      >
+        {toasts.map((toast) => <ToastItem key={toast.id} toast={toast} onRemove={remove} />)}
+      </div>
     </ToastContext.Provider>
   );
 }
