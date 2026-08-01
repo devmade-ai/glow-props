@@ -43,7 +43,7 @@
     </div>
   </main>
 
-  <footer class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6 text-center border-t border-base-300"
+  <footer class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6 text-center border-t border-base-300 no-print"
           style="padding-bottom: max(1.5rem, env(safe-area-inset-bottom));">
     <p class="text-sm text-base-content/40">
       <a href="https://github.com/devmade-ai" target="_blank" rel="noopener" class="link link-hover text-base-content/40 hover:text-base-content/70">github.com/devmade-ai</a>
@@ -61,17 +61,30 @@
     import { applyPageSeo } from './src/seoMeta.js';
     (function () {
       var app = document.getElementById('app');
+
+      // Requirement: this page is served from two URLs — the prerendered
+      //   /projects/<slug>/ (canonical, one static file per project) and the
+      //   legacy project.html?name=<slug>. Both have to work.
+      // Approach: prefer the query parameter when present, otherwise read the
+      //   slug from the path. Every fetch and in-page link resolves against
+      //   BASE rather than the document, because a relative path means
+      //   something different two directories down. Same shape as pattern.html.
+      var BASE = import.meta.env.BASE_URL;
       var params = new URLSearchParams(window.location.search);
       var projectName = params.get('name');
+      if (!projectName) {
+        var fromPath = window.location.pathname.match(/\/projects\/([a-z0-9-]+)\/?$/);
+        if (fromPath) projectName = fromPath[1];
+      }
 
       // Requirement: Validate projectName format to prevent path traversal attempts
       // Approach: Allowlist alphanumeric + hyphens only. Reject anything else.
       if (!projectName || !/^[a-z0-9-]+$/i.test(projectName)) {
-        app.innerHTML = '<div class="text-center py-16"><h1 class="text-2xl font-bold mb-2">No project specified</h1><p class="text-base-content/60"><a href="./" class="link link-primary">Back to portfolio</a></p></div>';
+        app.innerHTML = '<div class="text-center py-16"><h1 class="text-2xl font-bold mb-2">No project specified</h1><p class="text-base-content/60"><a href="' + BASE + '" class="link link-primary">Back to portfolio</a></p></div>';
         return;
       }
 
-      var basePath = 'projects/' + encodeURIComponent(projectName) + '/';
+      var basePath = BASE + 'projects/' + encodeURIComponent(projectName) + '/';
       var meta = null;
       var docs = {};
       var currentTab = 'readme';
@@ -114,7 +127,9 @@
           applyPageSeo({
             title: meta.title,
             description: meta.description,
-            path: 'project.html?name=' + encodeURIComponent(projectName),
+            // The clean URL is canonical — the ?name= form is the legacy
+            // entry point and must not compete with it for the same content.
+            path: 'projects/' + encodeURIComponent(projectName) + '/',
           });
           render();
           var docFiles = [
@@ -150,6 +165,9 @@
           });
         })
         .catch(function (err) {
+          // Cleared on BOTH paths — a non-abort rejection otherwise leaves
+          // the 10s abort timer pending (TIMER_LEAKS.md variant 3 pairing).
+          clearTimeout(fetchTimeout);
           // Requirement: Differentiate timeout/network errors from missing projects
           // Approach: Check error type to show appropriate message and action
           var isTimeout = err && err.name === 'AbortError';
@@ -160,7 +178,7 @@
           var retryHtml = isTimeout
             ? '<p class="mt-2"><button onclick="location.reload()" class="btn btn-primary btn-sm">Retry</button></p>'
             : '';
-          app.innerHTML = '<div class="text-center py-16"><h1 class="text-2xl font-bold mb-2">' + title + '</h1><p class="text-base-content/60">' + body + '</p>' + retryHtml + '<p class="mt-2"><a href="./" class="link link-primary">Back to portfolio</a></p></div>';
+          app.innerHTML = '<div class="text-center py-16"><h1 class="text-2xl font-bold mb-2">' + title + '</h1><p class="text-base-content/60">' + body + '</p>' + retryHtml + '<p class="mt-2"><a href="' + BASE + '" class="link link-primary">Back to portfolio</a></p></div>';
         });
 
       function render() {
@@ -227,7 +245,7 @@
         }
 
         app.innerHTML =
-          '<p class="text-sm mb-4"><a href="./" class="link link-primary">&larr; All projects</a></p>' +
+          '<p class="text-sm mb-4"><a href="' + BASE + '" class="link link-primary">&larr; All projects</a></p>' +
 
           '<header class="mb-6 animate-fade-in-up">' +
             '<div class="flex items-center gap-3 flex-wrap">' +
@@ -255,8 +273,11 @@
       // Approach: Event delegation on document — one listener handles all tabs.
       //   After render, focus moves to the new content area so screen reader users
       //   hear the updated content without having to navigate back to it.
+      //   Registered through an AbortController so window.__project.dispose() can
+      //   release it (TIMER_LEAKS.md — same dispose shape as window.__theme).
       // Alternative: Add/remove listeners in render() — rejected, causes
       //   listener accumulation (each render adds new handlers without removing old)
+      var pageController = new AbortController();
       document.addEventListener('click', function (e) {
         var tab = e.target.closest('.tab:not([disabled])');
         if (tab && tab.getAttribute('data-tab')) {
@@ -268,10 +289,14 @@
             content.focus({ preventScroll: true });
           }
         }
-      });
+      }, { signal: pageController.signal });
 
       window.copyDoc = function () {
         md.copyMarkdown(docs[currentTab], 'copy-btn');
+      };
+
+      window.__project = {
+        dispose: function () { pageController.abort(); }
       };
     })();
   </script>

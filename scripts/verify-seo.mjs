@@ -86,6 +86,23 @@ for (const page of PAGES) {
       'set at runtime in src/seoMeta.js instead.',
     )
   }
+
+  // The whole setup assumes the PUBLIC posture — one stray noindex undoes all
+  // of it with no visible symptom.
+  if (/<meta\s+name="robots"[^>]*noindex/.test(html)) {
+    fail(`${page}: carries a noindex robots meta — this site is meant to be indexed`)
+  }
+}
+
+// The landing page's identity must point at the site root exactly — presence
+// and https:// alone pass happily on a copy-pasted wrong origin.
+{
+  const html = readFileSync(join(ROOT, 'index.html'), 'utf8')
+  const canonical = html.match(/<link\s+rel="canonical"\s+href="([^"]+)"/)?.[1]
+  if (canonical !== SITE) fail(`index.html: canonical is ${canonical}, expected ${SITE}`)
+  if (meta(html, 'property', 'og:url') !== SITE) {
+    fail(`index.html: og:url is ${meta(html, 'property', 'og:url')}, expected ${SITE}`)
+  }
 }
 
 // --- the runtime helper stays wired -----------------------------------------
@@ -112,12 +129,16 @@ if (!existsSync(join(ROOT, OG_IMAGE))) {
   if (png.subarray(1, 4).toString() !== 'PNG') fail(`${OG_IMAGE} is not a PNG`)
   const width = png.readUInt32BE(16)
   const height = png.readUInt32BE(20)
-  const html = readFileSync(join(ROOT, 'index.html'), 'utf8')
-  if (String(width) !== meta(html, 'property', 'og:image:width')) {
-    fail(`og:image:width says ${meta(html, 'property', 'og:image:width')}, the file is ${width}`)
-  }
-  if (String(height) !== meta(html, 'property', 'og:image:height')) {
-    fail(`og:image:height says ${meta(html, 'property', 'og:image:height')}, the file is ${height}`)
+  // Every page declares the dimensions, so every page can drift — checking
+  // index.html alone let an edit to the other two pass silently.
+  for (const page of PAGES) {
+    const html = readFileSync(join(ROOT, page), 'utf8')
+    if (String(width) !== meta(html, 'property', 'og:image:width')) {
+      fail(`${page}: og:image:width says ${meta(html, 'property', 'og:image:width')}, the file is ${width}`)
+    }
+    if (String(height) !== meta(html, 'property', 'og:image:height')) {
+      fail(`${page}: og:image:height says ${meta(html, 'property', 'og:image:height')}, the file is ${height}`)
+    }
   }
 }
 
@@ -252,12 +273,93 @@ if (existsSync(distPatternsDir)) {
   }
 }
 
+// --- prerendered project pages ----------------------------------------------
+
+// Same contract as the pattern pages: every project gets its own file, head
+// tags, and crawlable body at projects/<slug>/.
+if (!/^\s*prerenderProjectPages\(\),\s*$/m.test(viteConfig)) {
+  fail('vite.config.js defines prerenderProjectPages() but does not register it in the plugins array')
+}
+
+const projectsDir = join(ROOT, 'public/projects')
+const distProjectsDir = join(ROOT, 'dist/projects')
+if (existsSync(projectsDir) && existsSync(distProjectsDir)) {
+  const projectSlugs = readdirSync(projectsDir).filter(
+    (d) => existsSync(join(projectsDir, d, 'meta.json')),
+  )
+  for (const slug of projectSlugs) {
+    const page = join(distProjectsDir, slug, 'index.html')
+    if (!existsSync(page)) {
+      fail(`dist/projects/${slug}/index.html missing — the project has no page of its own`)
+      continue
+    }
+    const html = readFileSync(page, 'utf8')
+    const title = JSON.parse(readFileSync(join(projectsDir, slug, 'meta.json'), 'utf8')).title
+
+    if (html.includes('devmade-ai — Project Details')) {
+      fail(`dist/projects/${slug}/: still carries the generic og:title — every project would unfurl the same`)
+    }
+    if (html.includes('<title>Loading... — devmade-ai</title>')) {
+      fail(`dist/projects/${slug}/: still carries the template's placeholder <title>`)
+    }
+    const canonical = html.match(/<link rel="canonical" href="([^"]+)"/)?.[1]
+    if (canonical !== `${SITE}projects/${slug}/`) {
+      fail(`dist/projects/${slug}/: canonical is ${canonical}, expected ${SITE}projects/${slug}/`)
+    }
+    const appBody = html.match(/<div id="app"[^>]*>([\s\S]*?)<\/main>/)?.[1] ?? ''
+    if (!/<h1[\s>]/.test(appBody)) {
+      fail(`dist/projects/${slug}/: #app has no prerendered content — a crawler that does not run JS sees an empty page`)
+    }
+    if (title && !appBody.includes(title.replace(/&/g, '&amp;'))) {
+      fail(`dist/projects/${slug}/: prerendered body does not contain the project's own heading`)
+    }
+    if (html.includes('href="./')) {
+      fail(`dist/projects/${slug}/: has root-relative "./" links that break from a nested URL`)
+    }
+    const headHtml = html.slice(0, html.indexOf('</head>'))
+    const identityTags = [
+      ['<title', '<title>'],
+      ['description', '<meta name="description"'],
+      ['og:title', '<meta property="og:title"'],
+      ['og:description', '<meta property="og:description"'],
+      ['og:url', '<meta property="og:url"'],
+      ['og:image', '<meta property="og:image"'],
+      ['twitter:title', '<meta name="twitter:title"'],
+      ['twitter:description', '<meta name="twitter:description"'],
+      ['canonical', '<link rel="canonical"'],
+    ]
+    for (const [label, literal] of identityTags) {
+      const count = headHtml.split(literal).length - 1
+      if (count !== 1) {
+        fail(`dist/projects/${slug}/: <head> has ${count} ${label} tags, expected exactly 1 — ` +
+          'a prerender step is adding a tag instead of replacing the template\'s')
+      }
+    }
+  }
+}
+
 // The clean URL is canonical, so that is what the sitemap must list — the
 // ?name= form is the legacy entry point and would be duplicate content.
 if (existsSync(distSitemap)) {
   const xml = readFileSync(distSitemap, 'utf8')
   if (xml.includes('pattern.html?name=')) {
     fail('dist/sitemap.xml lists pattern.html?name= URLs; the prerendered patterns/<slug>/ URLs are canonical')
+  }
+  if (xml.includes('project.html?name=')) {
+    fail('dist/sitemap.xml lists project.html?name= URLs; the prerendered projects/<slug>/ URLs are canonical')
+  }
+}
+
+// Non-JS crawlers must find the pattern pages FROM the landing page, not only
+// via the sitemap — the build injects static cards for exactly that reason.
+{
+  const distIndex = join(ROOT, 'dist/index.html')
+  if (existsSync(distIndex)) {
+    const html = readFileSync(distIndex, 'utf8')
+    const patternLinks = (html.match(/href="patterns\/[a-z0-9-]+\/"/g) ?? []).length
+    if (patternLinks < patternFiles.length) {
+      fail(`dist/index.html links ${patternLinks} pattern pages statically, expected ${patternFiles.length} — non-JS crawlers can't discover them`)
+    }
   }
 }
 
