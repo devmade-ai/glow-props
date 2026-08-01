@@ -92,6 +92,30 @@ export function getPwaState() {
   return state;
 }
 
+// Lifecycle events reach the DEV-gated debug pill through the optional
+// window.__debugAdd bridge (set by src/lib/debugLog.js, which production
+// never loads) — this module must not import the debug subsystem, or it would
+// ship in every bundle. console.warn call sites are NOT mirrored here: the
+// debug module intercepts console, and mirroring would double-log.
+function debugHook(severity, event, details) {
+  if (typeof window !== 'undefined' && window.__debugAdd) {
+    window.__debugAdd('pwa', severity, event, details);
+  }
+}
+
+// Install-funnel analytics (PWA_SYSTEM.md, optional): localStorage event log
+// capped at 50, read by the debug pill's PWA tab. Local only — no external
+// service, nothing leaves the browser.
+function trackInstallEvent(event) {
+  try {
+    const key = 'pwa-install-events';
+    const events = JSON.parse(localStorage.getItem(key) || '[]');
+    events.push({ event, timestamp: new Date().toISOString(), browser: state.browser });
+    if (events.length > 50) events.splice(0, events.length - 50);
+    localStorage.setItem(key, JSON.stringify(events));
+  } catch { /* best effort */ }
+}
+
 // Returns an unsubscribe fn — callers store and invoke it on cleanup.
 export function subscribePwa(fn) {
   listeners.add(fn);
@@ -138,6 +162,7 @@ function wasJustUpdated() {
 
 export function applyUpdate() {
   markUpdateApplied();
+  debugHook('info', 'Applying update (skipWaiting + reload)');
   emit({ type: 'toast', message: 'Updating to the latest version…', tone: 'info' });
   if (updateSW) updateSW(true);
 }
@@ -170,6 +195,7 @@ export function checkForUpdates() {
     .catch(() => 'error')
     .then((result) => {
       checkPromise = null;
+      debugHook(result === 'error' ? 'error' : 'info', `Manual update check: ${result}`);
       if (result === 'update-available') {
         setState({ updateBannerVisible: true });   // the banner IS the surface for this state
       } else if (result === 'up-to-date') {
@@ -313,6 +339,7 @@ function updateInstallVisibility() {
 export function dismissInstall() {
   dismissed = true;
   safeLocalSet('pwa-install-dismissed', 'true');
+  trackInstallEvent('dismissed');
   setState({ installModalOpen: false });
   updateInstallVisibility();
 }
@@ -337,6 +364,7 @@ export function triggerInstall() {
         updateInstallVisibility();
       });
   } else if (supportsManualInstall || manualFallbackArmed) {
+    trackInstallEvent('instructions-viewed');
     setState({ installModalOpen: true });
   }
 }
@@ -366,6 +394,7 @@ function init() {
   if (window.__pwaInstallPromptEvent) {
     deferredPrompt = window.__pwaInstallPromptEvent;
     delete window.__pwaInstallPromptEvent;
+    trackInstallEvent('prompted');
   }
 
   updateSW = registerSW({
@@ -378,6 +407,7 @@ function init() {
         return;
       }
       updateAvailable = true;
+      debugHook('info', 'New version available');
       // Launch-apply: onRegisteredSW found a worker already waiting and
       // recorded a short eligibility window (see module header).
       if (launchApplyUntil !== 0 && Date.now() < launchApplyUntil) {
@@ -391,11 +421,13 @@ function init() {
       setState({ updateBannerVisible: true });
     },
     onOfflineReady() {
+      debugHook('success', 'App ready for offline use');
       emit({ type: 'toast', message: 'Ready for offline use.', tone: 'success' });
     },
     onRegisteredSW(_url, registration) {
       if (!registration) return;
       swRegistration = registration;
+      debugHook('info', 'Service worker registered', { waiting: !!registration.waiting });
       if (registration.waiting && isAutoUpdateEnabled() && !wasJustUpdated()) {
         launchApplyUntil = Date.now() + LAUNCH_APPLY_WINDOW_MS;
       }
@@ -408,6 +440,7 @@ function init() {
   beforeInstallPromptListener = (e) => {
     e.preventDefault();
     deferredPrompt = e;
+    trackInstallEvent('prompted');
     updateInstallVisibility();
   };
   window.addEventListener('beforeinstallprompt', beforeInstallPromptListener);
@@ -415,6 +448,7 @@ function init() {
   appInstalledListener = () => {
     deferredPrompt = null;
     isStandalone = true;
+    trackInstallEvent('installed');
     updateInstallVisibility();
   };
   window.addEventListener('appinstalled', appInstalledListener);
@@ -427,6 +461,7 @@ function init() {
     if (e.matches) {
       isStandalone = true;
       deferredPrompt = null;
+      trackInstallEvent('installed-via-browser');
       updateInstallVisibility();
     }
   };

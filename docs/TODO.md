@@ -55,7 +55,7 @@ Legend: **Pass** = compliant, **Partial** = has the feature but with gaps, **Mis
 
 | Repo | CLAUDE.md | APP_ICONS | BURGER_MENU | DEBUG_SYSTEM | DOWNLOAD_PDF | PWA_SYSTEM | THEME_DARK_MODE | EVENT_BUS | Z_INDEX_SCALE | ICON_CACHE_BUST |
 |------|-----------|-----------|-------------|--------------|--------------|------------|-----------------|-----------|---------------|-----------------|
-| glow-props | Pass | Pass | Pass | Missing | Pass | Pass | Pass | N/A | Pass | Pass |
+| glow-props | Pass | Pass | Pass | Pass (DEV) | Pass | Pass | Pass | N/A | Pass | Pass |
 | canva-grid | Pass | Pass | Pass | Pass | Pass (B) | Pass | Pass | N/A | Pass | Pass |
 | fl-farlume | Pass | Pass | Pass | Pass | Pass | Pass | Pass | N/A | Pass | Pass |
 | model-pear | Partial | Pass | Missing | Pass | Partial | Missing | Missing | Missing | Pass | N/A |
@@ -72,7 +72,7 @@ Legend: **Pass** = compliant, **Partial** = has the feature but with gaps, **Mis
 
 **N/A for ICON_CACHE_BUST**: model-pear (no PWA yet — implement PWA_SYSTEM first). glow-props reclassified `N/A → Pass` 2026-08-01: the old rationale ("static site, no PWA icons") was false — the repo ships a full PWA with three manifest icons; the pattern is now implemented (see glow-props section).
 
-**Missing for glow-props DEBUG_SYSTEM**: reclassified `N/A → Missing` 2026-08-01 — the prior N/A had no recorded rationale and doesn't hold: the pattern's own vanilla-JS variant targets exactly this kind of site, and glow-props is a PWA (the PWA Diagnostics probes apply). Decision pending — see glow-props section.
+**Pass (DEV) for glow-props DEBUG_SYSTEM**: implemented 2026-08-01 (was falsely N/A, then honestly Missing earlier the same day). DEV-gated like four-ems — dynamic import keeps the subsystem out of production bundles; the pre-module error capture + 20s load watchdog and the localStorage install analytics run in production, the pill itself is dev-only. Documented in glow-props CLAUDE.md AI notes.
 
 **N/A for glow-props EVENT_BUS**: static four-module site, no service layer; cross-tab theme sync uses the `storage` event (the route EVENT_BUS.md prescribes), the install-prompt handoff is a one-shot callback. Documented in glow-props CLAUDE.md "Not Applicable Patterns" 2026-08-01.
 
@@ -126,12 +126,15 @@ is now the fleet's reference implementation of the patterns' React variants:
 - **THEME/PDF/Z-INDEX:** manifest `theme_color` now a real theme color, theme switches transition-free, `print-color-adjust: exact` + `.print-avoid-break` + `no-print` footers, skip-link `z-90 → z-50`, Tailwind no longer harvests classes from `docs/` markdown.
 - **DOWNLOAD_PDF/markdown:** clipboard fallback is a cascade (writeText rejection falls through to textarea).
 
-**Open items:**
+**Open items** (1–3 closed 2026-08-01: DEBUG_SYSTEM implemented DEV-gated with the
+pre-module load watchdog running in prod; install analytics landed with it, read
+by the pill's PWA tab; per-theme mood tags authored in
+`src/data/themeDescriptions.js`. `version.json` remains decided-against —
+supplementary update signal for stalled-SW edge cases the SW lifecycle +
+visibility checks already cover; revisit only if the reference role should
+demonstrate every optional limb of the pattern.)
 
-1. [ ] **DEBUG_SYSTEM — decide: implement or document N/A.** Reclassified `N/A → Missing` (the N/A had no rationale and doesn't survive scrutiny: this repo is a PWA, and `window.__pwaInstallPromptEvent` — the exact global the PWA diagnostics probe reads — is stashed but read by nothing). Since the React conversion, the natural implementation is the pattern's standard React DebugPill (DEV-gated like four-ems, if a visible pill on a public portfolio is unwanted). Real exposure: if a page's module script fails, the page shows nothing after the SSG markup is replaced — the pattern's load watchdog covers precisely that. Needs an owner decision: a visible debug pill on a public portfolio site is a product call, not a code call.
-2. [ ] **BURGER_MENU mood tags** (only adornment left after the React conversion closed the rest): per-theme description strings ("Cool blue-gray", "Minimal mono") for the 35-theme picker — needs authored copy, not code.
-3. [ ] **PWA_SYSTEM install analytics** (`pwa-install-events`): implement together with the DEBUG_SYSTEM decision — the debug pill's PWA tab is where the funnel data would actually be read; standalone it has no surface. (Display-mode `change` listener DONE 2026-08-01 in `src/lib/pwa.js`; `version.json` comparison decided against 2026-08-01 — supplementary update signal for stalled-SW edge cases the SW lifecycle + visibility checks already cover for this site's audience; revisit only if the reference role should demonstrate every optional limb of the pattern.)
-4. [ ] **verify:seo minor:** assert `dist/robots.txt` exists alongside the source-level robots checks.
+1. [ ] **verify:seo minor:** assert `dist/robots.txt` exists alongside the source-level robots checks.
 
 ### canva-grid — FULLY RESOLVED (2026-04-18, with one documentation gap)
 
@@ -523,10 +526,10 @@ Highest-leverage cross-cutting gaps (post-2026-04-25):
 3. **HISTORY.md removal** — Done in canva-grid, fl-farlume, repo-tor, graphiki, fh-fuelhunt, sun-sea-o, **intxt, tool-till-tees, four-ems**. Still present in **model-pear, see-veo**.
 4. **PWA_ICON_CACHE_BUST** — Full Pass in canva-grid, fl-farlume, repo-tor, graphiki, fh-fuelhunt, sun-sea-o, **intxt, four-ems, glow-props** (9 repos — glow-props implemented 2026-08-01, correcting a false "static site, no PWA icons" N/A). Missing in see-veo. N/A for model-pear (no PWA), tool-till-tees (no PWA).
 5. **EVENT_BUS** — N/A in canva-grid, fl-farlume, repo-tor, sun-sea-o, **intxt**, **see-veo** (minimal resume site), **four-ems** (no service layer; documented in CLAUDE.md "Not Applicable Patterns"), **glow-props** (no service layer; documented in CLAUDE.md "Not Applicable Patterns" 2026-08-01). Pass in graphiki (typed `EventBus<M>`). 3 repos still need an evaluate decision: model-pear, fh-fuelhunt, tool-till-tees.
-6. **DEBUG_SYSTEM: console interception** — Done in canva-grid, fl-farlume, repo-tor, graphiki, model-pear, fh-fuelhunt, sun-sea-o, **intxt, four-ems**. Still missing in see-veo.
-7. **DEBUG_SYSTEM: pre-React inline pill** — Done in canva-grid, fl-farlume, repo-tor, sun-sea-o, graphiki, model-pear, fh-fuelhunt, **intxt, four-ems**. Still missing in see-veo.
+6. **DEBUG_SYSTEM: console interception** — Done in canva-grid, fl-farlume, repo-tor, graphiki, model-pear, fh-fuelhunt, sun-sea-o, **intxt, four-ems, glow-props** (2026-08-01, DEV-gated). Still missing in see-veo.
+7. **DEBUG_SYSTEM: pre-React inline pill** — Done in canva-grid, fl-farlume, repo-tor, sun-sea-o, graphiki, model-pear, fh-fuelhunt, **intxt, four-ems, glow-props** (capture + 20s watchdog in partials/head-common.html; pill UI is React/DEV-only by design). Still missing in see-veo.
 8. **DEBUG_SYSTEM: inline styles** — Done in canva-grid, repo-tor, graphiki, model-pear, fh-fuelhunt, sun-sea-o, **intxt**. four-ems uses DaisyUI tokens via `--color-base-300`/`--color-base-content` + `color-mix` rather than literal inline styles — equivalent visual contract per the pattern's intent (chrome that flips with theme). see-veo still uses Tailwind/DaisyUI without the contract.
-9. **DEBUG_SYSTEM: PWA Diagnostics tab** — Done in canva-grid, fl-farlume, repo-tor, graphiki, model-pear, sun-sea-o, **intxt, four-ems** (`Tab = 'log' | 'env' | 'pwa'` at `DebugPill.tsx:27`, split into `src/components/debug/{LogTab,EnvTab,PwaTab}.tsx`). Still missing in see-veo (only 2 tabs), fh-fuelhunt.
+9. **DEBUG_SYSTEM: PWA Diagnostics tab** — Done in canva-grid, fl-farlume, repo-tor, graphiki, model-pear, sun-sea-o, **intxt, four-ems, glow-props** (2026-08-01: live probes + install-funnel view in the DEV-gated pill). Still missing in see-veo (only 2 tabs), fh-fuelhunt.
 10. **PWA_SYSTEM: visibility-based update checks** — Done in canva-grid, fl-farlume, repo-tor, glow-props, graphiki, fh-fuelhunt, sun-sea-o, **intxt, four-ems**. Still missing in see-veo.
 11. **PWA_SYSTEM: 30-second suppression** — Done in canva-grid, fl-farlume, repo-tor, glow-props, graphiki, sun-sea-o, **four-ems** (`pwa.ts:96-117` + `usePWAUpdate.ts:67`). Still missing in see-veo, fh-fuelhunt. N/A in intxt (chat app, hourly polling adequate).
 12. **PWA_SYSTEM: module singleton** — Done in canva-grid, fl-farlume, glow-props, repo-tor, graphiki, sun-sea-o, **four-ems** (`src/lib/pwa.ts`, 123 lines). Hooks-based but compliant: intxt, fh-fuelhunt. Still missing in see-veo, model-pear.

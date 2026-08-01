@@ -55,8 +55,8 @@ if (!/ignoreURLParametersMatching:\s*\[[^\]]*\/\^v\$\//.test(viteConfig)) {
 for (const page of ['index.html', 'pattern.html', 'project.html']) {
   const html = readFileSync(join(ROOT, page), 'utf8')
   for (const literal of [
-    'href="/glow-props/assets/images/favicon.png"',
-    'href="/glow-props/assets/images/apple-touch-icon.png"',
+    'href="assets/images/favicon.png"',
+    'href="assets/images/apple-touch-icon.png"',
   ]) {
     if (!html.includes(literal)) {
       fail(`${page}: missing the exact literal ${literal} the cache-bust plugin replaces`)

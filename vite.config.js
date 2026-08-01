@@ -47,9 +47,15 @@ const versioned = (relPath) => relPath + '?v=' + ICON_VERSIONS[relPath];
 //   literal is missing — a reformatted tag would otherwise silently ship
 //   un-versioned URLs and only surface weeks later when an icon changes.
 function iconCacheBustHtml() {
+  // The source links are document-relative. By the time a post transform runs,
+  // Vite has left them untouched in BUILD but rewritten them to
+  // base-prefixed form in DEV (its dev html pipeline resolves asset URLs) —
+  // so both shapes must be accepted, and at least one must match or the
+  // fail-loud contract fires. prerenderPages() absolutizes the versioned
+  // links again for the nested item pages.
   const REPLACEMENTS = [
-    ['href', '/glow-props/assets/images/favicon.png', 'assets/images/favicon.png'],
-    ['href', '/glow-props/assets/images/apple-touch-icon.png', 'assets/images/apple-touch-icon.png'],
+    ['href', 'assets/images/favicon.png'],
+    ['href', 'assets/images/apple-touch-icon.png'],
   ];
   return {
     name: 'icon-cache-bust-html',
@@ -57,15 +63,21 @@ function iconCacheBustHtml() {
       order: 'post',
       handler(html, ctx) {
         let out = html;
-        for (const [attr, urlPath, relPath] of REPLACEMENTS) {
-          const literal = attr + '="' + urlPath + '"';
-          if (!out.includes(literal)) {
+        for (const [attr, relPath] of REPLACEMENTS) {
+          const forms = [
+            attr + '="' + relPath + '"',                    // build
+            attr + '="/glow-props/' + relPath + '"',        // dev (base-rewritten)
+          ];
+          const found = forms.filter((literal) => out.includes(literal));
+          if (found.length === 0) {
             throw new Error(
-              '[icon-cache-bust-html] expected literal not found in ' + ctx.filename + ': ' + literal +
+              '[icon-cache-bust-html] expected literal not found in ' + ctx.filename + ': ' + forms[0] +
               '\nThe tag changed shape — update the REPLACEMENTS table in vite.config.js to match.',
             );
           }
-          out = out.replaceAll(literal, attr + '="' + urlPath + '?v=' + ICON_VERSIONS[relPath] + '"');
+          for (const literal of found) {
+            out = out.replaceAll(literal, literal.slice(0, -1) + '?v=' + ICON_VERSIONS[relPath] + '"');
+          }
         }
         return out;
       },
@@ -326,6 +338,18 @@ function prerenderPages() {
     return String(text).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
   }
 
+  // The built templates carry document-relative versioned icon links (correct
+  // at root level, and the only form that survives Vite's dev-server URL
+  // rewriting). Two directories down they 404 — absolutize them per page.
+  function iconLinkPairs() {
+    return ['assets/images/favicon.png', 'assets/images/apple-touch-icon.png'].map(
+      (relPath) => [
+        'href="' + versioned(relPath) + '"',
+        'href="/glow-props/' + versioned(relPath) + '"',
+      ],
+    );
+  }
+
   // Head pairs: every entry REPLACES a tag the template already carries, so
   // the fail-loud guard covers all of them and no duplicate identity tags can
   // ship (the historical failure mode: pages with two <meta name="description">
@@ -361,6 +385,7 @@ function prerenderPages() {
         '<meta name="twitter:description" content="' + GENERIC_PATTERN_DESC + '">',
         '<meta name="twitter:description" content="' + desc + '">',
       ],
+      ...iconLinkPairs(),
     ];
   }
 
@@ -395,6 +420,7 @@ function prerenderPages() {
         '<meta name="twitter:description" content="' + GENERIC_PROJECT_DESC + '">',
         '<meta name="twitter:description" content="' + desc + '">',
       ],
+      ...iconLinkPairs(),
     ];
   }
 

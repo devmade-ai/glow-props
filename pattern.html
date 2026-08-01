@@ -24,10 +24,12 @@
   <meta name="twitter:description" content="Reusable engineering patterns by devmade-ai — implementation guides shared across every project.">
   <meta name="twitter:image" content="https://devmade-ai.github.io/glow-props/assets/images/og-image.png">
   <meta name="description" content="Reusable engineering patterns by devmade-ai — implementation guides shared across every project.">
-  <!-- Base-absolute so the same head works from prerendered patterns/<slug>/
-       pages without rebasing. ?v= appended at build by iconCacheBustHtml(). -->
-  <link rel="icon" type="image/png" href="/glow-props/assets/images/favicon.png">
-  <link rel="apple-touch-icon" href="/glow-props/assets/images/apple-touch-icon.png">
+  <!-- Relative (correct from the root-level entries; Vite's dev server
+       rewrites root-relative URLs, so absolute forms break dev). The ?v=
+       cache-bust query is appended at build by iconCacheBustHtml(), and
+       prerenderPages() absolutizes these two for the nested item pages. -->
+  <link rel="icon" type="image/png" href="assets/images/favicon.png">
+  <link rel="apple-touch-icon" href="assets/images/apple-touch-icon.png">
 
   <!-- Shared <head> content injected from partials/head-common.html by htmlPartials Vite plugin -->
   <!-- HEAD_COMMON -->

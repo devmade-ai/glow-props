@@ -68,12 +68,39 @@ compatible — v6 needs Vite 8).
 
 ## Key context
 
-- **DEBUG_SYSTEM decision still open** (TODO.md item 1) — post-conversion the
-  natural shape is the pattern's standard React DebugPill, DEV-gated like
-  four-ems if a public pill is unwanted.
-- **Remaining BURGER_MENU nicety:** per-theme mood tags (authored copy).
+- **DEBUG_SYSTEM and mood tags: CLOSED later this session** — see the
+  addendum below. The only open repo item is the minor `verify:seo`
+  dist/robots.txt assertion (TODO.md).
 - The smoke test lives in the session scratchpad, not the repo — rerun by
   starting `vite preview` and driving Chromium at the five checks above, or
   promote it into the repo as a real script if it should gate CI.
 - Downstream repos can now reference glow-props source directly for the React
   pattern variants instead of only the docs' inline snippets.
+
+## Addendum (same session): DEBUG_SYSTEM + PWA extras + mood tags
+
+- **DEBUG_SYSTEM implemented, DEV-gated** (matrix `Missing → Pass (DEV)`):
+  `src/lib/debugLog.js` (store, console interception, global capture, report
+  with redacted URLs, PWA diagnostics probes), `src/components/debug/
+  DebugPill.jsx` (inline styles, separate root via `src/debugMount.jsx`,
+  z-80), loaded only through `if (import.meta.env.DEV) import(...)` in the
+  page entries — production bundles verified free of the subsystem. The
+  pre-module error capture + 20s plain-language load watchdog in
+  `partials/head-common.html` DOES run in prod; entries clear it after mount.
+  PWA lifecycle reaches the pill via the optional `window.__debugAdd` bridge.
+- **Install analytics** (`pwa-install-events`, localStorage, cap 50) landed in
+  `src/lib/pwa.js` — prompted / installed / installed-via-browser / dismissed /
+  instructions-viewed — displayed in the pill's PWA tab. Earlier the same
+  session: display-mode change listener; `version.json` decided against.
+- **Mood tags**: `src/data/themeDescriptions.js` (hand-authored, outside the
+  generator-owned catalog) rendered in the theme picker per BURGER_MENU.md.
+- **Shared clipboard helper** upgraded to the full DEBUG_SYSTEM cascade
+  (ClipboardItem Blob → writeText → textarea).
+- **Dev/build asymmetry fix**: Vite's dev html pipeline rewrites asset URLs
+  before post transforms, so `iconCacheBustHtml()` now accepts both the
+  relative (build) and base-prefixed (dev) literal forms — the source pages
+  keep relative icon links and `prerenderPages()` absolutizes them for nested
+  pages via `iconLinkPairs()`.
+- Verified: build + three tripwires green; app smoke test green (picker
+  selector updated for mood tags); debug smoke test green (pill mounts in dev
+  with live diagnostics + funnel, absent in prod, watchdog cleared both).

@@ -90,32 +90,33 @@ export function renderMarkdown(text) {
   return marked.parse(stripFrontmatter(text));
 }
 
-// Shared clipboard helper — a CASCADE, not a branch: writeText can reject even
-// where navigator.clipboard exists (permissions policy, focus loss), and a
-// rejection must fall through to the textarea path (DEBUG_SYSTEM.md clipboard
-// fallbacks, adapted).
-export function clipboardWrite(text) {
-  return new Promise((resolve) => {
-    function fallbackCopy() {
-      try {
-        const ta = document.createElement('textarea');
-        ta.value = text;
-        ta.style.position = 'fixed';
-        ta.style.opacity = '0';
-        document.body.appendChild(ta);
-        ta.select();
-        const ok = document.execCommand('copy');
-        document.body.removeChild(ta);
-        resolve(ok);
-      } catch {
-        resolve(false);
-      }
-    }
+// Shared clipboard helper — the full CASCADE from DEBUG_SYSTEM.md "Clipboard
+// Utilities": ClipboardItem Blob works in contexts where writeText is blocked;
+// writeText can reject even where navigator.clipboard exists (permissions
+// policy, focus loss); the textarea covers mobile PWA webviews. Each failure
+// falls through to the next method — never a dead-end branch.
+export async function clipboardWrite(text) {
+  try {
+    const blob = new Blob([text], { type: 'text/plain' });
+    await navigator.clipboard.write([new ClipboardItem({ 'text/plain': blob })]);
+    return true;
+  } catch { /* fall through */ }
 
-    if (navigator.clipboard && navigator.clipboard.writeText) {
-      navigator.clipboard.writeText(text).then(() => resolve(true), fallbackCopy);
-    } else {
-      fallbackCopy();
-    }
-  });
+  try {
+    await navigator.clipboard.writeText(text);
+    return true;
+  } catch { /* fall through */ }
+
+  try {
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    ta.style.cssText = 'position:fixed;left:-9999px;top:-9999px';
+    document.body.appendChild(ta);
+    ta.select();
+    const ok = document.execCommand('copy');
+    document.body.removeChild(ta);
+    return ok;
+  } catch {
+    return false;
+  }
 }

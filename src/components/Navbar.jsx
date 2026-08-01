@@ -11,6 +11,7 @@ import { useTheme } from '../hooks/useTheme.js';
 import { usePwa } from '../context/PwaContext.js';
 import { toggleDarkMode, pickTheme, toggleRandomTheme } from '../lib/theme.js';
 import { LIGHT_THEMES, DARK_THEMES } from '../lib/themeCatalog.js';
+import { THEME_DESCRIPTIONS } from '../data/themeDescriptions.js';
 import { version } from '../../package.json';
 
 // Sun when dark (clicking switches to light), moon when light — the icon
@@ -55,9 +56,14 @@ function ThemePicker({ dark, theme }) {
                   }`}
               >
                 <span className="truncate">{name.charAt(0).toUpperCase() + name.slice(1)}</span>
+                {THEME_DESCRIPTIONS[name] && (
+                  <span className="text-xs text-base-content/40 ml-auto truncate">
+                    {THEME_DESCRIPTIONS[name]}
+                  </span>
+                )}
                 {active && (
-                  <svg className="w-4 h-4 text-primary shrink-0 ml-auto" viewBox="0 0 20 20"
-                    fill="currentColor" aria-hidden="true">
+                  <svg className={`w-4 h-4 text-primary shrink-0${THEME_DESCRIPTIONS[name] ? '' : ' ml-auto'}`}
+                    viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
                     <path fillRule="evenodd" d={CHECKMARK} clipRule="evenodd" />
                   </svg>
                 )}
