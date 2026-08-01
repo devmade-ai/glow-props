@@ -16,7 +16,7 @@
     <!-- Disclosure-pattern dropdown (not role="menu") per WAI-ARIA -->
     <div class="relative">
       <button type="button"
-              class="btn btn-ghost btn-square"
+              class="btn btn-ghost btn-square min-h-11 min-w-11"
               id="burger-trigger"
               aria-expanded="false"
               aria-controls="burger-menu"
@@ -26,7 +26,10 @@
         </svg>
       </button>
 
-      <!-- Menu dropdown: CSS opacity+scale transition, pointer-events-none when closed -->
+      <!-- Menu dropdown: CSS opacity+scale transition, pointer-events-none when closed.
+           inert + aria-hidden while closed: opacity/pointer-events hide it visually but
+           leave 30+ items in the tab order and the accessibility tree. inert (not the
+           hidden attribute) preserves the open/close transition. theme.js toggles both. -->
       <div class="absolute right-0 top-full mt-2 z-dropdown w-56 max-w-[calc(100vw-2rem)]
                   rounded-xl shadow-lg bg-base-100 border border-base-300
                   py-1 overscroll-contain origin-top-right
@@ -34,7 +37,9 @@
                   pointer-events-none opacity-0 scale-95"
            id="burger-menu"
            role="navigation"
-           aria-label="Main navigation">
+           aria-label="Main navigation"
+           inert
+           aria-hidden="true">
         <ul class="list-none m-0 p-0 flex flex-col">
           <li><a href="{{NAV_PREFIX}}#projects" class="block w-full text-left px-4 py-2.5 text-sm text-base-content
                    hover:bg-base-200 transition-colors cursor-pointer no-underline
@@ -50,6 +55,7 @@
                    min-h-11 flex items-center" data-close>Patterns</a></li>
           <li><hr class="my-1 border-base-300"></li>
           <li><button type="button" id="theme-toggle"
+                      aria-label="Switch to dark mode"
                       class="block w-full text-left px-4 py-2.5 text-sm text-base-content
                              hover:bg-base-200 transition-colors cursor-pointer
                              focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-[-2px]

@@ -6,6 +6,11 @@
    Alternative: Keep Pico + add Tailwind — rejected, two frameworks fight over base styles */
 
 @import "tailwindcss";
+/* Requirement: docs/ markdown must not feed Tailwind's class scanner — the
+   pattern docs quote z-index VIOLATIONS as prose examples (z-100, z-[9999]),
+   and automatic source detection was harvesting them into the shipped CSS.
+   dist/ and node_modules/ are already excluded by detection defaults. */
+@source not "./docs";
 /* Requirement: Per-mode individual theme picker from burger menu
    Approach: Register all 35 DaisyUI built-in themes so users can pick any
      light theme independently of their dark theme choice. Dark/light toggle
@@ -245,7 +250,9 @@
    Requirement: Clean PDF output via window.print()
    Approach: Hide interactive elements, force readable colors, prevent page breaks
    in content blocks. !important justified — must override inline styles and
-   CSS-in-JS (see CLAUDE.md Download as PDF pattern) */
+   CSS-in-JS (see docs/implementations/DOWNLOAD_PDF.md).
+   print-color-adjust: without it browsers strip background colors in print, so
+   the card backgrounds, badges, and the project status dots vanish from the PDF. */
 @media print {
   .no-print {
     display: none !important;
@@ -254,11 +261,20 @@
   body {
     background: white !important;
     color: black !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
   }
 
   a {
     color: black !important;
     text-decoration: underline !important;
+  }
+
+  /* Named utility for content that must not straddle a page break, plus the
+     element fallback the pattern sanctions for unannotated markup. */
+  .print-avoid-break {
+    break-inside: avoid;
+    page-break-inside: avoid;
   }
 
   article, section, .card {
@@ -269,11 +285,23 @@
 }
 
 /* ===== Burger menu z-index layer =====
-   Follows z-index scale from CLAUDE.md:
-   Menu dropdown: z-50, Modals: z-60, Toasts: z-70
+   Follows the scale in docs/implementations/Z_INDEX_SCALE.md. Layers this site
+   uses: base content 0-10 (.code-copy-btn z-10), sticky navbar z-30, skip link
+   z-50 on focus, menu dropdown z-50, modals z-60, toasts z-70. Nothing above
+   z-80 (the scale's debug tier, unused here).
    Note: No backdrop layer (z-40) — the navbar's backdrop-filter creates a
    containing block that traps position:fixed children. Click-outside uses
    a document handler instead. See theme.js burger menu comments. */
 @utility z-dropdown {
   z-index: 50;
+}
+
+/* Requirement: theme switches must swap colors instantly (THEME_DARK_MODE.md
+   key lesson: no transitions on theme change) while hover feedback keeps its
+   transition-colors. theme.js adds this class around the data-theme swap for
+   two frames; !important outranks every utility transition. */
+.theme-switching *,
+.theme-switching *::before,
+.theme-switching *::after {
+  transition: none !important;
 }

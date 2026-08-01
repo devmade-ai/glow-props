@@ -1,5 +1,8 @@
 <!-- Requirement: Skip link for keyboard users to bypass navbar + burger menu (30+ items)
-     Approach: Visually hidden link that becomes visible on focus. Points to #main. -->
-<a href="#main" class="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-90 focus:btn focus:btn-primary focus:btn-sm">
+     Approach: Visually hidden link that becomes visible on focus. Points to #main.
+     z-50: clears the sticky navbar (z-30) — its whole job — while staying below
+     modals (60) and toasts (70). The scale tops out at z-80; nothing goes above it
+     (docs/implementations/Z_INDEX_SCALE.md). -->
+<a href="#main" class="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-50 focus:btn focus:btn-primary focus:btn-sm">
   Skip to main content
 </a>

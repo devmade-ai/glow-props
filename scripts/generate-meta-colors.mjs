@@ -158,10 +158,12 @@ navbarHtml = navbarHtml.replace(
 writeFileSync(join(root, 'partials/navbar.html'), navbarHtml);
 console.log('Updated partials/navbar.html');
 
-// 4. index.html / project.html — initial meta tag values
+// 4. index.html / pattern.html / project.html — initial meta tag values.
+// All three pages carry the theme-color pair; missing one lets it silently
+// drift on the next DaisyUI update.
 const defaultLightColor = metaColors['caramellatte'] || '#000000';
 const defaultDarkColor = metaColors['coffee'] || '#261b25';
-for (const htmlFile of ['index.html', 'project.html']) {
+for (const htmlFile of ['index.html', 'pattern.html', 'project.html']) {
   try {
     const htmlPath = join(root, htmlFile);
     let html = readFileSync(htmlPath, 'utf8');

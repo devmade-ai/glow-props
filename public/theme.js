@@ -133,12 +133,22 @@
   // Used by the cross-tab sync handler — the values already came from
   // another tab's localStorage write, so writing them back is redundant.
   function applyTheme(dark, themeName, skipPersist) {
+    // Suppress transitions for the swap (THEME_DARK_MODE.md: theme changes are
+    // instant). transition-colors on menu items/buttons is hover feedback and
+    // must not animate a whole-page recolor. Two rAFs: the first fires before
+    // the paint that applies the new theme, the second after it has painted.
+    document.documentElement.classList.add('theme-switching');
     if (dark) {
       document.documentElement.classList.add('dark');
     } else {
       document.documentElement.classList.remove('dark');
     }
     document.documentElement.setAttribute('data-theme', themeName);
+    requestAnimationFrame(function () {
+      requestAnimationFrame(function () {
+        document.documentElement.classList.remove('theme-switching');
+      });
+    });
 
     updateMetaThemeColor(themeName);
 
@@ -152,7 +162,9 @@
   }
 
   // ===== UI updates =====
-  // Requirement: Show correct toggle label based on current dark/light state
+  // Requirement: Show correct toggle label based on current dark/light state.
+  //   The aria-label flips with it — the visible span alone leaves the
+  //   accessible name stale for screen readers when the label swap happens.
   function updateThemeLabels(dark) {
     var darkLabels = document.querySelectorAll('.theme-label-dark');
     var lightLabels = document.querySelectorAll('.theme-label-light');
@@ -164,6 +176,10 @@
       if (dark) el.classList.add('hidden');
       else el.classList.remove('hidden');
     });
+    var toggleBtn = document.getElementById('theme-toggle');
+    if (toggleBtn) {
+      toggleBtn.setAttribute('aria-label', dark ? 'Switch to light mode' : 'Switch to dark mode');
+    }
   }
 
   // Requirement: Show which theme list matches the current mode
@@ -194,17 +210,20 @@
     });
   }
 
-  // Requirement: Show which theme is currently active in the picker
+  // Requirement: Show which theme is currently active in the picker.
+  //   bg-primary/10 + text-primary + font-medium, not bg-base-200 — the buttons
+  //   hover with bg-base-200, so the active row was indistinguishable from a
+  //   hovered one (BURGER_MENU.md active-theme highlight).
   function updateThemeIndicators(themeName) {
     var items = document.querySelectorAll('[data-theme-pick]');
     items.forEach(function (el) {
       var check = el.querySelector('.theme-check');
       if (el.getAttribute('data-theme-pick') === themeName) {
         if (check) check.classList.remove('invisible');
-        el.classList.add('bg-base-200');
+        el.classList.add('bg-primary/10', 'text-primary', 'font-medium');
       } else {
         if (check) check.classList.add('invisible');
-        el.classList.remove('bg-base-200');
+        el.classList.remove('bg-primary/10', 'text-primary', 'font-medium');
       }
     });
   }
@@ -327,6 +346,11 @@
 
     function openMenu() {
       menuOpen = true;
+      // inert/aria-hidden come off BEFORE the focus move below — an inert
+      // element refuses focus. Closed-state markup carries both so the 30+
+      // items stay out of the tab order and the accessibility tree.
+      menu.removeAttribute('inert');
+      menu.removeAttribute('aria-hidden');
       menu.classList.remove('pointer-events-none', 'opacity-0', 'scale-95');
       menu.classList.add('pointer-events-auto', 'opacity-100', 'scale-100');
       trigger.setAttribute('aria-expanded', 'true');
@@ -350,6 +374,8 @@
 
     function closeMenu() {
       menuOpen = false;
+      menu.setAttribute('inert', '');
+      menu.setAttribute('aria-hidden', 'true');
       menu.classList.remove('pointer-events-auto', 'opacity-100', 'scale-100');
       menu.classList.add('pointer-events-none', 'opacity-0', 'scale-95');
       trigger.setAttribute('aria-expanded', 'false');
@@ -385,6 +411,54 @@
       }
     }
     trackListener(document, 'keydown', onDocumentKeydown);
+
+    // Requirement: keyboard navigation inside the open menu (BURGER_MENU.md):
+    //   ArrowDown/ArrowUp move with wrap, Home/End jump, Tab is trapped so it
+    //   cycles within the menu instead of escaping to the page behind it.
+    // Approach: one keydown handler on the menu itself, walking the currently
+    //   VISIBLE items — the inactive theme list is display:none'd and must not
+    //   receive focus. offsetParent is null for hidden elements.
+    // Note on the trap living here instead of a shared module: pwa.js has the
+    //   same Tab-wrap for its install modal, but this file is a static classic
+    //   script outside Vite's module graph and cannot import from src/ — the
+    //   ~15 duplicated lines are the cost of that architecture.
+    function visibleMenuItems() {
+      var all = menu.querySelectorAll('a, button:not([disabled])');
+      return Array.prototype.filter.call(all, function (el) {
+        return el.offsetParent !== null;
+      });
+    }
+
+    function onMenuKeydown(e) {
+      if (!isOpen()) return;
+      var items = visibleMenuItems();
+      if (items.length === 0) return;
+      var idx = items.indexOf(document.activeElement);
+
+      if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        items[(idx + 1) % items.length].focus();
+      } else if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        items[(idx - 1 + items.length) % items.length].focus();
+      } else if (e.key === 'Home') {
+        e.preventDefault();
+        items[0].focus();
+      } else if (e.key === 'End') {
+        e.preventDefault();
+        items[items.length - 1].focus();
+      } else if (e.key === 'Tab') {
+        // Focus trap: wrap at the boundaries instead of leaving the menu.
+        if (e.shiftKey && (idx <= 0)) {
+          e.preventDefault();
+          items[items.length - 1].focus();
+        } else if (!e.shiftKey && idx === items.length - 1) {
+          e.preventDefault();
+          items[0].focus();
+        }
+      }
+    }
+    trackListener(menu, 'keydown', onMenuKeydown);
 
     // Close menu when clicking [data-close] items (nav links, PDF button).
     // Theme toggle and theme picker do NOT have data-close — menu stays open.
