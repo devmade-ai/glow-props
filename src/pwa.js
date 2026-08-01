@@ -70,11 +70,13 @@ var checkPromise = null;        // in-flight checkForUpdates() promise (re-entra
 // Cleanup tracking — pattern: docs/implementations/TIMER_LEAKS.md
 var swUpdateIntervalId = null;
 var manualInstallTimeoutId = null;
+var diagnosticTimeoutId = null;
 var checkSettleTimeoutId = null;
 var toastTimeouts = [];
 var beforeInstallPromptListener = null;
 var appInstalledListener = null;
 var domContentLoadedListener = null;
+var visibilityListener = null;
 
 // ===== Safe storage helpers =====
 // Requirement: Preference + suppression reads/writes must not throw in sandboxed
@@ -158,6 +160,13 @@ function applyUpdate() {
 
 updateSW = registerSW({
   onNeedRefresh: function () {
+    // Post-reload lifecycle re-fires within the suppression window are noise —
+    // without this guard the banner pops right after the update it announces
+    // (PWA_SYSTEM.md "Update Application Policy").
+    if (wasJustUpdated()) {
+      launchApplyUntil = 0;
+      return;
+    }
     updateAvailable = true;
     // Launch-apply: onRegisteredSW found a worker already waiting and recorded a
     // short eligibility window. This onNeedRefresh is that same worker's deferred
@@ -191,6 +200,21 @@ updateSW = registerSW({
     }
   },
 });
+
+// Requirement: catch updates when the user returns to a long-lived tab — the
+//   hourly poll alone leaves backgrounded tabs (especially Safari, which never
+//   closes standalone PWAs) stale until the next tick.
+// Approach: registration.update() on visibilitychange → visible
+//   (PWA_SYSTEM.md key lesson 15). Guarded + tracked like the other listeners.
+if (typeof document !== 'undefined' && !window.__pwaVisibilityAttached) {
+  window.__pwaVisibilityAttached = true;
+  visibilityListener = function () {
+    if (document.visibilityState === 'visible' && swRegistration) {
+      swRegistration.update();
+    }
+  };
+  document.addEventListener('visibilitychange', visibilityListener);
+}
 
 // ===== Manual update check =====
 // Requirement: "Check for updates" menu action with the fleet-standard typed result
@@ -252,20 +276,37 @@ var TOAST_STYLES = {
   warning: 'bg-warning text-warning-content',
 };
 
+// Requirement: concurrent toasts must stack, not overlap — "Checking…" runs
+//   while the settle timer decides the result, so two are routinely alive at
+//   once and independently-fixed elements paint on top of each other.
+// Approach: one fixed container, flex-col-reverse so the newest renders on top
+//   (PWA_SYSTEM.md Toast System). Created lazily, removed in the HMR dispose.
+function getToastContainer() {
+  var container = document.getElementById('pwa-toast-container');
+  if (!container) {
+    container = document.createElement('div');
+    container.id = 'pwa-toast-container';
+    container.className = 'fixed left-1/2 -translate-x-1/2 z-70 flex flex-col-reverse gap-2 ' +
+      'max-w-sm w-[calc(100%-2rem)] no-print';
+    container.style.bottom = 'max(1rem, env(safe-area-inset-bottom))';
+    document.body.appendChild(container);
+  }
+  return container;
+}
+
 function showToast(message, type, duration) {
   type = type || 'info';
   duration = duration || 3000;
 
   var toast = document.createElement('div');
-  toast.className = 'fixed left-1/2 -translate-x-1/2 z-70 px-4 py-2.5 rounded-xl shadow-lg ' +
-    'text-sm font-medium max-w-sm w-[calc(100%-2rem)] text-center ' +
-    'transition-all duration-200 opacity-0 translate-y-2 no-print ' +
+  toast.className = 'px-4 py-2.5 rounded-xl shadow-lg ' +
+    'text-sm font-medium text-center ' +
+    'transition-all duration-200 opacity-0 translate-y-2 ' +
     (TOAST_STYLES[type] || TOAST_STYLES.info);
-  toast.style.bottom = 'max(1rem, env(safe-area-inset-bottom))';
   toast.textContent = message;
   toast.setAttribute('role', type === 'error' ? 'alert' : 'status');
   toast.setAttribute('aria-live', type === 'error' ? 'assertive' : 'polite');
-  document.body.appendChild(toast);
+  getToastContainer().appendChild(toast);
 
   // Trigger enter animation on next frame
   requestAnimationFrame(function () {
@@ -336,13 +377,29 @@ function showUpdateBanner() {
 
 function detectBrowser() {
   var ua = navigator.userAgent;
-  if (navigator.brave) return 'brave';
+  // Brave Mobile strips "Brave" from the UA string — existence check, not UA match.
+  if ('brave' in navigator) return 'brave';
   if (/Firefox/i.test(ua)) return 'firefox';
   if (/Safari/i.test(ua) && !/Chrome/i.test(ua) && !/Chromium/i.test(ua)) return 'safari';
+  if (/SamsungBrowser/i.test(ua)) return 'samsung';
+  if (/OPR\//i.test(ua) || /Opera/i.test(ua)) return 'opera';
+  if (/Vivaldi/i.test(ua)) return 'vivaldi';
+  if (/Arc\//i.test(ua)) return 'arc';
   if (/Edg\//i.test(ua)) return 'edge';
   if (/Chrome/i.test(ua) || /Chromium/i.test(ua)) return 'chrome';
   return 'unknown';
 }
+
+// Single source of truth for which browsers support beforeinstallprompt —
+// shared by supportsAutoInstall and the diagnostic fallback (PWA_SYSTEM.md).
+var CHROMIUM_BROWSERS = ['chrome', 'edge', 'brave', 'opera', 'samsung', 'vivaldi', 'arc'];
+
+// Display names for UI — separate from detection logic.
+var BROWSER_DISPLAY_NAMES = {
+  chrome: 'Google Chrome', edge: 'Microsoft Edge', brave: 'Brave',
+  opera: 'Opera', samsung: 'Samsung Internet', vivaldi: 'Vivaldi',
+  arc: 'Arc', safari: 'Safari', firefox: 'Firefox', unknown: 'Your Browser',
+};
 
 // ===== Install Instructions =====
 // Requirement: Browser-specific step-by-step install guides for non-technical users
@@ -355,6 +412,22 @@ function detectBrowser() {
 function getInstallInstructions(browser) {
   var isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
   var isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
+
+  // iOS non-Safari browsers cannot install PWAs — without this, iOS Chrome/Edge
+  // users get desktop instructions ("install icon in the address bar") that are
+  // impossible to follow. Redirect to Safari and say why (PWA_SYSTEM.md).
+  if (isIOS && browser !== 'safari') {
+    return {
+      browser: BROWSER_DISPLAY_NAMES[browser] + ' (iOS)',
+      steps: [
+        'Open this page in <strong>Safari</strong> (iOS requires Safari for app installation)',
+        'Tap the <strong>Share</strong> button (square with arrow) at the bottom of the screen',
+        'Scroll down and tap <strong>Add to Home Screen</strong>',
+        'Tap <strong>Add</strong> in the top right corner',
+      ],
+      note: 'On iOS, only Safari can install web apps to the home screen. Other browsers on iOS cannot trigger installation.',
+    };
+  }
 
   switch (browser) {
     case 'safari':
@@ -406,10 +479,29 @@ function getInstallInstructions(browser) {
         ],
         note: 'If the install option doesn\'t appear, check that Brave Shields isn\'t blocking it.',
       };
+    case 'samsung':
+      return {
+        browser: 'Samsung Internet',
+        steps: [
+          'Tap the download icon in the address bar',
+          'Or tap the menu (≡) → <strong>Add page to</strong> → <strong>Home screen</strong>',
+          'Tap <strong>Install</strong> to confirm',
+        ],
+      };
+    case 'opera':
+      return {
+        browser: 'Opera',
+        steps: [
+          'Tap the menu (⋮) → <strong>Add to Home screen</strong>',
+          'Tap <strong>Add</strong> to confirm',
+        ],
+      };
+    case 'vivaldi':
+    case 'arc':
     case 'chrome':
     case 'edge':
       return {
-        browser: browser === 'edge' ? 'Microsoft Edge' : 'Google Chrome',
+        browser: BROWSER_DISPLAY_NAMES[browser],
         steps: [
           'Click the install icon in the address bar (computer with down arrow)',
           'Or click the menu (⋮) → <strong>Install Glow Props...</strong>',
@@ -438,9 +530,13 @@ var deferredPrompt = null;
 var browser = detectBrowser();
 var isStandalone = window.matchMedia('(display-mode: standalone)').matches ||
   navigator.standalone === true;
-var supportsAutoInstall = browser === 'chrome' || browser === 'edge' || browser === 'brave';
+var supportsAutoInstall = CHROMIUM_BROWSERS.indexOf(browser) !== -1;
 var supportsManualInstall = browser === 'safari' || browser === 'firefox';
 var dismissed = safeLocalGet('pwa-install-dismissed') === 'true';
+// Armed by the 5s diagnostic timeout: Chromium without beforeinstallprompt
+// (Chrome suppresses it for 90 days after a dismissal) falls back to the
+// manual-instructions modal instead of hiding the install item entirely.
+var manualFallbackArmed = false;
 
 // Consume early-captured event (repeat visits where SW fires before module loads)
 if (window.__pwaInstallPromptEvent) {
@@ -483,6 +579,29 @@ if (!isStandalone && !dismissed && supportsManualInstall) {
   }, 1000);
 }
 
+// Requirement: Chromium users whose beforeinstallprompt never fires (Chrome
+//   suppresses it for 90 days after a dismissal) had no install path at all —
+//   the menu item stayed hidden with nothing to diagnose it.
+// Approach: 5-second diagnostic timeout (PWA_SYSTEM.md) — log manifest/SW
+//   status for debugging, then arm the manual-instructions fallback so the
+//   menu item appears and opens the modal.
+if (!isStandalone && !dismissed && supportsAutoInstall) {
+  diagnosticTimeoutId = setTimeout(function () {
+    diagnosticTimeoutId = null;
+    if (!deferredPrompt) {
+      if (typeof console !== 'undefined') {
+        console.warn('[PWA] beforeinstallprompt not received after 5s', {
+          browser: browser,
+          hasManifest: !!document.querySelector('link[rel="manifest"]'),
+          hasSW: !!(navigator.serviceWorker && navigator.serviceWorker.controller),
+        });
+      }
+      manualFallbackArmed = true;
+      updateInstallMenuVisibility();
+    }
+  }, 5000);
+}
+
 // ===== Install Menu Item Visibility =====
 // Requirement: Show "Install app" in burger menu only when installable and not dismissed
 // Approach: Toggle hidden class on the menu item. Called on page load and when
@@ -490,7 +609,8 @@ if (!isStandalone && !dismissed && supportsManualInstall) {
 
 function updateInstallMenuVisibility() {
   var canNativeInstall = !!deferredPrompt;
-  var showInstall = !isStandalone && !dismissed && (canNativeInstall || supportsManualInstall);
+  var showInstall = !isStandalone && !dismissed &&
+    (canNativeInstall || supportsManualInstall || manualFallbackArmed);
   var installItems = document.querySelectorAll('.pwa-install-item');
   installItems.forEach(function (el) {
     if (showInstall) {
@@ -535,7 +655,7 @@ function triggerInstall() {
         deferredPrompt = null;
         updateInstallMenuVisibility();
       });
-  } else if (supportsManualInstall) {
+  } else if (supportsManualInstall || manualFallbackArmed) {
     showInstallModal();
   }
 }
@@ -628,6 +748,20 @@ function showInstallModal() {
           '</li>' +
         '</ul>' +
       '</div>' +
+      // OS icon cache is the one layer the web app can't refresh — tell users
+      // who hit it what to do (PWA_ICON_CACHE_BUST.md "User communication").
+      // Collapsed so first-time installers stay focused on the install steps.
+      '<details class="border-t border-base-300 pt-4 mt-4">' +
+        '<summary class="text-base-content/60 text-xs cursor-pointer hover:text-base-content">' +
+          'Already installed and the icon looks outdated?' +
+        '</summary>' +
+        '<p class="text-base-content/60 text-xs mt-2 leading-relaxed">' +
+          'Your phone or computer keeps app icons cached separately from your ' +
+          'browser, so clearing site data alone won\'t refresh them. Remove the ' +
+          'app from your home screen, dock, or Start menu first, then install ' +
+          'it again from this menu.' +
+        '</p>' +
+      '</details>' +
       // Actions
       '<div class="flex justify-end gap-2 mt-4">' +
         '<button type="button" id="pwa-install-modal-dismiss" class="btn btn-ghost">Not now</button>' +
@@ -698,6 +832,7 @@ if (import.meta.hot) {
   import.meta.hot.dispose(function () {
     if (swUpdateIntervalId !== null) clearInterval(swUpdateIntervalId);
     if (manualInstallTimeoutId !== null) clearTimeout(manualInstallTimeoutId);
+    if (diagnosticTimeoutId !== null) clearTimeout(diagnosticTimeoutId);
     // Clearing the settle timeout leaves an in-flight checkForUpdates() promise
     // unresolved — benign: it belongs to the old module closure being discarded.
     if (checkSettleTimeoutId !== null) clearTimeout(checkSettleTimeoutId);
@@ -712,6 +847,21 @@ if (import.meta.hot) {
     if (domContentLoadedListener) {
       document.removeEventListener('DOMContentLoaded', domContentLoadedListener);
     }
+    if (visibilityListener) {
+      document.removeEventListener('visibilitychange', visibilityListener);
+      window.__pwaVisibilityAttached = false;
+    }
+    // The early-capture listener lives in partials/head-common.html (inline,
+    // pre-bundle); it exposes its handler on window so this dispose can pair it.
+    if (window.__pwaInstallCapture) {
+      window.removeEventListener('beforeinstallprompt', window.__pwaInstallCapture);
+      window.__pwaInstallCapture = null;
+      window.__pwaInstallCaptureAttached = false;
+    }
+    var toastContainer = document.getElementById('pwa-toast-container');
+    if (toastContainer) toastContainer.remove();
+    var banner = document.getElementById('pwa-update-banner');
+    if (banner) banner.remove();
     closeInstallModal();  // closes any open modal + clears its escape listener
     window.__pwaModuleAttached = false;
   });
