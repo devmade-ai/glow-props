@@ -87,7 +87,7 @@ glow-props/
     AI_MISTAKES.md              # Learnings from past AI errors
     USER_ACTIONS.md             # Manual tasks requiring user intervention
     PROJECT_DOCS.md             # Status tracker and update guide for mirrored docs
-    implementations/            # Implementation patterns (11 files, YAML frontmatter)
+    implementations/            # Implementation patterns (12 files, YAML frontmatter)
   .github/
     workflows/
       deploy.yml                # GitHub Pages deployment on push to main
@@ -97,9 +97,11 @@ glow-props/
 
 ```bash
 npm install
-npm run dev          # Start dev server
-npm run build        # Production build → dist/
-npm run verify:seo   # Static check on the discoverability setup
+npm run dev                  # Start dev server
+npm run build                # Production build → dist/
+npm run verify:seo           # Static check on the discoverability setup
+npm run verify:icons         # Icon cache-busting contract (build first)
+npm run verify:timer-cleanup # Timer/listener cleanup hygiene
 ```
 
 ## Tech Stack
@@ -131,17 +133,15 @@ npm run generate:og-image   # Rebuild the card from assets/icon-source.svg
 npm run verify:seo          # Fails if any of it drifts
 ```
 
-Every pattern is **prerendered to its own file** at `patterns/<slug>/` — real
-content and its own title, description and canonical in the markup, so it
-crawls without JS and unfurls as itself rather than as "Pattern Details". The
-legacy `pattern.html?name=<slug>` still works and canonicalises to the clean
-URL.
+Every pattern and every project is **prerendered to its own file** at
+`patterns/<slug>/` and `projects/<slug>/` — real content and its own title,
+description and canonical in the markup, so each crawls without JS and unfurls
+as itself rather than as "Pattern Details" / "Project Details". The legacy
+`pattern.html?name=` / `project.html?name=` forms still work and canonicalise
+to the clean URLs.
 
 `sitemap.xml` is **generated at build** from `docs/implementations/` and
 `public/projects/` — do not add one to `public/`, it would shadow the real file.
-`project.html` is not prerendered; its canonical is set at runtime
-(`src/seoMeta.js`), because its content is chosen by `?name=` and a static one
-would point every project at the same URL.
 
 Run `npm run build` before `npm run verify:seo` — the checks over generated
 output are only as current as `dist/`.

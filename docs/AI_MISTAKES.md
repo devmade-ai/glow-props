@@ -1,5 +1,13 @@
 # AI Mistakes
 
+## 2026-08-01: Self-reported pattern compliance without verifying it
+
+**What went wrong:** The Gap Matrix in `docs/TODO.md` graded glow-props "Pass" or "N/A" in every column. A full 12-pattern self-audit found the row wrong in six columns — including two production breaks that had shipped: the service worker threw `add-to-cache-list-conflicting-entries` at evaluation (duplicate icon precache entries — the entire offline layer was dead), and all 12 prerendered pattern pages loaded `theme.js` from a relative path that 404s (theme picker and burger menu dead on the canonical URLs). The ICON_CACHE_BUST "N/A" rested on a premise ("static site, no PWA icons") that the same matrix row contradicted by marking PWA_SYSTEM "Pass".
+
+**Why it happened:** The matrix cells for this repo were filled in from memory of what had been implemented, not from the same evidence standard the fleet audits apply to downstream repos (one agent per repo, file-level verification). N/A cells were recorded without rationale footnotes — the exact defect this file's process flags when other repos do it — so nothing forced the premise to be checked. And no tripwire covered the two breaks: `verify:seo` checked head tags on prerendered pages but not their script/asset paths, and nothing inspected the built `sw.js` precache list.
+
+**How to prevent it:** Grade this repo's own matrix row by the downstream standard: per-pattern verification against the actual files and the actual build output, never from memory. Every N/A needs a written rationale at the moment it's recorded; an N/A without one is unverified. When a break can only be seen in `dist/` (SW precache conflicts, un-versioned URLs, broken asset paths), add a dist-level tripwire the same day the feature lands — `verify:icons` and the extended `verify:seo`/`verify:timer-cleanup` now cover these three.
+
 ## 2026-03-31: Used stale secondary source instead of the authoritative API
 
 **What went wrong:** Built the portfolio project list from repo-tor's `projects.json` file, which was incomplete (missing four-ems, sun-sea-o). Used the GitHub API's public-repos-only endpoint to cross-check, which hid private repos. Missed two projects entirely — sun-sea-o was caught by the user, four-ems was caught when the user provided the actual live URLs. Also used GitHub Pages URLs from the stale projects.json instead of the current Vercel URLs for 5 projects.

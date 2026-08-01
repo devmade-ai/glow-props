@@ -2,63 +2,78 @@
 
 ## Worked on
 
-The **qi-invoice** catalog entry — added, then substantially rewritten in the
-same session when the app itself changed shape. All implementation work happened
-in qi-invoice's own repo; the change here is the entry plus its scrubbed docs.
+Full 12-pattern self-audit ("does glow-props adhere to its own patterns?") and
+the fix pass that followed. One auditor per pattern doc, findings verified
+against source AND build output, then everything fixable fixed the same
+session.
 
 ## Accomplished
 
-- **`public/projects/qi-invoice/`** — `meta.json` + `README.md` +
-  `USER_GUIDE.md` + `TESTING_GUIDE.md`, `docs: { readme, userGuide,
-  testingGuide }`.
-- **Rewritten mid-session.** The first version described an app that emailed the
-  invoice; the owner then removed the entire backend — endpoint, SMTP, rate
-  limiting, Supabase — leaving a static app that produces a PDF. Every one of
-  the four files was updated: there is no send flow, no recipient inbox, no
-  server in the architecture diagram, and the privacy claims changed from "we
-  don't retain it" to "it never leaves your device", which is a stronger and
-  simpler thing to say.
-- **`meta.json`** carries four `dataPrivacy` keys rather than the usual
-  storage/auth pair. "No server" is the product's defining claim and stating it
-  alone would be incomplete: the browser DOES remember the sender's own details,
-  and that belongs beside it. The `authentication` key was dropped — there is no
-  auth to describe, and an empty one would read as an omission.
-- **`README.md`** keeps its design-decision section deliberately: integer money,
-  the two rounding rules, invoice-level currency, sign-from-section, two
-  renderers sharing one set of figures, and why the PDF holds text rather than
-  pixels. That is the part worth reading at portfolio altitude. Setup commands,
-  env vars and internal doc links are gone.
-- **`USER_GUIDE.md`** copied verbatim, both times. Grepped first on each pass:
-  the source guide has no commands, no localhost and no env vars, so there was
-  nothing to strip and rewriting it would only introduce drift.
-- **`TESTING_GUIDE.md`** rewritten rather than scrubbed. The source opens with
-  the automated suite, npm scripts and a per-test-file coverage table; removing
-  those left too little to edit around, so the manual scenarios were carried
-  over on their own — 16 of them now, including the generated-PDF and non-Latin
-  cases the email-era version had no reason to cover.
-- **`docs/PROJECT_DOCS.md`** — row in the User-Facing Apps table with the
-  per-file scrub treatment, and `qi-invoice` added to the private-repo list.
+- **Two production breaks found and fixed.** (1) The shipped service worker
+  threw `add-to-cache-list-conflicting-entries` — four icons entered the
+  precache twice (bare-URL `revision:null` from the glob + a revisioned copy
+  from includeAssets/manifest injection), which kills the whole precache layer
+  at SW evaluation. Now `globIgnores` excludes the icon files and each has
+  exactly one revisioned entry. (2) All 12 prerendered pattern pages loaded
+  `theme.js`, favicon, and the navbar mark via document-relative paths that
+  404 from `patterns/<slug>/` — theme picker and burger menu were dead there.
+  `rebaseDocumentRelativeAssets()` in `vite.config.js` now rewrites them, for
+  pattern AND project prerenders.
+- **Offline actually covers the content now:** `.md` added to `globPatterns`
+  (the site's body content), `ignoreURLParametersMatching` covers `?name=`
+  (project/pattern pages) and `?v=` (versioned icons), Google Fonts runtime-
+  cached.
+- **PWA_ICON_CACHE_BUST implemented** (was falsely "N/A" in the gap matrix):
+  sha256 `iconVersion()` → `?v=` on manifest icons, page links, and the navbar
+  mark; `iconCacheBustHtml()` fail-loud plugin; `npm run verify:icons` tripwire
+  gating the deploy; stale-icon `<details>` disclosure in the install modal.
+  The manifest's maskable icon is now a real full-bleed
+  `icon-1024-maskable.png` (transparent one was declared maskable before).
+- **Projects prerendered** like patterns: `prerenderProjectPages()` emits
+  `projects/<slug>/index.html` with per-project head tags + README body;
+  sitemap lists clean URLs; `project.html` reads its slug from the path and
+  canonicalizes to the clean URL; index.html project links updated; static
+  pattern cards injected into the built landing page for non-JS crawlers.
+- **Burger menu a11y:** focus trap + Arrow/Home/End navigation, `inert` +
+  `aria-hidden` while closed, 44px trigger, active theme visually distinct
+  from hover, aria-label flips with the toggle.
+- **Timer leaks:** abort timers cleared in catch paths (pattern/project.html),
+  `index.html` IIFE on an AbortController with `window.__home.dispose()`,
+  `window.__project.dispose()` for the tab listener, head-common's
+  beforeinstallprompt capture guarded and released by pwa.js's dispose.
+  `verify:timer-cleanup` now scans inline HTML scripts and all `public/*.js`.
+- **PWA install flow:** 7 Chromium browsers detected (`CHROMIUM_BROWSERS`),
+  iOS non-Safari users get Safari-redirect instructions, 5s diagnostic
+  fallback for suppressed prompts, `visibilitychange` update check,
+  `wasJustUpdated()` guard in `onNeedRefresh`, toasts stack in a
+  `flex-col-reverse` container.
+- **CSS/theme:** skip link `z-90 → z-50`; `@source not "./docs"` (pattern docs'
+  violation examples were being harvested into shipped CSS);
+  `print-color-adjust: exact` + `.print-avoid-break` + `no-print` footers;
+  manifest `theme_color` = coffee base-100 `#261b25`; theme switches are
+  transition-free via a two-frame `.theme-switching` class;
+  `generate-meta-colors.mjs` now also rewrites `pattern.html`.
+- **Docs made honest:** gap matrix row corrected (BURGER_MENU Partial,
+  DEBUG_SYSTEM Missing-pending-decision, ICON_CACHE_BUST Pass, EVENT_BUS N/A
+  with rationale), CLAUDE.md gained Not Applicable Patterns + deviation notes +
+  corrected stale prebuild claim, `TIMER_LEAKS.md` cross-ref fixed
+  (`bus.subscribe()` → `bus.on()`), AI_MISTAKES entry on unverified
+  self-grading.
 
 ## Current state
 
-`npm run build` clean, `validateProjectMeta` green (no warnings, so every
-declared doc file exists), sitemap at 29 URLs. `npm run verify:seo` and
-`npm run verify:timer-cleanup` both pass.
+`vite build` clean. All three tripwires green: `verify:timer-cleanup`,
+`verify:seo` (extended: project pages, OG dims on all pages, noindex guard,
+static pattern links), `verify:icons` (new). Precache 120 entries / ~2.2 MB.
+Sitemap 29 URLs (1 + 12 patterns + 16 projects, all clean forms).
 
 ## Key context
 
-- The Details page (`project.html`) renders one labeled tab per
-  `meta.docs.<key>: true` (Overview / User Guide / Testing Guide / Tutorial),
-  fetching the matching file from `public/projects/<slug>/`.
-  `validateProjectMeta` in `vite.config.js` warns if a declared doc file is
-  missing (`DOC_FILE_MAP`: readme→README.md, userGuide→USER_GUIDE.md,
-  testingGuide→TESTING_GUIDE.md, tutorial→TUTORIAL.md).
-- Scrub rule, unchanged: no `npm run`/`npm install`, no localhost/`:5173`, no
-  `VITE_*` / `SUPABASE_*` / `SMTP_*`, no `wrangler`/`npx`/`supabase` commands,
-  no DB schema or RLS, no deploy internals, no source-tree or CLAUDE.md
-  references. Features and high-level stack stay.
-- `intxt`'s docs remain the reference for scrub altitude; qi-invoice matches it.
-- **Mirrored docs go stale when the source product changes, not just when its
-  wording changes.** This entry described a mail-sending app for part of one
-  session. Worth re-reading a project's own README before assuming the mirrored
-  copy is still accurate.
+- **DEBUG_SYSTEM needs an owner decision** — implement the pattern's vanilla-JS
+  variant or document a real N/A. It's the one audit finding deliberately not
+  fixed: a visible debug pill on a public portfolio is a product call. Tracked
+  in TODO.md with the full reasoning.
+- The deploy workflow now runs three verify gates; `verify:icons` and the
+  dist-level parts of `verify:seo` are only as current as the last build.
+- Remaining optional items (BURGER_MENU adornments, display-mode listener,
+  install analytics, `version.json`) are in TODO.md under "glow-props (self)".

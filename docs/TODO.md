@@ -55,7 +55,7 @@ Legend: **Pass** = compliant, **Partial** = has the feature but with gaps, **Mis
 
 | Repo | CLAUDE.md | APP_ICONS | BURGER_MENU | DEBUG_SYSTEM | DOWNLOAD_PDF | PWA_SYSTEM | THEME_DARK_MODE | EVENT_BUS | Z_INDEX_SCALE | ICON_CACHE_BUST |
 |------|-----------|-----------|-------------|--------------|--------------|------------|-----------------|-----------|---------------|-----------------|
-| glow-props | Pass | Pass | Pass | N/A | Pass | Pass | Pass | N/A | Pass | N/A |
+| glow-props | Pass | Pass | Partial | Missing | Pass | Pass | Pass | N/A | Pass | Pass |
 | canva-grid | Pass | Pass | Pass | Pass | Pass (B) | Pass | Pass | N/A | Pass | Pass |
 | fl-farlume | Pass | Pass | Pass | Pass | Pass | Pass | Pass | N/A | Pass | Pass |
 | model-pear | Partial | Pass | Missing | Pass | Partial | Missing | Missing | Missing | Pass | N/A |
@@ -70,13 +70,38 @@ Legend: **Pass** = compliant, **Partial** = has the feature but with gaps, **Mis
 
 **(B)** = Approach B (pdf-lib) per `docs/implementations/DOWNLOAD_PDF.md` — correct choice for canvas-heavy content
 
-**N/A for ICON_CACHE_BUST**: glow-props (static site, no PWA icons), model-pear (no PWA yet — implement PWA_SYSTEM first)
+**N/A for ICON_CACHE_BUST**: model-pear (no PWA yet — implement PWA_SYSTEM first). glow-props reclassified `N/A → Pass` 2026-08-01: the old rationale ("static site, no PWA icons") was false — the repo ships a full PWA with three manifest icons; the pattern is now implemented (see glow-props section).
+
+**Missing for glow-props DEBUG_SYSTEM**: reclassified `N/A → Missing` 2026-08-01 — the prior N/A had no recorded rationale and doesn't hold: the pattern's own vanilla-JS variant targets exactly this kind of site, and glow-props is a PWA (the PWA Diagnostics probes apply). Decision pending — see glow-props section.
+
+**N/A for glow-props EVENT_BUS**: static four-module site, no service layer; cross-tab theme sync uses the `storage` event (the route EVENT_BUS.md prescribes), the install-prompt handoff is a one-shot callback. Documented in glow-props CLAUDE.md "Not Applicable Patterns" 2026-08-01.
 
 **N/A for DOWNLOAD_PDF**: graphiki (intentional skip — canvas/SVG editor, JSON export covers data portability, documented at `CLAUDE.md:710`), intxt (chat app, declined).
 
 **N/A for see-veo BURGER_MENU/THEME_DARK_MODE/EVENT_BUS**: minimal resume site — simple `<nav>` for social links, single dark theme is intentional, no service-layer pub/sub needs.
 
 **`?` for tool-till-tees**: two cells pending a decision (THEME_DARK_MODE — does the minimal landing page need theming? EVENT_BUS — does the backend API need internal pub/sub?). Most other cells are `N/A` because tool-till-tees is a hybrid backend-API + minimal landing page, not a user-facing PWA. APP_ICONS reclassified `Partial → Missing` 2026-04-25 — `index.html` has no icon links and no `scripts/` directory exists; decision needed.
+
+### glow-props (self) — full self-audit + fix pass 2026-08-01
+
+12-pattern self-audit found the prior matrix row (all Pass/N-A) inaccurate, including two production breaks. Fixed the same day:
+
+- **PWA_SYSTEM/ICON_CACHE_BUST breaks:** the shipped service worker threw `add-to-cache-list-conflicting-entries` (four icons precached twice with conflicting revisions — the whole precache layer was dead in production); `.md` content and `?name=` URLs weren't offline-reachable; Google Fonts never runtime-cached. All fixed in `vite.config.js` workbox config.
+- **Prerendered pattern pages:** `theme.js` + icon links were document-relative → theme picker/burger menu dead and favicon 404 on all 12 canonical URLs. Fixed via `rebaseDocumentRelativeAssets()`.
+- **ICON_CACHE_BUST implemented** (was falsely N/A): `iconVersion()`/`versioned()`/`iconCacheBustHtml()`, `/^v$/` ignore, single precache entry per icon, `npm run verify:icons` tripwire gating deploy, install-modal stale-icon disclosure.
+- **APP_ICONS:** transparent icon was declared `purpose: maskable` — now a dedicated full-bleed `icon-1024-maskable.png`.
+- **DISCOVERABILITY:** projects now prerendered (`prerenderProjectPages()`, clean sitemap URLs, path-based slug in `project.html`); landing-page pattern cards injected statically for non-JS crawlers; `verify:seo` extended (project pages, OG dims on all pages, noindex guard).
+- **BURGER_MENU a11y:** focus trap + Arrow/Home/End nav, `inert`+`aria-hidden` when closed, 44px trigger, distinct active-theme highlight, state-updating `aria-label`.
+- **TIMER_LEAKS:** abort timers now cleared in catch paths (pattern/project.html), `index.html` IIFE has AbortController + `window.__home.dispose()`, head-common capture guarded + released; tripwire extended to inline HTML scripts + all `public/*.js`.
+- **THEME/PDF/Z-INDEX:** manifest `theme_color` now a real theme color, theme switches transition-free, `print-color-adjust: exact` + `.print-avoid-break` + `no-print` footers, skip-link `z-90 → z-50`, Tailwind no longer harvests classes from `docs/` markdown.
+- **DOWNLOAD_PDF/markdown:** clipboard fallback is a cascade (writeText rejection falls through to textarea).
+
+**Open items:**
+
+1. [ ] **DEBUG_SYSTEM — decide: implement or document N/A.** Reclassified `N/A → Missing` (the N/A had no rationale and doesn't survive scrutiny: the pattern ships a vanilla-JS variant for exactly this kind of site, this repo is a PWA, and `window.__pwaInstallPromptEvent` — the exact global the PWA diagnostics probe reads — is already stashed but read by nothing). Real exposure: if a page's module script fails, `#app` shows "Loading..." forever — the vanilla variant's 20s watchdog covers precisely that. Needs an owner decision: a visible debug pill on a public portfolio site is a product call, not a code call.
+2. [ ] **BURGER_MENU optional adornments** (why the cell says Partial): sun/moon icons on the dark/light toggle, per-theme mood tags, recommended item order (theme block contiguous), Tutorial/User Guide help items + version footer, and an iOS whitespace-tap close fix (`cursor: pointer` on body while open, or an externalized backdrop) for the documented no-backdrop deviation.
+3. [ ] **PWA_SYSTEM optional hardening:** display-mode `change` listener (detect install via browser menu mid-session), install analytics (`pwa-install-events`), `version.json` comparison.
+4. [ ] **verify:seo minor:** assert `dist/robots.txt` exists alongside the source-level robots checks.
 
 ### canva-grid — FULLY RESOLVED (2026-04-18, with one documentation gap)
 
@@ -456,7 +481,7 @@ Re-classified `Partial → Missing` 2026-04-25; **still bare 2026-04-29**. `inde
 
 Updated 2026-04-25 after parallel full-sweep re-validation (13 agents — 1 coverage + 12 per-repo).
 
-Fully clean (no pending items): **canva-grid, fl-farlume, sun-sea-o, graphiki, intxt, glow-props, repo-tor** (7 repos — repo-tor's TIMER_LEAKS subsection landed in PR #117 2026-04-29).
+Fully clean (no pending items): **canva-grid, fl-farlume, sun-sea-o, graphiki, intxt, repo-tor** (6 repos — repo-tor's TIMER_LEAKS subsection landed in PR #117 2026-04-29). glow-props moved out of this list 2026-08-01 after a full self-audit found the earlier self-reported row was inaccurate — most gaps were fixed the same day, but open items remain (see glow-props section).
 Fully clean on patterns, doc-alignment touch-ups only: **fh-fuelhunt** (TIMER_LEAKS subsection + DOWNLOAD_PDF decision + __DEV__ guard restore).
 Mid-backlog: **tool-till-tees** (CLAUDE.md/HISTORY/Triggers DONE via PR #24; remaining: trigger-name collision note, APP_ICONS decision, THEME N/A, EVENT_BUS N/A documentation, backend pattern upstream proposals), **model-pear** (Communication + Z-index done; still needs PWA, THEME_DARK_MODE, BURGER_MENU, HISTORY.md, Triggers, DOWNLOAD_PDF button, EVENT_BUS, TIMER_LEAKS subsection, non-standard headings).
 Largest backlog: **see-veo**. (four-ems FULLY RESOLVED 2026-05-01 — see four-ems section below.)
@@ -466,8 +491,8 @@ Highest-leverage cross-cutting gaps (post-2026-04-25):
 1. **Triggers redesign** — Cross-fleet policy 2026-04-17. **Done in canva-grid, fl-farlume, repo-tor, fh-fuelhunt, sun-sea-o, graphiki, intxt, tool-till-tees, four-ems** (9 repos). Still missing in **model-pear, see-veo** (2 repos).
 2. **CLAUDE.md alignment** — Pass in canva-grid, fl-farlume, repo-tor, graphiki, fh-fuelhunt, sun-sea-o, **intxt, tool-till-tees, four-ems** (9 repos — four-ems landed 2026-05-01, 723 lines down from 957). Partial in **model-pear** (Implementation Patterns + prohibition present; Communication section still missing; non-standard `## HARD RULES` / `## AI SESSION MANAGEMENT` headings; TIMER_LEAKS subsection missing). Worst remaining: see-veo (~284 lines at L323-606, CLAUDE.md = 717 lines).
 3. **HISTORY.md removal** — Done in canva-grid, fl-farlume, repo-tor, graphiki, fh-fuelhunt, sun-sea-o, **intxt, tool-till-tees, four-ems**. Still present in **model-pear, see-veo**.
-4. **PWA_ICON_CACHE_BUST** — Full Pass in canva-grid, fl-farlume, repo-tor, graphiki, fh-fuelhunt, sun-sea-o, **intxt, four-ems** (8 repos). Missing in see-veo. N/A for glow-props (static site), model-pear (no PWA), tool-till-tees (no PWA).
-5. **EVENT_BUS** — N/A in canva-grid, fl-farlume, repo-tor, sun-sea-o, **intxt**, **see-veo** (minimal resume site), **four-ems** (no service layer; documented in CLAUDE.md "Not Applicable Patterns"). Pass in graphiki (typed `EventBus<M>`). 3 repos still need an evaluate decision: model-pear, fh-fuelhunt, tool-till-tees.
+4. **PWA_ICON_CACHE_BUST** — Full Pass in canva-grid, fl-farlume, repo-tor, graphiki, fh-fuelhunt, sun-sea-o, **intxt, four-ems, glow-props** (9 repos — glow-props implemented 2026-08-01, correcting a false "static site, no PWA icons" N/A). Missing in see-veo. N/A for model-pear (no PWA), tool-till-tees (no PWA).
+5. **EVENT_BUS** — N/A in canva-grid, fl-farlume, repo-tor, sun-sea-o, **intxt**, **see-veo** (minimal resume site), **four-ems** (no service layer; documented in CLAUDE.md "Not Applicable Patterns"), **glow-props** (no service layer; documented in CLAUDE.md "Not Applicable Patterns" 2026-08-01). Pass in graphiki (typed `EventBus<M>`). 3 repos still need an evaluate decision: model-pear, fh-fuelhunt, tool-till-tees.
 6. **DEBUG_SYSTEM: console interception** — Done in canva-grid, fl-farlume, repo-tor, graphiki, model-pear, fh-fuelhunt, sun-sea-o, **intxt, four-ems**. Still missing in see-veo.
 7. **DEBUG_SYSTEM: pre-React inline pill** — Done in canva-grid, fl-farlume, repo-tor, sun-sea-o, graphiki, model-pear, fh-fuelhunt, **intxt, four-ems**. Still missing in see-veo.
 8. **DEBUG_SYSTEM: inline styles** — Done in canva-grid, repo-tor, graphiki, model-pear, fh-fuelhunt, sun-sea-o, **intxt**. four-ems uses DaisyUI tokens via `--color-base-300`/`--color-base-content` + `color-mix` rather than literal inline styles — equivalent visual contract per the pattern's intent (chrome that flips with theme). see-veo still uses Tailwind/DaisyUI without the contract.
