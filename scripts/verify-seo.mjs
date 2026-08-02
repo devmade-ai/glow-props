@@ -252,6 +252,25 @@ if (!/^\s*prerenderPages\(\),\s*$/m.test(viteConfig)) {
 const patternEntries = eligiblePatterns()
 const distPatternsDir = join(ROOT, 'dist/patterns')
 
+// The markdown renderer resolves bare "X.md" cross-links between pattern docs
+// by DERIVING the target slug from the filename — lowercased, _ → -
+// (patternMdLinkResolver in src/lib/markdown.js; it cannot fetch the manifest,
+// being shared Node/browser code). Until now that convention was only cultural.
+// This makes it mechanical: a doc whose frontmatter slug diverges from its
+// filename would make every cross-reference TO it a silent 404 on the rendered
+// pages. Source-level — runs with or without a build.
+for (const { file, slug } of patternEntries) {
+  const derived = file.replace(/\.md$/i, '').toLowerCase().replace(/_/g, '-')
+  if (slug !== derived) {
+    fail(
+      `docs/implementations/${file}: frontmatter slug "${slug}" does not match the ` +
+      `filename-derived "${derived}" — bare .md cross-links to this doc resolve to ` +
+      `/patterns/${derived}/ (patternMdLinkResolver) and would 404. Rename the file ` +
+      'or change the slug so they agree.',
+    )
+  }
+}
+
 if (existsSync(distPatternsDir)) {
   for (const { slug, title } of patternEntries) {
     const page = join(distPatternsDir, slug, 'index.html')

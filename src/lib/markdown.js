@@ -110,10 +110,11 @@ marked.use({ renderer, gfm: true, breaks: false });
 let activeMdLinkResolver = null;
 
 // Pattern docs: bare X.md → the RENDERED /patterns/<slug>/ page, so a
-// cross-reference stays inside the styled site. Relies on the fleet
-// convention that a doc's slug is its filename lowercased with _ → -
-// (true for all 12; a diverging slug would need the manifest to resolve,
-// which this shared Node/browser module can't fetch).
+// cross-reference stays inside the styled site. Relies on the convention that
+// a doc's slug is its filename lowercased with _ → - (this module can't fetch
+// the manifest to resolve divergences — it's shared Node/browser code), and
+// verify:seo enforces the convention mechanically: a doc whose frontmatter
+// slug diverges from its filename fails the build.
 export function patternMdLinkResolver(fileName) {
   return import.meta.env.BASE_URL + 'patterns/' +
     fileName.replace(/\.md$/i, '').toLowerCase().replace(/_/g, '-') + '/';
