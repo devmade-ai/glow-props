@@ -62,6 +62,7 @@ export function detectBrowser() {
 
 let updateSW = null;
 let swRegistration = null;
+let swRegistrationFailed = false;
 let updateAvailable = false;
 let launchApplyUntil = 0;
 let checkPromise = null;
@@ -143,7 +144,14 @@ export function isAutoUpdateEnabled() {
 }
 
 export function toggleAutoUpdate() {
-  safeLocalSet(AUTO_UPDATE_KEY, String(!isAutoUpdateEnabled()));
+  const wanted = !isAutoUpdateEnabled();
+  safeLocalSet(AUTO_UPDATE_KEY, String(wanted));
+  // Read back rather than trust the write: safeLocalSet swallows failures
+  // (private browsing, storage-blocked iframes), and a toggle that silently
+  // stays put looks broken — say why instead.
+  if (isAutoUpdateEnabled() !== wanted) {
+    emit({ type: 'toast', message: 'Couldn\'t save this setting — your browser is blocking site storage.', tone: 'error' });
+  }
   setState({ autoUpdateEnabled: isAutoUpdateEnabled() });
 }
 
@@ -192,15 +200,19 @@ let checkSettleTimeoutId = null;
 export function checkForUpdates() {
   if (checkPromise) return checkPromise;   // re-entrancy: share the in-flight result
   if (!swRegistration) {
-    // Distinguish "registration still in flight" (first second of page life)
-    // from genuinely unsupported — blaming the browser there is just wrong.
+    // Three distinct truths, three messages: registration failed outright
+    // (onRegisterError fired — "try again in a moment" would be a lie
+    // forever), registration still in flight (first second of page life), or
+    // the browser genuinely has no service worker support.
     const supported = typeof navigator !== 'undefined' && 'serviceWorker' in navigator;
     emit({
       type: 'toast',
-      message: supported
-        ? 'Still starting up — try again in a moment.'
-        : 'Update checks aren\'t available in this browser.',
-      tone: 'info',
+      message: swRegistrationFailed
+        ? 'Update checks aren\'t working right now. Reload the page to try again.'
+        : supported
+          ? 'Still starting up — try again in a moment.'
+          : 'Update checks aren\'t available in this browser.',
+      tone: swRegistrationFailed ? 'error' : 'info',
     });
     return Promise.resolve('no-sw');
   }
@@ -460,6 +472,12 @@ function init() {
         launchApplyUntil = Date.now() + LAUNCH_APPLY_WINDOW_MS;
       }
       swUpdateIntervalId = setInterval(() => registration.update(), CHECK_INTERVAL_MS);
+    },
+    onRegisterError(err) {
+      // Permanent for this page load — checkForUpdates uses this to avoid
+      // telling the user to "try again in a moment" forever.
+      swRegistrationFailed = true;
+      debugHook('error', 'Service worker registration failed', { error: String(err) });
     },
   });
 

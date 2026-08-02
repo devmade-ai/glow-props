@@ -69,16 +69,15 @@ export function BurgerMenu({ items, id, version }) {
   const handleItem = useCallback((item) => {
     if (item.disabled) return;
     if (item.keepOpen) {
-      // Same error surface as the close-then-act path below — one failure
-      // class, one route.
+      // console.error, unconditionally: it's the only prod-visible surface
+      // (window.__debugPushError EXISTS in prod — the head partial defines it
+      // to feed a buffer nothing drains there — so keying on it swallows the
+      // error). In dev the debug pill captures console.error via its
+      // interception, so this one call reaches both surfaces.
       try {
         item.action();
       } catch (e) {
-        if (window.__debugPushError) {
-          window.__debugPushError(`Menu action "${item.label}" failed: ${e.message}`);
-        } else {
-          console.error('Menu action failed:', e);
-        }
+        console.error(`Menu action "${item.label}" failed:`, e);
       }
       return;
     }
@@ -88,12 +87,11 @@ export function BurgerMenu({ items, id, version }) {
       try {
         await item.action();
       } catch (e) {
-        // Route to the debug system when one exists; console otherwise.
-        if (window.__debugPushError) {
-          window.__debugPushError(`Menu action "${item.label}" failed: ${e.message}`);
-        } else {
-          console.error('Menu action failed:', e);
-        }
+        // Same rationale as the keepOpen path above: console.error is the one
+        // surface that works in BOTH prod (visible in devtools) and dev (the
+        // debug pill intercepts console) — __debugPushError exists in prod
+        // but feeds a buffer nothing drains there.
+        console.error(`Menu action "${item.label}" failed:`, e);
       }
     }, 150);
   }, [close]);

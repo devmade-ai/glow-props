@@ -94,7 +94,7 @@ for (const file of listJsFiles(join(ROOT, 'src'))) {
       }
     }
   } else if (REGISTRATION.test(content) && !VITE_DISPOSE.test(content)) {
-    failures.push(`${file}: uses setTimeout/setInterval/addEventListener/subscribe at module level but has no import.meta.hot.dispose() block`);
+    failures.push(`${file}: uses setTimeout/setInterval/requestAnimationFrame/addEventListener/subscribe/IntersectionObserver at module level but has no import.meta.hot.dispose() block`);
   }
 }
 

@@ -103,9 +103,14 @@ export function isRandomEnabled() {
   return safeLocalGet('randomThemeOnLoad') === 'true';
 }
 
+// Returns whether the new value actually persisted — safeLocalSet swallows
+// storage failures (private browsing, blocked iframes), and the caller owns
+// telling the user a toggle that silently stayed put isn't broken UI.
 export function toggleRandomTheme() {
-  safeLocalSet('randomThemeOnLoad', String(!isRandomEnabled()));
+  const wanted = !isRandomEnabled();
+  safeLocalSet('randomThemeOnLoad', String(wanted));
   notify();
+  return isRandomEnabled() === wanted;
 }
 
 // ===== Subscription =====

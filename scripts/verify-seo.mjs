@@ -48,9 +48,12 @@ function parsePatternFrontmatter(md) {
     return v
   }
   const slug = get('slug')
-  if (!slug || typeof slug !== 'string' || !/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(slug)) return null
+  // String(slug): the manifest parser regex-tests the coerced value too, so a
+  // digit-only slug (numeric after coercion) is ACCEPTED there — rejecting it
+  // here would fail the deploy over a page that actually shipped.
+  if (!slug || !/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(String(slug))) return null
   if (!get('title') || !get('badge') || !get('description')) return null
-  return { slug, title: String(get('title')) }
+  return { slug: String(slug), title: String(get('title')) }
 }
 
 function eligiblePatterns() {

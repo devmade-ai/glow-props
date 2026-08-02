@@ -27,7 +27,8 @@
     try {
       // Requirement: Prevent flash using stored per-mode theme + dark/light preference
       // Reads lightTheme/darkTheme directly — no combo map needed.
-      // Defaults must stay in sync with theme.js constants.
+      // Defaults must stay in sync with src/lib/themeCatalog.js
+      // (DEFAULT_LIGHT_THEME / DEFAULT_DARK_THEME — generator-owned).
       var stored = localStorage.getItem('darkMode');
       var isDark = stored !== null
         ? stored === 'true'

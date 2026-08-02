@@ -45,15 +45,24 @@ async function generate() {
     console.log(`  ${icon.name} (${icon.size}x${icon.size})`);
   }
 
+  // Two passes on purpose: sharp applies composite at the END of its
+  // pipeline, so chaining .flatten()/.removeAlpha() alongside it runs BEFORE
+  // the mark lands and silently does nothing (compositing an RGBA mark also
+  // re-promotes a 3-channel canvas to RGBA). Compositing to a buffer first,
+  // then stripping alpha in a second pass, makes the full-bleed guarantee
+  // hold in the actual file, not just visually.
   const mark = await sharp(svgBuffer, { density: SVG_DENSITY })
     .resize(MASKABLE_MARK, MASKABLE_MARK)
     .png()
     .toBuffer();
-  await sharp({
+  const composited = await sharp({
     create: { width: MASKABLE.size, height: MASKABLE.size, channels: 4, background: MASKABLE.background },
   })
     .composite([{ input: mark, gravity: 'centre' }])
-    .flatten({ background: MASKABLE.background })
+    .png()
+    .toBuffer();
+  await sharp(composited)
+    .removeAlpha()
     .png()
     .toFile(join(IMAGES_DIR, MASKABLE.name));
   console.log(`  ${MASKABLE.name} (${MASKABLE.size}x${MASKABLE.size}, full-bleed, mark ${MASKABLE_MARK}px in safe zone)`);

@@ -13,7 +13,7 @@ import { HomePage } from './pages/HomePage.jsx';
 import { PatternView } from './pages/PatternPage.jsx';
 import { ProjectView } from './pages/ProjectPage.jsx';
 import { normalizeMeta } from './pages/ProjectPage.jsx';
-import { renderMarkdown } from './lib/markdown.js';
+import { renderMarkdown, patternMdLinkResolver } from './lib/markdown.js';
 
 export function renderHome(patterns) {
   return renderToString(
@@ -26,7 +26,7 @@ export function renderHome(patterns) {
 export function renderPattern(pattern, rawMarkdown) {
   return renderToString(
     <PageShell>
-      <PatternView pattern={pattern} html={renderMarkdown(rawMarkdown)} rawMarkdown={rawMarkdown} />
+      <PatternView pattern={pattern} html={renderMarkdown(rawMarkdown, { resolveMdLink: patternMdLinkResolver })} rawMarkdown={rawMarkdown} />
     </PageShell>,
   );
 }

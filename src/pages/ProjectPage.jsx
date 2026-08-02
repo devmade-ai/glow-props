@@ -2,8 +2,8 @@
 // (canonical) and the legacy project.html?name=<slug>. ProjectView is the
 // shared presentational piece: entry-server renders it at build time with the
 // README only; the client render adds the interactive doc tabs.
-import { useEffect, useRef, useState } from 'react';
-import { renderMarkdown, isSafeUrl } from '../lib/markdown.js';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { renderMarkdown, isSafeUrl, projectMdLinkResolver } from '../lib/markdown.js';
 import { applyPageSeo } from '../seoMeta.js';
 import { Markdown, CopyMarkdownButton } from '../components/Markdown.jsx';
 
@@ -50,7 +50,20 @@ export function ProjectView({ meta, slug, docs, currentTab, onTab }) {
   const basePath = `${BASE}projects/${encodeURIComponent(slug)}/`;
   const tabDefs = DOC_FILES.map((d) => ({ ...d, available: !!meta.docs[d.key] }));
   const activeDef = tabDefs.find((t) => t.key === currentTab);
+  // Roving-tabindex anchor. Normally currentTab; if currentTab's doc is
+  // undeclared (malformed meta), fall back to the first available tab so the
+  // tablist never drops out of the keyboard tab order entirely.
+  const focusableTabKey = activeDef && activeDef.available
+    ? currentTab
+    : tabDefs.find((t) => t.available)?.key;
   const raw = docs[currentTab];
+  // Memoized: parsing a ~50KB doc on every render (each doc-fetch resolution,
+  // every tab switch, every arrow-key move) is real work. Keyed on the raw
+  // text — cross-links resolve to the project's own served doc files.
+  const docHtml = useMemo(
+    () => (raw ? renderMarkdown(raw, { resolveMdLink: projectMdLinkResolver(slug) }) : null),
+    [raw, slug],
+  );
 
   return (
     <>
@@ -133,8 +146,11 @@ export function ProjectView({ meta, slug, docs, currentTab, onTab }) {
         onKeyDown={(e) => {
           if (!onTab) return;
           const keys = tabDefs.filter((t) => t.available).map((t) => t.key);
-          const idx = keys.indexOf(currentTab);
-          if (idx === -1 || keys.length === 0) return;
+          if (keys.length === 0) return;
+          // currentTab can be unavailable only on malformed meta (no readme
+          // declared); treating it as "before the first tab" keeps arrows
+          // working instead of dead-ending.
+          const idx = Math.max(0, keys.indexOf(currentTab));
           let next = null;
           if (e.key === 'ArrowRight' || e.key === 'ArrowDown') next = keys[(idx + 1) % keys.length];
           else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') next = keys[(idx - 1 + keys.length) % keys.length];
@@ -157,7 +173,7 @@ export function ProjectView({ meta, slug, docs, currentTab, onTab }) {
             className={`tab${tab.key === currentTab ? ' tab-active' : ''}`}
             aria-selected={tab.key === currentTab}
             aria-controls="doc-content"
-            tabIndex={tab.key === currentTab ? 0 : -1}
+            tabIndex={tab.key === focusableTabKey ? 0 : -1}
             onClick={() => onTab && onTab(tab.key)}
           >
             {tab.label}
@@ -177,11 +193,13 @@ export function ProjectView({ meta, slug, docs, currentTab, onTab }) {
         ))}
       </div>
 
+      {/* aria-labelledby only when the tab actually renders with that id — a
+          disabled tab has no id, and a dangling reference is worse than none. */}
       <div
         id="doc-content"
         role="tabpanel"
         tabIndex={-1}
-        aria-labelledby={activeDef ? `tab-${currentTab}` : undefined}
+        aria-labelledby={activeDef && activeDef.available ? `tab-${currentTab}` : undefined}
       >
         {raw ? (
           <div className="card bg-base-200/50 border border-base-300">
@@ -197,7 +215,7 @@ export function ProjectView({ meta, slug, docs, currentTab, onTab }) {
                   Raw file
                 </a>
               </div>
-              <Markdown html={renderMarkdown(raw)} />
+              <Markdown html={docHtml} />
             </div>
           </div>
         ) : raw === null ? (

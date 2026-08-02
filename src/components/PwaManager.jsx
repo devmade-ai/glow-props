@@ -31,6 +31,11 @@ export function PwaManager({ children }) {
     const unsubEvents = subscribePwaEvents((event) => {
       if (event.type === 'toast') showToast(event.message, event.tone, event.duration);
     });
+    // Resync once on mount: a notify() that landed between the first render
+    // and this passive effect (SW registering fast, early install prompt)
+    // would otherwise be missed until the next notify — same gap useTheme
+    // closes with its own on-mount update().
+    force((n) => n + 1);
     return () => { unsubState(); unsubEvents(); };
   }, [showToast]);
 

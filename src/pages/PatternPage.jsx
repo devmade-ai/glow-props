@@ -3,7 +3,7 @@
 // PatternView is the shared presentational piece: entry-server renders it at
 // build time with data loaded in Node; this page renders it after fetching.
 import { useEffect, useState } from 'react';
-import { renderMarkdown } from '../lib/markdown.js';
+import { renderMarkdown, patternMdLinkResolver } from '../lib/markdown.js';
 import { applyPageSeo } from '../seoMeta.js';
 import { Markdown, CopyMarkdownButton } from '../components/Markdown.jsx';
 
@@ -118,7 +118,12 @@ export function PatternPage() {
         });
         return fetchWithTimeout(`${BASE}patterns/${pattern.file}`, 15000, (r) => r.text())
           .then((text) => {
-            setState({ status: 'loaded', pattern, rawMarkdown: text, html: renderMarkdown(text) });
+            setState({
+              status: 'loaded',
+              pattern,
+              rawMarkdown: text,
+              html: renderMarkdown(text, { resolveMdLink: patternMdLinkResolver }),
+            });
           });
       })
       .catch((err) => {

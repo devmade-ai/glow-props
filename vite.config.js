@@ -208,6 +208,20 @@ function validateProjectMeta() {
               errors.push(dir.name + ': missing required field "' + field + '"');
             }
           }
+          // Shape checks, not just presence — a string where ProjectView
+          // expects an array dies in a raw .map TypeError deep in the SSG
+          // render; a named validation error here is the debuggable version.
+          for (const arrayField of ['tech', 'useCases']) {
+            if (meta[arrayField] !== undefined && !Array.isArray(meta[arrayField])) {
+              errors.push(dir.name + ': "' + arrayField + '" must be an array');
+            }
+          }
+          for (const objectField of ['dataPrivacy', 'docs']) {
+            if (meta[objectField] !== undefined &&
+                (typeof meta[objectField] !== 'object' || Array.isArray(meta[objectField]) || meta[objectField] === null)) {
+              errors.push(dir.name + ': "' + objectField + '" must be an object');
+            }
+          }
           if (meta.docs) {
             for (const [key, enabled] of Object.entries(meta.docs)) {
               if (enabled && DOC_FILE_MAP[key]) {

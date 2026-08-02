@@ -202,6 +202,12 @@ These footers are required on every commit. No exceptions.
 
 **Why:** Some tasks require credentials, dashboards, or manual config the AI can't do.
 
+### `docs/PROJECT_DOCS.md` (glow-props only)
+
+**Purpose:** Status table + process for the mirrored per-project docs under `public/projects/*/`.
+**When to read:** Before mirroring or scrubbing a downstream project's docs into the portfolio.
+**When to update:** After any mirror pass — refresh the status table and the "Last mirrored" date.
+
 ### `docs/AI_MISTAKES.md`
 
 **Purpose:** Record significant AI mistakes and learnings to prevent repetition.
@@ -268,7 +274,7 @@ These footers are required on every commit. No exceptions.
 - Check for existing patterns in the codebase before creating new ones
 - Commit and push changes before ending a session
 - Clean up completed or obsolete docs/files and remove references to them
-- **CRITICAL: Keep `TutorialModal.jsx` up to date** - This is USER-FACING help content shown in-app. When tabs, sections, or features change, update the tutorial steps to match. Outdated tutorial content confuses users.
+- **CRITICAL: Keep `TutorialModal.jsx` up to date** - This is USER-FACING help content shown in-app. When tabs, sections, or features change, update the tutorial steps to match. Outdated tutorial content confuses users. (Fleet rule for the app repos — glow-props itself has no TutorialModal; its mirrored copies of downstream tutorials live under `public/projects/*/TUTORIAL.md`.)
 - **Always read files before editing.** Use the Read tool on every file before attempting to Edit it. Editing without reading first will fail.
 - **Check build tools before building.** Run `npm install` or verify `node_modules/.bin/vite` exists before attempting `npm run build`. There is no prebuild step — `npm run build` is `vite build` directly; icon generation (`npm run generate-icons`, needs `sharp`) is manual-only and its PNGs are committed.
 - **Break up large file writes to avoid timeouts.** Single tool calls that send a lot of content can hit transport timeouts in slower environments. For modifying existing files, always prefer `Edit` over a full-file `Write` — `Edit` sends only the diff. For creating files larger than ~500 lines (or any large data blob), seed with `Write` containing the first portion, then append the remainder via successive `Edit` calls. Same principle for committing large doc/data changes: many small edits are safer than one mega-write.

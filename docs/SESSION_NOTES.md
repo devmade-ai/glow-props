@@ -192,3 +192,47 @@ switches cards.
 - Verified: build + three tripwires green; app smoke green; NEW a11y/security
   smoke green (arrow-key tab nav live-tested, no unsafe hrefs in rendered
   markdown, .md links rewritten); debug smoke green.
+
+## Addendum 4 (same session): round-3 review-fix pass ("fix all")
+
+A third 3-agent review (round-2-regression hunt, cold state/data-flow sweep,
+docs-coherence audit) found 1 HIGH + 2 real MEDIUMs + edge/docs residue — all
+fixed. The jsdom-based claim that card switching needs two taps was re-tested
+in real Chromium (3 trials): one tap switches cards — refuted; jsdom's event
+dispatch does not match browser behavior here.
+
+- **HIGH (round-2 regression): project-doc .md links 404'd.** The blanket
+  bare-`X.md` → `/patterns/<slug>/` rewrite also caught project READMEs
+  (USER_GUIDE.md etc. → 16 dead links across 8 prerendered project pages,
+  confirmed in dist). The rewrite is now caller-owned: `renderMarkdown(text,
+  { resolveMdLink })` with `patternMdLinkResolver` (rendered pattern pages)
+  and `projectMdLinkResolver(slug)` (the project's own served doc files) —
+  verified in the rebuilt dist for both families.
+- **BurgerMenu error swallowing (round-2 regression):** routing to
+  `__debugPushError` was wrong — that global EXISTS in prod (head-partial
+  buffer nothing drains). Both action paths now `console.error`
+  unconditionally; the dev pill still sees it via console interception.
+- **Maskable icon:** two-pass composite + removeAlpha — the chained flatten
+  ran before composite (sharp pipeline order) and the file kept an alpha
+  channel; now genuinely 3-channel. PNG regenerated again.
+- **Hardening:** ProjectView roving tabindex falls back to the first
+  available tab (malformed meta can't drop the tablist from tab order) and
+  the tabpanel's aria-labelledby only points at ids that render; ProjectView
+  memoizes renderMarkdown (was re-parsing ~50KB per keystroke/tab switch);
+  PwaManager resyncs once on mount (subscribe-only gap); empty pattern
+  manifest gets an empty-state message; storage-blocked preference toggles
+  toast an explanation (readback check in toggleAutoUpdate +
+  toggleRandomTheme return value consumed by Navbar); onRegisterError tracked
+  so "still starting up" can't be claimed forever; validateProjectMeta checks
+  array/object shapes, not just presence; verify-seo slug parity via
+  String() coercion (mirrors manifest exactly); verify-timer-cleanup message
+  lists its actual verbs.
+- **Docs:** TODO.md mood-tag "remaining nicety" + "three inline scripts" +
+  deleted-file citations corrected; README head-partial description, scripts
+  tree (all six), src tree (debugMount, debugLog, mood tags); head-common
+  bootstrap comment points at themeCatalog.js; CLAUDE.md TutorialModal note
+  scoped to downstream repos + PROJECT_DOCS.md added to the Documentation
+  section.
+- Verified: build + three tripwires green; per-context link resolution
+  checked in dist (patterns → rendered pages, projects → own served docs,
+  targets exist); both smoke suites green.

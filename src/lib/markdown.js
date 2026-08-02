@@ -60,18 +60,16 @@ const renderer = {
 
   link({ href, tokens }) {
     if (!isSafeUrl(href)) return this.parser.parseInline(tokens);
-    // Pattern docs cross-reference each other with bare filenames
-    // ("TIMER_LEAKS.md"). Relative to a /patterns/<slug>/ page that resolves
-    // to /patterns/<slug>/TIMER_LEAKS.md — a 404. Send the reader to the
-    // RENDERED page, not the raw served file — clicking a cross-reference
-    // should stay inside the styled site. Relies on the fleet convention that
-    // a doc's slug is its filename lowercased with _ → - (true for all 12 and
-    // enforced culturally, not mechanically; a diverging slug would need the
-    // manifest to resolve, which this shared Node/browser module can't fetch).
+    // Bare-filename .md cross-links ("TIMER_LEAKS.md", "USER_GUIDE.md") mean
+    // something different per document family — a pattern doc references a
+    // sibling pattern, a project README references its own doc files — so the
+    // CALLER decides via renderMarkdown's resolveMdLink option. A hardcoded
+    // rewrite here once sent every project doc link to a nonexistent
+    // /patterns/ page (16 shipped 404s); this module can't know the context.
     let resolved = href;
-    const mdMatch = href.match(/^([\w-]+)\.md$/i);
-    if (mdMatch) {
-      resolved = import.meta.env.BASE_URL + 'patterns/' + mdMatch[1].toLowerCase().replace(/_/g, '-') + '/';
+    const mdMatch = href.match(/^[\w.-]+\.md$/i);
+    if (mdMatch && activeMdLinkResolver) {
+      resolved = activeMdLinkResolver(href);
     }
     return '<a href="' + escapeHtml(resolved) + '" class="link link-primary">' +
       this.parser.parseInline(tokens) + '</a>';
@@ -105,6 +103,29 @@ const renderer = {
 
 marked.use({ renderer, gfm: true, breaks: false });
 
+// Per-parse context for the link renderer above. marked's renderer methods
+// take no per-call options, and parse() is synchronous, so a module-level
+// slot set for the duration of one renderMarkdown call is safe in both the
+// browser and the SSG pass (single-threaded in each).
+let activeMdLinkResolver = null;
+
+// Pattern docs: bare X.md → the RENDERED /patterns/<slug>/ page, so a
+// cross-reference stays inside the styled site. Relies on the fleet
+// convention that a doc's slug is its filename lowercased with _ → -
+// (true for all 12; a diverging slug would need the manifest to resolve,
+// which this shared Node/browser module can't fetch).
+export function patternMdLinkResolver(fileName) {
+  return import.meta.env.BASE_URL + 'patterns/' +
+    fileName.replace(/\.md$/i, '').toLowerCase().replace(/_/g, '-') + '/';
+}
+
+// Project docs: bare X.md → the project's own served copy of that file
+// (public/projects/<slug>/X.md ships to dist and is precached). Base-absolute
+// so it works from both /projects/<slug>/ and the legacy project.html?name=.
+export function projectMdLinkResolver(slug) {
+  return (fileName) => import.meta.env.BASE_URL + 'projects/' + encodeURIComponent(slug) + '/' + fileName;
+}
+
 export function stripFrontmatter(text) {
   if (!text) return text;
   const t = text.replace(/\r\n/g, '\n');
@@ -114,9 +135,14 @@ export function stripFrontmatter(text) {
   return t.slice(end + 5);
 }
 
-export function renderMarkdown(text) {
+export function renderMarkdown(text, options) {
   if (!text) return '';
-  return marked.parse(stripFrontmatter(text));
+  activeMdLinkResolver = (options && options.resolveMdLink) || null;
+  try {
+    return marked.parse(stripFrontmatter(text));
+  } finally {
+    activeMdLinkResolver = null;
+  }
 }
 
 // Shared clipboard helper — the full CASCADE from DEBUG_SYSTEM.md "Clipboard

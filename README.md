@@ -64,15 +64,17 @@ glow-props/
   main.css                      # Tailwind directives, DaisyUI config, custom animations, markdown renderer styles
   partials/
     head-common.html            # Shared <head> content — GA, pre-paint theme bootstrap,
+                                #   pre-module error capture + load watchdog,
                                 #   beforeinstallprompt capture, fonts, CSS (must stay inline)
   src/
     main-{home,pattern,project}.jsx  # Client entries (one React root per page)
     entry-server.jsx            # Build-time SSG renderers (renderToString of the same components)
+    debugMount.jsx              # DEV-only separate root for the debug pill
     components/                 # Navbar, BurgerMenu, PageShell, Toast, PwaManager, InstallModal, ...
     hooks/                      # useDisclosureFocus, useFocusTrap, useEscapeKey, useTheme
-    lib/                        # theme, pwa (module singletons), markdown, safeStorage, themeCatalog
+    lib/                        # theme, pwa (module singletons), markdown, safeStorage, themeCatalog, debugLog
     context/                    # PwaContext (SSR-safe defaults)
-    data/                       # Landing-page card content
+    data/                       # Landing-page card content + theme mood tags
     pages/                      # HomePage, PatternPage, ProjectPage (+ shared Views)
     seoMeta.js                  # Runtime canonical/OG for the legacy ?name= URLs
   public/
@@ -88,7 +90,12 @@ glow-props/
   assets/
     icon-source.svg             # SVG source for icon generation
   scripts/
-    generate-icons.mjs          # Sharp: SVG → PNG at 400 DPI
+    generate-icons.mjs          # Sharp: SVG → PNG at 400 DPI (manual; PNGs committed)
+    generate-og-image.mjs       # 1200×630 social card from the icon
+    generate-meta-colors.mjs    # Theme catalog + bootstrap arrays + theme-color metas
+    verify-timer-cleanup.mjs    # Tripwire: timer/listener cleanup rules
+    verify-seo.mjs              # Tripwire: discoverability contract (run after build)
+    verify-icon-cache-bust.mjs  # Tripwire: icon versioning contract (run after build)
   docs/
     SESSION_NOTES.md            # Current session context
     TODO.md                     # Pending items

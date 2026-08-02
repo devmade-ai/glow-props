@@ -267,7 +267,11 @@ export function HomePage({ patterns: initialPatterns = null, prerender = false }
           <a href={`${BASE}CLAUDE.md`} className="link link-primary">View full reference</a>.
         </p>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-          {patterns ? (
+          {patterns && patterns.length === 0 ? (
+            <p className="text-base-content/40 text-sm col-span-full text-center py-8">
+              No patterns published yet.
+            </p>
+          ) : patterns ? (
             patterns.map((pattern, i) => (
               <PatternCard
                 key={pattern.slug}

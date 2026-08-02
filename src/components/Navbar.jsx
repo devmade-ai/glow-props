@@ -10,6 +10,7 @@ import { BurgerMenu } from './BurgerMenu.jsx';
 import { useTheme } from '../hooks/useTheme.js';
 import { usePwa } from '../context/PwaContext.js';
 import { toggleDarkMode, pickTheme, toggleRandomTheme } from '../lib/theme.js';
+import { useToast } from './Toast.jsx';
 import { LIGHT_THEMES, DARK_THEMES } from '../lib/themeCatalog.js';
 import { THEME_DESCRIPTIONS } from '../data/themeDescriptions.js';
 import { version } from '../../package.json';
@@ -79,6 +80,7 @@ function ThemePicker({ dark, theme }) {
 export function Navbar() {
   const { dark, theme, randomEnabled } = useTheme();
   const pwa = usePwa();
+  const showToast = useToast();
 
   const items = [
     { label: 'Projects', href: `${BASE}#projects` },
@@ -98,7 +100,14 @@ export function Navbar() {
     { key: 'theme-picker', render: () => <ThemePicker dark={dark} theme={theme} /> },
     {
       label: 'Random theme on load',
-      action: toggleRandomTheme,
+      // toggleRandomTheme reports whether the preference persisted — an
+      // indicator that silently stays put (storage-blocked browsers) needs
+      // an explanation, not a shrug.
+      action: () => {
+        if (!toggleRandomTheme()) {
+          showToast('Couldn’t save this setting — your browser is blocking site storage.', 'error');
+        }
+      },
       indicator: randomEnabled ? 'On' : 'Off',
       keepOpen: true,
       key: 'random-toggle',
