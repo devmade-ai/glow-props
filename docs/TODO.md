@@ -513,7 +513,7 @@ Re-classified `Partial → Missing` 2026-04-25; **still bare 2026-04-29**. `inde
 
 Updated 2026-04-25 after parallel full-sweep re-validation (13 agents — 1 coverage + 12 per-repo).
 
-Fully clean (no pending items): **canva-grid, fl-farlume, sun-sea-o, graphiki, intxt, repo-tor** (6 repos — repo-tor's TIMER_LEAKS subsection landed in PR #117 2026-04-29). glow-props moved out of this list 2026-08-01 after a full self-audit found the earlier self-reported row was inaccurate — most gaps were fixed the same day, but open items remain (see glow-props section).
+Fully clean (no pending items): **glow-props, canva-grid, fl-farlume, sun-sea-o, graphiki, intxt, repo-tor** (7 repos — repo-tor's TIMER_LEAKS subsection landed in PR #117 2026-04-29). glow-props left this list 2026-08-01 when a full self-audit found the earlier self-reported row inaccurate, and rejoined it the same day: every gap was fixed across the audit fix pass, the React conversion, and the PR #59 review-fix passes (see glow-props section).
 Fully clean on patterns, doc-alignment touch-ups only: **fh-fuelhunt** (TIMER_LEAKS subsection + DOWNLOAD_PDF decision + __DEV__ guard restore).
 Mid-backlog: **tool-till-tees** (CLAUDE.md/HISTORY/Triggers DONE via PR #24; remaining: trigger-name collision note, APP_ICONS decision, THEME N/A, EVENT_BUS N/A documentation, backend pattern upstream proposals), **model-pear** (Communication + Z-index done; still needs PWA, THEME_DARK_MODE, BURGER_MENU, HISTORY.md, Triggers, DOWNLOAD_PDF button, EVENT_BUS, TIMER_LEAKS subsection, non-standard headings).
 Largest backlog: **see-veo**. (four-ems FULLY RESOLVED 2026-05-01 — see four-ems section below.)

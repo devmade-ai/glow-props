@@ -41,15 +41,23 @@ function parsePatternFrontmatter(md) {
   const get = (key) => {
     let v = block.match(new RegExp(`^${key}:\\s*(.+)$`, 'm'))?.[1]?.trim()
     if (v && v.startsWith('"') && v.endsWith('"')) v = v.slice(1, -1)
+    // Numeric coercion mirrors the manifest parser: `badge: 0` becomes the
+    // number 0 there and fails its truthiness check — this parser must reach
+    // the same verdict or the counts drift.
+    if (v && /^\d+$/.test(v)) v = parseInt(v, 10)
     return v
   }
   const slug = get('slug')
-  if (!slug || !/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(slug)) return null
+  if (!slug || typeof slug !== 'string' || !/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(slug)) return null
   if (!get('title') || !get('badge') || !get('description')) return null
-  return { slug, title: get('title') }
+  return { slug, title: String(get('title')) }
 }
 
 function eligiblePatterns() {
+  // Duplicate slugs: keep the FIRST, like generatePatternManifest() does —
+  // it warns and skips subsequent duplicates, so counting both here would
+  // fail the build with a misleading off-by-one.
+  const seen = new Set()
   return readdirSync(join(ROOT, 'docs/implementations'))
     .filter((f) => f.endsWith('.md'))
     .map((file) => {
@@ -57,6 +65,11 @@ function eligiblePatterns() {
       return attrs ? { file, ...attrs } : null
     })
     .filter(Boolean)
+    .filter(({ slug }) => {
+      if (seen.has(slug)) return false
+      seen.add(slug)
+      return true
+    })
 }
 
 function meta(html, attr, key) {

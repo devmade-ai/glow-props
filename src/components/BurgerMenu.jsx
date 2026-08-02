@@ -69,7 +69,17 @@ export function BurgerMenu({ items, id, version }) {
   const handleItem = useCallback((item) => {
     if (item.disabled) return;
     if (item.keepOpen) {
-      try { item.action(); } catch (e) { console.error('Menu action failed:', e); }
+      // Same error surface as the close-then-act path below — one failure
+      // class, one route.
+      try {
+        item.action();
+      } catch (e) {
+        if (window.__debugPushError) {
+          window.__debugPushError(`Menu action "${item.label}" failed: ${e.message}`);
+        } else {
+          console.error('Menu action failed:', e);
+        }
+      }
       return;
     }
     close();

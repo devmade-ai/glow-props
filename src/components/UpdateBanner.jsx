@@ -6,6 +6,8 @@
 export function UpdateBanner({ onUpdate, onDismiss }) {
   return (
     <div
+      role="status"
+      aria-live="polite"
       className="update-banner fixed left-4 right-4 z-70 flex items-center justify-between gap-3
         rounded-xl bg-base-200 border border-base-300 px-4 py-3 shadow-lg
         max-w-md mx-auto no-print"

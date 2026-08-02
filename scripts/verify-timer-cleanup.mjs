@@ -36,7 +36,7 @@ import { dirname, join } from 'node:path';
 const __filename = fileURLToPath(import.meta.url);
 const ROOT = dirname(dirname(__filename));
 
-const REGISTRATION = /\b(setTimeout|setInterval)\s*\(|\.addEventListener\s*\(|\.subscribe\s*\(/;
+const REGISTRATION = /\b(setTimeout|setInterval|requestAnimationFrame)\s*\(|\.addEventListener\s*\(|\.subscribe\s*\(|\bnew IntersectionObserver\s*\(/;
 const VITE_DISPOSE = /\bimport\.meta\.hot\.dispose\s*\(/;
 const GLOBAL_DISPOSE = /window\.__\w+\s*=\s*\{[\s\S]*?\bdispose\b/;
 const ATTACH_GUARD = /window\.__\w+Attached/;

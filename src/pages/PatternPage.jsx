@@ -70,7 +70,11 @@ export function PatternPage() {
   useEffect(() => {
     const slug = patternSlugFromLocation();
     if (!slug) {
-      setState({ status: 'error', title: 'Pattern not found', body: '' });
+      setState({
+        status: 'error',
+        title: 'Pattern not found',
+        body: 'This link is missing a pattern name. Head back and pick a pattern from the list.',
+      });
       return;
     }
 
@@ -98,7 +102,11 @@ export function PatternPage() {
       .then((manifest) => {
         const pattern = manifest.patterns.find((p) => p.slug === slug);
         if (!pattern) {
-          setState({ status: 'error', title: 'Pattern not found', body: '' });
+          setState({
+            status: 'error',
+            title: 'Pattern not found',
+            body: 'This pattern doesn’t exist or was renamed. Head back and pick one from the list.',
+          });
           return;
         }
         applyPageSeo({

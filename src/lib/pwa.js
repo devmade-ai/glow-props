@@ -192,7 +192,16 @@ let checkSettleTimeoutId = null;
 export function checkForUpdates() {
   if (checkPromise) return checkPromise;   // re-entrancy: share the in-flight result
   if (!swRegistration) {
-    emit({ type: 'toast', message: 'Update checks aren\'t available in this browser.', tone: 'info' });
+    // Distinguish "registration still in flight" (first second of page life)
+    // from genuinely unsupported — blaming the browser there is just wrong.
+    const supported = typeof navigator !== 'undefined' && 'serviceWorker' in navigator;
+    emit({
+      type: 'toast',
+      message: supported
+        ? 'Still starting up — try again in a moment.'
+        : 'Update checks aren\'t available in this browser.',
+      tone: 'info',
+    });
     return Promise.resolve('no-sw');
   }
   emit({ type: 'toast', message: 'Checking for updates…', tone: 'info', duration: 1200 });

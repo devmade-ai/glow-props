@@ -15,12 +15,14 @@ import { marked } from 'marked';
 //   today, but they're fetched at runtime and rendered as HTML — the guard is
 //   what keeps a compromised or mistaken doc from becoming script execution.
 // Approach: Decode percent-encoded characters FIRST, then allowlist http(s)
-//   and relative URLs. Protocol-relative (//evil.com) is rejected — it slips
-//   past a naive "starts with /" relative check while pointing off-site.
+//   and relative URLs. Protocol-relative is rejected — it slips past a naive
+//   "starts with /" relative check while pointing off-site — and the check
+//   covers BACKSLASH variants too: browsers normalize \ to / in special
+//   schemes, so /\evil.com and \\evil.com navigate to https://evil.com.
 export function isSafeUrl(url) {
   let decoded;
   try { decoded = decodeURIComponent(url); } catch { return false; }
-  if (decoded.startsWith('//')) return false;
+  if (/^[/\\]{2}/.test(decoded)) return false;
   if (/^https?:\/\//i.test(decoded)) return true;
   if (/^[a-z0-9]/i.test(decoded) && !/:/.test(decoded)) return true;
   if (decoded.startsWith('/') || decoded.startsWith('#') || decoded.startsWith('.')) return true;
@@ -60,11 +62,16 @@ const renderer = {
     if (!isSafeUrl(href)) return this.parser.parseInline(tokens);
     // Pattern docs cross-reference each other with bare filenames
     // ("TIMER_LEAKS.md"). Relative to a /patterns/<slug>/ page that resolves
-    // to /patterns/<slug>/TIMER_LEAKS.md — a 404. Anchor them to the served
-    // copies under <base>/patterns/ instead, where every doc actually lives.
+    // to /patterns/<slug>/TIMER_LEAKS.md — a 404. Send the reader to the
+    // RENDERED page, not the raw served file — clicking a cross-reference
+    // should stay inside the styled site. Relies on the fleet convention that
+    // a doc's slug is its filename lowercased with _ → - (true for all 12 and
+    // enforced culturally, not mechanically; a diverging slug would need the
+    // manifest to resolve, which this shared Node/browser module can't fetch).
     let resolved = href;
-    if (/^[\w.-]+\.md$/i.test(href)) {
-      resolved = import.meta.env.BASE_URL + 'patterns/' + href;
+    const mdMatch = href.match(/^([\w-]+)\.md$/i);
+    if (mdMatch) {
+      resolved = import.meta.env.BASE_URL + 'patterns/' + mdMatch[1].toLowerCase().replace(/_/g, '-') + '/';
     }
     return '<a href="' + escapeHtml(resolved) + '" class="link link-primary">' +
       this.parser.parseInline(tokens) + '</a>';

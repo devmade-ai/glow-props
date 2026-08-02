@@ -3,7 +3,11 @@
 // canva-grid original).
 import { useEffect, useRef } from 'react';
 
-const FOCUSABLE = 'a[href], button:not([disabled]), textarea, input, select, [tabindex]:not([tabindex="-1"])';
+// summary is natively tabbable and must be in the list — the InstallModal's
+// stale-icon disclosure sits between the trap's first/last stops, and omitting
+// it both skips it on Tab wrap and lets Shift+Tab escape the dialog after a
+// mouse-click focuses it.
+const FOCUSABLE = 'a[href], button:not([disabled]), summary, textarea, input, select, [tabindex]:not([tabindex="-1"])';
 
 export function useFocusTrap(containerRef, active) {
   const previousFocusRef = useRef(null);

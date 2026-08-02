@@ -122,9 +122,15 @@ if (typeof window !== 'undefined' && !window.__themeListenersAttached) {
   window.__themeListenersAttached = true;
 
   // storage fires only in OTHER tabs — mirror their choice without re-writing.
+  // darkMode falls back to the OS preference when unset, matching the pre-paint
+  // bootstrap: a never-toggled OS-dark user whose other tab writes only a theme
+  // key (random-theme-on-load does) must not get flipped to light here.
   storageListener = (e) => {
     if (e.key === 'darkMode' || e.key === 'lightTheme' || e.key === 'darkTheme') {
-      const dark = safeLocalGet('darkMode') === 'true';
+      const stored = safeLocalGet('darkMode');
+      const dark = stored !== null
+        ? stored === 'true'
+        : window.matchMedia('(prefers-color-scheme: dark)').matches;
       applyTheme(dark, getStoredTheme(dark), true);
     }
     if (e.key === 'randomThemeOnLoad') notify();

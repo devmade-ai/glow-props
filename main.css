@@ -204,7 +204,7 @@
 
 /* ===== Markdown renderer classes =====
    Requirement: Markdown-rendered content (project.html, pattern.html) styled consistently
-   Approach: marked library (src/markdown.js) renders markdown to semantic HTML with a
+   Approach: marked library (src/lib/markdown.js) renders markdown to semantic HTML with a
      custom renderer for DaisyUI classes. Structural styling defined here under .md-render
      so changes are visible in CSS diffs, not buried in JS.
    Alternative: Inline Tailwind class strings in JS renderer — rejected, hard to maintain

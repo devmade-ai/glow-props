@@ -124,9 +124,13 @@ function htmlPartials() {
 // Dev-server requests reach configureServer middlewares BEFORE Vite's own
 // base middleware strips the base — req.url is /glow-props/patterns/x.md, not
 // /patterns/x.md. Both dev middlewares below match on the stripped form.
+// The query string is dropped too: a ?cache-bust suffix would otherwise dodge
+// the match and fall through to Vite's SPA fallback, serving 200 text/html
+// where the caller expected markdown/JSON — wrong content is worse than a 404.
 function stripBase(url) {
   if (!url) return url;
-  return url.startsWith('/glow-props/') ? url.slice('/glow-props'.length) : url;
+  const path = url.split('?')[0];
+  return path.startsWith('/glow-props/') ? path.slice('/glow-props'.length) : path;
 }
 
 function copyRootFiles() {
@@ -180,8 +184,12 @@ function copyRootFiles() {
 function validateProjectMeta() {
   const REQUIRED_FIELDS = ['name', 'title', 'description', 'badge', 'repo', 'audience', 'docs'];
   const DOC_FILE_MAP = { readme: 'README.md', userGuide: 'USER_GUIDE.md', testingGuide: 'TESTING_GUIDE.md', tutorial: 'TUTORIAL.md' };
+  let isServe = false;
   return {
     name: 'validate-project-meta',
+    configResolved(config) {
+      isServe = config.command === 'serve';
+    },
     buildStart() {
       const projectsDir = resolve(__dirname, 'public', 'projects');
       if (!existsSync(projectsDir)) return;
@@ -215,9 +223,16 @@ function validateProjectMeta() {
         }
       }
       if (errors.length > 0) {
-        // this.error, not warn — the requirement above says the build fails.
-        // A warning scrolls past and the broken page ships.
-        this.error('Project metadata validation failed:\n  ' + errors.join('\n  '));
+        // BUILD fails loud (the requirement above) — a warning scrolls past
+        // and the broken page ships. DEV only warns: buildStart also runs on
+        // `vite dev` init, and refusing to start the dev server over a
+        // half-created project folder blocks the very session that would fix
+        // it (same stance as iconVersion()'s missing-icon fallback).
+        if (isServe) {
+          this.warn('Project metadata validation failed (dev server continues; the BUILD will fail):\n  ' + errors.join('\n  '));
+        } else {
+          this.error('Project metadata validation failed:\n  ' + errors.join('\n  '));
+        }
       }
     },
   };
@@ -684,6 +699,12 @@ export default defineConfig({
           '**/assets/images/icon-512.png',
           '**/assets/images/icon-1024.png',
           '**/assets/images/icon-1024-maskable.png',
+          // og-image joins the icons here for a different reason: the plugin's
+          // default dontCacheBustURLsMatching treats everything under assets/
+          // as content-hashed (revision:null), so a regenerated card under the
+          // same URL would never refetch for installed SWs. includeAssets
+          // below gives it a real content revision instead.
+          '**/assets/images/og-image.png',
         ],
         ignoreURLParametersMatching: [/^name$/, /^v$/, /^utm_/, /^fbclid$/],
         navigateFallback: null,
@@ -716,7 +737,7 @@ export default defineConfig({
       // Each icon gets ONE bare-URL entry with a content revision here; requests
       // for the versioned form match it because ignoreURLParametersMatching
       // strips ?v= on lookup.
-      includeAssets: ICON_PATHS,
+      includeAssets: [...ICON_PATHS, 'assets/images/og-image.png'],
       manifest: {
         name: 'Glow Props — Project Portfolio',
         short_name: 'Glow Props',

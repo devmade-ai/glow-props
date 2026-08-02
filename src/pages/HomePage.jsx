@@ -116,10 +116,10 @@ function ToolCard({ tool, animate, active, shown, onToggle, delay }) {
       onClick={(e) => onToggle(id, e)}
     >
       <div className="card-body py-4">
-        <h4 className="font-semibold text-base mb-1">
+        <h3 className="font-semibold text-base mb-1">
           {tool.title}{' '}
           <span className="badge badge-ghost badge-sm">{tool.badge}</span>
-        </h4>
+        </h3>
         <p className="text-sm text-base-content/70">{tool.description}</p>
         <div className="card-links">
           {tool.claudeMd && (
@@ -150,7 +150,7 @@ function PatternCard({ pattern, animate, active, shown, onToggle, delay }) {
       onClick={(e) => onToggle(pattern.slug, e)}
     >
       <div className="card-body">
-        <h4 className="font-semibold text-base mb-1">{pattern.title}</h4>
+        <h3 className="font-semibold text-base mb-1">{pattern.title}</h3>
         <p className="text-sm text-base-content/70 grow">{pattern.description}</p>
         <div className="mt-auto pt-2">
           {pattern.tags.length > 0 && (
@@ -175,17 +175,30 @@ export function HomePage({ patterns: initialPatterns = null, prerender = false }
   const [patternsError, setPatternsError] = useState(false);
 
   // Client fetch of the pattern manifest (the SSG pass passes it as a prop
-  // instead). Abort on unmount.
+  // instead). Same hygiene as the pattern/project pages: HTTP failures are
+  // failures, a 10s timeout stops an eternal "Loading patterns...", and the
+  // timer clears in finally — after the body parses. timedOut distinguishes
+  // the timeout abort (show the error) from the unmount abort (stay silent).
   useEffect(() => {
     if (prerender || patterns) return;
     const controller = new AbortController();
+    let timedOut = false;
+    const timer = setTimeout(() => { timedOut = true; controller.abort(); }, 10000);
     fetch(`${BASE}patterns/manifest.json`, { signal: controller.signal })
-      .then((r) => r.json())
+      .then((r) => {
+        if (!r.ok) throw new Error('HTTP ' + r.status);
+        return r.json();
+      })
       .then((manifest) => setPatterns(manifest.patterns))
       .catch((err) => {
-        if (err && err.name !== 'AbortError') setPatternsError(true);
-      });
-    return () => controller.abort();
+        if (err && err.name === 'AbortError' && !timedOut) return;
+        setPatternsError(true);
+      })
+      .finally(() => clearTimeout(timer));
+    return () => {
+      clearTimeout(timer);
+      controller.abort();
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -268,7 +281,7 @@ export function HomePage({ patterns: initialPatterns = null, prerender = false }
             ))
           ) : (
             <p className="text-base-content/40 text-sm col-span-full text-center py-8">
-              {patternsError ? 'Could not load patterns.' : 'Loading patterns...'}
+              {patternsError ? 'Couldn’t load the patterns. Check your connection and reload the page.' : 'Loading patterns...'}
             </p>
           )}
         </div>

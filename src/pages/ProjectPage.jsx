@@ -91,13 +91,13 @@ export function ProjectView({ meta, slug, docs, currentTab, onTab }) {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 mb-6">
         <div className="card bg-base-200/50 border border-base-300">
           <div className="card-body py-4">
-            <h3 className="text-xs font-semibold uppercase tracking-wider text-base-content/50 mb-2">Who it&apos;s for</h3>
+            <h2 className="text-xs font-semibold uppercase tracking-wider text-base-content/50 mb-2">Who it&apos;s for</h2>
             <p className="text-sm text-base-content/70">{meta.audience}</p>
           </div>
         </div>
         <div className="card bg-base-200/50 border border-base-300">
           <div className="card-body py-4">
-            <h3 className="text-xs font-semibold uppercase tracking-wider text-base-content/50 mb-2">Use cases</h3>
+            <h2 className="text-xs font-semibold uppercase tracking-wider text-base-content/50 mb-2">Use cases</h2>
             {meta.useCases.length > 0 ? (
               <ul className="list-disc ml-4 space-y-1">
                 {meta.useCases.map((u) => <li key={u} className="text-sm text-base-content/70">{u}</li>)}
@@ -109,7 +109,7 @@ export function ProjectView({ meta, slug, docs, currentTab, onTab }) {
         </div>
         <div className="card bg-base-200/50 border border-base-300">
           <div className="card-body py-4">
-            <h3 className="text-xs font-semibold uppercase tracking-wider text-base-content/50 mb-2">Data &amp; Privacy</h3>
+            <h2 className="text-xs font-semibold uppercase tracking-wider text-base-content/50 mb-2">Data &amp; Privacy</h2>
             {Object.keys(meta.dataPrivacy).map((key) => (
               <div key={key} className="mb-2">
                 <span className="font-semibold text-sm text-base-content">{privacyLabel(key)}:</span>{' '}
@@ -120,25 +120,69 @@ export function ProjectView({ meta, slug, docs, currentTab, onTab }) {
         </div>
       </div>
 
-      <div role="tablist" className="tabs tabs-bordered mb-6 no-print overflow-x-auto">
+      {/* Full ARIA tabs pattern, not just the roles: roving tabindex + arrow
+          keys on the tablist, and #doc-content is the labelled tabpanel.
+          Half the pattern (roles without the keyboard model) announces
+          interactions that don't exist. Arrow nav keeps focus ON the tab
+          (onTab's focusPanel=false); click activation moves it to the panel
+          so screen readers hear the new content. */}
+      <div
+        role="tablist"
+        aria-label="Project documents"
+        className="tabs tabs-bordered mb-6 no-print overflow-x-auto"
+        onKeyDown={(e) => {
+          if (!onTab) return;
+          const keys = tabDefs.filter((t) => t.available).map((t) => t.key);
+          const idx = keys.indexOf(currentTab);
+          if (idx === -1 || keys.length === 0) return;
+          let next = null;
+          if (e.key === 'ArrowRight' || e.key === 'ArrowDown') next = keys[(idx + 1) % keys.length];
+          else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') next = keys[(idx - 1 + keys.length) % keys.length];
+          else if (e.key === 'Home') next = keys[0];
+          else if (e.key === 'End') next = keys[keys.length - 1];
+          if (next && next !== currentTab) {
+            e.preventDefault();
+            onTab(next, false);
+            document.getElementById(`tab-${next}`)?.focus();
+          } else if (next) {
+            e.preventDefault();
+          }
+        }}
+      >
         {tabDefs.map((tab) => tab.available ? (
           <button
             key={tab.key}
+            id={`tab-${tab.key}`}
             role="tab"
             className={`tab${tab.key === currentTab ? ' tab-active' : ''}`}
             aria-selected={tab.key === currentTab}
+            aria-controls="doc-content"
+            tabIndex={tab.key === currentTab ? 0 : -1}
             onClick={() => onTab && onTab(tab.key)}
           >
             {tab.label}
           </button>
         ) : (
-          <button key={tab.key} className="tab text-base-content/30 cursor-default" disabled>
+          <button
+            key={tab.key}
+            role="tab"
+            aria-selected={false}
+            aria-disabled="true"
+            tabIndex={-1}
+            className="tab text-base-content/30 cursor-default"
+            disabled
+          >
             {tab.label}
           </button>
         ))}
       </div>
 
-      <div id="doc-content">
+      <div
+        id="doc-content"
+        role="tabpanel"
+        tabIndex={-1}
+        aria-labelledby={activeDef ? `tab-${currentTab}` : undefined}
+      >
         {raw ? (
           <div className="card bg-base-200/50 border border-base-300">
             <div className="card-body">
@@ -205,7 +249,11 @@ export function ProjectPage() {
     const slug = projectSlugFromLocation();
     // Allowlist alphanumeric + hyphens — prevents path traversal attempts.
     if (!slug || !/^[a-z0-9-]+$/i.test(slug)) {
-      setState({ status: 'error', title: 'No project specified', body: '' });
+      setState({
+        status: 'error',
+        title: 'No project specified',
+        body: 'This link is missing a project name. Head back to the portfolio and pick a project from the list.',
+      });
       return;
     }
 
@@ -286,16 +334,15 @@ export function ProjectPage() {
   useEffect(() => () => {
     if (tabFocusRafRef.current !== null) cancelAnimationFrame(tabFocusRafRef.current);
   }, []);
-  const onTab = (key) => {
+  // focusPanel=false is the arrow-key path — focus must stay on the tab so
+  // the user can keep arrowing; click activation moves focus to the panel.
+  const onTab = (key, focusPanel = true) => {
     setCurrentTab(key);
     if (tabFocusRafRef.current !== null) cancelAnimationFrame(tabFocusRafRef.current);
+    if (!focusPanel) return;
     tabFocusRafRef.current = requestAnimationFrame(() => {
       tabFocusRafRef.current = null;
-      const content = document.getElementById('doc-content');
-      if (content) {
-        content.setAttribute('tabindex', '-1');
-        content.focus({ preventScroll: true });
-      }
+      document.getElementById('doc-content')?.focus({ preventScroll: true });
     });
   };
 

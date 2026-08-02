@@ -140,23 +140,40 @@ function buildCatalogExports() {
 
 // ===== Write files =====
 
+// Every replace target is format-coupled to the file it edits. A silent
+// no-match would print "Updated ..." while writing the file back unchanged —
+// the worst failure mode for a sync tool — so each replacement asserts it
+// actually matched and the script exits non-zero otherwise.
+function mustReplace(content, regex, replacement, label) {
+  if (!regex.test(content)) {
+    console.error(`FAILED: ${label} — the target block no longer matches its regex. ` +
+      'The file format drifted; update the regex in scripts/generate-meta-colors.mjs.');
+    process.exit(1);
+  }
+  return content.replace(regex, replacement);
+}
+
 // 1. src/lib/themeCatalog.js — everything after the header comment + defaults
 // is generator-owned.
 const catalogPath = join(root, 'src/lib/themeCatalog.js');
 let catalog = readFileSync(catalogPath, 'utf8');
-catalog = catalog.replace(
+catalog = mustReplace(
+  catalog,
   /export const LIGHT_THEMES = \[[\s\S]*?\};\s*$/,
   buildCatalogExports() + '\n',
+  'themeCatalog.js export block',
 );
 writeFileSync(catalogPath, catalog);
 console.log('Updated src/lib/themeCatalog.js');
 
 // 2. head-common.html
 let headHtml = readFileSync(join(root, 'partials/head-common.html'), 'utf8');
-headHtml = headHtml.replace(/      var mc = \{[\s\S]*?\};/, buildBootstrapMc());
-headHtml = headHtml.replace(
+headHtml = mustReplace(headHtml, /      var mc = \{[\s\S]*?\};/, buildBootstrapMc(), 'head-common.html mc block');
+headHtml = mustReplace(
+  headHtml,
   /      var lt = \[[\s\S]*?\];\s*\n\s*var dt = \[[\s\S]*?\];/,
-  wrapArray('lt', lightThemes, '      ') + '\n' + wrapArray('dt', darkThemes, '      ')
+  wrapArray('lt', lightThemes, '      ') + '\n' + wrapArray('dt', darkThemes, '      '),
+  'head-common.html lt/dt arrays',
 );
 writeFileSync(join(root, 'partials/head-common.html'), headHtml);
 console.log('Updated partials/head-common.html');
@@ -167,20 +184,22 @@ console.log('Updated partials/head-common.html');
 const defaultLightColor = metaColors['caramellatte'] || '#000000';
 const defaultDarkColor = metaColors['coffee'] || '#261b25';
 for (const htmlFile of ['index.html', 'pattern.html', 'project.html']) {
-  try {
-    const htmlPath = join(root, htmlFile);
-    let html = readFileSync(htmlPath, 'utf8');
-    html = html.replace(
-      /(<meta name="theme-color" content=")#[0-9a-fA-F]{6}(" media="\(prefers-color-scheme: light\)")/,
-      `$1${defaultLightColor}$2`
-    );
-    html = html.replace(
-      /(<meta name="theme-color" content=")#[0-9a-fA-F]{6}(" media="\(prefers-color-scheme: dark\)")/,
-      `$1${defaultDarkColor}$2`
-    );
-    writeFileSync(htmlPath, html);
-    console.log(`Updated ${htmlFile}`);
-  } catch (e) { /* skip missing files */ }
+  const htmlPath = join(root, htmlFile);
+  let html = readFileSync(htmlPath, 'utf8');
+  html = mustReplace(
+    html,
+    /(<meta name="theme-color" content=")#[0-9a-fA-F]{6}(" media="\(prefers-color-scheme: light\)")/,
+    `$1${defaultLightColor}$2`,
+    `${htmlFile} light theme-color meta`,
+  );
+  html = mustReplace(
+    html,
+    /(<meta name="theme-color" content=")#[0-9a-fA-F]{6}(" media="\(prefers-color-scheme: dark\)")/,
+    `$1${defaultDarkColor}$2`,
+    `${htmlFile} dark theme-color meta`,
+  );
+  writeFileSync(htmlPath, html);
+  console.log(`Updated ${htmlFile}`);
 }
 
 // Summary

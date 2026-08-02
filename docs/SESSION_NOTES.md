@@ -147,3 +147,48 @@ all fixed:
   checks inline scripts PER BLOCK and pairs requestAnimationFrame.
 - Verified: build + three tripwires green, dev middlewares curl-checked, both
   smoke suites green (incl. new card-tap + heading-reveal checks).
+
+## Addendum 3 (same session): round-2 review-fix pass ("fix all")
+
+A second 3-agent fresh-eyes review of PR #59 (post-fix head) found 6 MEDIUM +
+16 LOW — all fixed. One claimed HIGH (card-to-card tap needing a double tap)
+was REFUTED empirically with Playwright before fixing anything: one tap
+switches cards.
+
+- **Security:** `isSafeUrl` now rejects backslash protocol-relative forms
+  (`/\evil.com` — browsers normalize `\`→`/`; verified `new URL` resolves it
+  off-site). Bare `.md` cross-links now land on the RENDERED pattern page
+  (filename↔slug fleet convention, documented in the renderer).
+- **A11y:** `useFocusTrap`'s FOCUSABLE selector includes `summary` (the
+  InstallModal disclosure was untabbable and could leak focus out of the
+  dialog); ProjectPage doc tabs are now the FULL ARIA tabs pattern (roving
+  tabindex, arrow/Home/End, labelled `tabpanel`, `aria-disabled` on
+  unavailable tabs — arrow nav keeps focus on the tab, click focuses the
+  panel); heading levels fixed (info cards h2, all home cards h3); UpdateBanner
+  announces via role=status.
+- **Maskable icon regenerated:** the mark's corner arcs reached ~523px from
+  center vs the 410px circular safe zone — Pixel-style round masks cropped all
+  four corners. generate-icons.mjs now composites a 780px render onto the
+  white 1024 canvas (≤801px keeps the arcs inside; only the maskable PNG's
+  bytes changed).
+- **Theme:** the cross-tab storage listener falls back to the OS preference
+  when darkMode is unset (random-theme-on-load in another tab no longer flips
+  an OS-dark tab to light).
+- **PWA/copy:** early "Check for updates" says "Still starting up" instead of
+  blaming the browser; HomePage manifest fetch got ok-check + 10s timeout +
+  actionable error; empty-body error states filled in.
+- **Build/dev:** stripBase drops query strings (no more 200-HTML for
+  query-stringed doc fetches); validateProjectMeta warns under `vite dev` but
+  still fails the build; og-image gets a real precache revision via
+  globIgnores+includeAssets (was revision:null → stale forever for installed
+  SWs); generate-meta-colors fails loud when a format-coupled regex stops
+  matching; verify-seo's parser now mirrors the manifest's dedupe/numeric
+  rules; verify-timer-cleanup's plain-module rule covers rAF and
+  IntersectionObserver.
+- **Docs drift:** seoMeta JSDoc/canonical comments, main.css markdown pointer,
+  CLAUDE.md "three→four inline scripts", TODO.md fully-clean list includes
+  glow-props again (contradiction removed); BurgerMenu keepOpen errors route
+  through the same debug surface as close-then-act.
+- Verified: build + three tripwires green; app smoke green; NEW a11y/security
+  smoke green (arrow-key tab nav live-tested, no unsafe hrefs in rendered
+  markdown, .md links rewritten); debug smoke green.

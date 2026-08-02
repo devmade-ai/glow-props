@@ -41,7 +41,7 @@ function setMeta(selector, attr, key, content) {
  * @param {object} page
  * @param {string} page.title       Item title, without the site suffix.
  * @param {string} page.description One or two sentences about this item.
- * @param {string} page.path        Page file plus query, e.g. "pattern.html?name=x".
+ * @param {string} page.path        Site-relative canonical path, e.g. "patterns/timer-leaks/".
  */
 export function applyPageSeo({ title, description, path }) {
   const fullTitle = `${title} — devmade-ai`;
@@ -49,8 +49,10 @@ export function applyPageSeo({ title, description, path }) {
 
   document.title = fullTitle;
 
-  // The canonical is the whole reason this runs: it has to carry the query
-  // string, or every item collapses onto one URL.
+  // The canonical is the whole reason this runs: callers pass the item's
+  // clean prerendered URL (patterns/<slug>/, projects/<slug>/), which is what
+  // keeps the legacy ?name= entry points from competing with those pages —
+  // and keeps every item from collapsing onto the bare template URL.
   let canonical = document.head.querySelector('link[rel="canonical"]');
   if (!canonical) {
     canonical = document.createElement('link');
