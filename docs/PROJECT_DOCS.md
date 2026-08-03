@@ -2,9 +2,12 @@
 
 How to maintain the mirrored project docs on the glow-props portfolio site.
 
-**Last mirrored:** 2026-03-31
+**Last mirrored:** 2026-08-03
 
 ## Current Status
+
+> **2026-08-03 correction.** Three projects — `kl-website`, `web-arch`, `dm-website` — had their docs mirrored into `public/projects/` without ever being added to this table, and the "Last mirrored" date sat at 2026-03-31, months before two of them existed. The mirror step was run; the step that *records* it was not. When mirroring a project, both halves are the job — see the process section below.
+
 
 ### User-Facing Projects
 
@@ -20,6 +23,9 @@ How to maintain the mirrored project docs on the glow-props portfolio site.
 | sun-sea-o | private | Scrubbed | Yes | Yes | **No** | README: removed env vars, localhost, setup commands, project structure, internal doc refs. No TutorialModal in source. |
 | four-ems | private | Scrubbed | Yes | Yes | **No** | README: removed env vars, setup commands. User Guide and Testing Guide copied as-is. No TutorialModal in source. |
 | qi-invoice | private | Scrubbed | Yes | Scrubbed | **No** | README: removed setup commands, env vars, internal doc links; kept the design-decision notes, which are the interesting part at portfolio altitude. User Guide copied as-is (grepped first — it contains no commands, paths or env vars). Testing Guide: removed the automated-suite section, npm scripts and file paths, keeping the 16 manual scenarios. No TutorialModal in source. |
+| kl-website | private | Scrubbed | **No** | **No** | **No** | Mirrored without being recorded here — added 2026-08-03. Only a README is present; user guide, testing guide and tutorial were never mirrored. |
+| web-arch | private | Scrubbed | Yes | Yes | **No** | Branded "redline", a knowless sub-brand. Mirrored without being recorded here — added 2026-08-03. No TutorialModal in source. |
+| dm-website | private | Scrubbed | Yes | Yes | **No** | The devmade studio front-door site. Mirrored without being recorded here — added 2026-08-03. No TutorialModal in source. |
 
 ### Internal Tools
 

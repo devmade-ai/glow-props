@@ -12,6 +12,7 @@
     "verify:timer-cleanup": "node scripts/verify-timer-cleanup.mjs",
     "verify:seo": "node scripts/verify-seo.mjs",
     "verify:icons": "node scripts/verify-icon-cache-bust.mjs",
+    "verify:ssr-safety": "node scripts/verify-ssr-safety.mjs",
     "generate:og-image": "node scripts/generate-og-image.mjs"
   },
   "devDependencies": {

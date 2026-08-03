@@ -7,7 +7,7 @@
   "status": "active",
   "repo": "private",
   "liveUrl": "https://four-ems.vercel.app/",
-  "tech": ["TypeScript", "React", "Vite", "Tailwind CSS", "Zustand", "dnd-kit", "Supabase"],
+  "tech": ["TypeScript", "React", "Vite", "PWA", "Tailwind CSS", "Zustand", "dnd-kit", "Supabase"],
   "audience": "Small business owners, event organisers, freelancers, and teams who need to collect structured information from people without paying for Typeform or Google Forms limitations.",
   "useCases": [
     "A wedding planner sends guests a multi-page RSVP form \u2014 dietary requirements only appear if the guest selects 'attending', keeping the form short for declines",

@@ -101,7 +101,50 @@ version-injection advice was actively harmful); runtime-caching rules including
 the opaque-response trap the doc itself prescribed; CSP; draft safety; a
 recovery ladder for when the worker itself is the bug; and a SvelteKit variant.
 
-**State:** docs only — no source changes. Build green, all three verify gates
+### Round 3 — glow-props' own PWA items + fleet bookkeeping
+
+First source changes of the session. Seven of the eight self-audit items are
+done (`src/lib/pwa.js`, `src/components/PwaManager.jsx`):
+
+- `detectBrowser()` now handles `CriOS`/`FxiOS`/`EdgiOS`, which made the
+  iOS-non-Safari redirect reachable for the first time — it had been dead code.
+  Added the iPadOS `MacIntel` + `maxTouchPoints` test alongside it.
+- The hourly poll `.catch()`es like the visibility check already did.
+- `triggerInstall()` clears the prompt BEFORE calling it (single-use event) and
+  catches `prompt()` itself, not just `userChoice`; a rejected prompt now arms
+  the manual fallback instead of stranding the user.
+- Events emitted before the first subscriber are buffered and drained on
+  subscribe, so an early `onOfflineReady` no longer loses its toast.
+- `PwaManager` uses `useSyncExternalStore`, which required making the singleton
+  return **immutable snapshots** — React compares with `Object.is`, so the old
+  mutate-in-place object would never have re-rendered. That also deleted the
+  manual on-mount resync hack.
+- The dead 1s manual-instructions timer is gone: `supportsManualInstall`
+  already granted visibility and `init()` called the same function
+  unconditionally, so the callback recomputed a value that was already true.
+- New `npm run verify:ssr-safety` walks the SSR entry's import graph and fails
+  with the offending chain. Verified it catches the INDIRECT case (injecting
+  `pwa.js` into `PageShell.jsx` fails with
+  `entry-server -> PageShell -> lib/pwa.js`).
+
+Left open deliberately: maskable-at-192+512 (the pattern documents the single
+1024 as an accepted alternative).
+
+**Verified behaviourally, not just by build**: served `dist/` under its real
+`/glow-props/` base over localhost and drove it in headless Chromium — SW
+activated with 120 precache entries, PWA singleton ran, React mounted, burger
+menu click changed the DOM, zero page errors.
+
+Fleet bookkeeping, all four items closed: "PWA" added to `tech` in all 14
+mirrored PWA projects; model-pear corrected from React to **SvelteKit** in both
+`meta.json` and `homeContent.js`; Gap Matrix extended 12 → 16 repos with
+`fl-farlume` downgraded to Partial and the false "coverage verified complete"
+claim replaced; `docs/PROJECT_DOCS.md` given its three missing rows and a
+corrected mirror date.
+
+**State:** source + docs. Build green, all FOUR gates green.
+
+**Previous state:** docs only — no source changes. Build green, all three verify gates
 green, served `dist/patterns/*.md` byte-identical to source. Full findings
 checkpointed at `scratchpad/round2-findings.md` (520 lines). All repo-side
 drift is queued in TODO.md, not started.

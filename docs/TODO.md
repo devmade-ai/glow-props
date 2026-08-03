@@ -57,8 +57,8 @@ Legend: **Pass** = compliant, **Partial** = has the feature but with gaps, **Mis
 |------|-----------|-----------|-------------|--------------|--------------|------------|-----------------|-----------|---------------|-----------------|
 | glow-props | Pass | Pass | Pass | Pass (DEV) | Pass | Pass | Pass | N/A | Pass | Pass |
 | canva-grid | Pass | Pass | Pass | Pass | Pass (B) | Pass | Pass | N/A | Pass | Pass |
-| fl-farlume | Pass | Pass | Pass | Pass | Pass | Pass | Pass | N/A | Pass | Pass |
-| model-pear | Partial | Pass | Missing | Pass | Partial | Missing | Missing | Missing | Pass | N/A |
+| fl-farlume | Pass | Pass | Pass | Pass | Pass | Partial | Pass | N/A | Pass | Pass |
+| model-pear | Partial | Partial | Missing | Pass | Partial | Partial | Partial | Missing | Pass | Missing |
 | see-veo | Missing | Partial | N/A | Partial | Partial | Partial | N/A | N/A | Missing | Missing |
 | repo-tor | Pass | Pass | Pass | Pass | Pass | Pass | Pass | N/A | Pass | Pass |
 | fh-fuelhunt | Pass | Pass | Pass | Pass | Missing | Partial | Pass | N/A | Pass | Pass |
@@ -66,11 +66,19 @@ Legend: **Pass** = compliant, **Partial** = has the feature but with gaps, **Mis
 | graphiki | Pass | Pass | Pass | Pass | N/A | Pass | Pass | Pass | Pass | Pass |
 | four-ems | Pass | Pass | Pass | Pass | Pass | Pass | Pass | N/A | Pass | Pass |
 | intxt | Pass | Pass | Pass | Pass | N/A | Pass | Pass | N/A | Pass | Pass |
+| qi-invoice | Pass | Pass | Pass | N/A | Pass (B) | Pass | Pass | N/A | Pass | Pass |
+| kl-website | Pass | Pass | Pass | N/A | N/A | Pass | Pass | N/A | Pass | Pass |
+| web-arch | Pass | Partial | Pass | N/A | N/A | Partial | Pass | N/A | Pass | Partial |
+| dm-website | Pass | Partial | Pass | N/A | N/A | Partial | Pass | N/A | Pass | Missing |
 | tool-till-tees | Pass | Missing | N/A | N/A | N/A | N/A | ? | ? | N/A | N/A |
+
+**PWA_SYSTEM / ICON_CACHE_BUST columns are pre-audit.** They were assessed before the 2026-08-03 fleet PWA audit, which found open repo-side drift in **every** PWA repo — including several marked `Pass` here. Treat those two columns as "was implemented", not "is currently conformant", and read the per-repo sections below (and each repo's own `docs/TODO.md`, where the findings now live) for what is actually open. `fl-farlume` is downgraded to `Partial` because it still ships the rejected tap-only update design rather than auto-on-launch.
+
+**Coverage**: 16 repos tracked. The 2026-04-25 claim that coverage was "verified complete — 12 tracked + 3 excluded, set difference empty" was **false**: `qi-invoice`, `kl-website`, `web-arch` and `dm-website` were all first-party repos absent from this matrix. Excluded by policy: `plant-fur`, `coin-zapp` (discontinued), `canva-grid-assets` (CDN only), `sp-website`/`sp-backend`/`hf-sculpt` (not yet assessed).
 
 **(B)** = Approach B (pdf-lib) per `docs/implementations/DOWNLOAD_PDF.md` — correct choice for canvas-heavy content
 
-**N/A for ICON_CACHE_BUST**: model-pear (no PWA yet — implement PWA_SYSTEM first). glow-props reclassified `N/A → Pass` 2026-08-01: the old rationale ("static site, no PWA icons") was false — the repo ships a full PWA with three manifest icons; the pattern is now implemented (see glow-props section).
+**model-pear reclassified 2026-08-03**: the old row said "no PWA / no vite-plugin-pwa" and ICON_CACHE_BUST `N/A`. Both were false — it is a **SvelteKit** PWA (not React, as the portfolio also recorded) shipping vite-plugin-pwa with a fuller update policy than several repos marked Pass. ICON_CACHE_BUST is `Missing`, not N/A: three manifest icons, zero `?v=` versioning. Note the glow-props `transformIndexHtml` approach cannot be ported as-is — vite-plugin-pwa's HTML pipeline never runs under SvelteKit. glow-props reclassified `N/A → Pass` 2026-08-01: the old rationale ("static site, no PWA icons") was false — the repo ships a full PWA with three manifest icons; the pattern is now implemented (see glow-props section).
 
 **Pass (DEV) for glow-props DEBUG_SYSTEM**: implemented 2026-08-01 (was falsely N/A, then honestly Missing earlier the same day). DEV-gated like four-ems — dynamic import keeps the subsystem out of production bundles; the pre-module error capture + 20s load watchdog and the localStorage install analytics run in production, the pill itself is dev-only. Documented in glow-props CLAUDE.md AI notes.
 
@@ -544,10 +552,13 @@ Highest-leverage cross-cutting gaps (post-2026-04-25):
 
 The first pass of the PWA audit selected repos by the portfolio's `badge`/`tech` metadata and covered 6 of 15. **The metadata does not record PWA-ness reliably** — only 5 repos advertise it, while 15 ship a service worker. Two follow-ups:
 
-- [ ] **Record PWA-ness in `public/projects/*/meta.json`** — add a `pwa: true` field (or include "PWA" in `tech` consistently) for all 15, so the fleet's PWA set is discoverable without cloning every repo. Update `docs/PROJECT_DOCS.md`'s meta.json template to match.
-- [ ] **Fix `model-pear`'s recorded tech stack** — `meta.json` says "TypeScript, React, Vite"; it is actually **SvelteKit** (`@sveltejs/kit` in `apps/web`).
-- [ ] **`web-arch` and `dm-website` are missing from the Gap Matrix** below, and `web-arch` is absent from `docs/PROJECT_DOCS.md`'s status table entirely (whose "Last mirrored" still reads 2026-03-31, months before web-arch deployed). `qi-invoice` and `kl-website` are likewise missing from the matrix. The 2026-04-25 claim that coverage was "verified complete, set difference empty" is **false** — it counted 12 repos against a fleet of at least 15.
-- [ ] **Add per-repo TODO sections for `dm-website` and `web-arch`** — both implement the patterns (their code cites PWA_SYSTEM.md throughout) but neither has ever been audited against them.
+*(All four bookkeeping items below are done — 2026-08-03.)*
+
+- [x] **PWA-ness recorded in `public/projects/*/meta.json`** — "PWA" added to `tech` for all 14 mirrored PWA projects (`kl-website` and `qi-invoice` already had it), matching the convention those two already used rather than inventing a new field no consumer reads.
+- [x] **`model-pear`'s tech stack corrected** — it is **SvelteKit**, not React, in both `meta.json` and `src/data/homeContent.js`.
+- [x] **Gap Matrix extended to 16 repos** — `qi-invoice`, `kl-website`, `web-arch` and `dm-website` added; `model-pear`'s row corrected from "no PWA" to a real SvelteKit PWA; `fl-farlume` downgraded to `Partial` on PWA_SYSTEM; the false 2026-04-25 "coverage verified complete" claim replaced with an accurate count and an explicit exclusion list.
+- [x] **`docs/PROJECT_DOCS.md` reconciled** — `kl-website`, `web-arch` and `dm-website` added to the status table, "Last mirrored" corrected from 2026-03-31 to 2026-08-03, and the reason the table drifted recorded so the process gets fixed rather than just the data.
+- [x] **Per-repo findings distributed** — rather than per-repo sections here, each repo's own `docs/TODO.md` now carries its findings (merged 2026-08-03), so the backlog travels with the code.
 
 **App-name → repo map** (from the installed home screen, since several differ): Four Ems=four-ems, CanvaGrid=canva-grid, Model Pear=model-pear, Git Analytics=repo-tor, JT·CV=see-veo, Glow Props=glow-props, Graphiki=graphiki, Farlume=fl-farlume, knowless=kl-website, qi-invoice=qi-invoice, devmade=dm-website, FuelHunt=fh-fuelhunt, inTXT=intxt, **redline=web-arch**, **Sancio=sun-sea-o**.
 

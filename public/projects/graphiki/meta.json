@@ -13,7 +13,8 @@
     "Cytoscape.js",
     "Dexie.js",
     "IndexedDB",
-    "Hugging Face Transformers"
+    "Hugging Face Transformers",
+    "PWA"
   ],
   "audience": "Researchers, journalists, analysts, students, and anyone who needs to see how things connect \u2014 people whose work involves untangling relationships that are hard to hold in a spreadsheet or document.",
   "useCases": [

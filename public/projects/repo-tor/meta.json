@@ -8,7 +8,7 @@
   "repo": "public",
   "liveUrl": "https://repo-tor.vercel.app/",
   "repoUrl": "https://github.com/devmade-ai/repo-tor",
-  "tech": ["JavaScript", "React", "Vite", "Chart.js", "Tailwind CSS"],
+  "tech": ["JavaScript", "React", "Vite", "PWA", "Chart.js", "Tailwind CSS"],
   "audience": "Developers who want to see their own output, team leads tracking contributor patterns, and managers who need a visual summary of engineering progress without reading git logs.",
   "useCases": [
     "A developer preparing for a performance review \u2014 pulls up their commit activity across all repos to show consistent output and areas of focus",
