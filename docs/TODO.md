@@ -612,11 +612,13 @@ Several of these fixes are now described directly by the updated pattern docs, s
 
 ### Round 2 (2026-08-03, second pass — the 9 repos the first pass missed)
 
-Severity-ordered. The two production-down service workers (repo-tor, model-pear) are fixed and pushed; the rest is open.
+Severity-ordered. The two broken service workers (repo-tor, model-pear) are fixed and pushed; the rest is open.
+
+**Correction to this section's original wording:** both were first written up as "the SW never installs / registration rejects". Measured in Chromium against real builds, that is wrong — in both cases the worker registers and reaches `activated`, and the damage is to its *configuration*. repo-tor precached nothing at all (zero caches, and every route after the throwing line — including all runtimeCaching — never registered), so it was live but completely inert. model-pear precached fine and lost only the navigation fallback, so offline deep links failed while everything else worked. The fixes are unchanged; the impact statements were.
 
 #### repo-tor
 
-*(The `add-to-cache-list-conflicting-entries` SW-killer is fixed and pushed on `claude/pwa-patterns-review-76cg78`: glob is now the sole precache source, `dontCacheBustURLsMatching` narrowed so icons keep real revisions, plus two dist tripwires confirmed to fail when the bug is reintroduced.)*
+*(Fixed and pushed on `claude/pwa-patterns-review-76cg78` — PR #120: glob is now the sole precache source, `dontCacheBustURLsMatching` narrowed so icons keep real revisions, plus two dist tripwires confirmed to fail when the bug is reintroduced. Verified in Chromium: pre-fix the worker activated with **0 cache entries**; post-fix, 17.)*
 
 1. [ ] **Dead code documenting a feature that doesn't exist** — `vite.config.js:232-239` describes a NetworkOnly runtime rule with an offline fallback for embed URLs; there is no such rule. `public/offline.html` is precached and can never be served.
 3. [ ] `registration.update()` uncaught at `pwa.js:518` and `:570`; visibility check unthrottled; `_isChecking` is set but never read, so two taps run two concurrent checks.
@@ -626,7 +628,7 @@ Severity-ordered. The two production-down service workers (repo-tor, model-pear)
 
 #### model-pear (the matrix row is wrong)
 
-*(The unprecached-`navigateFallback` SW-killer is fixed and pushed on `claude/pwa-patterns-review-76cg78`: `/200.html` registered via `additionalManifestEntries`, `json` and `webmanifest` dropped from `globPatterns`, `includeAssets` dropped and `includeManifestIcons: false`. Built manifest now has the fallback precached, zero duplicate URLs and no `_app/version.json`. Tripwire added. Note the audit's claim that `.vite/manifest.json` was precached did **not** reproduce — that build emits no `.vite/` directory; the real second defect was `_app/version.json` freezing SvelteKit's `updated` store.)*
+*(Fixed and pushed on `claude/pwa-patterns-review-76cg78` — PR #119. Verified in Chromium: pre-fix an offline deep link failed with `ERR_INTERNET_DISCONNECTED`; post-fix the same request returns the shell (HTTP 200). Precaching worked in both cases — only the navigation fallback was lost, not the whole worker. Changes: `/200.html` registered via `additionalManifestEntries`, `json` and `webmanifest` dropped from `globPatterns`, `includeAssets` dropped and `includeManifestIcons: false`. Built manifest now has the fallback precached, zero duplicate URLs and no `_app/version.json`. Tripwire added. Note the audit's claim that `.vite/manifest.json` was precached did **not** reproduce — that build emits no `.vite/` directory; the real second defect was `_app/version.json` freezing SvelteKit's `updated` store.)*
 
 1. [ ] **Consider `@vite-pwa/sveltekit`** — it globs the adapter's real output, removing the root cause that the `additionalManifestEntries` fix compensates for. Deliberately not bundled into the hotfix.
 2. [ ] **`controllerchange` reloads unconditionally** (only a 5s throttle, no apply latch) — tab A reloads and loses in-memory calculator inputs when tab B applies an update. Exactly what the policy exists to prevent, and it defeats the repo's own stated rationale.
