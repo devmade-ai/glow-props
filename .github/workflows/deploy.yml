@@ -51,6 +51,12 @@ jobs:
       - name: Verify discoverability (docs/implementations/DISCOVERABILITY.md)
         run: npm run verify:seo
 
+      # Same shape and reason as verify:seo — reads dist/, so it runs after the
+      # build and gates the publish. An un-versioned icon URL or a duplicate
+      # precache entry ships silently otherwise.
+      - name: Verify icon cache-busting (docs/implementations/PWA_ICON_CACHE_BUST.md)
+        run: npm run verify:icons
+
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:

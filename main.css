@@ -6,6 +6,11 @@
    Alternative: Keep Pico + add Tailwind — rejected, two frameworks fight over base styles */
 
 @import "tailwindcss";
+/* Requirement: docs/ markdown must not feed Tailwind's class scanner — the
+   pattern docs quote z-index VIOLATIONS as prose examples (z-100, z-[9999]),
+   and automatic source detection was harvesting them into the shipped CSS.
+   dist/ and node_modules/ are already excluded by detection defaults. */
+@source not "./docs";
 /* Requirement: Per-mode individual theme picker from burger menu
    Approach: Register all 35 DaisyUI built-in themes so users can pick any
      light theme independently of their dark theme choice. Dark/light toggle
@@ -87,8 +92,12 @@
 /* ===== Custom animations =====
    Requirement: Portfolio should feel polished with tasteful motion
    Approach: CSS @keyframes for fade-in-up on scroll, plus utility classes.
-     Intersection Observer in JS triggers .animate-in class.
-   Alternative: Framer Motion — rejected, this is vanilla HTML, no React */
+     An IntersectionObserver in HomePage.jsx records revealed elements in React
+     state, and React renders .animate-in from it — the class must live in the
+     React-owned className, never an imperative classList write, or the next
+     re-render wipes it.
+   Alternative: Framer Motion — rejected, one fade-in doesn't justify a
+     dependency */
 @keyframes fade-in-up {
   from {
     opacity: 0;
@@ -195,7 +204,7 @@
 
 /* ===== Markdown renderer classes =====
    Requirement: Markdown-rendered content (project.html, pattern.html) styled consistently
-   Approach: marked library (src/markdown.js) renders markdown to semantic HTML with a
+   Approach: marked library (src/lib/markdown.js) renders markdown to semantic HTML with a
      custom renderer for DaisyUI classes. Structural styling defined here under .md-render
      so changes are visible in CSS diffs, not buried in JS.
    Alternative: Inline Tailwind class strings in JS renderer — rejected, hard to maintain
@@ -245,7 +254,9 @@
    Requirement: Clean PDF output via window.print()
    Approach: Hide interactive elements, force readable colors, prevent page breaks
    in content blocks. !important justified — must override inline styles and
-   CSS-in-JS (see CLAUDE.md Download as PDF pattern) */
+   CSS-in-JS (see docs/implementations/DOWNLOAD_PDF.md).
+   print-color-adjust: without it browsers strip background colors in print, so
+   the card backgrounds, badges, and the project status dots vanish from the PDF. */
 @media print {
   .no-print {
     display: none !important;
@@ -254,11 +265,20 @@
   body {
     background: white !important;
     color: black !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
   }
 
   a {
     color: black !important;
     text-decoration: underline !important;
+  }
+
+  /* Named utility for content that must not straddle a page break, plus the
+     element fallback the pattern sanctions for unannotated markup. */
+  .print-avoid-break {
+    break-inside: avoid;
+    page-break-inside: avoid;
   }
 
   article, section, .card {
@@ -269,11 +289,37 @@
 }
 
 /* ===== Burger menu z-index layer =====
-   Follows z-index scale from CLAUDE.md:
-   Menu dropdown: z-50, Modals: z-60, Toasts: z-70
-   Note: No backdrop layer (z-40) — the navbar's backdrop-filter creates a
-   containing block that traps position:fixed children. Click-outside uses
-   a document handler instead. See theme.js burger menu comments. */
+   Follows the scale in docs/implementations/Z_INDEX_SCALE.md. Layers this site
+   uses: base content 0-10 (.code-copy-btn z-10), menu backdrop z-20 (portaled
+   to body — see BurgerMenu.jsx), sticky navbar z-30, skip link z-50 on focus,
+   menu dropdown z-50, modals z-60, toasts/update banner z-70, DEV debug pill
+   z-80 (the scale's debug tier; never ships in production bundles).
+   Note: the backdrop sits BELOW the scale's backdrop tier (40) — the navbar's
+   backdrop-filter creates a containing block/stacking context that caps its
+   children at z-30, so a body-level backdrop above 30 would cover the menu
+   itself. See BurgerMenu.jsx. */
 @utility z-dropdown {
   z-index: 50;
+}
+
+/* Toast stack position — a stylesheet rule (not an inline style) so the stack
+   can shift above the update banner when both are on screen: they share the
+   bottom-center slot, and a toast landing on the banner would cover its
+   Update/Later buttons for the toast's lifetime. :has() keeps the coupling in
+   CSS instead of threading banner state through the toast provider. */
+.toast-viewport {
+  bottom: max(1rem, env(safe-area-inset-bottom));
+}
+body:has(.update-banner) .toast-viewport {
+  bottom: calc(max(1rem, env(safe-area-inset-bottom)) + 4.5rem);
+}
+
+/* Requirement: theme switches must swap colors instantly (THEME_DARK_MODE.md
+   key lesson: no transitions on theme change) while hover feedback keeps its
+   transition-colors. theme.js adds this class around the data-theme swap for
+   two frames; !important outranks every utility transition. */
+.theme-switching *,
+.theme-switching *::before,
+.theme-switching *::after {
+  transition: none !important;
 }

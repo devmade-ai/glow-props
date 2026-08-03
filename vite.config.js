@@ -1,17 +1,101 @@
-import { defineConfig } from 'vite';
+import { defineConfig, createServer } from 'vite';
+import react from '@vitejs/plugin-react';
 import tailwindcss from '@tailwindcss/vite';
 import { VitePWA } from 'vite-plugin-pwa';
 import { copyFileSync, readFileSync, readdirSync, existsSync, mkdirSync, writeFileSync } from 'fs';
 import { resolve, basename } from 'path';
+import { createHash } from 'crypto';
 
-// Requirement: Shared partials across index.html and project.html without duplication
-// Approach: Custom Vite plugin reads partial files and injects them into HTML at build time.
-//   Supports three partial types:
-//   1. <!-- NAVBAR:prefix --> — navbar with {{NAV_PREFIX}} token replacement
-//   2. <!-- HEAD_COMMON --> — shared <head> content (bootstrap, fonts, CSS)
-//   3. <!-- SKIP_LINK --> — accessibility skip-to-content link
-// Alternative: Vite plugin ecosystem (vite-plugin-handlebars, etc.) — rejected,
-//   adds dependency for simple replacements.
+// Requirement: icon URLs must change when the icon bytes change, or browser/CDN/
+//   WebAPK caches keep serving the old mark for weeks
+//   (docs/implementations/PWA_ICON_CACHE_BUST.md invariant 1).
+// Approach: sha256 of the file in public/, first 8 hex chars, appended as ?v=.
+//   Content hash, not a timestamp — same bytes give the same URL across rebuilds,
+//   so nothing invalidates spuriously.
+// Alternative: content-hashed filenames — rejected for now; vite-plugin-pwa copies
+//   manifest icon paths verbatim, so renames would need custom build steps (see the
+//   pattern doc's tradeoff assessment).
+const PUBLIC_DIR = resolve(__dirname, 'public');
+
+function iconVersion(relPath) {
+  const full = resolve(PUBLIC_DIR, relPath);
+  if (!existsSync(full)) {
+    // Warn, don't throw: a fresh clone has no icons before `npm run generate-icons`,
+    // and breaking the dev server there is worse than a clear warning.
+    console.warn('[iconVersion] missing icon at ' + full + " — using '0' as version.");
+    return '0';
+  }
+  return createHash('sha256').update(readFileSync(full)).digest('hex').slice(0, 8);
+}
+
+const ICON_PATHS = [
+  'assets/images/favicon.png',
+  'assets/images/apple-touch-icon.png',
+  'assets/images/icon-192.png',
+  'assets/images/icon-512.png',
+  'assets/images/icon-1024-maskable.png',
+];
+const ICON_VERSIONS = Object.fromEntries(ICON_PATHS.map((p) => [p, iconVersion(p)]));
+const versioned = (relPath) => relPath + '?v=' + ICON_VERSIONS[relPath];
+
+// Requirement: every URL surface must carry the icon version — the HTML
+//   <link rel="icon">/<link rel="apple-touch-icon"> tags
+//   (PWA_ICON_CACHE_BUST.md invariant 2). Missing one leaks stale content.
+//   The navbar mark is rendered by React and gets its version from the
+//   __ICON_VERSIONS__ define below — same hashes, one source.
+// Approach: replace the exact literals in every built page. Fail loud when a
+//   literal is missing — a reformatted tag would otherwise silently ship
+//   un-versioned URLs and only surface weeks later when an icon changes.
+function iconCacheBustHtml() {
+  // The source links are document-relative. By the time a post transform runs,
+  // Vite has left them untouched in BUILD but rewritten them to
+  // base-prefixed form in DEV (its dev html pipeline resolves asset URLs) —
+  // so both shapes must be accepted, and at least one must match or the
+  // fail-loud contract fires. prerenderPages() absolutizes the versioned
+  // links again for the nested item pages.
+  const REPLACEMENTS = [
+    ['href', 'assets/images/favicon.png'],
+    ['href', 'assets/images/apple-touch-icon.png'],
+  ];
+  return {
+    name: 'icon-cache-bust-html',
+    transformIndexHtml: {
+      order: 'post',
+      handler(html, ctx) {
+        let out = html;
+        for (const [attr, relPath] of REPLACEMENTS) {
+          const forms = [
+            attr + '="' + relPath + '"',                    // build
+            attr + '="/glow-props/' + relPath + '"',        // dev (base-rewritten)
+          ];
+          const found = forms.filter((literal) => out.includes(literal));
+          if (found.length === 0) {
+            throw new Error(
+              '[icon-cache-bust-html] expected literal not found in ' + ctx.filename + ': ' + forms[0] +
+              '\nThe tag changed shape — update the REPLACEMENTS table in vite.config.js to match.',
+            );
+          }
+          for (const literal of found) {
+            // Function form: a string replacement would $-expand ($&, $', $`)
+            // if a literal ever contained one — same rule as applyHead().
+            out = out.replaceAll(literal, () => literal.slice(0, -1) + '?v=' + ICON_VERSIONS[relPath] + '"');
+          }
+        }
+        return out;
+      },
+    },
+  };
+}
+
+// Requirement: shared <head> content (GA, pre-paint theme bootstrap,
+//   beforeinstallprompt capture, fonts, main.css) across the three HTML
+//   entries. These MUST stay inline classic scripts in the head — they run
+//   before any module, which is their entire purpose — so they cannot move
+//   into React with the rest of the old partials (navbar and skip link are
+//   components now).
+// Approach: Custom Vite plugin injects the partial at the HEAD_COMMON marker.
+// Alternative: vite-plugin-handlebars etc. — rejected, adds a dependency for
+//   one string replacement.
 function htmlPartials() {
   const partialsDir = resolve(__dirname, 'partials');
   return {
@@ -19,29 +103,12 @@ function htmlPartials() {
     transformIndexHtml: {
       order: 'pre',
       handler(html) {
-        // Navbar partial with prefix token
-        html = html.replace(
-          /<!--\s*NAVBAR:(\S*)\s*-->/g,
-          function (match, prefix) {
-            var navbar = readFileSync(resolve(partialsDir, 'navbar.html'), 'utf-8');
-            return navbar.replace(/\{\{NAV_PREFIX\}\}/g, prefix);
-          }
-        );
-        // Head common partial (bootstrap script, fonts, CSS)
-        html = html.replace(
+        return html.replace(
           /<!--\s*HEAD_COMMON\s*-->/g,
           function () {
             return readFileSync(resolve(partialsDir, 'head-common.html'), 'utf-8');
           }
         );
-        // Skip link partial
-        html = html.replace(
-          /<!--\s*SKIP_LINK\s*-->/g,
-          function () {
-            return readFileSync(resolve(partialsDir, 'skip-link.html'), 'utf-8');
-          }
-        );
-        return html;
       },
     },
   };
@@ -54,6 +121,18 @@ function htmlPartials() {
 // Alternative: Symlink in public/ — rejected, fragile with git across platforms.
 // Alternative: Put patterns in public/ — rejected, they live in docs/implementations/
 //   which is the canonical location referenced by CLAUDE.md.
+// Dev-server requests reach configureServer middlewares BEFORE Vite's own
+// base middleware strips the base — req.url is /glow-props/patterns/x.md, not
+// /patterns/x.md. Both dev middlewares below match on the stripped form.
+// The query string is dropped too: a ?cache-bust suffix would otherwise dodge
+// the match and fall through to Vite's SPA fallback, serving 200 text/html
+// where the caller expected markdown/JSON — wrong content is worse than a 404.
+function stripBase(url) {
+  if (!url) return url;
+  const path = url.split('?')[0];
+  return path.startsWith('/glow-props/') ? path.slice('/glow-props'.length) : path;
+}
+
 function copyRootFiles() {
   const files = ['CLAUDE.md'];
   const implDir = resolve(__dirname, 'docs', 'implementations');
@@ -62,10 +141,14 @@ function copyRootFiles() {
     // Requirement: Serve pattern docs during dev so pattern.html works locally
     // Approach: Dev server middleware rewrites /patterns/*.md to docs/implementations/*.md.
     //   Uses basename() to prevent path traversal (e.g., /patterns/../../../etc/passwd).
+    //   configureServer middlewares run BEFORE Vite strips the base, so requests
+    //   arrive as /glow-props/patterns/*.md — strip the base prefix first, or
+    //   every dev fetch misses this handler and 404s.
     configureServer(server) {
       server.middlewares.use(function (req, res, next) {
-        if (req.url && req.url.startsWith('/patterns/')) {
-          const fileName = basename(req.url.replace('/patterns/', ''));
+        const url = stripBase(req.url);
+        if (url && url.startsWith('/patterns/')) {
+          const fileName = basename(url.replace('/patterns/', ''));
           if (!fileName.endsWith('.md')) { next(); return; }
           const filePath = resolve(implDir, fileName);
           if (existsSync(filePath)) {
@@ -101,8 +184,12 @@ function copyRootFiles() {
 function validateProjectMeta() {
   const REQUIRED_FIELDS = ['name', 'title', 'description', 'badge', 'repo', 'audience', 'docs'];
   const DOC_FILE_MAP = { readme: 'README.md', userGuide: 'USER_GUIDE.md', testingGuide: 'TESTING_GUIDE.md', tutorial: 'TUTORIAL.md' };
+  let isServe = false;
   return {
     name: 'validate-project-meta',
+    configResolved(config) {
+      isServe = config.command === 'serve';
+    },
     buildStart() {
       const projectsDir = resolve(__dirname, 'public', 'projects');
       if (!existsSync(projectsDir)) return;
@@ -121,6 +208,20 @@ function validateProjectMeta() {
               errors.push(dir.name + ': missing required field "' + field + '"');
             }
           }
+          // Shape checks, not just presence — a string where ProjectView
+          // expects an array dies in a raw .map TypeError deep in the SSG
+          // render; a named validation error here is the debuggable version.
+          for (const arrayField of ['tech', 'useCases']) {
+            if (meta[arrayField] !== undefined && !Array.isArray(meta[arrayField])) {
+              errors.push(dir.name + ': "' + arrayField + '" must be an array');
+            }
+          }
+          for (const objectField of ['dataPrivacy', 'docs']) {
+            if (meta[objectField] !== undefined &&
+                (typeof meta[objectField] !== 'object' || Array.isArray(meta[objectField]) || meta[objectField] === null)) {
+              errors.push(dir.name + ': "' + objectField + '" must be an object');
+            }
+          }
           if (meta.docs) {
             for (const [key, enabled] of Object.entries(meta.docs)) {
               if (enabled && DOC_FILE_MAP[key]) {
@@ -136,7 +237,16 @@ function validateProjectMeta() {
         }
       }
       if (errors.length > 0) {
-        this.warn('Project metadata validation warnings:\n  ' + errors.join('\n  '));
+        // BUILD fails loud (the requirement above) — a warning scrolls past
+        // and the broken page ships. DEV only warns: buildStart also runs on
+        // `vite dev` init, and refusing to start the dev server over a
+        // half-created project folder blocks the very session that would fix
+        // it (same stance as iconVersion()'s missing-icon fallback).
+        if (isServe) {
+          this.warn('Project metadata validation failed (dev server continues; the BUILD will fail):\n  ' + errors.join('\n  '));
+        } else {
+          this.error('Project metadata validation failed:\n  ' + errors.join('\n  '));
+        }
       }
     },
   };
@@ -232,7 +342,9 @@ function generatePatternManifest() {
     name: 'generate-pattern-manifest',
     configureServer(server) {
       server.middlewares.use(function (req, res, next) {
-        if (req.url === '/patterns/manifest.json') {
+        // Same base-prefix note as copyRootFiles(): dev requests arrive
+        // un-stripped, so match on the base-stripped form.
+        if (stripBase(req.url) === '/patterns/manifest.json') {
           var manifest = buildManifest();
           res.setHeader('Content-Type', 'application/json');
           res.end(JSON.stringify(manifest, null, 2));
@@ -250,43 +362,53 @@ function generatePatternManifest() {
   };
 }
 
-// Requirement: every pattern was served from pattern.html?name=<slug>. That is
-//   one HTML file standing in for twelve pages, so each pattern had the same
-//   generic <title> and og: copy in its markup — a link to any of them unfurled
-//   as "Pattern Details", and a crawler that does not run JS saw no content at
-//   all. Runtime tags fix the first problem for Google and nothing for anyone
-//   else, because unfurlers do not run JS.
-// Approach: write one real HTML file per pattern at build, derived from the
-//   BUILT pattern.html so every asset URL is already correct. Each gets its own
-//   head tags and its markdown rendered into #app — which the page's own render
-//   then overwrites on mount, so there is no shell to tear down and no way for
-//   the two to disagree about what is on screen.
-// Alternative: a full static-site generator — rejected, this is one template
-//   and a folder of markdown.
-// See docs/implementations/DISCOVERABILITY.md.
-function prerenderPatternPages() {
+// Requirement: every pattern, every project, and the landing page must exist
+//   as real crawlable HTML — unfurlers and non-JS crawlers read markup, not
+//   the React tree (DISCOVERABILITY.md "One page per item").
+// Approach: build-time SSG. A nested Vite server ssrLoadModule's
+//   src/entry-server.jsx, which renderToString's the SAME components the
+//   client mounts — the crawlable markup and the live page cannot drift. The
+//   output is injected into each built template's #root, which
+//   createRoot().render() replaces on mount (render-then-replace, not
+//   hydration: the pages fetch their data at runtime, so hydration would
+//   mismatch by design). Every link the components emit is base-absolute, so
+//   nested pages need no path rewriting.
+// Alternative: a full SSG framework — rejected, three templates and two
+//   folders of markdown don't justify one, and the fleet standard is plain
+//   Vite + React.
+function prerenderPages() {
   const SITE = 'https://devmade-ai.github.io/glow-props/';
+  const GENERIC_PATTERN_DESC = 'Reusable engineering patterns by devmade-ai — implementation guides shared across every project.';
+  const GENERIC_PROJECT_DESC = 'Software projects, internal tools, and reusable engineering patterns by devmade-ai.';
 
-  function head(pattern) {
+  function escapeAttr(text) {
+    return String(text).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  }
+
+  // The built templates carry document-relative versioned icon links (correct
+  // at root level, and the only form that survives Vite's dev-server URL
+  // rewriting). Two directories down they 404 — absolutize them per page.
+  function iconLinkPairs() {
+    return ['assets/images/favicon.png', 'assets/images/apple-touch-icon.png'].map(
+      (relPath) => [
+        'href="' + versioned(relPath) + '"',
+        'href="/glow-props/' + versioned(relPath) + '"',
+      ],
+    );
+  }
+
+  // Head pairs: every entry REPLACES a tag the template already carries, so
+  // the fail-loud guard covers all of them and no duplicate identity tags can
+  // ship (the historical failure mode: pages with two <meta name="description">
+  // tags, and the crawler picks whichever it likes).
+  function patternHead(pattern) {
     const title = escapeAttr(pattern.title + ' — devmade-ai');
     const desc = escapeAttr(pattern.description);
     const url = SITE + 'patterns/' + pattern.slug + '/';
-    const GENERIC_DESC = 'Reusable engineering patterns by devmade-ai — implementation guides shared across every project.';
-    // Pairs, not an object: several of these keys are built by concatenation,
-    // which an object literal cannot take without bracket syntax.
-    //
-    // Every entry REPLACES a tag the template already carries. Nothing here
-    // may introduce a tag that the template also has: the description was
-    // originally injected alongside og:title, which left the generic one in
-    // place and shipped all 12 pages with two <meta name="description">
-    // tags — a crawler then picks one and we do not get to say which.
-    // Replacing in place also means the fail-loud guard below covers the
-    // description too, so a reworded template breaks the build instead of
-    // quietly restoring the generic copy.
     return [
       ['<title>Loading... — devmade-ai</title>', '<title>' + title + '</title>'],
       [
-        '<meta name="description" content="' + GENERIC_DESC + '">',
+        '<meta name="description" content="' + GENERIC_PATTERN_DESC + '">',
         '<meta name="description" content="' + desc + '">',
       ],
       [
@@ -295,7 +417,7 @@ function prerenderPatternPages() {
         '<meta property="og:title" content="' + title + '">',
       ],
       [
-        '<meta property="og:description" content="' + GENERIC_DESC + '">',
+        '<meta property="og:description" content="' + GENERIC_PATTERN_DESC + '">',
         '<meta property="og:description" content="' + desc + '">',
       ],
       [
@@ -307,81 +429,188 @@ function prerenderPatternPages() {
         '<meta name="twitter:title" content="' + title + '">',
       ],
       [
-        '<meta name="twitter:description" content="' + GENERIC_DESC + '">',
+        '<meta name="twitter:description" content="' + GENERIC_PATTERN_DESC + '">',
         '<meta name="twitter:description" content="' + desc + '">',
       ],
+      ...iconLinkPairs(),
     ];
   }
 
-  function escapeAttr(text) {
-    return String(text).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  function projectHead(meta, slug) {
+    const title = escapeAttr(meta.title + ' — devmade-ai');
+    const desc = escapeAttr(meta.description);
+    const url = SITE + 'projects/' + slug + '/';
+    return [
+      ['<title>Loading... — devmade-ai</title>', '<title>' + title + '</title>'],
+      [
+        '<meta name="description" content="' + GENERIC_PROJECT_DESC + '">',
+        '<meta name="description" content="' + desc + '">',
+      ],
+      [
+        '<meta property="og:title" content="devmade-ai — Project Details">',
+        '<link rel="canonical" href="' + url + '">\n  ' +
+        '<meta property="og:title" content="' + title + '">',
+      ],
+      [
+        '<meta property="og:description" content="' + GENERIC_PROJECT_DESC + '">',
+        '<meta property="og:description" content="' + desc + '">',
+      ],
+      [
+        '<meta property="og:url" content="' + SITE + 'project.html">',
+        '<meta property="og:url" content="' + url + '">',
+      ],
+      [
+        '<meta name="twitter:title" content="devmade-ai — Project Details">',
+        '<meta name="twitter:title" content="' + title + '">',
+      ],
+      [
+        '<meta name="twitter:description" content="' + GENERIC_PROJECT_DESC + '">',
+        '<meta name="twitter:description" content="' + desc + '">',
+      ],
+      ...iconLinkPairs(),
+    ];
+  }
+
+  function applyHead(html, pairs, label) {
+    for (const [from, to] of pairs) {
+      if (!html.includes(from)) {
+        throw new Error(
+          '[prerender-pages] expected literal not found in ' + label + ': ' + from +
+          '\nThe head tags changed — update prerenderPages() in vite.config.js to match.',
+        );
+      }
+      // Function form: the replacement carries content-derived text (titles,
+      // descriptions), and String.replace $-expands $&, $', $` in string
+      // replacements — a description containing "$&" would corrupt the head.
+      html = html.replace(from, () => to);
+    }
+    return html;
+  }
+
+  function injectRoot(html, body, label) {
+    const literal = '<div id="root"></div>';
+    if (!html.includes(literal)) {
+      throw new Error(
+        '[prerender-pages] expected an empty <div id="root"></div> in ' + label +
+        ' — the root markup changed shape; update prerenderPages() to match.',
+      );
+    }
+    // Function form: body is rendered markdown — literal "$&" in a pattern doc
+    // would $-expand in a string replacement and duplicate the root div.
+    return html.replace(literal, () => '<div id="root">' + body + '</div>');
   }
 
   return {
-    name: 'prerender-pattern-pages',
+    name: 'prerender-pages',
     async closeBundle() {
       const distDir = resolve(__dirname, 'dist');
-      const templatePath = resolve(distDir, 'pattern.html');
-      if (!existsSync(templatePath)) {
-        console.warn('[prerender-patterns] dist/pattern.html missing — skipped');
+      if (!existsSync(resolve(distDir, 'index.html'))) {
+        console.warn('[prerender-pages] dist/index.html missing — skipped');
         return;
       }
-      const template = readFileSync(templatePath, 'utf-8');
-      // marked is a runtime dependency of the site, so the build renders the
-      // same markdown with the same library the browser will.
-      const { marked } = await import('marked');
 
-      const patterns = buildPatternManifestForSitemap().patterns;
-      for (const pattern of patterns) {
-        const mdPath = resolve(__dirname, 'docs', 'implementations', pattern.file);
-        if (!existsSync(mdPath)) continue;
-        // Strip the YAML frontmatter — it is metadata for the manifest, not
-        // page content, and marked would render it as a paragraph of keys.
-        const body = readFileSync(mdPath, 'utf-8').replace(/^---\n[\s\S]*?\n---\n/, '');
+      // Nested server with configFile:false — the full plugin pipeline
+      // (VitePWA, this plugin) must not re-run inside itself. Only what the
+      // SSR transform needs: root, base, and the icon-version define.
+      const server = await createServer({
+        configFile: false,
+        root: __dirname,
+        base: '/glow-props/',
+        logLevel: 'error',
+        appType: 'custom',
+        server: { middlewareMode: true },
+        define: { __ICON_VERSIONS__: JSON.stringify(ICON_VERSIONS) },
+        esbuild: { jsx: 'automatic' },
+        // The dependency scanner crawls the CLIENT entries and trips on
+        // virtual:pwa-register (only the full plugin pipeline provides it).
+        // ssrLoadModule needs no client pre-bundling — turn discovery off.
+        optimizeDeps: { noDiscovery: true },
+      });
 
-        let html = template;
-        for (const [from, to] of head(pattern)) {
-          if (!html.includes(from)) {
-            throw new Error(
-              '[prerender-patterns] expected literal not found in built pattern.html: ' + from +
-              '\nThe head tags changed — update prerenderPatternPages() in vite.config.js to match.',
-            );
+      try {
+        const ssg = await server.ssrLoadModule('/src/entry-server.jsx');
+        const patterns = buildPatternManifestForSitemap().patterns;
+
+        // Landing page — full SSG'd body (hero, project/tool cards, pattern
+        // cards with real links) into the built index.html's #root.
+        const indexPath = resolve(distDir, 'index.html');
+        writeFileSync(indexPath, injectRoot(
+          readFileSync(indexPath, 'utf-8'),
+          ssg.renderHome(patterns),
+          'built index.html',
+        ));
+        console.log('[prerender-pages] index.html');
+
+        // Pattern pages. Missing templates get a named error instead of a bare
+        // ENOENT — the likely cause is an entry renamed in rollupOptions.input.
+        const patternTemplatePath = resolve(distDir, 'pattern.html');
+        if (!existsSync(patternTemplatePath)) {
+          throw new Error('[prerender-pages] dist/pattern.html missing — was the pattern entry removed from rollupOptions.input?');
+        }
+        const patternTemplate = readFileSync(patternTemplatePath, 'utf-8');
+        let patternCount = 0;
+        for (const pattern of patterns) {
+          const mdPath = resolve(__dirname, 'docs', 'implementations', pattern.file);
+          if (!existsSync(mdPath)) continue;
+          const raw = readFileSync(mdPath, 'utf-8');
+          let html = applyHead(patternTemplate, patternHead(pattern), 'built pattern.html');
+          html = injectRoot(html, ssg.renderPattern(pattern, raw), 'built pattern.html');
+          const outDir = resolve(distDir, 'patterns', pattern.slug);
+          mkdirSync(outDir, { recursive: true });
+          writeFileSync(resolve(outDir, 'index.html'), html);
+          patternCount++;
+        }
+        console.log('[prerender-pages] ' + patternCount + ' pattern pages');
+
+        // Project pages.
+        const projectTemplatePath = resolve(distDir, 'project.html');
+        if (!existsSync(projectTemplatePath)) {
+          throw new Error('[prerender-pages] dist/project.html missing — was the project entry removed from rollupOptions.input?');
+        }
+        const projectTemplate = readFileSync(projectTemplatePath, 'utf-8');
+        let projectCount = 0;
+        for (const slug of listProjectSlugs()) {
+          const metaPath = resolve(__dirname, 'public', 'projects', slug, 'meta.json');
+          let meta;
+          try {
+            meta = JSON.parse(readFileSync(metaPath, 'utf-8'));
+          } catch (e) {
+            console.warn('[prerender-pages] ' + slug + ': invalid meta.json — skipped');
+            continue;
           }
-          html = html.replace(from, to);
+          if (!meta.title || !meta.description) {
+            console.warn('[prerender-pages] ' + slug + ': meta.json missing title/description — skipped');
+            continue;
+          }
+          const readmePath = resolve(__dirname, 'public', 'projects', slug, 'README.md');
+          const readme = meta.docs && meta.docs.readme && existsSync(readmePath)
+            ? readFileSync(readmePath, 'utf-8')
+            : null;
+          let html = applyHead(projectTemplate, projectHead(meta, slug), 'built project.html');
+          html = injectRoot(html, ssg.renderProject(meta, slug, readme), 'built project.html');
+          const outDir = resolve(distDir, 'projects', slug);
+          mkdirSync(outDir, { recursive: true });
+          writeFileSync(resolve(outDir, 'index.html'), html);
+          projectCount++;
         }
-
-        // Into #app, which the page's own render overwrites on mount. No
-        // separate shell to remove, and nothing that can outlive the handoff.
-        html = html.replace(
-          '<div id="app"',
-          '<div id="app" data-prerendered="true"',
-        ).replace(
-          /(<div id="app"[^>]*>)/,
-          '$1\n' + marked.parse(body),
-        );
-
-        // The navbar partial is stamped with NAV_PREFIX="./" for a root-level
-        // page. Two directories down, "./#patterns" resolves to
-        // patterns/<slug>/#patterns and every nav link is dead. These are the
-        // only "./" hrefs in the template — they exist BECAUSE of that token —
-        // so rewriting them to the site base is exact rather than a guess.
-        const navLinks = (html.match(/href="\.\//g) || []).length;
-        if (navLinks === 0) {
-          throw new Error(
-            '[prerender-patterns] no "./" nav links found in built pattern.html. ' +
-            'NAV_PREFIX changed shape — re-check that nav links still resolve from ' +
-            'patterns/<slug>/ before removing this guard.',
-          );
-        }
-        html = html.replace(/href="\.\//g, 'href="/glow-props/');
-
-        const outDir = resolve(distDir, 'patterns', pattern.slug);
-        mkdirSync(outDir, { recursive: true });
-        writeFileSync(resolve(outDir, 'index.html'), html);
+        console.log('[prerender-pages] ' + projectCount + ' project pages');
+      } finally {
+        // The nested server holds watchers — an unclosed one hangs the build.
+        await server.close();
       }
-      console.log('[prerender-patterns] ' + patterns.length + ' pages');
     },
   };
+}
+
+// A directory under public/projects is a project only if it carries the
+// meta.json the page fetches — the folder also holds asset-only directories.
+// Shared by generateSitemap() and prerenderPages().
+function listProjectSlugs() {
+  const projectsDir = resolve(__dirname, 'public', 'projects');
+  if (!existsSync(projectsDir)) return [];
+  return readdirSync(projectsDir).filter(
+    (d) => existsSync(resolve(projectsDir, d, 'meta.json')),
+  );
 }
 
 // Requirement: the sitemap listed two URLs — the landing and a bare
@@ -396,16 +625,6 @@ function prerenderPatternPages() {
 // See docs/implementations/DISCOVERABILITY.md.
 function generateSitemap() {
   const SITE = 'https://devmade-ai.github.io/glow-props/';
-  const projectsDir = resolve(__dirname, 'public', 'projects');
-
-  function projectSlugs() {
-    if (!existsSync(projectsDir)) return [];
-    // A directory is a project only if it carries the meta.json the page
-    // fetches — public/projects also holds asset-only folders.
-    return readdirSync(projectsDir).filter(
-      (d) => existsSync(resolve(projectsDir, d, 'meta.json')),
-    );
-  }
 
   return {
     name: 'generate-sitemap',
@@ -414,8 +633,10 @@ function generateSitemap() {
       for (var p of buildPatternManifestForSitemap().patterns) {
         urls.push({ loc: SITE + 'patterns/' + p.slug + '/', priority: '0.8' });
       }
-      for (var slug of projectSlugs()) {
-        urls.push({ loc: SITE + 'project.html?name=' + slug, priority: '0.8' });
+      // The prerendered clean URL is canonical; the project.html?name= form is
+      // the legacy entry point and must not appear here as duplicate content.
+      for (var slug of listProjectSlugs()) {
+        urls.push({ loc: SITE + 'projects/' + slug + '/', priority: '0.8' });
       }
 
       var body = urls
@@ -449,7 +670,11 @@ export default defineConfig({
   plugins: [
     validateProjectMeta(),
     htmlPartials(),
+    react(),
     tailwindcss(),
+    // Before VitePWA() so the icon-URL contract is locked in ahead of manifest
+    // generation (PWA_ICON_CACHE_BUST.md "Plugin order").
+    iconCacheBustHtml(),
     // Requirement: Installable PWA with offline support and user-controlled updates
     // Approach: vite-plugin-pwa with registerType: 'prompt' so users control when
     //   updates apply. Service worker caches all assets for offline portfolio viewing.
@@ -457,31 +682,87 @@ export default defineConfig({
     // Alternative: No PWA — rejected, offline access useful for demos/interviews
     VitePWA({
       registerType: 'prompt',
-      includeAssets: ['assets/images/favicon.png'],
       // Requirement: Reliable cache management across Workbox version upgrades
       // Approach: cleanupOutdatedCaches removes stale caches from older Workbox versions.
-      //   globPatterns ensures all asset types used in the project are precached.
-      // Alternative: Rely on Workbox defaults — rejected, defaults may miss font/image types
-      //   and don't clean up caches from prior Workbox major versions.
-      // Requirement: Fix SW for multi-page app — disable SPA-style navigation fallback
-      // Approach: Set navigateFallback to false so the SW doesn't serve index.html for
-      //   all navigation requests. This is a multi-page app (index, project, pattern),
-      //   not an SPA. Without this fix, navigating to pattern.html?name=... or
-      //   project.html?name=... serves index.html from the SW cache because query params
-      //   prevent precacheAndRoute from matching.
-      // Alternative: navigateFallbackDenylist — rejected, easier to disable entirely
-      //   since every page is already precached.
+      //   globPatterns ensures all asset types used in the project are precached —
+      //   including .md, which IS the site's content (pattern.html and project.html
+      //   fetch markdown at runtime; without it, every content page is offline-broken).
+      // Requirement: query-parameter URLs must resolve offline. pattern.html?name= and
+      //   project.html?name= never match their precached page because the query is part
+      //   of the cache key, and versioned icon requests (?v=) have the same problem.
+      // Approach: ignoreURLParametersMatching strips name/v (plus the Workbox defaults
+      //   utm_/fbclid, which supplying this option would otherwise silently drop) before
+      //   precache lookup. navigateFallback stays null — multi-page app, every page is
+      //   its own precached entry, index.html must never stand in for the others.
+      // Requirement: exactly one precache entry per icon (PWA_ICON_CACHE_BUST checklist).
+      //   The icon PNGs used to enter twice — revision:null from the glob AND a
+      //   revisioned copy from includeAssets/manifest injection. Two cache keys for one
+      //   URL makes workbox-precaching throw add-to-cache-list-conflicting-entries at SW
+      //   evaluation, killing the whole precache layer in production.
+      // Approach: globIgnores the referenced icon files; their precache entries come
+      //   solely from the versioned manifest/includeAssets injection. icon-1024.png
+      //   is the transparent APP_ICONS master — nothing references it at runtime,
+      //   so it is excluded outright rather than precached.
       workbox: {
         cleanupOutdatedCaches: true,
-        globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2,json}'],
+        globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2,json,md}'],
+        globIgnores: [
+          '**/assets/images/favicon.png',
+          '**/assets/images/apple-touch-icon.png',
+          '**/assets/images/icon-192.png',
+          '**/assets/images/icon-512.png',
+          '**/assets/images/icon-1024.png',
+          '**/assets/images/icon-1024-maskable.png',
+          // og-image joins the icons here for a different reason: the plugin's
+          // default dontCacheBustURLsMatching treats everything under assets/
+          // as content-hashed (revision:null), so a regenerated card under the
+          // same URL would never refetch for installed SWs. includeAssets
+          // below gives it a real content revision instead.
+          '**/assets/images/og-image.png',
+        ],
+        ignoreURLParametersMatching: [/^name$/, /^v$/, /^utm_/, /^fbclid$/],
         navigateFallback: null,
+        // Google Fonts are loaded on every page (partials/head-common.html) but were
+        // never runtime-cached, so offline pages fell back to system fonts.
+        // CacheFirst for a year — fonts effectively never change under one URL.
+        runtimeCaching: [
+          {
+            urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'google-fonts-cache',
+              expiration: { maxEntries: 10, maxAgeSeconds: 60 * 60 * 24 * 365 },
+              cacheableResponse: { statuses: [0, 200] },
+            },
+          },
+          {
+            urlPattern: /^https:\/\/fonts\.gstatic\.com\/.*/i,
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'gstatic-fonts-cache',
+              expiration: { maxEntries: 10, maxAgeSeconds: 60 * 60 * 24 * 365 },
+              cacheableResponse: { statuses: [0, 200] },
+            },
+          },
+        ],
       },
+      // Bare paths, not versioned() — includeAssets globs real files, so a query
+      // string matches nothing and the icon silently drops out of the precache.
+      // Each icon gets ONE bare-URL entry with a content revision here; requests
+      // for the versioned form match it because ignoreURLParametersMatching
+      // strips ?v= on lookup.
+      includeAssets: [...ICON_PATHS, 'assets/images/og-image.png'],
       manifest: {
         name: 'Glow Props — Project Portfolio',
         short_name: 'Glow Props',
         description: 'Portfolio of tools and patterns by devmade.ai',
         id: '/glow-props/',
-        theme_color: '#10b981',
+        // Matches the coffee (--prefersdark default) base-100 — THEME_DARK_MODE
+        // requires the manifest fallback to be a real theme color, and this is the
+        // same value the dark <meta name="theme-color"> ships with. If the default
+        // dark theme changes, re-run `npm run generate:meta-colors` and copy the
+        // coffee value it reports here — the generator does not edit this file.
+        theme_color: '#261b25',
         background_color: '#ffffff',
         display: 'standalone',
         scope: '/glow-props/',
@@ -489,19 +770,21 @@ export default defineConfig({
         prefer_related_applications: false,
         icons: [
           {
-            src: 'assets/images/icon-192.png',
+            src: versioned('assets/images/icon-192.png'),
             sizes: '192x192',
             type: 'image/png',
             purpose: 'any',
           },
           {
-            src: 'assets/images/icon-512.png',
+            src: versioned('assets/images/icon-512.png'),
             sizes: '512x512',
             type: 'image/png',
             purpose: 'any',
           },
           {
-            src: 'assets/images/icon-1024.png',
+            // Full-bleed white-background variant — a transparent icon declared
+            // maskable gets crop-masked over an undefined backdrop on Android.
+            src: versioned('assets/images/icon-1024-maskable.png'),
             sizes: '1024x1024',
             type: 'image/png',
             purpose: 'maskable',
@@ -511,9 +794,15 @@ export default defineConfig({
     }),
     copyRootFiles(),
     generatePatternManifest(),
-    prerenderPatternPages(),
+    prerenderPages(),
     generateSitemap(),
   ],
+  // The navbar mark is rendered by React; it gets the same content-hash
+  // versions the manifest and link tags use, via this define (client build AND
+  // the nested SSG server pass the identical object).
+  define: {
+    __ICON_VERSIONS__: JSON.stringify(ICON_VERSIONS),
+  },
   build: {
     rollupOptions: {
       input: {

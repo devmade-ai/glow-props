@@ -2,63 +2,237 @@
 
 ## Worked on
 
-The **qi-invoice** catalog entry — added, then substantially rewritten in the
-same session when the app itself changed shape. All implementation work happened
-in qi-invoice's own repo; the change here is the entry plus its scrubbed docs.
+Two major passes in one session: (1) a full 12-pattern self-audit with a
+same-day fix pass (two production breaks found and fixed, PWA_ICON_CACHE_BUST
+implemented, gap matrix corrected), then (2) the **React conversion** — the
+whole site moved from vanilla JS to React 19 + Vite, MPA with build-time SSG,
+making glow-props the fleet's reference implementation of the patterns' React
+variants.
 
 ## Accomplished
 
-- **`public/projects/qi-invoice/`** — `meta.json` + `README.md` +
-  `USER_GUIDE.md` + `TESTING_GUIDE.md`, `docs: { readme, userGuide,
-  testingGuide }`.
-- **Rewritten mid-session.** The first version described an app that emailed the
-  invoice; the owner then removed the entire backend — endpoint, SMTP, rate
-  limiting, Supabase — leaving a static app that produces a PDF. Every one of
-  the four files was updated: there is no send flow, no recipient inbox, no
-  server in the architecture diagram, and the privacy claims changed from "we
-  don't retain it" to "it never leaves your device", which is a stronger and
-  simpler thing to say.
-- **`meta.json`** carries four `dataPrivacy` keys rather than the usual
-  storage/auth pair. "No server" is the product's defining claim and stating it
-  alone would be incomplete: the browser DOES remember the sender's own details,
-  and that belongs beside it. The `authentication` key was dropped — there is no
-  auth to describe, and an empty one would read as an omission.
-- **`README.md`** keeps its design-decision section deliberately: integer money,
-  the two rounding rules, invoice-level currency, sign-from-section, two
-  renderers sharing one set of figures, and why the PDF holds text rather than
-  pixels. That is the part worth reading at portfolio altitude. Setup commands,
-  env vars and internal doc links are gone.
-- **`USER_GUIDE.md`** copied verbatim, both times. Grepped first on each pass:
-  the source guide has no commands, no localhost and no env vars, so there was
-  nothing to strip and rewriting it would only introduce drift.
-- **`TESTING_GUIDE.md`** rewritten rather than scrubbed. The source opens with
-  the automated suite, npm scripts and a per-test-file coverage table; removing
-  those left too little to edit around, so the manual scenarios were carried
-  over on their own — 16 of them now, including the generated-PDF and non-Latin
-  cases the email-era version had no reason to cover.
-- **`docs/PROJECT_DOCS.md`** — row in the User-Facing Apps table with the
-  per-file scrub treatment, and `qi-invoice` added to the private-repo list.
+- **Audit fix pass** (details in TODO.md "full self-audit + fix pass"): SW
+  precache conflict fixed, offline coverage (.md, ?name=, fonts), icon
+  cache-busting + `verify:icons` tripwire, full-bleed maskable icon, project
+  prerendering, menu a11y, timer leaks, install-flow gaps, z-index/print/theme
+  fixes, honest gap matrix + CLAUDE.md N/A declarations.
+- **React conversion:**
+  - Three entries (`index/pattern/project.html` keep their literal head tags +
+    the inline head partial), one React root each (`src/main-*.jsx`).
+  - `src/components/` — `BurgerMenu.jsx` per BURGER_MENU.md's reference
+    (disclosure, portaled backdrop, arrow/Home/End, close-then-act, MenuItem
+    extensions: `href`, `keepOpen`, `indicator`, `ariaLabel`, `render`),
+    `Navbar` with the Approach-A theme picker, `PageShell`, `Toast`
+    (ToastProvider), `PwaManager`/`InstallModal`/`UpdateBanner`, `Markdown`
+    (delegated copy buttons, no window globals).
+  - `src/lib/` — `pwa.js` (module singleton per PWA_SYSTEM.md; registers SW,
+    owns update policy + install flow, subscriber set + event emitter),
+    `theme.js` (Approach A singleton; cross-tab sync, OS fallback,
+    theme-switching transition suppression), `markdown.js` (shared marked
+    renderer used by client AND SSG), `safeStorage.js`, `themeCatalog.js`
+    (generator-owned).
+  - **SSG:** `prerenderPages()` in vite.config spins a nested Vite server
+    (`configFile: false`), `ssrLoadModule`s `src/entry-server.jsx`, and
+    `renderToString`s the landing page + 12 patterns + 16 projects into each
+    built template's `<div id="root"></div>`, with per-item head tags replaced
+    literal-for-literal. Render-then-replace on mount, NOT hydration (pages
+    fetch at runtime). All links base-absolute — the old NAV_PREFIX and path
+    rewriting are gone.
+  - **SSR boundary:** `entry-server` must never import `src/lib/pwa.js`
+    (`virtual:pwa-register` + SW registration on import); PWA state reaches
+    SSR-rendered components via `PwaContext`, whose default value is the
+    SSR-safe shape.
+  - **Deleted:** `public/theme.js`, `partials/navbar.html`,
+    `partials/skip-link.html`, old `src/pwa.js`/`src/markdown.js`, all inline
+    page scripts. `partials/head-common.html` survives (GA + pre-paint
+    bootstrap + install capture must stay pre-module).
+  - **Generator:** `generate-meta-colors.mjs` now writes
+    `src/lib/themeCatalog.js` + the bootstrap copy + three HTML metas.
+  - **Tripwires:** `verify:timer-cleanup` — pairing rule for React files,
+    dispose blocks for lib singletons, inline-script rules unchanged;
+    `verify:seo` — SSG assertions over `#root`/`<main>`, static
+    pattern+project links on the landing page, seoMeta wiring checked in the
+    React pages; `verify:icons` — head links + `__ICON_VERSIONS__` define
+    (versions the React navbar mark).
+  - **Verified:** build + all three tripwires green; Playwright smoke test
+    passes (menu open/keyboard/Escape, mode toggle stays open, theme pick
+    applies, prerendered pattern + project pages mount, legacy `?name=` URLs
+    canonicalize, doc tabs load).
 
 ## Current state
 
-`npm run build` clean, `validateProjectMeta` green (no warnings, so every
-declared doc file exists), sitemap at 29 URLs. `npm run verify:seo` and
-`npm run verify:timer-cleanup` both pass.
+`vite build` clean: SSG logs index + 12 pattern + 16 project pages; precache
+120 entries (~1.9 MB); sitemap 29 URLs. All three verify gates green. New
+deps: `react`, `react-dom` (runtime), `@vitejs/plugin-react@5` (Vite 7
+compatible — v6 needs Vite 8).
 
 ## Key context
 
-- The Details page (`project.html`) renders one labeled tab per
-  `meta.docs.<key>: true` (Overview / User Guide / Testing Guide / Tutorial),
-  fetching the matching file from `public/projects/<slug>/`.
-  `validateProjectMeta` in `vite.config.js` warns if a declared doc file is
-  missing (`DOC_FILE_MAP`: readme→README.md, userGuide→USER_GUIDE.md,
-  testingGuide→TESTING_GUIDE.md, tutorial→TUTORIAL.md).
-- Scrub rule, unchanged: no `npm run`/`npm install`, no localhost/`:5173`, no
-  `VITE_*` / `SUPABASE_*` / `SMTP_*`, no `wrangler`/`npx`/`supabase` commands,
-  no DB schema or RLS, no deploy internals, no source-tree or CLAUDE.md
-  references. Features and high-level stack stay.
-- `intxt`'s docs remain the reference for scrub altitude; qi-invoice matches it.
-- **Mirrored docs go stale when the source product changes, not just when its
-  wording changes.** This entry described a mail-sending app for part of one
-  session. Worth re-reading a project's own README before assuming the mirrored
-  copy is still accurate.
+- **DEBUG_SYSTEM and mood tags: CLOSED later this session** — see the first
+  addendum below. **PR #59 review-fix pass also CLOSED** — see the second
+  addendum; no open repo items remain in TODO.md.
+- The smoke test lives in the session scratchpad, not the repo — rerun by
+  starting `vite preview` and driving Chromium at the five checks above, or
+  promote it into the repo as a real script if it should gate CI.
+- Downstream repos can now reference glow-props source directly for the React
+  pattern variants instead of only the docs' inline snippets.
+
+## Addendum (same session): DEBUG_SYSTEM + PWA extras + mood tags
+
+- **DEBUG_SYSTEM implemented, DEV-gated** (matrix `Missing → Pass (DEV)`):
+  `src/lib/debugLog.js` (store, console interception, global capture, report
+  with redacted URLs, PWA diagnostics probes), `src/components/debug/
+  DebugPill.jsx` (inline styles, separate root via `src/debugMount.jsx`,
+  z-80), loaded only through `if (import.meta.env.DEV) import(...)` in the
+  page entries — production bundles verified free of the subsystem. The
+  pre-module error capture + 20s plain-language load watchdog in
+  `partials/head-common.html` DOES run in prod; entries clear it after mount.
+  PWA lifecycle reaches the pill via the optional `window.__debugAdd` bridge.
+- **Install analytics** (`pwa-install-events`, localStorage, cap 50) landed in
+  `src/lib/pwa.js` — prompted / installed / installed-via-browser / dismissed /
+  instructions-viewed — displayed in the pill's PWA tab. Earlier the same
+  session: display-mode change listener; `version.json` decided against.
+- **Mood tags**: `src/data/themeDescriptions.js` (hand-authored, outside the
+  generator-owned catalog) rendered in the theme picker per BURGER_MENU.md.
+- **Shared clipboard helper** upgraded to the full DEBUG_SYSTEM cascade
+  (ClipboardItem Blob → writeText → textarea).
+- **Dev/build asymmetry fix**: Vite's dev html pipeline rewrites asset URLs
+  before post transforms, so `iconCacheBustHtml()` now accepts both the
+  relative (build) and base-prefixed (dev) literal forms — the source pages
+  keep relative icon links and `prerenderPages()` absolutizes them for nested
+  pages via `iconLinkPairs()`.
+- Verified: build + three tripwires green; app smoke test green (picker
+  selector updated for mood tags); debug smoke test green (pill mounts in dev
+  with live diagnostics + funnel, absent in prod, watchdog cleared both).
+
+## Addendum 2 (same session): PR #59 review-fix pass ("fix all")
+
+A 3-agent fresh-context review of PR #59 found 2 HIGH, 7 MEDIUM, ~15 LOW —
+all fixed:
+
+- **HIGH-1 (regression):** tapping a home card wiped `animate-in` (React owns
+  className; the observer's imperative classList write was lost on re-render)
+  → card faded to opacity:0. `useScrollAnimate` now returns a React-state
+  `revealed` Set keyed by `data-reveal-id`; cards AND section headings render
+  `animate-in` from it. Smoke test gained a card-tap regression check.
+- **HIGH-2:** both dev middlewares (`/patterns/*.md`, `/patterns/manifest.json`)
+  matched un-prefixed URLs, but configureServer middlewares run BEFORE Vite
+  strips `/glow-props/` — every dev fetch 404'd. `stripBase()` added; verified
+  live with curl (both 200 under the base).
+- **MEDIUMs:** `$`-expansion killed in applyHead/injectRoot/iconCacheBustHtml
+  (function-replacement form); `validateProjectMeta` now `this.error` (fails
+  the build as its comment promised); InstallModal got role=dialog +
+  aria-modal + labelled title + focus-in on open (the trap never engaged
+  without it); visibilitychange SW update throttled 60s + rejection swallowed;
+  applyUpdate falls back to plain reload when no worker is waiting;
+  suppressed onNeedRefresh still records `updateAvailable`; theme mediaListener
+  passes skipPersist (OS-follow is not a user choice).
+- **LOWs (selection):** Toast viewport always mounted (live region exists
+  before content) + CSS `:has` shift above the update banner; empty project
+  doc → failed state (was eternal Loading); per-fetch AbortControllers with
+  timers cleared after body parse; retry offered on all load failures;
+  isSafeUrl on meta.json hrefs + protocol-relative `//` rejected + image
+  renderer override + relative `X.md` links anchored to `<base>/patterns/`;
+  debug probe reads durable `__pwaPromptCaptured`; pill auto-scroll keyed on
+  last entry id; install-funnel Clear button; watchdog cleared from PageShell
+  effect (post-commit, not module eval) and message differentiates prerendered
+  pages; theme.js rAFs tracked + cancelled in dispose; install analytics via
+  safeStorage; stale comments fixed (main.css, seoMeta.js, pattern/project
+  html, CHROMIUM_BROWSERS).
+- **Tripwires hardened:** verify-icons dropped the meaningless plugin-order
+  assert (VitePWA is enforce:'post'), requires the navbar mark on the SSG'd
+  index, asserts prerendered pages are precached; verify-seo counts only
+  manifest-eligible pattern docs (frontmatter-parsed, quote-stripped) and
+  asserts dist/robots.txt (closing the last TODO item); verify-timer-cleanup
+  checks inline scripts PER BLOCK and pairs requestAnimationFrame.
+- Verified: build + three tripwires green, dev middlewares curl-checked, both
+  smoke suites green (incl. new card-tap + heading-reveal checks).
+
+## Addendum 3 (same session): round-2 review-fix pass ("fix all")
+
+A second 3-agent fresh-eyes review of PR #59 (post-fix head) found 6 MEDIUM +
+16 LOW — all fixed. One claimed HIGH (card-to-card tap needing a double tap)
+was REFUTED empirically with Playwright before fixing anything: one tap
+switches cards.
+
+- **Security:** `isSafeUrl` now rejects backslash protocol-relative forms
+  (`/\evil.com` — browsers normalize `\`→`/`; verified `new URL` resolves it
+  off-site). Bare `.md` cross-links now land on the RENDERED pattern page
+  (filename↔slug fleet convention, documented in the renderer).
+- **A11y:** `useFocusTrap`'s FOCUSABLE selector includes `summary` (the
+  InstallModal disclosure was untabbable and could leak focus out of the
+  dialog); ProjectPage doc tabs are now the FULL ARIA tabs pattern (roving
+  tabindex, arrow/Home/End, labelled `tabpanel`, `aria-disabled` on
+  unavailable tabs — arrow nav keeps focus on the tab, click focuses the
+  panel); heading levels fixed (info cards h2, all home cards h3); UpdateBanner
+  announces via role=status.
+- **Maskable icon regenerated:** the mark's corner arcs reached ~523px from
+  center vs the 410px circular safe zone — Pixel-style round masks cropped all
+  four corners. generate-icons.mjs now composites a 780px render onto the
+  white 1024 canvas (≤801px keeps the arcs inside; only the maskable PNG's
+  bytes changed).
+- **Theme:** the cross-tab storage listener falls back to the OS preference
+  when darkMode is unset (random-theme-on-load in another tab no longer flips
+  an OS-dark tab to light).
+- **PWA/copy:** early "Check for updates" says "Still starting up" instead of
+  blaming the browser; HomePage manifest fetch got ok-check + 10s timeout +
+  actionable error; empty-body error states filled in.
+- **Build/dev:** stripBase drops query strings (no more 200-HTML for
+  query-stringed doc fetches); validateProjectMeta warns under `vite dev` but
+  still fails the build; og-image gets a real precache revision via
+  globIgnores+includeAssets (was revision:null → stale forever for installed
+  SWs); generate-meta-colors fails loud when a format-coupled regex stops
+  matching; verify-seo's parser now mirrors the manifest's dedupe/numeric
+  rules; verify-timer-cleanup's plain-module rule covers rAF and
+  IntersectionObserver.
+- **Docs drift:** seoMeta JSDoc/canonical comments, main.css markdown pointer,
+  CLAUDE.md "three→four inline scripts", TODO.md fully-clean list includes
+  glow-props again (contradiction removed); BurgerMenu keepOpen errors route
+  through the same debug surface as close-then-act.
+- Verified: build + three tripwires green; app smoke green; NEW a11y/security
+  smoke green (arrow-key tab nav live-tested, no unsafe hrefs in rendered
+  markdown, .md links rewritten); debug smoke green.
+
+## Addendum 4 (same session): round-3 review-fix pass ("fix all")
+
+A third 3-agent review (round-2-regression hunt, cold state/data-flow sweep,
+docs-coherence audit) found 1 HIGH + 2 real MEDIUMs + edge/docs residue — all
+fixed. The jsdom-based claim that card switching needs two taps was re-tested
+in real Chromium (3 trials): one tap switches cards — refuted; jsdom's event
+dispatch does not match browser behavior here.
+
+- **HIGH (round-2 regression): project-doc .md links 404'd.** The blanket
+  bare-`X.md` → `/patterns/<slug>/` rewrite also caught project READMEs
+  (USER_GUIDE.md etc. → 16 dead links across 8 prerendered project pages,
+  confirmed in dist). The rewrite is now caller-owned: `renderMarkdown(text,
+  { resolveMdLink })` with `patternMdLinkResolver` (rendered pattern pages)
+  and `projectMdLinkResolver(slug)` (the project's own served doc files) —
+  verified in the rebuilt dist for both families.
+- **BurgerMenu error swallowing (round-2 regression):** routing to
+  `__debugPushError` was wrong — that global EXISTS in prod (head-partial
+  buffer nothing drains). Both action paths now `console.error`
+  unconditionally; the dev pill still sees it via console interception.
+- **Maskable icon:** two-pass composite + removeAlpha — the chained flatten
+  ran before composite (sharp pipeline order) and the file kept an alpha
+  channel; now genuinely 3-channel. PNG regenerated again.
+- **Hardening:** ProjectView roving tabindex falls back to the first
+  available tab (malformed meta can't drop the tablist from tab order) and
+  the tabpanel's aria-labelledby only points at ids that render; ProjectView
+  memoizes renderMarkdown (was re-parsing ~50KB per keystroke/tab switch);
+  PwaManager resyncs once on mount (subscribe-only gap); empty pattern
+  manifest gets an empty-state message; storage-blocked preference toggles
+  toast an explanation (readback check in toggleAutoUpdate +
+  toggleRandomTheme return value consumed by Navbar); onRegisterError tracked
+  so "still starting up" can't be claimed forever; validateProjectMeta checks
+  array/object shapes, not just presence; verify-seo slug parity via
+  String() coercion (mirrors manifest exactly); verify-timer-cleanup message
+  lists its actual verbs.
+- **Docs:** TODO.md mood-tag "remaining nicety" + "three inline scripts" +
+  deleted-file citations corrected; README head-partial description, scripts
+  tree (all six), src tree (debugMount, debugLog, mood tags); head-common
+  bootstrap comment points at themeCatalog.js; CLAUDE.md TutorialModal note
+  scoped to downstream repos + PROJECT_DOCS.md added to the Documentation
+  section.
+- Verified: build + three tripwires green; per-context link resolution
+  checked in dist (patterns → rendered pages, projects → own served docs,
+  targets exist); both smoke suites green.

@@ -9,11 +9,12 @@
 //   document.title assignment already relies on.
 // Alternatives:
 //   - Static canonical per page: rejected, see above — actively harmful.
-//   - Prerendering one HTML file per item: DONE for patterns — see
-//     prerenderPatternPages() in vite.config.js, which gives each pattern its
-//     own file, head tags and crawlable body at /patterns/<slug>/. This module
-//     still runs there (harmlessly, setting the same values) and is what covers
-//     project.html, which is not prerendered.
+//   - Prerendering one HTML file per item: DONE for both patterns AND projects
+//     — prerenderPages() in vite.config.js gives each its own file, head tags
+//     and crawlable body at /patterns/<slug>/ and /projects/<slug>/. This
+//     module still runs on those pages (harmlessly, setting the same values)
+//     and is what covers the legacy ?name= entry points, which stay generic
+//     until it runs.
 //
 // NOT a fix for link previews. Unfurlers (WhatsApp, Slack, Signal, iMessage)
 // do not run JS, so they see the generic tags in the HTML and nothing this
@@ -40,7 +41,7 @@ function setMeta(selector, attr, key, content) {
  * @param {object} page
  * @param {string} page.title       Item title, without the site suffix.
  * @param {string} page.description One or two sentences about this item.
- * @param {string} page.path        Page file plus query, e.g. "pattern.html?name=x".
+ * @param {string} page.path        Site-relative canonical path, e.g. "patterns/timer-leaks/".
  */
 export function applyPageSeo({ title, description, path }) {
   const fullTitle = `${title} — devmade-ai`;
@@ -48,8 +49,10 @@ export function applyPageSeo({ title, description, path }) {
 
   document.title = fullTitle;
 
-  // The canonical is the whole reason this runs: it has to carry the query
-  // string, or every item collapses onto one URL.
+  // The canonical is the whole reason this runs: callers pass the item's
+  // clean prerendered URL (patterns/<slug>/, projects/<slug>/), which is what
+  // keeps the legacy ?name= entry points from competing with those pages —
+  // and keeps every item from collapsing onto the bare template URL.
   let canonical = document.head.querySelector('link[rel="canonical"]');
   if (!canonical) {
     canonical = document.createElement('link');

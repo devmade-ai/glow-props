@@ -15,7 +15,7 @@ order: 11
 Every timer, interval, event listener, and subscription is a resource that keeps its callback alive. If the component or module that created it goes away (unmount, HMR reload, route change, bundle teardown) without releasing it, the callback keeps running against stale state, holds references that can't be GC'd, and — in the nested case — can spawn new work on a dead tree. This pattern defines the contract and five concrete shapes that cover every real case.
 
 **Related patterns:**
-- [EVENT_BUS.md](EVENT_BUS.md) — `bus.subscribe()` returns an unsubscribe fn; callers must store and invoke it
+- [EVENT_BUS.md](EVENT_BUS.md) — `bus.on()` returns an unsubscribe fn; callers must store and invoke it
 - [DEBUG_SYSTEM.md](DEBUG_SYSTEM.md) — `subscribeDebugLog()` follows the same pub/sub contract; errors during cleanup route to `debugAdd()`
 - [PWA_SYSTEM.md](PWA_SYSTEM.md) — service worker update checks and `beforeinstallprompt` listeners are long-lived and HMR-sensitive
 

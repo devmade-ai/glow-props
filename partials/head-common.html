@@ -27,7 +27,8 @@
     try {
       // Requirement: Prevent flash using stored per-mode theme + dark/light preference
       // Reads lightTheme/darkTheme directly — no combo map needed.
-      // Defaults must stay in sync with theme.js constants.
+      // Defaults must stay in sync with src/lib/themeCatalog.js
+      // (DEFAULT_LIGHT_THEME / DEFAULT_DARK_THEME — generator-owned).
       var stored = localStorage.getItem('darkMode');
       var isDark = stored !== null
         ? stored === 'true'
@@ -93,16 +94,73 @@
   })();
 </script>
 
+<!-- Requirement: capture errors that happen before any module loads — the one
+     failure mode the DEV-gated React debug pill cannot see is the bundle
+     itself failing (DEBUG_SYSTEM.md "Pre-React inline pill", adapted: buffer +
+     watchdog only; the pill UI is React and DEV-only in this repo).
+     The 20s watchdog turns a silent blank page into a plain-language message:
+     with render-then-replace, a failed module leaves whatever markup was
+     prerendered but nothing interactive.
+     Cleanup contract: attach guard + the paired clearTimeout lives in
+     __debugClearLoadTimer, called by every page entry after mount. -->
+<script>
+  if (!window.__debugCaptureAttached) {
+    window.__debugCaptureAttached = true;
+    window.__debugErrors = [];
+    window.__debugPushError = function (msg, stack) {
+      window.__debugErrors.push({ msg: msg, stack: stack, time: Date.now() });
+      if (window.__debugErrors.length > 200) window.__debugErrors.shift();
+    };
+    window.addEventListener('error', function (e) {
+      if (window.__debugPushError) window.__debugPushError(e.message || 'Unknown error', e.filename + ':' + e.lineno);
+    });
+    window.addEventListener('unhandledrejection', function (e) {
+      if (window.__debugPushError) window.__debugPushError('Unhandled rejection: ' + e.reason);
+    });
+
+    window.__debugReactMounted = false;
+    window.__debugClearLoadTimer = function () {
+      window.__debugReactMounted = true;
+      clearTimeout(window.__debugLoadTimer);
+    };
+    window.__debugLoadTimer = setTimeout(function () {
+      if (!window.__debugReactMounted) {
+        var root = document.getElementById('root');
+        // Prerendered pages already show real content when the bundle dies —
+        // "taking longer to load" would be untrue there. Say what actually
+        // failed in each case, in plain language.
+        var hasContent = !!(root && root.children.length > 0);
+        var warning = document.createElement('p');
+        warning.style.cssText = 'color:#b45309;font-size:14px;margin:12px auto;max-width:32rem;text-align:center;font-family:system-ui,sans-serif';
+        warning.textContent = hasContent
+          ? 'Some parts of this page didn’t finish loading, so menus and buttons may not respond. Check your connection and reload the page.'
+          : 'This page is taking longer than usual to load. Check your connection and reload the page.';
+        if (root) root.appendChild(warning);
+      }
+    }, 20000);
+  }
+</script>
+
 <!-- Requirement: Capture beforeinstallprompt before framework mounts
      Approach: Stash the event on window for pwa.js to consume later.
        On repeat visits with a cached SW, the event fires before any module
        scripts run — if nothing catches it, the install prompt is permanently lost.
+       Named handler + attach guard (TIMER_LEAKS.md variant 5): the handler lives
+       on window so pwa.js's dispose block can remove it, and the guard keeps a
+       re-evaluated partial from double-subscribing.
      Alternative: Listen in pwa.js only — rejected, misses the early-fire case -->
 <script>
-  window.addEventListener('beforeinstallprompt', function (e) {
-    e.preventDefault();
-    window.__pwaInstallPromptEvent = e;
-  });
+  if (!window.__pwaInstallCaptureAttached) {
+    window.__pwaInstallCaptureAttached = true;
+    window.__pwaInstallCapture = function (e) {
+      e.preventDefault();
+      window.__pwaInstallPromptEvent = e;
+      // Durable flag for the debug diagnostics probe — pwa.js deletes the
+      // event object when it consumes it, so the probe checks this instead.
+      window.__pwaPromptCaptured = true;
+    };
+    window.addEventListener('beforeinstallprompt', window.__pwaInstallCapture);
+  }
 </script>
 
 <!-- Fonts: Space Grotesk for headings, Inter for body -->
