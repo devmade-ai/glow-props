@@ -612,22 +612,24 @@ Several of these fixes are now described directly by the updated pattern docs, s
 
 ### Round 2 (2026-08-03, second pass — the 9 repos the first pass missed)
 
-Severity-ordered. Several are production-down.
+Severity-ordered. The two production-down service workers (repo-tor, model-pear) are fixed and pushed; the rest is open.
 
-#### repo-tor — **PRODUCTION SERVICE WORKER IS DEAD**
+#### repo-tor
 
-1. [ ] **`add-to-cache-list-conflicting-entries` — the SW never installs.** `vite.config.js:154` `includeAssets: ['assets/images/*.png']` plus `globPatterns` matching `png`, with no `globIgnores` and no `dontCacheBustURLsMatching`, so the default `/^assets/` nulls the globbed revision while `includeAssets` supplies an MD5 — two cache keys for one URL. Verified by running the real workbox pipeline over a synthetic dist. Blast radius: no precache, no offline, no runtime caching (routes are registered in the script that throws), the update system never arms, and Chrome's installability criteria are unmet. Fix: drop `includeAssets` (the glob already covers the PNGs), then add the duplicate-URL dist assertion that would have caught it.
-2. [ ] **Dead code documenting a feature that doesn't exist** — `vite.config.js:232-239` describes a NetworkOnly runtime rule with an offline fallback for embed URLs; there is no such rule. `public/offline.html` is precached and can never be served.
+*(The `add-to-cache-list-conflicting-entries` SW-killer is fixed and pushed on `claude/pwa-patterns-review-76cg78`: glob is now the sole precache source, `dontCacheBustURLsMatching` narrowed so icons keep real revisions, plus two dist tripwires confirmed to fail when the bug is reintroduced.)*
+
+1. [ ] **Dead code documenting a feature that doesn't exist** — `vite.config.js:232-239` describes a NetworkOnly runtime rule with an offline fallback for embed URLs; there is no such rule. `public/offline.html` is precached and can never be served.
 3. [ ] `registration.update()` uncaught at `pwa.js:518` and `:570`; visibility check unthrottled; `_isChecking` is set but never read, so two taps run two concurrent checks.
 4. [ ] `applyUpdate()` has no plain-reload fallback — and `version.json` can report an update with no SW change at all, so "Update Now" silently does nothing.
 5. [ ] Preference write not read back; the toast unconditionally claims the new state. Install `prompt()` not awaited, throw propagates into an uncaught `await` in `Header.jsx:120`.
 6. [ ] Precaches Expo-era leftovers (`adaptive-icon.png`, `splash-icon.png`, a duplicate `apple-touch-icon.png`) the web app never requests.
 
-#### model-pear — **PRODUCTION SERVICE WORKER IS DEAD** (and the matrix row is wrong)
+#### model-pear (the matrix row is wrong)
 
-1. [ ] **`navigateFallback: '/200.html'` names a URL that is never precached** → `createHandlerBoundToURL` throws at SW evaluation → no offline support and no update mechanism in production. Workbox globs `.svelte-kit/output/client`; the adapter writes `200.html` afterwards.
-2. [ ] **`globPatterns` includes `json`** → `.vite/manifest.json` is precached but stripped on copy → install 404s → `bad-precaching-response`. An independent second SW-killer. It also precaches `_app/version.json`, freezing SvelteKit's own update detection.
-3. [ ] **`controllerchange` reloads unconditionally** (only a 5s throttle, no apply latch) — tab A reloads and loses in-memory calculator inputs when tab B applies an update. Exactly what the policy exists to prevent, and it defeats the repo's own stated rationale.
+*(The unprecached-`navigateFallback` SW-killer is fixed and pushed on `claude/pwa-patterns-review-76cg78`: `/200.html` registered via `additionalManifestEntries`, `json` and `webmanifest` dropped from `globPatterns`, `includeAssets` dropped and `includeManifestIcons: false`. Built manifest now has the fallback precached, zero duplicate URLs and no `_app/version.json`. Tripwire added. Note the audit's claim that `.vite/manifest.json` was precached did **not** reproduce — that build emits no `.vite/` directory; the real second defect was `_app/version.json` freezing SvelteKit's `updated` store.)*
+
+1. [ ] **Consider `@vite-pwa/sveltekit`** — it globs the adapter's real output, removing the root cause that the `additionalManifestEntries` fix compensates for. Deliberately not bundled into the hotfix.
+2. [ ] **`controllerchange` reloads unconditionally** (only a 5s throttle, no apply latch) — tab A reloads and loses in-memory calculator inputs when tab B applies an update. Exactly what the policy exists to prevent, and it defeats the repo's own stated rationale.
 4. [ ] `launchPhase` has no terminal timeout — if registration never settles (known Safari behaviour) the update banner is suppressed for the whole session.
 5. [ ] Google Fonts loaded from CDN with no runtime route → installed PWA falls back to system fonts offline.
 6. [ ] No `?v=` icon versioning at all; `purpose: 'maskable'` on a plain transparent render; no PWA tests despite a custom launch-apply implementation.
