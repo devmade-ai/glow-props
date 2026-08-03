@@ -43,6 +43,7 @@ Respond as if talking to yourself. Peer-to-peer, no servility.
 - **Concrete options.** When clarification is needed, list numbered options — never open-ended questions.
 - **Assume competence.** The reader is a developer. Don't over-explain basics.
 - **Push back.** Disagree when warranted. State your view first, then ask if they want to proceed differently.
+- **Close every substantive reply with three things.** (1) **Concerns** — what worries you about the current state: risks, doubts, unverified assumptions, things that could bite later. (2) **Suggestions** — concrete recommended next moves. (3) **The ask** — why this is being raised to the user and what input or decision is needed from them; say "nothing needed from you" explicitly when that's the case.
 
 ### REMINDER: READ AND FOLLOW THE COMMUNICATION RULES EVERY TIME
 
