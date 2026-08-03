@@ -65,7 +65,17 @@ const ICON_PATHS = [
 ];
 
 const ICON_VERSIONS = Object.fromEntries(ICON_PATHS.map((p) => [p, iconVersion(p)]));
-const versioned = (relPath) => `${relPath}?v=${ICON_VERSIONS[relPath]}`;
+
+// Fail loud on a path missing from ICON_PATHS. Template-interpolating an
+// undefined lookup emits `?v=undefined` — a URL that "works", never busts, and
+// looks deliberate in the built output. Invariant 4 applies to this table too.
+const versioned = (relPath) => {
+  const v = ICON_VERSIONS[relPath];
+  if (!v) throw new Error(
+    `[versioned] no version for "${relPath}" — add it to ICON_PATHS in vite.config.js.`
+  );
+  return `${relPath}?v=${v}`;
+};
 
 function iconCacheBustHtml() {
   const REPLACEMENTS = [
@@ -79,22 +89,36 @@ function iconCacheBustHtml() {
 
   return {
     name: 'icon-cache-bust-html',
-    transformIndexHtml(html) {
+    // 'post' so the match runs after Vite's own HTML rewriting.
+    order: 'post',
+    transformIndexHtml(html, ctx) {
+      // Scope to the page(s) that actually carry the icon links. The throw
+      // below is deliberately fatal, and Vite runs this hook for EVERY html
+      // entry — an unscoped handler fails the moment the repo grows a page.
+      if (!ctx.path.endsWith('/index.html')) return html;
+
       let out = html;
       for (const { from, to } of REPLACEMENTS) {
         if (!out.includes(from)) {
           throw new Error(
-            `[icon-cache-bust-html] expected literal not found in index.html: ${from}\n` +
+            `[icon-cache-bust-html] expected literal not found in ${ctx.path}: ${from}\n` +
             `Update the REPLACEMENTS table in vite.config.js to match the current tag formatting.`
           );
         }
-        out = out.replace(from, to());
+        // replaceAll, not replace: the same href legitimately appears more than
+        // once (e.g. apple-touch-icon AND apple-touch-startup-image). With
+        // single-replace the second occurrence silently ships un-versioned —
+        // exactly the drift this plugin exists to prevent.
+        // Function form avoids `$&`-style expansion in the replacement string.
+        out = out.replaceAll(from, () => to());
       }
       return out;
     },
   };
 }
 ```
+
+**Non-root `base` and dev mode:** Vite's dev HTML pipeline rewrites document-relative hrefs into base-prefixed form, so a plugin matching a single literal shape throws in dev under any non-root base. Match both shapes (with and without the base prefix) when your app isn't served from `/`.
 
 Wiring:
 
@@ -110,20 +134,48 @@ plugins: [
         { src: versioned('assets/images/icon.png'),     sizes: '1024x1024', type: 'image/png', purpose: 'maskable' },
       ],
     },
+    // Sole precache source for the icons — see "Exactly one precache entry per
+    // icon" below. BARE paths here: a `?v=` path globs nothing and the icon
+    // silently drops out of the precache entirely.
+    includeAssets: ICON_PATHS,
     workbox: {
       cleanupOutdatedCaches: true,
-      ignoreURLParametersMatching: [/^utm_/, /^v$/],
+      // Supplying this option REPLACES Workbox's defaults rather than extending
+      // them — re-add utm_/fbclid or you silently lose the default stripping.
+      ignoreURLParametersMatching: [/^utm_/, /^fbclid$/, /^v$/],
+      // Keep the icons out of the glob so each has exactly ONE entry.
+      globIgnores: ICON_PATHS.map((p) => `**/${p}`),
+      // The default marks everything under assets/ as content-hashed
+      // (revision: null). Plain-named icons living there could then never be
+      // invalidated — the `?v=` busting works for HTTP/CDN/WebAPK but the
+      // precached bytes behind the URL never refresh. Narrow it to real hashes.
+      dontCacheBustURLsMatching: /^assets\/[^/]+-[A-Za-z0-9_-]{8,}\.\w+$/,
     },
   }),
 ]
 ```
+
+## Exactly one precache entry per icon
+
+An icon that reaches the precache manifest **twice** — once bare via `globPatterns`, once revisioned via `includeAssets` or manifest-icon injection — makes workbox-precaching throw `add-to-cache-list-conflicting-entries` when the service worker evaluates. The SW then activates having precached **nothing**: offline is dead in production, and the build log still prints a healthy precache count. Nothing at source level catches it.
+
+Pick one source and stick to it:
+
+| Resolution | How | Used by |
+|---|---|---|
+| **Glob is the sole source** | No `includeAssets` at all; `globPatterns` matches the icons | qi-invoice, fl-farlume |
+| **`includeAssets` is the sole source** | `globIgnores` every icon, list bare paths in `includeAssets` (shown above) | glow-props |
+
+The second form is what makes each icon a *revisioned* entry that versioned requests still resolve to via `ignoreURLParametersMatching` — which is the whole point. Verify it in the built manifest (checklist item 5), never by reading the config.
+
+The same trap applies to any stable-named file under `assets/` — a regenerated OG social card at a fixed URL will never refetch for installed clients unless you either narrow `dontCacheBustURLsMatching` or give it a real revision the same way.
 
 ## Why each piece matters
 
 - **Content hash, not timestamp.** Version only bumps when icons actually change. Prevents spurious cache invalidation on every deploy and spurious Chrome WebAPK regeneration (which costs user disk + Play Services bandwidth on Android).
 - **Fail-loud on missing literal.** Biggest bug class: someone reformats a link tag (single-quoted attrs, attribute reorder, query already present), the plugin silently ships un-versioned URLs, the bug surfaces weeks later when an icon changes. Throwing on missing literal catches it at build time.
 - **Warn, don't throw, on missing icon file.** A first-time clone legitimately has no icons before the generation step. Breaking the dev server is worse UX than a clear warning.
-- **`ignoreURLParametersMatching: [/^v$/]`.** Required. Without it, Workbox precache only serves the un-versioned URL; versioned icon requests fall through to network every time, breaking offline.
+- **`ignoreURLParametersMatching: [/^v$/]`.** Required. Without it, Workbox precache only serves the un-versioned URL; versioned icon requests fall through to network every time, breaking offline. Note the option **replaces** Workbox's defaults — re-add `utm_`/`fbclid`. Apps that address content by query param (an MPA using `?name=`) must strip those too, or every such page is offline-broken.
 - **`cleanupOutdatedCaches: true`.** Defense-in-depth. Deletes precache stores whose names use an older `workbox-precache-*` prefix than the active SW (cross-major-version cleanup). Same-prefix stale entries are already handled by Workbox's normal install flow; this is not per-build cleanup.
 - **Plugin order.** Placing the cache-bust plugin before `VitePWA()` locks the contract in — neutral today (VitePWA only injects a `<link rel="manifest">`), protects against future behavior changes in either plugin.
 
@@ -194,7 +246,26 @@ test('dist/sw.js contains cleanupOutdatedCaches() and /^v$/ ignore', { skip: !DI
   assert.match(sw, /cleanupOutdatedCaches\(\)/);
   assert.match(sw, /ignoreURLParametersMatching:\s*\[[^\]]*\/\^v\$\//);
 });
+
+// The SW-killer. Two entries for one URL make workbox-precaching throw at
+// runtime inside the worker, precaching nothing — invisible in the build log.
+test('dist/sw.js precache manifest has no duplicate URLs', { skip: !DIST_AVAILABLE }, () => {
+  const sw = readFileSync(join(DIST_DIR, 'sw.js'), 'utf8');
+  const urls = [...sw.matchAll(/"url":\s*"([^"]+)"/g)].map((m) => m[1]);
+  const dupes = urls.filter((u, i) => urls.indexOf(u) !== i);
+  assert.deepEqual([...new Set(dupes)], [], `duplicate precache entries: ${dupes}`);
+});
+
+// Source-level guard so a NEW manifest icon can't be added un-versioned later.
+test('every manifest icon src in vite.config.js is wrapped in versioned()', () => {
+  const iconsBlock = VITE_CONFIG.match(/icons:\s*\[[\s\S]*?\]/)?.[0] ?? '';
+  const srcs = [...iconsBlock.matchAll(/src:\s*([^,]+),/g)].map((m) => m[1].trim());
+  assert.ok(srcs.length > 0, 'no manifest icons found — check the regex');
+  for (const src of srcs) assert.match(src, /^versioned\(/);
+});
 ```
+
+Run the dist-level assertions after `npm run build`; they are only as current as the last build.
 
 ## User communication
 
@@ -215,6 +286,26 @@ The OS icon cache is the one layer the web app can't touch. Surface it in the in
 ```
 
 Plain language. No jargon ("OS", "cache", "Springboard"). Tells the user what to do, not what's wrong.
+
+Give the reinstall steps **per platform** rather than one generic paragraph — "remove the app from your home screen, dock, or Start menu" asks the reader to work out which sentence is theirs. iOS: long-press the icon → Remove App. Android: long-press → App info → Uninstall. Desktop: reinstall from the address-bar icon.
+
+### Actively detecting a stale icon (closing invariant 5)
+
+The `<details>` above is passive — it only helps users who already suspect something. fl-farlume closes the loop: hash the icon bytes at build time into an aggregate `iconsHash`, emit it alongside `buildTime` in `version.json`, and have the app compare at runtime.
+
+```javascript
+// vite.config.js — one hash over all icon bytes. Sort the paths so reordering
+// ICON_PATHS doesn't bump the hash and trigger a spurious reinstall banner.
+const iconsHash = createHash('sha256')
+  .update([...ICON_PATHS].sort().map((p) => ICON_VERSIONS[p]).join(':'))
+  .digest('hex').slice(0, 8);
+```
+
+Runtime rules that make it non-annoying:
+- **Only prompt in standalone display mode.** A user in the browser gets the new favicon automatically; showing them a reinstall banner is noise.
+- **Record the hash on first run** so a fresh install is never flagged.
+- **Dismiss per hash**, not globally — the next genuine icon change should ask again.
+- **Deep-link into the install modal** with the reinstall section pre-expanded, so the banner's action lands on the instructions rather than the top of a modal.
 
 ## Browser-layer behavior (cross-stack)
 
@@ -240,9 +331,10 @@ Plain language. No jargon ("OS", "cache", "Springboard"). Tells the user what to
 2. `dist/index.html` icon `<link>` tags all end in `?v=<hash>`.
 3. `dist/sw.js` contains `cleanupOutdatedCaches()` and `ignoreURLParametersMatching:[...,/^v$/]`.
 4. Tripwire test passes.
-5. Deploy. Chrome DevTools → Application → Manifest shows new hashes. Application → Cache Storage → precache has a single entry per icon path, no duplicates.
-6. On Android: after WebAPK update interval, the icon refreshes.
-7. Clear site data + refresh → icons render from new URLs. Uninstall + reinstall → home-screen icon refreshes.
+5. `dist/sw.js`'s precache manifest has a single entry per icon path, no duplicates, and each icon entry carries a real `revision` (not `null`). Automated by the duplicate-URL test above — the SW-killer this catches is invisible everywhere else.
+6. Deploy. Chrome DevTools → Application → Manifest shows new hashes. Application → Cache Storage → precache matches the above.
+7. On Android: after WebAPK update interval, the icon refreshes.
+8. Clear site data + refresh → icons render from new URLs. Uninstall + reinstall → home-screen icon refreshes.
 
 ## Known limitation: OS icon cache
 

@@ -1,5 +1,74 @@
 # Session Notes
 
+## Latest session (2026-08-03): fleet-wide PWA pattern audit
+
+**Worked on:** auditing every PWA repo in the fleet against the PWA pattern docs
+and folding the fixes back upstream. Six parallel audits — fl-farlume (Vue),
+graphiki, see-veo, kl-website, qi-invoice, and glow-props itself. Sibling repos
+were attached with `add_repo` + shallow clones under `/workspace/`; the
+`GITHUB_ALL_REPO_TOKEN` API path is now blocked by the session proxy for repos
+not attached to the session, so the CLAUDE.md "never clone siblings, use the
+API" note no longer holds in this environment.
+
+**Headline finding:** the pattern docs lagged the fleet's own fixes, and several
+snippets in them were actively buggy — multiple repos had independently fixed the
+same things, which is what made the findings trustworthy.
+
+**Fixed in `docs/implementations/PWA_SYSTEM.md`:**
+- `includeAssets` + `globPatterns` overlap (the doc *recommended* the combination)
+  → duplicate precache entries → `add-to-cache-list-conflicting-entries` thrown
+  inside the worker → SW precaches nothing while the build log looks healthy.
+  Now a named invariant with both valid resolutions.
+- Launch-apply moved from `onRegisteredSW` to `onNeedRefresh` behind a 10s
+  eligibility window + once-guard (the old snippet could skipWaiting before any
+  reload listener existed).
+- `install()` clears the prompt *before* calling it — the event is single-use, so
+  the old "clear only on accepted" form threw on the tap after a dismissal.
+- `detectBrowser()` gained `CriOS`/`FxiOS`/`EdgiOS`; `getInstallInstructions()`
+  gained iPadOS `MacIntel` + `maxTouchPoints` detection.
+- `.catch()` on every background `registration.update()` (it rejects offline).
+- `checkForUpdate` sample now matches the doc's own canonical union, reads
+  `registration.waiting`, and shares one in-flight promise.
+- `hasUpdate` no longer ORs in `needRefresh` (which bypassed the suppression).
+- `onRegisteredSW` replaces deprecated `onRegistered`; the two install-capture
+  snippets now use ONE window key (they disagreed, silently breaking early
+  capture for anyone copy-pasting); `checkVersionUpdate` persists before
+  reporting (it re-detected the same update forever).
+- **New sections:** Testing (virtual-module alias + singleton reset), the
+  `dontCacheBustURLsMatching` trap, large-asset strategy (ML/wasm), precache
+  hygiene + a dist-level `verify:precache` tripwire, Vercel cache headers,
+  Vue and SSR/SSG framework variants, `useSyncExternalStore` guidance, and
+  three platform gotchas (Android `100dvh` latch after the update reload,
+  `share_target` POST, `apple-touch-startup-image`).
+- Key Lessons renumbered and extended to 49.
+
+**Fixed in `PWA_ICON_CACHE_BUST.md`:** fail-loud `versioned()`, `replaceAll` +
+`order: 'post'` + per-entry scoping in the HTML plugin, the single-precache-entry
+mechanism, `ignoreURLParametersMatching` replacing (not extending) defaults,
+duplicate-URL + manifest-icon tripwire tests, and fl-farlume's active
+icon-staleness detection (`iconsHash` in version.json → standalone-only reinstall
+banner) which closes invariant 5.
+
+**Fixed in `APP_ICONS.md`:** maskable safe zone is a CIRCLE of radius 40% (not
+the inner-80% square), sharp's composite-runs-last pipeline order, the
+transparent-source/composited-maskable strategy, an ICO container byte tripwire,
+and removal of a stale see-veo citation.
+
+**Also:** `docs/TODO.md` gained a "PWA drift found in the 2026-08-03 fleet PWA
+audit" section — per-repo repo-side fixes for all six repos, including 8 items
+for glow-props itself (unhandled hourly-poll rejection, dead 1s timer, the same
+iOS detection hole, event buffering before the React bridge subscribes,
+`useSyncExternalStore` migration, and an entry-server import tripwire).
+
+**State:** docs only — no source changes. Build green, all three verify gates
+green (`verify:seo`, `verify:icons`, `verify:timer-cleanup`), served
+`dist/patterns/*.md` copies byte-identical to source. The repo-side drift items
+are queued in TODO.md, not started.
+
+---
+
+## Previous session
+
 ## Worked on
 
 Two major passes in one session: (1) a full 12-pattern self-audit with a

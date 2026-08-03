@@ -92,26 +92,51 @@ generate().catch((err) => {
 **SVG design rules for maskable icons:**
 - Canvas must be square (e.g. `viewBox="0 0 1024 1024"`)
 - Add `shape-rendering="geometricPrecision"` to the root `<svg>` element — tells the rasterizer to prioritize accurate geometry over speed
-- Background fills entire canvas (no transparency)
-- Important content stays within the inner 80% (safe zone for maskable crop)
+- **The maskable safe zone is a CIRCLE of radius 40%** (410px on a 1024 canvas), not the inner-80% square. The distinction matters: artwork can sit inside the square and still have its corners clipped by a circular launcher mask. Scale the mark to ~780px within the 1024 canvas and document the math where you generate it.
 - Design must be legible at 48px (favicon) — avoid fine details
+
+**Transparent source, composited maskable.** Maskable icons need an opaque full-bleed background, but the favicon and any in-app logo usage want transparency so they sit on whatever the theme provides. Rather than baking a background into the SVG, keep the source transparent and composite the maskable variant at generation time (glow-props' approach):
+
+```javascript
+// Sharp applies .composite() at the END of its pipeline, so chaining
+// .flatten()/.removeAlpha() alongside it silently runs BEFORE the mark lands —
+// you get a blank plate. Two passes: composite to a buffer, then strip alpha.
+const mark = await sharp(svgBuffer, { density: SVG_DENSITY }).resize(780, 780).png().toBuffer();
+const composited = await sharp({
+  create: { width: 1024, height: 1024, channels: 4, background: '#ffffff' },
+}).composite([{ input: mark, gravity: 'centre' }]).png().toBuffer();
+
+await sharp(composited).flatten({ background: '#ffffff' })
+  .png().toFile(join(IMAGES_DIR, 'icon-1024-maskable.png'));
+```
 
 **PWA manifest icons** (`manifest.json`):
 ```json
 "icons": [
   { "src": "/assets/images/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
   { "src": "/assets/images/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
-  { "src": "/assets/images/icon.png", "sizes": "1024x1024", "type": "image/png", "purpose": "maskable" }
+  { "src": "/assets/images/icon-1024-maskable.png", "sizes": "1024x1024", "type": "image/png", "purpose": "maskable" }
 ]
 ```
 
-Separate `purpose` values: `any` for standard display (192, 512), `maskable` for the full-bleed 1024. Don't combine `"any maskable"` — browsers pick the wrong one.
+Separate `purpose` values: `any` for standard display (192, 512), `maskable` for the full-bleed variant. Don't combine `"any maskable"` — browsers pick the wrong one. Maskable at 192 + 512 instead of a single 1024 is equally valid and matches the sizes Chrome's install criteria request.
+
+Icons in `public/assets/` interact with two Workbox traps — precache duplication and `revision: null` — before they ever reach a user. See [PWA_ICON_CACHE_BUST.md](PWA_ICON_CACHE_BUST.md).
 
 ## Favicon.ico Generation (Optional)
 
-For cross-browser compatibility (Windows taskbar pinning, older browsers), generate a `favicon.ico` from a 32x32 PNG. Two approaches:
+For cross-browser compatibility (Windows taskbar pinning, older browsers), generate a `favicon.ico` from a 32x32 PNG. Two approaches — prefer the manual pack: it has no dependency, and its byte layout is what makes the tripwire below possible.
 
-**With `png-to-ico` package** (see-veo):
+**Failure mode worth a test:** writing raw PNG bytes to a `.ico` filename is invisible in browsers (they sniff the content) but rejected by Windows taskbar pinning. Assert the ICO container bytes — reserved `0x0000`, type `0x0001`, image count — so the silent version can't ship:
+
+```javascript
+const ico = readFileSync(join(IMAGES_DIR, 'favicon.ico'));
+assert.equal(ico.readUInt16LE(0), 0);  // reserved
+assert.equal(ico.readUInt16LE(2), 1);  // type: ICO
+assert.ok(ico.readUInt16LE(4) >= 1);   // at least one image
+```
+
+**With `png-to-ico` package:**
 
 ```javascript
 import pngToIco from 'png-to-ico';
@@ -122,7 +147,7 @@ const icoBuffer = await pngToIco(favicon32);
 writeFileSync(join(IMAGES_DIR, 'favicon.ico'), icoBuffer);
 ```
 
-**Manual ICO packing** (fl-farlume) — zero dependencies, stable binary format:
+**Manual ICO packing** (fl-farlume, kl-website) — zero dependencies, stable binary format:
 
 ```javascript
 const favicon32 = await sharp(svgBuffer, { density: SVG_DENSITY })

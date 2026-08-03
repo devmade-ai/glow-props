@@ -537,3 +537,64 @@ Highest-leverage cross-cutting gaps (post-2026-04-25):
 15. **Z_INDEX_SCALE** — Pass in glow-props, canva-grid, fl-farlume, repo-tor, graphiki, model-pear, fh-fuelhunt, sun-sea-o, **intxt, four-ems** (10 repos — four-ems via `scripts/audit-z-index.mjs` + `npm run audit:z-index`). Missing in see-veo. N/A in tool-till-tees.
 16. **DOWNLOAD_PDF** — Pass in canva-grid (Approach B pdf-lib), fl-farlume, repo-tor, sun-sea-o, **four-ems** (`SubmissionDetail.tsx:56` Save-as-PDF + `print-color-adjust: exact` at `index.css:147`). **N/A documented** in graphiki (canvas/SVG editor — `CLAUDE.md:710`), intxt (chat app declined). Still Partial in see-veo (missing `print-color-adjust: exact`), model-pear. Decision pending in fh-fuelhunt.
 17. **TIMER_LEAKS self-compliance + cross-fleet inheritance** — glow-props own audit DONE 2026-04-25, and the React conversion (2026-08-01) superseded the audited files: the canonical examples are now `src/lib/pwa.js` and `src/lib/theme.js` (module-level registrations behind `window.__*Attached` HMR guards with paired `import.meta.hot.dispose()` teardown) plus the React pairing contract in every component/hook (`src/pwa.js`, `src/markdown.js`, and `public/theme.js` no longer exist). Tripwire: `npm run verify:timer-cleanup` (`scripts/verify-timer-cleanup.mjs`). **Cross-fleet `### Timer and Subscription Cleanup` subsection presence verified:** PRESENT in canva-grid, fl-farlume, sun-sea-o, graphiki, intxt, tool-till-tees, glow-props, **four-ems** (8 repos — four-ems at `CLAUDE.md:81`, with canonical-examples bullet listing `debugLog.ts`/`theme.ts`/`pwa.ts`/`useAutoSave.ts`/`embedResize.ts` per commit `a7d63c2`). MISSING in model-pear, see-veo, **repo-tor, fh-fuelhunt** (4 repos — the latter two are flagged "FULLY RESOLVED" elsewhere in this file but predate the 2026-04-22 upstream addition; needs a CLAUDE.md doc-alignment touch-up to inherit the new content).
+
+---
+
+## PWA drift found in the 2026-08-03 fleet PWA audit
+
+Six parallel audits (fl-farlume, graphiki, see-veo, kl-website, qi-invoice, glow-props) compared every PWA repo against PWA_SYSTEM.md / PWA_ICON_CACHE_BUST.md / APP_ICONS.md. The **pattern-side** findings are already folded into those docs. What follows is the **repo-side** drift — each repo should be fixed to match the (now corrected) patterns. Line references were accurate at audit time.
+
+Several of these fixes are now described directly by the updated pattern docs, so fetch the pattern before starting each one.
+
+### fl-farlume — largest PWA backlog
+
+1. [ ] **Adopt the auto-on-launch update policy** — currently the rejected tap-only design: `usePWAUpdate.ts:10-11` explicitly opts out, `onRegisteredSW` never inspects `registration.waiting`, there is no "Automatic updates" toggle in the menu, and `checkForUpdate()` returns `void` instead of the canonical union. The comment predates the fleet standard; this reads as staleness, not a deliberate deviation. Users get tap-only updates today.
+2. [ ] **Add `woff2` to `globPatterns`** (`vite.config.ts:148`) — eight self-hosted brand fonts land in `dist/assets/` and are not precached, so offline typography falls back to system fonts.
+3. [ ] **Resolve `share_target`** (`vite.config.ts:179-189`) — a POST multipart share target is declared but nothing consumes it: no SW POST handler, no `launchQueue`, zero call sites. Sharing a CSV from Android fails or loses the file. Implement it (needs `injectManifest` or a runtime POST handler) or remove it from the manifest.
+4. [ ] **Remove or fix `apple-touch-startup-image`** (`index.html:21`) — points at the 180px touch icon; iOS needs exact device-sized splash images with media queries, so this is ignored or mis-rendered.
+5. [ ] **Add a `controllerchange` reload latch** — if another tab applies an update, this tab keeps running the old page under the new SW with no reload and no guard.
+6. [ ] **Await `deferredPrompt.userChoice` in `triggerInstall()`** (`usePWAInstall.ts:336-343`) — native-prompt dismissal is currently untrackable, so the funnel undercounts.
+
+### see-veo — no icon cache-busting, plus an install dead end
+
+1. [ ] **Implement PWA_ICON_CACHE_BUST** — manifest icons (`vite.config.ts:67-90`) and HTML links (`index.html:5-8`) use stable un-versioned URLs; no hashing, no `ignoreURLParametersMatching`, no tripwire. If the icon ever changes, installed users keep the old one indefinitely. (Already tracked in see-veo's section above; the audit confirms it is still open.)
+2. [ ] **Give Chromium users an install affordance when the prompt is suppressed** — `showManualInstructions` is `!supportsAutoInstall && !isStandalone()` (`usePWAInstall.ts:61-64`), so under Chrome's 90-day post-dismissal suppression nothing renders at all. Add the pattern's 5s diagnostic-timeout fallback.
+3. [ ] **Remove the dead `navigateFallbackDenylist` entry** (`vite.config.ts:107`) — `[/^https?:\/\/.*\.vercel\.app\/api\//]` can never match: Workbox tests denylist regexes against `pathname + search`, never the origin. The adjacent comment claims it excludes an API domain; it does nothing.
+4. [ ] **Set `cleanupOutdatedCaches: true` explicitly** — the plugin defaults it to true so behavior is correct, but the pattern's tripwire greps the source and would fail.
+5. [ ] **Add the display-mode-change listener and install-funnel analytics** — install-via-browser-menu is currently undetected.
+6. [ ] **Reconcile `APP_ICONS.md`'s see-veo citation** — the doc cited see-veo as the `png-to-ico` reference, but the repo has no `scripts/` directory and no `favicon.ico`, while `sharp` and `png-to-ico` sit unused in devDependencies. Either restore the generator or drop the dead deps. (The doc no longer names see-veo as of this pass.)
+7. [ ] **Fix the CSP blocking Google Analytics** — `vercel.json` `script-src` omits `googletagmanager.com` and `connect-src` omits the GA collection endpoints, yet `index.html` loads gtag (`G-61SDQXZSFT`). GA is almost certainly dead in production. *(Not a PWA item — found during the audit.)*
+
+### graphiki
+
+1. [ ] **Runtime-cache the ORT wasm** — the ~21 MB `ort-wasm-simd-threaded.jsep-*.wasm` is neither in `globPatterns` (no `wasm` extension) nor runtime-cached, so offline ML survives only as long as the HTTP cache keeps it. Add a `CacheFirst` route for `/assets/*.wasm`; do **not** precache it. Also correct the stale comment at `vite.config.ts:162-166` claiming there is nothing to cache at runtime.
+2. [ ] **Set `cleanupOutdatedCaches: true`** (`vite.config.ts:160-171`) — absent, and workbox-build defaults it to false.
+3. [ ] **Fix the install-prompt diagnostic false negative** — `pwaDiagnostics.ts:84` checks `window.__pwaInstallPromptEvent`, which `usePWAInstall.ts:11-18` deletes on consume, so the pill reads "not received" the moment the app mounts. Use the durable `__pwaPromptCaptured` flag the pattern now specifies.
+4. [ ] **Strengthen the icon cache-bust tripwire and make the transform fail loud** — the test drops the dist-level assertions and the `cleanupOutdatedCaches` check; the regex-based href transform (`vite.config.ts:57-63`) silently no-ops if attribute order flips, and a missing icon falls back to `'00000000'` without warning. All three violate invariant 4.
+5. [ ] **Add the `CriOS` check and the 5s Chromium fallback** — Chrome-on-iOS currently misdetects as Safari, and `'other'` browsers get no install affordance.
+6. [ ] **Consume `offlineReady` or delete it** — returned and auto-dismissed in `usePWAUpdate.ts:159-165,203` but never destructured in `App.tsx:103`, while `docs/CODEBASE_DOCUMENTATION.md:186` claims the feedback exists.
+7. [ ] **Move update state to a module singleton** — `usePWAUpdate.ts:69-79` keeps registration in the hook; safe only because `App.tsx:103` is the sole never-remounted consumer.
+
+### qi-invoice
+
+1. [ ] **Emit from `setAutoUpdateEnabled`** (`pwaUpdate.ts:83-85`) — it writes localStorage but never notifies, so the "Automatic updates: on/off" menu label (`App.tsx:560`) only refreshes because a toast in the same handler happens to re-render the subtree. Remove the toast and the label goes stale.
+2. [ ] **Wire the `offlineReady` toast or delete the state** — plumbed through `pwaUpdate.ts:155-157` → `usePwa.ts:59` and consumed nowhere, in an app whose whole pitch is offline invoicing.
+3. [ ] **Add iOS-specific install instructions** — `pwaInstall.ts:78-115` maps `CriOS` to the Chrome steps ("browser menu → Install app"), which don't exist on iOS; the real path is Share → Add to Home Screen. Safari-on-iOS steps are already present, so this is a small data addition.
+4. [ ] **Consider install-funnel analytics / `appinstalled` tracking** — absent; defensible given there's no debug-pill system, but the pattern lists it as standard. Decide and document.
+
+### kl-website — cleanest of the five
+
+1. [ ] **Stop shipping the unused `favicon.png`** — `generate-icons.mjs` emits a 48px favicon nothing references (`index.html:6-8` links `.ico` + SVG + apple-touch), and `**/*.png` still precaches it for every client. Drop it from the generator or add it to `globIgnores`.
+2. [ ] **Fix the `'no-sw'` toast copy** — `pwa.ts:269` returns `'no-sw'` while registration is still in flight, which `useKnowless.ts:239-241` renders as "Updates are not available in this browser". Blames the browser for a timing window. Use the pattern's three-way messaging.
+3. [ ] **Report a never-firing `beforeinstallprompt` on Chromium** — the 5s timer (`usePWAInstall.ts:252-258`) flips to manual steps but never calls `reportError`, even though the repo built exactly that channel for registration failures.
+
+### glow-props (self)
+
+1. [ ] **`.catch()` the hourly poll** — `src/lib/pwa.js:474` calls `registration.update()` bare while the visibility handler at `:527` catches with an explicit "rejects offline" rationale. An offline backgrounded tab throws an unhandled rejection every hour, which the head-common capture then logs as noise.
+2. [ ] **Fix or delete the 1s manual-instructions timer** — `src/lib/pwa.js:533-538` schedules a timeout whose callback re-runs `updateInstallVisibility()`, but `showInstallItem` is already true as soon as `supportsManualInstall` is, and `init()` calls it unconditionally at `:566`. The timer gates nothing: either restore the pattern's 1s delay behind a real flag or remove it.
+3. [ ] **Add `CriOS`/`FxiOS`/`EdgiOS` to `detectBrowser()`** — `src/lib/pwa.js:46-59` has the same hole the pattern had; the iOS non-Safari redirect at `:254` is therefore nearly unreachable and those users get Safari-specific copy.
+4. [ ] **Catch `deferredPrompt.prompt()` rejection** — `src/lib/pwa.js:387`; only `userChoice` has a `.catch` today. Also adopt the pattern's clear-before-prompt ordering.
+5. [ ] **Buffer PWA events until the first subscriber attaches** — `emit()` (`src/lib/pwa.js:90-94`) drops toast events fired before `PwaManager` subscribes, so an early `onOfflineReady` loses its toast. The on-mount `force()` resyncs *state*, not events.
+6. [ ] **Move `PwaManager` to `useSyncExternalStore`** — `PwaManager.jsx:25-42` uses force-render over a mutable snapshot, which is the tearing-prone form under React 19 and needs the on-mount resync hack. The proper primitive subsumes both.
+7. [ ] **Tripwire the "entry-server must never import pwa.js" invariant** — enforced only by comments (`entry-server.jsx:5-7`, `PwaManager.jsx:4-6`). A direct import fails loudly, but an indirect one through a shared component fails deep in the SSG pass. A static import-graph check fits the repo's existing verify-script convention.
+8. [ ] **Consider the maskable-at-192+512 form** — the manifest currently ships a single 1024 maskable; 192/512 are the sizes install criteria actually request. Low priority, documented as an accepted alternative in the pattern.
