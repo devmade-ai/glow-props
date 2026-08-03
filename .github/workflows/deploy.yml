@@ -57,6 +57,14 @@ jobs:
       - name: Verify icon cache-busting (docs/implementations/PWA_ICON_CACHE_BUST.md)
         run: npm run verify:icons
 
+      # Source-graph check, so it does NOT need the build — but it gates the
+      # publish for the same reason as the two above. This is the tripwire for
+      # the invariant that keeps prerenderPages() working at all: if the SSR
+      # entry ever reaches src/lib/pwa.js, the SSG pass fails pointing at a
+      # virtual module rather than at the import that caused it.
+      - name: Verify SSR safety (docs/implementations/PWA_SYSTEM.md)
+        run: npm run verify:ssr-safety
+
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:
