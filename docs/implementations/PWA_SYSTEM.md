@@ -42,8 +42,8 @@ VitePWA({
     // Exclude assets the app never displays — scraper-only social cards would
     // otherwise cost every installed client megabytes of precache for nothing.
     globIgnores: ['**/og-card.png', '**/og/*.png', 'share/**'],
-    // SPA only — omit for multi-page apps:
-    // navigateFallback: '/index.html',
+    // SPA: name the APP SHELL. MPA: `null` — omitting the key does NOT disable it.
+    navigateFallback: 'index.html',
     runtimeCaching: [
       // Google Fonts — cache for 1 year (fonts rarely change)
       {
@@ -67,6 +67,8 @@ VitePWA({
       // CDN images — cache for 30 days
       // Adapt the urlPattern to your CDN domain
     ],
+    // `[0, 200]` above accepts OPAQUE cross-origin responses. Correct only for
+    // resources the app exclusively RENDERS. See "Opaque responses" below.
   },
   manifest: {
     name: 'Your App',
@@ -92,24 +94,41 @@ VitePWA({
 - **`workbox.cleanupOutdatedCaches`**: Removes caches from incompatible older Workbox major versions. Without this, stale caches accumulate across deployments.
 - **`workbox.globPatterns`**: Explicit precache patterns. The default may miss font or image types your app uses. Pay special attention to assets fetched at *feature-use* time rather than page-load time — their absence offline fails **silently**. qi-invoice precaches `.ttf` because pdf-lib can only embed TTF (the browser uses the woff2); without them a PDF generated offline silently falls back to Helvetica instead of the brand font. Enumerate those deliberately and add a tripwire.
 - **`workbox.globIgnores`**: The inverse rule. Exclude anything the app itself never fetches — OG/Twitter card images are requested only by external scrapers, so precaching them taxes every install for zero benefit. Any repo following DISCOVERABILITY ships these.
-- **`navigateFallback`**: Only set for SPAs. For multi-page apps (multiple HTML entry points), omit this — it would incorrectly serve `index.html` for all navigation requests.
+- **`navigateFallback`**: names the **app shell**, and it is the most misunderstood option in the plugin. Three facts, each of which has cost a repo:
+  1. **It is not a network-failure fallback.** Workbox registers a `NavigationRoute` that matches every `request.mode === 'navigate'` — online or offline, with no connectivity check anywhere. Whatever URL you name is served for *every* navigation whose URL isn't otherwise resolvable. four-ems set it to `/offline.html` (comment: "serve offline.html when a navigation request fails") and every deep link — including every shared `/f/:slug` form URL, the product's main distribution channel — served "You're offline" to fully-online users, with a "Try again" button that reloaded straight back into it.
+  2. **Omitting the key does not disable it.** vite-plugin-pwa defaults it to `'index.html'` and merges via `Object.assign({}, defaults, yourWorkbox)`. To actually turn it off for a multi-page app you must pass `navigateFallback: null` — which glow-props' own config does, and which this doc previously told you to achieve by omission. Confirmed independently in model-pear and sun-sea-o.
+  3. **The URL must be in the precache manifest, or the service worker dies on evaluation.** Workbox emits `createHandlerBoundToURL(<value>)` at SW top level, which throws `non-precached-url` for an unprecached URL — *before* install, so registration rejects, offline is dead, and the build log still prints a healthy precache count. In a plain Vite SPA `index.html` is globbed automatically so nobody hits this; it fires the moment the shell is produced **outside the globbed directory** (SvelteKit's `200.html`, any adapter-generated shell). model-pear is in this state in production today.
+- **`navigateFallbackDenylist`**: mandatory once anything same-origin is served from outside the build — `/api/*` routes, an edge-generated `/sitemap.xml`, `/feed.xml`. A directly-typed or linked URL is a *navigation*, so without a denylist an SW-controlled client gets the app shell instead: a 200 HTML body where JSON was expected. The failure is silent, hits only returning/installed users, and never reproduces in a fresh dev profile.
 - **`id`**: Stable app identity. Without it, Chrome derives from `start_url` — breaks on config changes or redeployments.
 - **`prefer_related_applications: false`**: Without this, Chrome may skip `beforeinstallprompt` if it thinks a native app exists.
 - **Separate icon purposes**: `any` for standard display (192, 512), `maskable` full-bleed. Never combine `"any maskable"` — browsers pick the wrong one. Either a dedicated 1024x1024 maskable (glow-props, qi-invoice) or maskable entries at 192 **and** 512 (see-veo) is correct; the latter matches the sizes Chrome's install criteria and Lighthouse actually request, so prefer it when you have no other use for a 1024 asset.
-- **`theme_color`**: Static fallback for the browser chrome — and in Android standalone mode the manifest value **wins over the meta tags entirely**. It must therefore equal your *default/light* theme's `<meta name="theme-color">` value, not a dark accent. kl-website shipped `#15110b` here and rendered a near-black status bar over a light app. Pair it with dual `<meta name="theme-color" media="(prefers-color-scheme: light|dark)">` tags for correct pre-JS chrome in both themes, and assert manifest `theme_color` === `background_color` === the light meta in a test — three values that must agree and silently drift otherwise.
+- **`theme_color`**: Static fallback for the browser chrome — and in Android standalone mode the manifest value **wins over the meta tags entirely**. It must therefore equal your *default/light* theme's `<meta name="theme-color">` value, not a dark accent. kl-website shipped `#15110b` here and rendered a near-black status bar over a light app; intxt and four-ems have the same mismatch today. **This doc owns the rule** — THEME_DARK_MODE.md only points back here, and four-ems followed that circular pointer into the dark value. If your default theme is *system-derived* there is no single default: match `background_color` and the splash, and accept that Android standalone chrome cannot track the in-app theme. Pair it with dual `<meta name="theme-color" media="(prefers-color-scheme: light|dark)">` tags for correct pre-JS chrome in both themes, and assert manifest `theme_color` === `background_color` === the light meta in a test — three values that must agree and silently drift otherwise.
 
 ### Exactly one precache source per URL
 
-**This is the highest-severity misconfiguration in the pattern.** If a file reaches the precache manifest twice — once from `globPatterns` and once from `includeAssets` or manifest-icon injection — workbox-precaching throws `add-to-cache-list-conflicting-entries` **inside the worker at runtime**. The SW "activates" having precached nothing: offline is dead in production while the build log still cheerfully prints `precache 37 entries`. No source-level test and no build output catches it (qi-invoice shipped exactly this; post-mortem in its `docs/AI_MISTAKES.md`).
+**This is the highest-severity misconfiguration in the pattern.** When a file reaches the precache manifest twice with **conflicting revisions**, workbox-precaching throws `add-to-cache-list-conflicting-entries` while the worker script evaluates. The SW never installs: registration rejects, offline is dead in production, and the build log still cheerfully prints `precache 37 entries`. No source-level test and no build output catches it. qi-invoice shipped exactly this (post-mortem in its `docs/AI_MISTAKES.md`); repo-tor is in this state right now.
+
+**The precise mechanism** — worth knowing, because "duplicate = fatal" is not unconditional and triage is otherwise guesswork:
+
+1. There are **three** precache sources, not two: `globPatterns`, `includeAssets`, and `includeManifestIcons` (which defaults to **true** and quietly adds every manifest icon).
+2. `includeAssets`/`includeManifestIcons` are globbed against `publicDir` and pushed into `workbox.additionalManifestEntries` with a real MD5 revision. They are **not** merged into `globPatterns`, and nothing dedupes them against it.
+3. Inside workbox's transform pipeline, `dontCacheBustURLsMatching` runs **first** and sets `revision: null` on every globbed entry it matches. `additionalManifestEntriesTransform` runs **last** and blindly appends.
+4. The cache key is `url + ?__WB_REVISION__=<revision>`, and `addToCacheList` throws only when one URL maps to two *different* cache keys.
+
+So two entries with the **same** revision dedupe silently — which is why canva-grid and four-ems carry duplicates today and still work. It turns fatal when the two sources disagree on the revision, and the usual cause is `dontCacheBustURLsMatching` nulling one side: its default is `/^assets\//`, so **any icon living under `assets/` is one config away from killing the worker.** repo-tor's `includeAssets: ['assets/images/*.png']` plus the default regex is precisely that collision.
+
+None of this makes duplicates safe. **Never duplicate** remains the only rule worth following — a benign duplicate is one `dontCacheBustURLsMatching` tweak, one asset move, or one `manifestTransforms` away from a dead worker. Two valid resolutions — pick one, never both:
 
 Two valid resolutions — pick one, never both:
 
 | Resolution | How | Used by |
 |---|---|---|
-| **Glob is the sole source** | Drop `includeAssets` entirely; let `globPatterns` match the icons | qi-invoice, fl-farlume |
+| **Glob is the sole source** | Drop `includeAssets` entirely (and set `includeManifestIcons: false`); let `globPatterns` match the icons | qi-invoice, fl-farlume |
 | **`includeAssets` is the sole source** | `globIgnores` every referenced icon, list them in `includeAssets` with **bare** paths | glow-props |
 
-In the second form the bare path matters: a `?v=` path globs nothing, so the icon silently drops out of the precache altogether. The only reliable detector is a dist-level check that parses the built `dist/sw.js` precache manifest — see "Tripwire: verify the built precache manifest" below.
+In the second form the bare path matters: the plugin strips a leading slash and hands the string to a globber, where `?` is a single-character wildcard — so a `?v=` path matches nothing and the icon silently drops out of the precache altogether.
+
+The only reliable detector is a dist-level check that parses the built `dist/sw.js` precache manifest — see "Tripwire: verify the built precache manifest" below. Grade it: two entries agreeing on revision are a **warning** (latent), two entries disagreeing are a **failure** (the worker is already dead).
 
 ### The `dontCacheBustURLsMatching` trap
 
@@ -124,6 +143,28 @@ workbox: {
 
 Alternatives when you can't narrow the regex: move the file out of `assets/`, extend `?v=` versioning to it (see PWA_ICON_CACHE_BUST.md), or bump `workbox.cacheId` to rename the whole precache (kl-website's lever — effective but a manual remember-to-do-it step, so prefer the first two).
 
+### Runtime caching rules the recipes above don't teach
+
+**Opaque responses are one-way poison.** `cacheableResponse: { statuses: [0, 200] }` — which the Google Fonts recipe above prescribes, as every fleet repo copied it — accepts opaque (status 0) responses from no-cors requests. The cache is keyed by URL, so whichever request type lands first decides what every later reader gets. canva-grid captured opaque font entries from plain `<link>` requests, which were then returned to `crossorigin="anonymous"` requests, failing CORS and breaking both font rendering *and* its canvas export (which reads `cssRules` to embed fonts). Use `[0, 200]` only for resources the app exclusively renders and never reads back; if any code path reads the bytes — canvas export, PDF embedding, `document.styleSheets`, WebGL textures — use `[200]` and set `crossorigin` on the tag.
+
+**Renaming a `cacheName` is the only way to abandon poisoned entries** — and it orphans the old cache forever, because `cleanupOutdatedCaches` only touches *precaches*. The old cache sits in storage until its `maxAgeSeconds` expires, which for a fonts cache is a year, consuming the origin's quota. `generateSW` gives you no `activate` hook, so do it from the app: a tiny module exporting an `OLD_CACHES` array, fire-and-forget `caches.delete()` on every boot, idempotent. canva-grid then has its debug pill import the *same* array and warn while any stale name is still present, with a sunset criterion in its TODO ("no report shows the warning for ~30 days") so the cleanup code itself gets deleted eventually.
+
+**`maxAgeSeconds` on a NetworkFirst offline-fallback cache is a self-destruct timer.** Workbox's expiration plugin returns `null` for an expired entry, so repo-tor's dashboard — whose entire content is cached JSON — has *no data at all* after seven days offline. The cache that exists purely to survive network loss deletes itself on exactly the timeline where it is the only copy. NetworkFirst already guarantees freshness (the network wins whenever it is reachable), so the TTL buys nothing. Use `maxEntries` for quota control and omit `maxAgeSeconds`; TTLs belong on CacheFirst routes.
+
+**NetworkFirst without `networkTimeoutSeconds` only degrades on *hard* offline.** `navigator.onLine` is `true` on a captive portal, a one-bar cell connection, or against a stalled CDN, so the fetch hangs and the strategy never reaches the cache. For an installed PWA that is the *common* failure, not the rare one. Set 3–5 seconds on every NetworkFirst route serving app content.
+
+**Runtime routes are keyed on the full URL — `ignoreURLParametersMatching` does not apply to them.** It is a precache-lookup option only. canva-grid appends `?v=<hour>` to a CDN manifest that it also runtime-caches, so the cache key changes every hour and an installed user is offline-capable for at most sixty minutes after their last online visit. If you cache-bust a runtime-cached URL, strip the param with `matchOptions: { ignoreSearch: true }` or a `cacheKeyWillBeUsed` plugin — or accept that the resource is network-only.
+
+**A mis-served app shell becomes *durable* in a runtime cache.** Workbox's default `cacheWillUpdate` accepts any status-200 response, so a host rewrite that answers a missing `/data/2024-01.json` with `index.html` gets HTML stored under the JSON URL for the whole TTL. Put `cacheableResponse: { statuses: [200] }` *and* a content-type check on data routes — the server-side fix alone doesn't evict what's already cached.
+
+**Enumerate every runtime data origin, including user-configurable ones.** repo-tor accepts a `?data=<url>` parameter pointing at externally hosted JSON, which no runtime rule covers; installed plus offline plus `?data=` is an empty dashboard. When the origin isn't fixed, a `urlPattern` *function* is the honest form.
+
+**Two-tier CDN shape:** NetworkFirst on the index or manifest that names the content, CacheFirst on the immutable content itself (canva-grid). That decomposition is right for any content-addressed CDN and beats a single blanket rule.
+
+**Tell the user what they're looking at.** An app whose content is entirely remote needs a staleness affordance — "Showing saved data from Tuesday" — not just an online/offline flag. It is the difference between "this app is broken" and "you're offline". Neither this doc nor any fleet repo had one.
+
+**Sometimes the right runtime cache is no runtime cache.** web-arch proxies the Wayback Machine through a same-origin serverless function and sets `Cache-Control` there per action — five minutes on the mutable capture index, a day on immutable snapshot content, `no-store` on errors. That eliminates opaque responses entirely (so the `[0, 200]` question never arises), caches at the CDN edge for *all* users rather than one browser, and puts the TTL decision next to the code that knows which action is immutable. Its per-user layer is then a sessionStorage LRU holding *extracted text* — a derived artifact no response-level cache can hold — deliberately scoped to the tab so it can never serve stale policy text across sessions.
+
 ### Large assets: ML models, WASM, media
 
 Workbox's `maximumFileSizeToCacheInBytes` defaults to 2 MiB and **silently drops** anything larger from the precache — a build warning nobody reads. Raising it is usually the wrong fix. Decide per asset class:
@@ -133,7 +174,10 @@ Workbox's `maximumFileSizeToCacheInBytes` defaults to 2 MiB and **silently drops
 | App shell (js/css/html/fonts/icons) | Precache | Small, always needed |
 | Lazy same-origin multi-MB assets (`.wasm`) | Runtime `CacheFirst` route | Precaching makes *every* visitor pay the download at SW install for a feature they may never open |
 | Model-hub downloads (huggingface.co etc.) | Leave to the library's own cache | transformers.js already caches to Cache Storage; adding a workbox route **double-stores** the same bytes (~93 MB in graphiki's case) |
-| User data | Never cache in the SW | Belongs in IndexedDB |
+| User data | Never cache in the SW | Belongs in IndexedDB — see "Authenticated apps" |
+| Session-scoped or post-processed data | App-layer cache (sessionStorage/IndexedDB) | A SW cache outlives the tab and expires on wall-clock, so it cannot express "never across sessions"; and it can only hold response bodies, not derived artifacts |
+
+Pick the row by the **freshness contract**, not just the size. And note the precache cost model while you're here: every entry whose revision changes is re-downloaded **in full** at SW install, so a monolithic vendor chunk means every installed client pays the whole thing on every deploy, on cellular, at launch. Split vendor chunks by change-frequency — the cost is per changed *entry*, not per changed byte.
 
 graphiki is the worked example: ~80 MB all-MiniLM + ~13 MB xtremedistil are library-cached, and the ~21 MB ORT wasm needs a `CacheFirst` runtime route — precaching it would be wrong, and omitting it (its current state) leaves offline ML dependent on HTTP-cache luck.
 
@@ -187,6 +231,12 @@ Every devmade-ai PWA applies updates the same way. One model, no per-app tiering
    value `'true' | 'false'`, absent = ON, read through the repo's safeStorage wrapper.
    Plain-language label: "Automatic updates" with helper copy like "Updates apply
    automatically when the app opens."
+   **The key must survive the app's bulk storage clears.** It is a device preference,
+   not session state — but several of the names above start with `pwa-`, and four-ems
+   sweeps exactly that prefix on session reset. A wiped key reads as absent, absent
+   means ON, and the next launch force-applies an update the user explicitly opted out
+   of. Name it outside your sweep prefixes and assert in a test that a sign-out or
+   "reset" leaves it intact.
 4. **"Check for updates" action.** A menu/settings item everywhere. Runs
    `registration.update()` (plus the `version.json` comparison where the repo has one),
    waits a ~1500ms settle, and surfaces a typed result as a toast/banner. Canonical
@@ -204,6 +254,16 @@ Every devmade-ai PWA applies updates the same way. One model, no per-app tiering
 - *Tap-only `prompt`*: users who never tap run stale code indefinitely. Real incident:
   canva-grid swapped its GA measurement ID and months later the **old** property was
   still receiving traffic from precached shells of never-updated clients. Rejected.
+  Two mechanisms made that tail months rather than days, and both generalize: the ID
+  was **inlined in `index.html`**, which the SW precaches — so it could only refresh
+  when the *worker* did, unlike a hashed JS chunk that turns over whenever any code
+  changes; and `navigateFallback` served that precached shell for every navigation,
+  new tab and hard reload **before HTTP was ever consulted**, so the site's `no-cache`
+  header on `index.html` was irrelevant and "tell users to refresh" was a no-op.
+  General rule: **treat anything inlined in the HTML shell — analytics IDs, feature
+  flags, API endpoints — as SW-update-cadence content. If a value must be changeable
+  out of band, fetch it, don't inline it.** (No written post-mortem of this incident
+  exists in canva-grid; the repo's only references cite this doc.)
 - *Auto-on-launch* keeps both guarantees: never reloads over in-progress work, and
   every client converges by its next visit.
 
@@ -247,11 +307,32 @@ _hasUpdate = true                      // mid-session: arm the banner only. No r
 notifyListeners()
 ```
 
-**Why the apply must run from `onNeedRefresh`, not `onRegisteredSW`:** in vite-plugin-pwa's prompt-mode client the reload-on-`controlling` listener is installed *inside* the `'waiting'` handler — the same handler that calls `onNeedRefresh`. workbox-window dispatches `'waiting'` for an already-waiting worker on a ~200 ms timer. Calling `updateServiceWorker(true)` (or posting `SKIP_WAITING`) straight from `onRegisteredSW` can therefore skipWaiting *before any reload listener exists*, leaving the user on a stale page under the new worker. Found independently in glow-props, qi-invoice, and kl-website.
+**The one invariant: a reload listener must already exist when skipWaiting is posted.** Everything below follows from it.
 
-If you do post `SKIP_WAITING` manually instead of calling `updateServiceWorker(true)`, attach your `controllerchange` listener **synchronously at init**, before any callback can fire — an effect-mounted listener loses the same race.
+In vite-plugin-pwa's prompt-mode client the reload-on-`controlling` listener is installed *inside* the `'waiting'` handler — the same handler that calls `onNeedRefresh` — and workbox-window dispatches `'waiting'` for an already-waiting worker on a ~200 ms timer. Applying straight from `onRegisteredSW` can therefore skipWaiting before that listener exists, stranding the user on a stale page under the new worker. Found independently in glow-props, qi-invoice, and kl-website.
+
+**Two architectures satisfy the invariant. Pick one deliberately:**
+
+| | Who owns the reload | Shape |
+|---|---|---|
+| **A. Library owns it** | vite-plugin-pwa | Record eligibility in `onRegisteredSW`, apply from `onNeedRefresh` (the code above). Needs the eligibility window. |
+| **B. App owns it** | You | Attach your own `controllerchange` listener at **module scope**, synchronously at init — then you may launch-apply directly from `onRegisteredSW`, and need no window at all. |
+
+B is the more precise form: `r.waiting` present at first registration *is* the launch condition, exactly, with no clock involved. repo-tor and model-pear use it correctly. The failure mode to avoid in both is a listener attached in a **different component** that may mount later or conditionally — four-ems attaches it in an effect in the *same* component as the registering effect, which is safe (React flushes a commit's passive effects synchronously in declaration order, and no promise continuation can interleave), but that safety is not obvious and does not survive the hook moving.
+
+**Do not read anything into `updateServiceWorker(true)`'s argument — it has been inert since vite-plugin-pwa 0.13.2.** The shipped client is `async (_reloadPage = true) => { await registerPromise; if (!auto) sendSkipWaitingMessage?.() }`; the plugin's own type declarations say so. Calling it and posting `SKIP_WAITING` yourself are the same operation, so the invariant applies identically to both.
+
+**The plugin also installs its own unconditional reload, and your latch cannot veto it.** That same `'waiting'` handler runs `wb.addEventListener('controlling', e => { if (e.isUpdate) { onNeedReload ? onNeedReload() : window.location.reload() } })`. Your `controllerchange` guard gates *your* reload; this one fires regardless. So after a user taps "Later", any subsequent controller change — another tab applying the update, an external `skipWaiting` — reloads this tab over their unsaved work, which is exactly what policy step 2 promises won't happen. **If step 2's guarantee matters to your app, pass `onNeedReload` to `useRegisterSW` and route the decision through your own latch.**
 
 **Related echo:** workbox-window also fires `onNeedRefresh` for a worker that was already waiting before `register()` (`wasWaitingBeforeRegister`). That can land before your registration handler runs and arm the banner for a frame before the launch-apply reload; clearing `_hasUpdate` inside the launch-apply branch (above) covers it. When the preference is OFF, arm the banner explicitly rather than relying on the echo.
+
+### Draft safety
+
+The policy above protects the *automatic* path and then hands the user a button that does the thing the policy exists to prevent. Any app holding in-progress user data owes three more things:
+
+1. **The manual apply is in scope too.** "Restart now" must flush pending persistence and await any in-flight save before reloading — or confirm, or disable itself while the document is dirty. four-ems' update banner is mounted app-globally, so it renders on public form-filling routes where every answer lives in component state with no persistence and no `beforeunload` anywhere in the repo; one tap discards the lot. Its builder autosave debounces two seconds, and the apply path neither flushes the debounce nor awaits the in-flight PUT.
+2. **Justify launch-apply against interactivity, not registration timing.** The claim "this moment is always safe — the user hasn't typed anything yet" is true at launch and false ten seconds later, which is exactly how long the eligibility window above stays open. Prefer an explicit dirty flag or a "no input yet" check. If you keep a window, keep it short and say why. four-ems checks `r.waiting` synchronously at first registration and opens no window at all — tighter than this doc, and worth copying.
+3. **Mind audience asymmetry.** A global update banner reaches people who are not your app's operator — form respondents, invited signers, shared-link visitors — who will never care what version they're on and have everything to lose from a reload. Consider suppressing the update surface on routes holding third-party in-progress input; the deferred worker still converges at next launch.
 
 **Custom-SW repos (Expo/Metro):** identical semantics over their own plumbing —
 launch-apply posts `SKIP_WAITING` to `registration.waiting` at startup; a `version.json`
@@ -264,11 +345,33 @@ auto-apply) to this model is safe — installed clients still converge at their 
 launch. The long-standing warning below about `autoUpdate` → tap-only `prompt` remains
 true; auto-on-launch is exempt because launch-apply preserves unattended convergence.
 
+## Authenticated apps
+
+**Workbox's default cache key is the request URL.** The `Authorization` header, the session cookie, and the signed-in identity are not part of it. So a cached `GET /api/agreements/123` fetched by user A is served verbatim to user B on the same device or browser profile — with no auth check at all, because the service worker answers before any network call happens. Cache Storage is **not** cleared by your `signOut()`, **not** cleared when the JWT expires, and survives clearing localStorage. Revoking a session leaves the data readable.
+
+1. **Do not add a runtime cache for any endpoint that requires credentials.** This is the default answer, and for most authed apps it is the final answer.
+2. **If you must cache authed data**, three non-negotiables: `NetworkFirst`, never `CacheFirst`/`StaleWhileRevalidate`; a `cacheKeyWillBeUsed` plugin folding the user id into the key; and a named owner for eviction.
+3. **Sign-out is a cache lifecycle event.** On sign-out, delete every non-precache cache (`caches.keys()`, filter out `workbox-precache*`, `caches.delete`). Do it again on sign-**in** as a different user — account switching on a shared device is the case people forget. Keep this in the auth module next to `signOut()`, not in the service worker, so it stays visible to whoever edits the auth flow.
+4. **User data belongs in IndexedDB**, owned and cleared by the app.
+5. **`navigateFallbackDenylist: [/^\/api\//]`.**
+6. **Make the refusal explicit and testable.** sun-sea-o caches nothing authenticated — but by omission, not decision: no comment, no rule, no test, while its own TODO claims "read-only offline via PWA cache" (false) and thereby invites the next contributor to add exactly the dangerous route. A three-line assertion that no `runtimeCaching` entry matches the API prefix converts "we happen not to" into "we decided not to".
+7. **Debug and report surfaces are part of this.** If a debug pill ships in production and its copied report includes response-body snippets, those snippets are user content — on a legal or medical product they are the user's documents. Redact to status plus a correlation id.
+
+Related: **register the service worker above the auth boundary.** sun-sea-o mounts its registration hook only inside the authenticated layout, so a first-time visitor's sign-in page has no service worker at all — Chrome's installability criteria are never met, `beforeinstallprompt` cannot fire before login, and update polling stops whenever the user signs out. The service worker is app-wide infrastructure, not a feature of the signed-in shell.
+
 ## Service Worker Updates (`usePWAUpdate.ts`)
 
 Wraps `vite-plugin-pwa`'s React hook. Exposes `hasUpdate`, `update()`, `checkForUpdate()`, and `checking` state. Checks for new SW versions every 60 minutes and on visibility change (when tab regains focus).
 
-**Architecture: Module-level singleton** — all SW state lives at module scope, not in React state. This solves a real bug: hook-local state re-initializes on component remount, re-triggering `register()` and causing "update available" to re-appear after navigation. The singleton pattern with pub/sub listeners preserves state across mounts.
+**Architecture: Module-level singleton** — all SW state lives at module scope, not in React state. This solves a real bug: hook-local state re-initializes on component remount, causing "update available" to re-appear after navigation.
+
+**But a state singleton does not dedupe *registration*, and the snippet below is a trap.** `useRegisterSW` calls `registerSW()` from a `useState` lazy initializer — **once per hook instance**. Put it inside `usePWAUpdate()` as shown here and every component calling that hook registers its own service worker, each with its own `needRefresh`, its own `updateServiceWorker` closure, and its own lifecycle listeners that are never released. A hook consumer that lives inside a routed page re-registers on **every navigation**.
+
+Three repos reproduced this by following this doc faithfully — dm-website (two consumers, one of them per-route), four-ems (three consumers), canva-grid. Symptoms are diffuse and easy to misattribute: consumers disagreeing about whether an update exists, the hourly poll's phase resetting whenever the last registration resolves, and N `controllerchange` listeners racing to reload.
+
+**The rule: `registerSW()` / `useRegisterSW` must be called exactly once per app** — from the module singleton at import time (glow-props, kl-website, qi-invoice), or from a single `<PwaManager/>` mounted at the app root and never inside a routed subtree. Then the hook is a pure reader.
+
+**The diagnostic tell:** if you found yourself adding a shared latch so several `controllerchange` handlers wouldn't each call `reload()`, or your poll interval restarts on every registration callback — you have more than one registration. Fix the registration, then delete the latch.
 
 **Prefer `useSyncExternalStore` over the `forceRender` listener.** The hook below uses `const [, forceRender] = useState(0)` because it predates React 18. An external mutable store React has to observe is exactly what `useSyncExternalStore` exists for; under React 19 concurrent rendering the force-render form is the textbook tearing setup, and it needs an on-mount resync hack to catch a `notify()` landing between first render and the passive effect. Use it instead (qi-invoice, kl-website):
 
@@ -410,20 +513,27 @@ export function usePWAUpdate() {
     setChecking(true)
     _checkPromise = (async () => {
       try {
-        await _registration!.update()
-        // 1500ms settle delay for async SW lifecycle events
-        await new Promise(r => setTimeout(r, 1500))
-        // Read the flag OR the waiting worker — a "Later"-dismissed update is
-        // still waiting even though nothing re-armed hasUpdate.
-        if (_hasUpdate || _registration!.waiting) {
+        // registration.update() CAN HANG FOREVER — measured in Chromium, with
+        // and without a changed worker. Never await it unbounded: with the
+        // in-flight sharing above, one hang would strand every later call on
+        // the same dead promise and pin the menu item at "Checking…" for the
+        // rest of the session. Bound the probe and read the verdict off the
+        // registration, which answers the user's actual question regardless.
+        let rejected = false
+        const probe = Promise.resolve(_registration!.update()).catch(() => { rejected = true })
+        await Promise.race([probe, new Promise(r => setTimeout(r, 3500))])
+        await new Promise(r => setTimeout(r, 1500))   // settle for SW lifecycle events
+        if (rejected) return 'error' as const
+        // waiting OR installing: after the settle a freshly-found worker is
+        // often still downloading a large precache. Reading only the flag
+        // reports a confident "up-to-date" and then arms the banner seconds
+        // later. `waiting` also covers a "Later"-dismissed update.
+        if (_hasUpdate || _registration!.waiting || _registration!.installing) {
           _hasUpdate = true
           notifyListeners()
           return 'update-available' as const
         }
         return 'up-to-date' as const
-      } catch (e) {
-        debugAdd('pwa', 'error', 'Update check failed', { error: String(e) })
-        return 'error' as const
       } finally {
         setChecking(false)
         _checkPromise = null
@@ -444,7 +554,13 @@ export function usePWAUpdate() {
 }
 ```
 
-**`'no-sw'` covers three different truths** and deserves three messages: registration failed outright (`onRegisterError` fired — "try again in a moment" would be a lie forever), registration is still in flight (the first second of page life — blaming the browser here is wrong), or the browser genuinely lacks service worker support. glow-props' `checkForUpdates()` is the reference.
+**Reporting `'update-available'` for an *installing* worker makes the plain-reload fallback mandatory, not optional** — an immediate "Update now" tap then has no waiting worker to skip. The two rules ship as a pair.
+
+**A faster settle:** the flat 1500 ms is a worst-case guess. Subscribe to a shared deferred that `onNeedRefresh` resolves, subscribe *before* calling `update()`, then `Promise.race([announcement, deadline])` — the deadline stays as the backstop for the genuine no-update case. The common path returns in tens of milliseconds instead of always blocking a spinner for a second and a half (sun-sea-o). Keep the `waiting || installing` read after the race; sun-sea-o dropped it during that refactor.
+
+**`'no-sw'` covers four different truths** and deserves four messages: registration failed outright (`onRegisterError` fired — "try again in a moment" would be a lie forever); registration is still in flight (the first second of page life — blaming the browser here is wrong); **no service worker was built for this environment** (`devOptions.enabled: false` is the sane default, so every dev-mode check lands here and "not available in this browser" is simply false — branch on `import.meta.env.DEV`); or the browser genuinely lacks service worker support. glow-props' `checkForUpdates()` is the reference for the first, second and fourth.
+
+**`navigator.serviceWorker.ready` never resolves if registration failed.** If your check awaits it as a fallback, race it with a timeout — otherwise one failed registration pins `checkForUpdate` at `'no-sw'` for the page's lifetime (intxt).
 
 **Surface update failures.** `updateServiceWorker(true)` can reject; if the banner doesn't handle it the user stares at a stuck "Updating…". Await the apply, and on rejection show "Update failed — please try again" and re-enable the button (see-veo's `UpdatePrompt`).
 
@@ -1015,9 +1131,10 @@ export default memo(function InstallInstructionsModal({ isOpen, onClose, instruc
 
 | Pattern | When to use | Examples |
 |---------|-------------|---------|
-| **Burger menu item** | App has a nav menu | canva-grid, glow-props |
-| **Fixed bottom banner** | No nav menu, or high visibility needed | four-ems |
-| **Inline button** | Fits within existing page layout | sync-tone |
+| **Burger menu item** | App has a nav menu | canva-grid, glow-props, repo-tor |
+| **Fixed bottom banner** | No nav menu, or high visibility needed | dm-website |
+| **Corner toast** | Non-blocking, app already has a toast system | four-ems |
+| **Inline button** | Fits within existing page layout | see-veo |
 
 **Update notifications** should use the Toast system for consistency:
 - `hasUpdate` (mid-session) → show a persistent toast or inline banner with a "Restart now" / "Update" button; the update also applies automatically on next launch (see Update Application Policy)
@@ -1121,6 +1238,20 @@ location / {
 }
 ```
 
+**Prefer default-deny to enumeration.** The block above names the no-cache files individually, which fails open: add a new non-hashed root file (`version.json`, `offline.html`, an embed script) and it silently inherits the platform default. repo-tor's form is safer — `max-age=0, must-revalidate` on `/(.*)` first, then a narrow `immutable` override for hashed paths. Same for the rewrite: `"/((?!assets/|.*\\..+$).*)"` excludes *any* path with a file extension, so `sw.js`, `manifest.webmanifest`, `version.json` and your data files can never be replaced by a 200 HTML body. (Trade-off: SPA routes containing a literal dot stop resolving.)
+
+**Cloudflare Workers Static Assets** (`wrangler.toml` + a `public/_headers` file):
+```toml
+[assets]
+directory = "./dist"
+binding = "ASSETS"
+not_found_handling = "single-page-application"   # SPA only
+run_worker_first = true                          # or an array of route patterns
+```
+Four platform facts that change the advice: the default is already `max-age=0, must-revalidate` + ETag, so only the `immutable` rule for hashed assets is strictly required; **`_headers` applies only to responses from the ASSETS binding**, so anything a Worker synthesizes bypasses it (and loses your security headers with it); `HTMLRewriter.transform()` preserves status and headers, so a Worker rewriting HTML need not re-apply them; and — the important one — **the SPA fallback cannot be scoped.** There is no Cloudflare equivalent of Vercel's negative lookahead, so `/assets/oldchunk.js` returns `index.html` at 200 with a JS MIME type. Implement the exclusion *in the Worker*: after `env.ASSETS.fetch()`, if the path is under your hashed-assets directory and the content-type came back `text/html`, return a real 404.
+
+`Service-Worker-Allowed: /` on the `sw.js` response is worth knowing about: it is the fix for a worker served from a subdirectory that needs to claim the root scope.
+
 Three Vercel-specific notes: include `registerSW.js` (emitted under some `injectRegister` settings) in the no-cache set; include `workbox-<hash>.js`, which sits at the root rather than under `/assets/` when `inlineWorkboxRuntime` is false; and **scope the SPA rewrite to exclude `/assets/`** — otherwise a deleted old chunk returns `index.html` with a JS MIME type instead of a clean 404, turning a recoverable `ChunkLoadError` into a confusing parse error. Vercel's framework defaults (`max-age=0, must-revalidate` + ETag) are safe but not optimal without the explicit `immutable` rule.
 
 **GitHub Pages note:** GitHub Pages sets its own cache headers (~10 min max-age). You can't customize them, but the service worker precache layer handles staleness — the SW compares its manifest on each check and re-fetches changed files regardless of HTTP cache state.
@@ -1158,11 +1289,27 @@ If self-hosting without a CDN, keep previous build artifacts available for an ov
 
 ## Custom Service Worker (Non-Vite Projects)
 
-For Expo/Metro or other non-Vite build systems, vite-plugin-pwa cannot be used. Implement a hand-written service worker with pattern-based caching:
+For Expo/Metro or other non-Vite build systems, vite-plugin-pwa cannot be used. Write the service worker by hand — **not** `workbox-cli generateSW`, which an earlier version of this doc recommended two sections apart from this one: `expo export` produces no stable manifest shape to glob, and the routing you need (`/_expo/`, `/assets/`, `?v=` icon URLs) is a few lines in a `fetch` handler and awkward in generateSW config. Both fh-fuelhunt and intxt hand-write theirs.
+
+Everything below is load-bearing. The sample in previous revisions of this doc omitted items 1–7 and would not have survived production in either repo:
+
+1. **A `message` listener, or launch-apply silently does nothing forever.** The update policy above tells you to post `SKIP_WAITING` to `registration.waiting`; without a handler for it, nothing happens, ever. Accept both shapes — `event.data === 'SKIP_WAITING'` and `event.data?.type === 'SKIP_WAITING'` — so the worker survives a later migration to workbox, whose convention is the object form.
+2. **`self.clients.claim()`.** Without it the first-visit worker installs and activates but controls nothing: no offline coverage for that session, `navigator.serviceWorker.controller` is `null`, and the install diagnostics above report no SW. Note that `claim()` also fires `controllerchange` on first install, which makes the reload latch mandatory rather than an optimization.
+3. **Gate every `cache.put` on `response.ok`.** Otherwise a 404 or 500 lands in a cache-first store and is served forever, online and offline. This also excludes opaque cross-origin responses for free, since they report `ok === false`.
+4. **Skip non-`GET` requests.** `cache.put` with a POST `Request` throws `TypeError`.
+5. **Skip non-`http(s)` schemes.** `chrome-extension:`, `blob:` and `data:` throw the same way.
+6. **Namespace your cache deletions.** An `activate` handler that deletes every cache key it doesn't recognise destroys caches owned by other code on the same origin — including the model-hub cache that this doc's own large-asset table tells you to leave alone. Filter on an app prefix.
+7. **Optional-query tails on every cache-first pattern.** A `$`-anchored extension regex stops matching the moment icons carry `?v=<hash>` from PWA_ICON_CACHE_BUST, and versioned icons then fall through to network-first — offline icons break. Use `(?:\?.*)?$`. Both Expo repos hit this independently; it is the custom-SW equivalent of workbox's `ignoreURLParametersMatching`.
+8. **Inline the offline document as a `Response` literal** rather than precaching an `offline.html` file. `cache.addAll` is atomic — one 404 aborts the entire install — and a precached offline page is exactly the file most likely to go missing from a build config. A string literal in the worker cannot 404 and cannot go stale.
+9. **Decide `addAll` failure policy deliberately.** intxt *rethrows*, with the post-mortem inline: swallowing the error let a worker with an empty shell cache activate "successfully", so the offline fallback silently didn't exist, while a failed install keeps the previous working worker and retries next visit. That is the stronger default. Push the loud failure to build time instead: fail the build on a missing precache asset.
+10. **Guard against caching a mis-served shell.** A SPA catch-all rewrite answers a missing hashed chunk with `index.html` at status 200; without a content-type check the worker stores HTML under a `.js` URL, turning a transient miss into a **permanent parse error that survives fixing the server config**.
+11. **Cap runtime caches, and never share one cache between the app shell and API responses.** intxt's single 60-entry LRU holds both; a chatty session issues more than sixty API GETs after the last bundle fetch, evicts `entry-*.js`, and offline launch silently breaks.
+12. **Bypass the freshness probe explicitly.** `fetch('/version.json', { cache: 'no-store' })` is an *HTTP-cache* directive — it does not stop your own `fetch` handler from seeing the request and caching it. With a `?t=` cache-buster every poll otherwise becomes a permanent cache entry.
+13. **Cross-origin cache-first needs a host allowlist, not an extension match.** fh-fuelhunt matches any URL ending in an image extension and permits query strings, so Mapbox sprite URLs are cached permanently **with the access token in the cache key**. Any URL carrying auth query parameters is network-only.
 
 ```javascript
 // public/sw.js
-const SW_BUILD = '__SW_BUILD_VERSION__' // replaced at build time
+const SW_BUILD = '__SW_BUILD_VERSION__' // replaced at build time — see below
 const STATIC_CACHE = `app-static-${SW_BUILD}`
 const DYNAMIC_CACHE = `app-dynamic-${SW_BUILD}`
 
@@ -1223,12 +1370,20 @@ self.addEventListener('fetch', (event) => {
 })
 ```
 
-**Build-time version injection** (`scripts/inject-sw-version.mjs`): Replace `__SW_BUILD_VERSION__` with an ISO timestamp after build. Ensures byte-for-byte SW changes on every deployment without manual version bumping.
+**Build-time version injection — use a content hash, not a timestamp.** Earlier revisions of this doc said to inject an ISO timestamp "to ensure byte-for-byte SW changes on every deployment". That is the wrong goal, and fh-fuelhunt shipped it and reverted it. A timestamp rotates the version on no-op deploys, which fires a false "update available" *and* — because cache names embed the version — makes the `activate` handler wipe and re-download every installed client's entire precache, for nothing. The goal is **the version changes if and only if shipped content changed**: hash the built output (sorted paths, path bytes included so renames register) and use that.
 
-**Triple-layer `beforeinstallprompt` capture** for Expo:
-1. **Inline script in `+html.tsx`** — runs during HTML parse, catches repeat-visit early fires
-2. **Module-scope listener in `_layout.tsx`** — catches during initial app boot
-3. **`useEffect` fallback in `usePWAInstall`** — catches late-firing events on first visit
+Two corollaries worth stating:
+- **Emit `version.json` from the same script, with the same hash.** One walk of the build output, one source of truth.
+- **Separate the two cadences.** Cache *names* only need to change when the cache **shape** changes; the SW *file* only needs to change when behavior or content changes. intxt keeps a hand-bumped `CACHE_VERSION` for the former and per-build `version.json` for the latter, precisely so a routine deploy doesn't nuke every client's precache. Its icon-hash injection rewrites the icon list *inside* `sw.js`, which is what makes an icon change produce a byte-different worker — the coupling that actually gets new icons precached.
+- **This reframes `version.json`.** When the SW version *is* the content hash, "app bundles changed but `sw.js` didn't" cannot happen, so version.json is not a second detection channel — it is the **safety net for clients whose `sw.js` fetch failed or whose SW events were missed**. In a repo that hand-bumps its cache version instead, version.json is the *primary* channel and the waiting-worker path is nearly dead. Know which one you are.
+
+**Two capture layers, not three.** Earlier revisions prescribed three for Expo. The module-scope listener in `_layout.tsx` **cannot catch anything the inline script misses** — the inline handler is attached during HTML parse and never detaches, so any event reaching module scope already fired the inline one. Both Expo repos carry the dead third layer.
+
+What actually matters is not the layer count but that **one consumer reads every key that any layer writes, in priority order, and deletes each.** Both Expo repos write two different keys (`__pwaInstallPromptEvent` inline, `__deferredInstallPrompt` at module scope) — and fh-fuelhunt's live install button reads only the second, so on the exact repeat-visit path the inline script exists for, a live prompt sits unread on `window` while the button falls back to `window.alert()`. intxt reads both but returns after the first, leaving a spent event object on `window` forever. Enumerate the keys, read them all, and add a tripwire that greps every `__pwa*` write site and asserts each has a read site.
+
+**Expo `output: "static"` specifics:** `web/index.html` is ignored — `app/+html.tsx` is the template, and it executes **in Node** during export, so `readFileSync` and `throw` are legitimate there and let you fail loud *inside* the template. Secondary HTML entry points must be generated from the built shell (copy `dist/index.html`, swap only the tags you mean to change); a hand-written second page silently loses every inline script — install capture, theme bootstrap, error capture.
+
+**The preference read is async on Expo** (AsyncStorage), so the whole launch-apply decision is async. That makes the ordering rule from the update policy a hard requirement rather than a nicety: attach `controllerchange` synchronously first, *then* await the preference.
 
 ## version.json Update Detection
 
@@ -1261,6 +1416,10 @@ Generate `version.json` at build time with `{ "buildTime": "2026-04-06T12:00:00Z
 
 The PWA layer is testable, and the riskiest behavior in it — launch-apply, an *unwanted reload* — is exactly what you want pinned. Two obstacles, both solved:
 
+**0. You may not need any of this.** If the policy lives in a plain module that imports no virtual module — the shape recommended above — you can test it directly with a storage shim and no mocking infrastructure at all. sun-sea-o pins 40 policy cases that way. The alias below is only needed to test the *hook*.
+
+One trap when the policy module is a singleton: **ESM hoisting evaluates it before `beforeAll` installs your shims**, so a singleton that reads storage at module init (which the preference pattern does) must tolerate storage-less init and re-derive that state in its reset helper.
+
 **1. The virtual module can't be imported under vitest.** `virtual:pwa-register/react` only resolves inside the plugin pipeline; Vite's import analysis rejects it *before* `vi.mock` can intercept. Map it to a concrete mock with an alias:
 
 ```typescript
@@ -1286,7 +1445,11 @@ Source-level tests cannot see duplicate precache entries, `revision: null` on mu
 4. **Missing offline-critical entries** — enumerate the ones whose absence fails silently (fonts embedded by a PDF library, wasm, etc.).
 5. **Manifest collapse** — fewer than N entries means something ate the glob.
 
-Run it in the same gate as your other verify scripts, after `npm run build`.
+Run it in the same gate as your other verify scripts, after `npm run build` — and make the gate real. A dist tier hidden behind `describe.skipIf(!existsSync(dist))` in a `npm test` that never builds has, in practice, **never executed**: four-ems' suite reports green having checked only regexes over its config, and sun-sea-o's runs only because its CI orders `build` before `test`. Two requirements: a skipped dist tier must be **loud** in the output, and it must **fail** rather than skip when `process.env.CI` is set. Otherwise "skipped because nobody built" is indistinguishable from "passed", which is the exact failure the tripwire exists to prevent.
+
+The cheapest way to make it unskippable is to put the build in the platform's own build command — web-arch uses Vercel's `"buildCommand": "npm run build && npm test"`, so the dist assertions cannot be bypassed by a forgotten local step while still degrading to skipped on a developer machine.
+
+Add two more assertions while you're there: that the `navigateFallback` URL actually appears in the emitted manifest (see the `navigateFallback` bullet — an unprecached value kills the worker on evaluation), and that no icon `<link>` in the built HTML lacks its `?v=`.
 
 ## Framework variants
 
@@ -1307,15 +1470,69 @@ Three consequences:
 
 For tests, mock `virtual:pwa-register/vue` the same way, with `vi.resetModules()` between cases.
 
+### SvelteKit
+
+`virtual:pwa-register/svelte` exists and is the Vue variant verbatim: call `useRegisterSW()` at module top level, module scope *is* the singleton, and `needRefresh`/`offlineReady` come back as stores. Svelte's `$store` auto-subscribe is compiler-generated, so none of the React tearing/`getSnapshot`-stability discussion applies. Model-pear instead publishes an imperative `window.__pwa` façade, which cost it a 95-line `Window` type augmentation and two mount-order races — the shape to avoid.
+
+Four SvelteKit-specific facts, each of which has broken something:
+
+1. **`transformIndexHtml` never runs.** Kit's client build has no HTML entry, so the plugin's HTML pipeline is never invoked. Consequences: `injectRegister: false` is required and you must call registration yourself; `<link rel="manifest">` must be hand-written in `app.html`; and **the `iconCacheBustHtml()` approach in PWA_ICON_CACHE_BUST cannot be ported as-is** — which is exactly why model-pear has no icon versioning at all. Rewrite `app.html` from a custom plugin instead.
+2. **The precache is globbed from the wrong directory.** Kit runs the SSR build as the *outer* build and spawns the client build inside it; the plugin's `closeBundle` fires at the end of that nested build, globbing `.svelte-kit/output/client` — while the adapter writes `200.html` and every prerendered page *afterwards*. So no HTML is ever precached, `.vite/manifest.json` gets a precache entry that 404s in production (it's stripped on copy), and `_app/version.json` gets precached, freezing Kit's own update detection forever. This is what `@vite-pwa/sveltekit` exists to solve; use it, or understand precisely what you're globbing.
+3. **`$service-worker` is the native alternative** — Kit's `injectManifest` analogue, and the only mechanism that sees the `prerendered` array.
+4. **Paths differ.** Hashed output lives at `_app/immutable/`, not `assets/`, so the `dontCacheBustURLsMatching` regex, the Vercel `/assets/(.*)` header and the rewrite exclusion all need substituting. `publicDir` is `static/`.
+
+Kit also ships this doc's `version.json` mechanism natively (`_app/version.json` plus the `updated` store and `kit.version.pollInterval`) — prefer it over hand-rolling, and keep `json` out of `globPatterns` so you don't precache the very file it polls.
+
+**Svelte 4 footgun:** `onMount` is client-only but **`onDestroy` runs during SSR teardown**, so a PWA component unregistering a callback there throws `ReferenceError: window is not defined` on the server. Model-pear shipped this and every route returned 500 while `build` exited 0. Under `adapter-static` with a fallback, a clean build proves nothing — curl every route against `vite preview`.
+
 ### SSR / prerendered (SSG) apps
 
 If any component that reads PWA state is rendered at build time or on a server, three rules apply:
 
-1. **The server entry must never import the PWA module.** It calls `registerSW()` on import and needs `virtual:pwa-register`, which only resolves in the full plugin pipeline — importing it fails deep inside the SSG pass with a confusing error. Route state to SSR-rendered components through a context whose **default value is the SSR-safe shape**, so a build-time render falls through to markup identical to the pre-hydration client UI.
+1. **The server entry must never import the PWA module** — *if that module registers on import*, which glow-props' does. Route state to SSR-rendered components through a context whose **default value is the SSR-safe shape**, so a build-time render falls through to markup identical to the pre-hydration client UI.
+
+   The sharper form of the rule, for frameworks like SvelteKit that have **no separate server entry** (a shared layout compiles into both bundles, making the rule as stated unsatisfiable): *if the PWA module is import-safe — registration deferred to a call, every `window` access guarded — a shared layout may import it statically.* The plain `registerSW` from `virtual:pwa-register` is import-safe (it resolves fine in an SSR graph and lazily `await import()`s workbox-window only when called); a module that registers at import time is not, and must be dynamically imported behind a `browser` check.
 2. **`getServerSnapshot`** is the third argument to `useSyncExternalStore` — return the same SSR-safe snapshot.
 3. **Mind the build-step ordering.** If pages are prerendered *after* `vite build`, Workbox has already generated the SW and never sees those HTML files — they aren't precached, and SW-controlled clients get the shell via `navigateFallback` while crawlers get the static file. That is a legitimate hybrid (kl-website relies on it), but the ordering is load-bearing: document it, or a future "tidy the build script" change silently breaks either offline or SEO.
 
 Consider a static check that the server entry's import graph never reaches the PWA module — comments alone don't survive an indirect import through a shared component.
+
+## Recovery: when the service worker itself is the bug
+
+This doc describes several failures that are fatal, silent, and unrecoverable from the user's side — a conflicting precache manifest, an unprecached `navigateFallback`, a stale shell referencing deleted chunks, a poisoned cache. They share one property that makes them uniquely nasty: **every update mechanism in this document lives inside the bundle, so none of it is reachable in exactly the scenario where it's needed.** A user with a broken worker cannot be told to refresh, because `navigateFallback` answers the refresh from the same broken precache.
+
+The exit is an escalating ladder in the pre-module inline script, which runs before any bundle and therefore survives a dead one (repo-tor, fh-fuelhunt, intxt):
+
+- **~20 s:** a plain-language message appended to the loading state. Turns a white screen into something the user can act on.
+- **~30 s:** `registration.update()`, then `postMessage SKIP_WAITING` to `registration.waiting` — plus an `updatefound` → `statechange === 'installed'` listener, so a worker still *installing* at that moment also gets skipped.
+- **+3 s:** the nuclear option — `caches.keys()` → delete all, `registration.unregister()`, reload.
+
+Four details make it safe, and all four are easy to omit:
+
+1. **Cap the attempts** (two per session, in `sessionStorage`) so a genuinely broken deploy cannot reload-loop.
+2. **Fail closed on storage.** `sessionStorage` *access* throws in locked-down browsers — wrap the counter and `return`, refusing to arm the destructive path rather than arming it uncounted.
+3. **Clear the counter on successful mount**, or the next real incident starts with the budget already spent.
+4. **Detection only on the healthy path.** fh-fuelhunt regressed here: auto-activating every waiting worker on load defeated user-controlled activation and let the new worker's `activate` handler delete the running page's caches mid-session.
+
+Two related invariants worth stating on their own:
+
+- **If cache names embed the build version, activation must be immediately followed by a reload.** Never `skipWaiting()` on a page you intend to keep alive — the new worker's cleanup deletes the caches the current page is still being served from.
+- **`SKIP_WAITING` to a worker that isn't in state `installed` is a no-op** — no `controllerchange` fires, the banner clears without reloading, *and* a stale apply latch arms a surprise reload at some later unrelated controller change. Check `worker.state`, not just `worker` truthiness, and plain-reload otherwise.
+- **Ordering constraint:** the recovery timeout must fire *before* the "app failed to load" watchdog, or the user is told to give up while the fix is still running. Two constants in two subsystems that must stay ordered.
+
+**A runtime detector for the worst deploy bug:** fetch `/sw.js` and assert the body isn't HTML. A SPA catch-all that swallows `/sw.js` returns `index.html` with a `text/html` MIME type, registration fails on MIME, and the entire PWA is silently dead. intxt surfaces exactly this in its debug pill.
+
+## Content Security Policy
+
+Every inline classic script this doc prescribes — the `beforeinstallprompt` capture, the theme bootstrap, the error capture and load watchdog — is blocked outright by a CSP without `'unsafe-inline'`. The browser logs a violation nobody reads and the install prompt is permanently lost on repeat visits: the exact failure the capture exists to prevent, now invisible.
+
+If the app ships a strict CSP, **externalise the capture as a classic script file** (`<script src="/pwa-capture.js">` in `<head>`). It still runs before the module bundle — an external classic script in `<head>` is parser-blocking, while module scripts are deferred by definition. Two consequences: it costs one render-blocking request, and the file is non-hashed so it needs its own `no-cache` header rule.
+
+The hash-based alternative (`script-src 'sha256-...'`) is tempting but brittle: it breaks on any HTML transformation, and dm-website rejected it specifically because its HTML is rewritten at the edge by a Worker.
+
+Two directives silently break a PWA and belong in any policy: **`worker-src 'self'`** (the service worker) and **`manifest-src 'self'`** (the webmanifest).
+
+This applies to glow-props itself, which keeps four inline classic scripts in its head partial — all four would need externalising the day it adopts a strict CSP.
 
 ## Platform Gotchas
 
@@ -1379,7 +1596,14 @@ Consider a static check that the server entry's import graph never reaches the P
 35. **Don't precache multi-MB opt-in assets** — runtime `CacheFirst` for lazy same-origin blobs, library-owned caches for model hubs, and remember `maximumFileSizeToCacheInBytes` silently drops anything over 2 MiB.
 
 ### Caching & Deployment
-36. **`navigateFallback` is SPA-only** — for multi-page apps, omit it or navigation to non-index pages will break.
+36. **`navigateFallback` names the app shell** — it fires on every navigation regardless of connectivity, it defaults to `'index.html'` so MPAs must pass `null` rather than omit it, and the URL must be in the precache manifest or the worker throws on evaluation and never installs.
+36b. **`navigateFallbackDenylist` for anything same-origin served from outside the build** — API routes, edge-generated files. Otherwise a direct navigation to them returns the app shell.
+36c. **`registerSW`/`useRegisterSW` exactly once per app** — a state singleton does not dedupe registration, and the hook form registers once per consumer.
+36d. **`updateServiceWorker(true)`'s argument is inert**; the plugin installs its own unconditional reload on `controlling`. Pass `onNeedReload` if "never reload mid-session" has to be a real guarantee.
+36e. **`registration.update()` can hang forever** — bound it and read the verdict off the registration, or one hang plus in-flight sharing wedges the check for the session.
+36f. **Never runtime-cache a credentialed endpoint** — the cache key is the URL, so one user's response is served to the next; and sign-out does not clear Cache Storage.
+36g. **Opaque responses are one-way poison** — `[0, 200]` only for resources you never read back.
+36h. **A NetworkFirst offline-fallback cache must not carry `maxAgeSeconds`**, and must carry `networkTimeoutSeconds`.
 37. **Cache headers complement the SW** — `no-cache` on `index.html`/`sw.js`/`registerSW.js`/manifest, `immutable` on hashed assets. Scope SPA rewrites to exclude `/assets/`.
 38. **`version.json` for non-SW updates** — supplementary detection for app changes that don't modify the service worker file. Persist the new build time *before* reporting a change, or it re-detects forever.
 39. **Verify the built precache manifest** — duplicates, `revision: null` on mutable files, and manifest collapse are invisible to source-level tests.

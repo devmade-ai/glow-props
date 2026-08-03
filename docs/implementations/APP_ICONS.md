@@ -123,9 +123,26 @@ Separate `purpose` values: `any` for standard display (192, 512), `maskable` for
 
 Icons in `public/assets/` interact with two Workbox traps — precache duplication and `revision: null` — before they ever reach a user. See [PWA_ICON_CACHE_BUST.md](PWA_ICON_CACHE_BUST.md).
 
+## Notification badge (apps that use Web Push)
+
+If the service worker calls `showNotification`, its `badge` is a separate icon with its own rule: **Android alpha-masks and tints it**, so an opaque full-square PNG renders as a solid white block. The badge must be a **white-on-transparent silhouette**, generated from its own source SVG rather than the app icon — the inverse of the maskable requirement above, which is why one source cannot serve both.
+
+Both the `icon` and `badge` passed to `showNotification` are icon URL surfaces, so version them from the same table as the rest (see PWA_ICON_CACHE_BUST.md).
+
 ## Favicon.ico Generation (Optional)
 
 For cross-browser compatibility (Windows taskbar pinning, older browsers), generate a `favicon.ico` from a 32x32 PNG. Two approaches — prefer the manual pack: it has no dependency, and its byte layout is what makes the tripwire below possible.
+
+## Verify generated images by their pixels, not their header
+
+Every icon tripwire in the fleet checked dimensions and file existence, and every one of them would pass on a blank image. web-arch generates its rasters by screenshotting with headless Chromium, whose **window width floors at ~500px** — so `--window-size=180,180` emitted a correctly-sized PNG that was a top-left *crop* of a 500px viewport. Every icon under ~500px shipped blank for a month while a dimensions-only test stayed green.
+
+Two rules, whichever generator you use:
+
+- **Assert on content.** Sample a few pixels, or check that the file is not uniformly one colour. A correct `IHDR` proves nothing about what the renderer actually drew.
+- **Byte-identical output after a source change is a failure signal**, not a no-op — it means the source never reached the output.
+
+(A sharp-free generator is a reasonable choice when you want to keep native dependencies out of a hosted build; the trap above is the price.)
 
 **Failure mode worth a test:** writing raw PNG bytes to a `.ico` filename is invisible in browsers (they sniff the content) but rejected by Windows taskbar pinning. Assert the ICO container bytes — reserved `0x0000`, type `0x0001`, image count — so the silent version can't ship:
 

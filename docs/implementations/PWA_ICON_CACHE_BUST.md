@@ -120,6 +120,21 @@ function iconCacheBustHtml() {
 
 **Non-root `base` and dev mode:** Vite's dev HTML pipeline rewrites document-relative hrefs into base-prefixed form, so a plugin matching a single literal shape throws in dev under any non-root base. Match both shapes (with and without the base prefix) when your app isn't served from `/`.
 
+**Add a catch-all sweep after the table.** The replacements above throw when a *known* literal disappears — but a **newly added** icon `<link>` ships un-versioned with no signal at all, which is the same silent drift from the opposite direction. After replacing, re-scan the HTML and throw on any icon link still missing its `?v=`:
+
+```javascript
+const ICON_LINK = /<link[^>]+rel="(?:icon|apple-touch-icon|mask-icon|apple-touch-startup-image)"[^>]*>/g;
+for (const tag of out.match(ICON_LINK) ?? []) {
+  if (!/\?v=[0-9a-f]{8}/.test(tag)) throw new Error(`[icon-cache-bust-html] un-versioned icon link: ${tag}`);
+}
+```
+
+The sweep also makes the `replaceAll`-vs-`replace` distinction non-fatal, and pairs well with a test asserting the regex covers every `rel` you actually ship. It covers `<link>` only, not `<meta content="…">` — see the OG-image note below.
+
+**In TypeScript, type the lookup key** as `typeof ICON_PATHS[number]` so `versioned('typo.png')` is a compile error and the runtime throw is belt-and-braces.
+
+**`og:image` is a URL surface too, and nobody versions it.** Invariant 2 says "any `<meta>` image references", but neither this doc's reference implementation nor any fleet repo applies `?v=` to the social card — and Slack, Facebook and WhatsApp cache preview images by URL for a very long time, so a regenerated card never refreshes anywhere it has already been pasted. Either extend `versioned()` to it and add `content="…"` to the sweep, or amend invariant 2 to exclude scraper-facing images deliberately. Note the interaction with precaching: an OG card is scraper-only, so it should be `globIgnores`d regardless.
+
 Wiring:
 
 ```javascript
@@ -169,6 +184,12 @@ Pick one source and stick to it:
 The second form is what makes each icon a *revisioned* entry that versioned requests still resolve to via `ignoreURLParametersMatching` — which is the whole point. Verify it in the built manifest (checklist item 5), never by reading the config.
 
 The same trap applies to any stable-named file under `assets/` — a regenerated OG social card at a fixed URL will never refetch for installed clients unless you either narrow `dontCacheBustURLsMatching` or give it a real revision the same way.
+
+**`includeManifestIcons` is a third, implicit source.** It defaults to `true` and quietly adds every manifest icon to the same `additionalManifestEntries` list as `includeAssets`. If the glob is your sole source, set it to `false`.
+
+**The duplicate is fatal only when the two revisions disagree** — and `dontCacheBustURLsMatching` nulling one side is the usual cause. Two entries agreeing on revision dedupe silently, which is why some fleet repos carry duplicates and still work while repo-tor's identical-looking config kills its worker. See PWA_SYSTEM.md's "Exactly one precache source per URL" for the full mechanism; treat "never duplicate" as the rule regardless, because a benign duplicate is one config change from a fatal one.
+
+**Not every icon needs precaching.** Manifest launcher art (the 512 and maskable sizes) is fetched by the OS or browser *during install*, which by definition happens online — it never needs an offline entry. Icons referenced by the **document** — favicon, apple-touch-icon, a navbar mark — do. dm-website found ~537 KB of launcher art sitting in every visitor's precache, nearly half the total. Excluding launcher icons does not weaken `?v=` busting at all, since the HTTP, CDN and WebAPK layers are all online layers. So the `ICON_PATHS` you feed to `includeAssets` should be the **document-referenced subset**, not the whole set.
 
 ## Why each piece matters
 
@@ -287,6 +308,10 @@ The OS icon cache is the one layer the web app can't touch. Surface it in the in
 
 Plain language. No jargon ("OS", "cache", "Springboard"). Tells the user what to do, not what's wrong.
 
+**Invariant 5 is unmet in most implementations, including this doc's own recommendation.** The disclosure above lives in the *install modal* — and every implementation hides the install affordance once the app is installed (`!isStandalone && …`). A user staring at a stale home-screen icon is, by definition, installed. So the modal never opens for them and the per-platform reinstall copy is dead code in production. Confirmed in sun-sea-o, glow-props and fh-fuelhunt.
+
+Give the guidance its own always-available entry point — a menu item, or drop the installed-check on the path that opens the modal. The checklist item is **"reachable while installed"**, not merely "present".
+
 Give the reinstall steps **per platform** rather than one generic paragraph — "remove the app from your home screen, dock, or Start menu" asks the reader to work out which sentence is theirs. iOS: long-press the icon → Remove App. Android: long-press → App info → Uninstall. Desktop: reinstall from the address-bar icon.
 
 ### Actively detecting a stale icon (closing invariant 5)
@@ -319,11 +344,25 @@ Runtime rules that make it non-annoying:
 
 | Invariant                  | Vite + vite-plugin-pwa                           | Webpack                                             | Next.js                                    | Expo / Metro                      | Static site         |
 |----------------------------|--------------------------------------------------|-----------------------------------------------------|--------------------------------------------|-----------------------------------|---------------------|
-| Compute hash               | `vite.config.js` at config-load                  | `webpack.config.js` evaluation                      | `next.config.js` `env`                     | `metro.config.js` prebuild        | build script        |
-| Inject into HTML           | `transformIndexHtml` plugin                      | `HtmlWebpackPlugin.templateParameters`              | `app/layout.tsx` / `_document.tsx`         | Expo web template                 | template pass       |
-| Inject into manifest       | `VitePWA` `manifest.icons`                       | `webpack-pwa-manifest` plugin                       | `app/manifest.ts` route handler            | `app.json` `expo.icons`           | written JSON        |
-| SW precache match          | workbox `ignoreURLParametersMatching`            | workbox-webpack-plugin + same option                | `@ducanh2912/next-pwa` + same option       | custom SW                         | workbox-cli         |
-| Build-time assertion       | Vite plugin `throw`                              | `compilation.errors.push`                           | Next config check / middleware             | prebuild `process.exit(1)`        | shell `exit 1`      |
+| Compute hash               | `vite.config.js` at config-load                  | `webpack.config.js` evaluation                      | `next.config.js` `env`                     | standalone Node script chained **before** `expo export` | build script        |
+| Inject into HTML           | `transformIndexHtml` plugin                      | `HtmlWebpackPlugin.templateParameters`              | `app/layout.tsx` / `_document.tsx`         | `app/+html.tsx` — runs **in Node** at export, so it can `readFileSync` and `throw` | template pass       |
+| Inject into manifest       | `VitePWA` `manifest.icons`                       | `webpack-pwa-manifest` plugin                       | `app/manifest.ts` route handler            | hand-authored `public/manifest.json`, rewritten in place, idempotently | written JSON        |
+| SW precache match          | workbox `ignoreURLParametersMatching`            | workbox-webpack-plugin + same option                | `@ducanh2912/next-pwa` + same option       | `caches.match(req, { ignoreSearch: true })` + optional-query tails + an activate-time prune | workbox-cli         |
+| Cache-name identity        | workbox owns it                                  | workbox owns it                                     | workbox owns it                            | manual `CACHE_VERSION`, bumped only on cache-shape changes | manual              |
+| SW file identity           | plugin rewrites the manifest                     | plugin rewrites the manifest                        | plugin rewrites the manifest               | rewrite the icon list **inside `sw.js`** so an icon change yields a byte-different worker | manual              |
+| Build-time assertion       | Vite plugin `throw`                              | `compilation.errors.push`                           | Next config check / middleware             | prebuild `process.exit(1)` **plus** a dist-level tripwire | shell `exit 1`      |
+
+Three of the Expo/Metro cells were wrong in earlier revisions and are worth calling out: `metro.config.js` is not evaluated on the export path and cannot rewrite `public/`; under `output: "static"` the `web/index.html` template is ignored entirely; and `app.json` has no `expo.icons` key — an Expo Router static export generates no web manifest at all.
+
+**SvelteKit has no cell here because the approach doesn't port.** `transformIndexHtml` never runs (Kit's client build has no HTML entry), so the plugin form above is unavailable; rewrite `app.html` from a custom plugin instead. See PWA_SYSTEM.md's SvelteKit variant.
+
+### The `ignoreSearch` stale-duplicate trap
+
+The Vite form precaches **bare** paths and tells workbox to strip `?v=` on lookup. A custom SW usually does the inverse — precache the **versioned** URL and match with `{ ignoreSearch: true }`. Both satisfy invariant 3, but the inverted form has a trap workbox does not: `?v=OLD` and `?v=NEW` can coexist in one cache, and `match` returns the **first insertion-ordered** entry — so **the stale icon wins forever**, in exactly the normal case where icon hashes change without a cache-version bump.
+
+Fix: prune at `activate` — delete any cached icon URL not in the current versioned list. Two follow-ons: `ignoreSearch: true` is a blunt instrument that also collapses legitimately query-differentiated images (`/img?w=200` vs `?w=400`), so scope it to icon paths; and with more than one cache, use `cache.match()` on a **named** cache rather than `caches.match()`, whose resolution order across caches is creation order.
+
+**A fourth URL surface the invariants don't enumerate: push-notification art.** If the SW calls `showNotification`, its `icon` and `badge` are icon URLs too — resolve them from the same versioned list so there is no second source of truth.
 
 ## Verification checklist
 

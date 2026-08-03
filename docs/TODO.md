@@ -540,6 +540,17 @@ Highest-leverage cross-cutting gaps (post-2026-04-25):
 
 ---
 
+## Fleet coverage correction (2026-08-03)
+
+The first pass of the PWA audit selected repos by the portfolio's `badge`/`tech` metadata and covered 6 of 15. **The metadata does not record PWA-ness reliably** — only 5 repos advertise it, while 15 ship a service worker. Two follow-ups:
+
+- [ ] **Record PWA-ness in `public/projects/*/meta.json`** — add a `pwa: true` field (or include "PWA" in `tech` consistently) for all 15, so the fleet's PWA set is discoverable without cloning every repo. Update `docs/PROJECT_DOCS.md`'s meta.json template to match.
+- [ ] **Fix `model-pear`'s recorded tech stack** — `meta.json` says "TypeScript, React, Vite"; it is actually **SvelteKit** (`@sveltejs/kit` in `apps/web`).
+- [ ] **`web-arch` and `dm-website` are missing from the Gap Matrix** below, and `web-arch` is absent from `docs/PROJECT_DOCS.md`'s status table entirely (whose "Last mirrored" still reads 2026-03-31, months before web-arch deployed). `qi-invoice` and `kl-website` are likewise missing from the matrix. The 2026-04-25 claim that coverage was "verified complete, set difference empty" is **false** — it counted 12 repos against a fleet of at least 15.
+- [ ] **Add per-repo TODO sections for `dm-website` and `web-arch`** — both implement the patterns (their code cites PWA_SYSTEM.md throughout) but neither has ever been audited against them.
+
+**App-name → repo map** (from the installed home screen, since several differ): Four Ems=four-ems, CanvaGrid=canva-grid, Model Pear=model-pear, Git Analytics=repo-tor, JT·CV=see-veo, Glow Props=glow-props, Graphiki=graphiki, Farlume=fl-farlume, knowless=kl-website, qi-invoice=qi-invoice, devmade=dm-website, FuelHunt=fh-fuelhunt, inTXT=intxt, **redline=web-arch**, **Sancio=sun-sea-o**.
+
 ## PWA drift found in the 2026-08-03 fleet PWA audit
 
 Six parallel audits (fl-farlume, graphiki, see-veo, kl-website, qi-invoice, glow-props) compared every PWA repo against PWA_SYSTEM.md / PWA_ICON_CACHE_BUST.md / APP_ICONS.md. The **pattern-side** findings are already folded into those docs. What follows is the **repo-side** drift — each repo should be fixed to match the (now corrected) patterns. Line references were accurate at audit time.
@@ -598,3 +609,91 @@ Several of these fixes are now described directly by the updated pattern docs, s
 6. [ ] **Move `PwaManager` to `useSyncExternalStore`** — `PwaManager.jsx:25-42` uses force-render over a mutable snapshot, which is the tearing-prone form under React 19 and needs the on-mount resync hack. The proper primitive subsumes both.
 7. [ ] **Tripwire the "entry-server must never import pwa.js" invariant** — enforced only by comments (`entry-server.jsx:5-7`, `PwaManager.jsx:4-6`). A direct import fails loudly, but an indirect one through a shared component fails deep in the SSG pass. A static import-graph check fits the repo's existing verify-script convention.
 8. [ ] **Consider the maskable-at-192+512 form** — the manifest currently ships a single 1024 maskable; 192/512 are the sizes install criteria actually request. Low priority, documented as an accepted alternative in the pattern.
+
+### Round 2 (2026-08-03, second pass — the 9 repos the first pass missed)
+
+Severity-ordered. Several are production-down.
+
+#### repo-tor — **PRODUCTION SERVICE WORKER IS DEAD**
+
+1. [ ] **`add-to-cache-list-conflicting-entries` — the SW never installs.** `vite.config.js:154` `includeAssets: ['assets/images/*.png']` plus `globPatterns` matching `png`, with no `globIgnores` and no `dontCacheBustURLsMatching`, so the default `/^assets/` nulls the globbed revision while `includeAssets` supplies an MD5 — two cache keys for one URL. Verified by running the real workbox pipeline over a synthetic dist. Blast radius: no precache, no offline, no runtime caching (routes are registered in the script that throws), the update system never arms, and Chrome's installability criteria are unmet. Fix: drop `includeAssets` (the glob already covers the PNGs), then add the duplicate-URL dist assertion that would have caught it.
+2. [ ] **Dead code documenting a feature that doesn't exist** — `vite.config.js:232-239` describes a NetworkOnly runtime rule with an offline fallback for embed URLs; there is no such rule. `public/offline.html` is precached and can never be served.
+3. [ ] `registration.update()` uncaught at `pwa.js:518` and `:570`; visibility check unthrottled; `_isChecking` is set but never read, so two taps run two concurrent checks.
+4. [ ] `applyUpdate()` has no plain-reload fallback — and `version.json` can report an update with no SW change at all, so "Update Now" silently does nothing.
+5. [ ] Preference write not read back; the toast unconditionally claims the new state. Install `prompt()` not awaited, throw propagates into an uncaught `await` in `Header.jsx:120`.
+6. [ ] Precaches Expo-era leftovers (`adaptive-icon.png`, `splash-icon.png`, a duplicate `apple-touch-icon.png`) the web app never requests.
+
+#### model-pear — **PRODUCTION SERVICE WORKER IS DEAD** (and the matrix row is wrong)
+
+1. [ ] **`navigateFallback: '/200.html'` names a URL that is never precached** → `createHandlerBoundToURL` throws at SW evaluation → no offline support and no update mechanism in production. Workbox globs `.svelte-kit/output/client`; the adapter writes `200.html` afterwards.
+2. [ ] **`globPatterns` includes `json`** → `.vite/manifest.json` is precached but stripped on copy → install 404s → `bad-precaching-response`. An independent second SW-killer. It also precaches `_app/version.json`, freezing SvelteKit's own update detection.
+3. [ ] **`controllerchange` reloads unconditionally** (only a 5s throttle, no apply latch) — tab A reloads and loses in-memory calculator inputs when tab B applies an update. Exactly what the policy exists to prevent, and it defeats the repo's own stated rationale.
+4. [ ] `launchPhase` has no terminal timeout — if registration never settles (known Safari behaviour) the update banner is suppressed for the whole session.
+5. [ ] Google Fonts loaded from CDN with no runtime route → installed PWA falls back to system fonts offline.
+6. [ ] No `?v=` icon versioning at all; `purpose: 'maskable'` on a plain transparent render; no PWA tests despite a custom launch-apply implementation.
+7. [ ] **Correct this file's own record:** model-pear is listed as PWA_SYSTEM "Missing"/"no vite-plugin-pwa" and ICON_CACHE_BUST "N/A (no PWA)". It is a SvelteKit PWA with a fuller update policy than several repos marked Pass. ICON_CACHE_BUST should read **Missing**, not N/A. The neighbouring "no DaisyUI", "`class="dark"` hardcoded" and "BURGER_MENU still `p-2`" claims are also stale.
+
+#### fh-fuelhunt
+
+1. [ ] **The entire install UI is orphaned** — `usePWAInstall.ts` (300 lines) and `InstallInstructionsModal.tsx` (250 lines) are imported by zero components; the live path is 5 lines ending in `window.alert()`. Consequences: the third capture layer doesn't exist at runtime, `IconCacheDisclosure` is unreachable so ICON_CACHE_BUST invariant 5 is unmet in production, and all install analytics are dead. `CLAUDE.md:294` and `TESTING_GUIDE.md:183` claim otherwise.
+2. [ ] **Security: cross-origin cache-first matches by extension and permits query strings**, so Mapbox sprite URLs are cached permanently with the access token in the cache key. Needs a host allowlist; any URL with auth params must be network-only.
+3. [ ] `SW_BUILD` hashes only `dist/_expo/static/`, so `public/` font changes are invisible — fonts are cache-first and unversioned, so replacing one serves stale bytes forever.
+4. [ ] Manifest declares `icon.png` maskable but it is a plain transparent raster, byte-identical to `adaptive-icon.png` and `splash-icon.png`.
+5. [ ] Vercel catch-all not scoped away from `_expo/static/` or `/assets/fonts/`; `watchInstallingWorker` leaks a `statechange` listener; visibility check unthrottled; `checkForUpdates` guarded by React state rather than module state.
+
+#### intxt
+
+1. [ ] **`storeCurrentBuildTime()` is a fire-and-forget fetch issued immediately before `location.reload()`** — the navigation cancels it, so the write never lands and a phantom "Update available" reappears after the suppression window. The launch-apply path does it correctly and synchronously; the inconsistency is the tell.
+2. [ ] **`DYNAMIC_CACHE` mixes Supabase REST responses with the JS/CSS shell under one 60-entry LRU** — a chatty session evicts `entry-*.js` and offline launch silently breaks. `STATIC_CACHE` separately grows unbounded through navigation caching.
+3. [ ] `clearAllData()` deletes the precache too, orphaning it until the next SW *install* — which won't happen, because `sw.js` didn't change.
+4. [ ] Manifest `theme_color`/`background_color` are the dark base-100 while the first-visit default theme is light → near-black status bar over a light app in Android standalone.
+5. [ ] The icon-cache-bust tripwire never gates a deploy (absent from `build:web` and `vercel.json`, no CI) and still hardcodes `synctone.vercel.app`. `console.log` ships in `public/sw.js` (babel's remove-console only touches the Metro bundle).
+6. [ ] Update affordance is home-screen-only *and* installed-only — a user inside a chat has no update surface; no "Updating…" state, no failure UI. `offlineReady` and `dismiss` are exported and unused.
+
+#### four-ems
+
+1. [ ] **`navigateFallback: '/offline.html'`** — every SW-controlled deep link or reload serves "You're offline" while online, including every shared `/f/:slug` form URL, and the "Try again" button reloads straight back into it. Set it to the app shell.
+2. [ ] **The update banner is a data-loss control on public form routes** — mounted app-globally, respondent answers live in `useState` with no persistence and no `beforeunload` anywhere in the repo. Also, the builder's 2s autosave debounce is never flushed before the update reload.
+3. [ ] `checkForUpdate` never reads `registration.waiting`; no shared in-flight promise; `hasUpdate` ORs `needRefresh`; preference write not read back.
+4. [ ] Install capture has no named handler/attach guard/durable flag — so `PwaTab.tsx:197` reports "not captured" forever *and* its truthy-branch copy is backwards. `prompt()` called before clearing; no `CriOS`/`FxiOS`/`EdgiOS`; no iPadOS test.
+5. [ ] No `workbox-window` dependency; no `vercel.json` headers block at all; `pwa-1024x1024.png` declared maskable but is a copy of the transparent icon.
+6. [ ] **The dist tripwire has never run** (`skipIf` + a `npm test` that doesn't build), and `verify-timer-cleanup.mjs` gives a false negative on the module singleton because a `clearInterval` exists in the test-reset helper.
+
+#### canva-grid
+
+1. [ ] **Live offline bug** — `SampleImagesSection.jsx:47-50` appends `?v=<hour>` to a runtime-cached CDN manifest; `ignoreURLParametersMatching` does not apply to runtime routes, so an installed user is offline-capable for at most one hour after their last online visit. Fix with `matchOptions: { ignoreSearch: true }` and raise `maxEntries` above 1.
+2. [ ] Duplicate precache source for `icon.svg` (benign today — root-level, identical revisions — but one config change from fatal).
+3. [ ] `onRegistered` (deprecated); launch-apply from the registration callback with the listener in an effect; `onNeedRefresh` returns before recording; `checkForUpdate` never reads `waiting`; the concurrency guard returns a non-canonical `'checking'` that maps to `null`, so the second tap gives the user **no feedback at all**.
+4. [ ] No preference read-back; visibility check unthrottled; install event cleared after `prompt()` and never deleted from `window`; `'prompted'` tracked only in the late listener.
+5. [ ] No `vercel.json` headers block; tripwire has no duplicate-URL assertion.
+6. [ ] **Write the GA-tail post-mortem.** The incident justifies the entire fleet update policy and exists nowhere — not in `CLAUDE.md`, not in `docs/AI_MISTAKES.md`. The repo's only references cite the fleet doc, which cites the repo.
+
+#### sun-sea-o
+
+1. [ ] **The install banner never appears on Chromium repeat visits** — `deferredPrompt` is React state and the consume-and-delete runs inside the `useState` initializer, so the parent consumer (`AppLayout`) deletes the global before the banner's own hook initializes. StrictMode double-invocation drops it in dev too. Move the consume to module scope and only *seed* state from it.
+2. [ ] **Launch-apply posts `SKIP_WAITING` from `onRegisteredSW` while `controllerchange` is attached in a later effect** — neither sanctioned shape; works only by timing.
+3. [ ] **`ignoreURLParametersMatching: [/^v$/]` replaces the defaults**, so `utm_`/`fbclid` stripping is gone — on a product distributed by tagged invitation links, a `?utm_source=` navigation misses the precached shell.
+4. [ ] Make the no-authed-caching stance explicit and testable, and fix `docs/TODO.md:131`'s false "read-only offline via PWA cache" claim before it invites someone to add the dangerous route.
+5. [ ] `handleNeedRefresh` returns before recording — **and `pwaSingleton.test.ts:101,451` pins that as correct**, so the test changes with the code.
+6. [ ] No `appinstalled` or display-mode listener, no 5s diagnostic → Chromium users in the 90-day suppression window get no install affordance; no `CriOS`/`FxiOS`/`EdgiOS`; no iPadOS test; `'prompted'` measures clicks.
+7. [ ] No `vercel.json` cache headers; `og-image.png` and `icon-source.svg` precached; dist tripwire never parses the precache manifest; `icon.png` declared maskable but has transparent rounded corners (`rx="192"` source).
+8. [ ] `absoluteMetaUrls` must fail loud on a literal miss like its sibling twelve lines earlier, and the two head-rewriting plugins need an ordering contract (also applies to DISCOVERABILITY.md, which carries this plugin verbatim).
+
+#### dm-website (never audited before)
+
+1. [ ] `includeAssets` overlaps `globPatterns` with no `globIgnores`; launch-apply from `onRegistered`; `hasUpdate` ORs `needRefresh`; `onRegistered` deprecated; `update()` uncaught and unthrottled.
+2. [ ] **`checkForUpdate` finds a waiting worker but never re-arms the banner** — the menu says "a new version is ready" while the update prompt stays hidden and no refresh action appears.
+3. [ ] **Missing `/assets/*` returns the SPA shell at 200 with a JS MIME type** — Cloudflare's fallback can't be scoped, so the exclusion has to live in the Worker.
+4. [ ] PWA_ICON_CACHE_BUST entirely unimplemented, and all six icons were regenerated at unchanged URLs on 2026-08-01 — the WebAPK shadow has no signal to refresh.
+5. [ ] `workbox-window` not declared; `_headers` missing the `/workbox-*.js` immutable rule; no tests or verify scripts of any kind; `'no-sw'` before registration resolves is surfaced as "this site isn't set up for offline use in this browser".
+6. [ ] `UpdatePrompt` mounts its live region together with its first message (its own `SiteNav` gets this right).
+
+#### web-arch / "redline" (never audited before)
+
+1. [ ] No `globIgnores` — `public/og-image.png` (60 KB, scraper-only) precached for every install.
+2. [ ] `update()` uncaught in two of three call sites; visibility unthrottled; `hasUpdate` ORs `needRefresh`; `onRegistered` deprecated; hourly interval created inside the registration callback and held in a component ref (leaks if registration resolves after unmount).
+3. [ ] **No `onRegisterError` or `onOfflineReady` at all** — registration failure is invisible, though the repo has a GA channel built for exactly this.
+4. [ ] **The iOS-non-Safari branch is unreachable dead code** — no `CriOS`/`FxiOS`/`EdgiOS`, so those users fall through to `'safari'`. No iPadOS test. `install()` prompts before clearing.
+5. [ ] `versioned()` doesn't throw on a missing path (`?v=undefined` ships); `transformIndexHtml` unscoped; `SAFE_ZONE = 80` is the inner square, not the 40%-radius circle.
+6. [ ] **`CLAUDE.md:38` claims 23 PWA checks including 9 on the update policy; those tests live in a scratchpad file that is not in the repo.** Either commit them or correct the claim. No precache-manifest tripwire either, and this repo is squarely exposed to the duplicate-entry class.
+7. [ ] `discoverability.test.js:198` justifies its `skipIf` by citing `.github/workflows/ci.yml` — there is no `.github` directory; the real gate is `vercel.json`'s buildCommand.

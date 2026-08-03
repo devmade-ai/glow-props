@@ -60,10 +60,51 @@ for glow-props itself (unhandled hourly-poll rejection, dead 1s timer, the same
 iOS detection hole, event buffering before the React bridge subscribes,
 `useSyncExternalStore` migration, and an entry-server import tripwire).
 
+### Round 2 — the first pass had covered 6 of 15 PWAs
+
+Selecting repos by the portfolio's `badge`/`tech` metadata under-covered badly:
+**only 5 repos advertise PWA-ness, but 15 ship a service worker.** The user's
+home screen was the ground truth. Nine more repos audited in a second pass:
+four-ems, canva-grid, model-pear, repo-tor, dm-website, fh-fuelhunt, intxt,
+sun-sea-o, web-arch. Two were entirely untracked (`dm-website`, `web-arch` —
+"redline"), and `model-pear` turned out to be a **SvelteKit** PWA recorded in
+both the portfolio and TODO.md as a React non-PWA.
+
+**Two repos have a dead service worker in production**, both verified against
+real workbox/plugin source rather than inferred: repo-tor throws
+`add-to-cache-list-conflicting-entries` on evaluation (its `includeAssets` +
+the default `dontCacheBustURLsMatching` produce two cache keys for one URL),
+and model-pear's `navigateFallback: '/200.html'` names a URL workbox never
+precached, so `createHandlerBoundToURL` throws before install.
+
+**Corrections to doc text written earlier the same session:**
+- The duplicate-precache rule was overstated as unconditional. It is fatal only
+  when the two revisions *disagree*; identical revisions dedupe silently. The
+  doc now carries the verified mechanism (three sources including the implicit
+  `includeManifestIcons`, transform ordering, cache-key equality) so triage
+  isn't guesswork — while keeping "never duplicate" as the rule.
+- The in-flight promise added to `checkForUpdate` turned a hang into a
+  *permanent* one: `registration.update()` can never settle (measured in
+  Chromium), so the shared promise wedges every later call. Now bounded by
+  `Promise.race` with the verdict read off the registration.
+- `navigateFallback` guidance was wrong in three ways at once, and is rewritten.
+
+**Other significant absorptions:** `updateServiceWorker(true)`'s argument has
+been inert since 0.13.2 and the plugin installs its own unconditional reload on
+`controlling` (so policy step 2's "never reload mid-session" needs
+`onNeedReload` to be real); `useRegisterSW` registers once per *hook instance*,
+so the doc's own snippet caused N registrations in three repos; a whole missing
+section on authenticated apps (the cache key is the URL, so one user's response
+is served to the next, and sign-out doesn't clear Cache Storage); a rewritten
+custom-SW section (the old sample had seven production-breaking defects and its
+version-injection advice was actively harmful); runtime-caching rules including
+the opaque-response trap the doc itself prescribed; CSP; draft safety; a
+recovery ladder for when the worker itself is the bug; and a SvelteKit variant.
+
 **State:** docs only — no source changes. Build green, all three verify gates
-green (`verify:seo`, `verify:icons`, `verify:timer-cleanup`), served
-`dist/patterns/*.md` copies byte-identical to source. The repo-side drift items
-are queued in TODO.md, not started.
+green, served `dist/patterns/*.md` byte-identical to source. Full findings
+checkpointed at `scratchpad/round2-findings.md` (520 lines). All repo-side
+drift is queued in TODO.md, not started.
 
 ---
 
