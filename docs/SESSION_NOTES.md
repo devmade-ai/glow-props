@@ -86,10 +86,23 @@ marks private) with no `robots.txt` and no `X-Robots-Tag`.
   four-ems, graphiki, kl-website, model-pear, see-veo, sun-sea-o).
 - **The Gap Matrix has a `DISCOVERABILITY` column**, the only one graded against
   deployed reality rather than source, with the grading criteria written down so
-  the cells mean something. 4 Pass, 1 Pass (private posture), 6 Partial, 4
-  Missing, 1 unknown. The note above it now says plainly that the eight
-  never-revisited columns carry April-2026 grades from a method that this
-  session proved over-reports `Pass`.
+  the cells mean something — and **regenerable**: `npm run
+  audit:discoverability [--check]` fetches all 16 origins, applies the criteria
+  in code, prints the cells and fails on drift against `docs/TODO.md`. That is
+  the fix for how the other columns went stale; a grade nobody can recompute is
+  a grade nobody notices has expired. Origins come from
+  `public/projects/*/meta.json`, so a new project joins automatically. Not a
+  deploy gate on purpose — sixteen third-party origins, and someone else's 503
+  must not block a docs change.
+- **The script reproduced the hand grading on 14 of 16 and corrected the other
+  two**, which is the acceptance test: glow-props was graded `Pass` counting
+  structured data that is still on a branch (live has none — now `Partial`), and
+  tool-till-tees was `?` purely because nobody had looked (now `Missing`, and it
+  needs a posture decision). Final: 3 Pass, 1 Pass (private), 7 Partial, 5
+  Missing.
+- The note above the table now says plainly that the eight never-revisited
+  columns carry April-2026 grades from a method that this session proved
+  over-reports `Pass`.
 
 ## Key context for the next session
 

@@ -55,7 +55,7 @@ Legend: **Pass** = compliant, **Partial** = has the feature but with gaps, **Mis
 
 | Repo | CLAUDE.md | APP_ICONS | BURGER_MENU | DEBUG_SYSTEM | DOWNLOAD_PDF | PWA_SYSTEM | THEME_DARK_MODE | EVENT_BUS | Z_INDEX_SCALE | ICON_CACHE_BUST | DISCOVERABILITY |
 |------|-----------|-----------|-------------|--------------|--------------|------------|-----------------|-----------|---------------|-----------------|-----------------|
-| glow-props | Pass | Pass | Pass | Pass (DEV) | Pass | Pass | Pass | N/A | Pass | Pass | Pass |
+| glow-props | Pass | Pass | Pass | Pass (DEV) | Pass | Pass | Pass | N/A | Pass | Pass | Partial |
 | canva-grid | Pass | Pass | Pass | Pass | Pass (B) | Pass | Pass | N/A | Pass | Pass | Missing |
 | fl-farlume | Pass | Pass | Pass | Pass | Pass | Partial | Pass | N/A | Pass | Pass | Missing |
 | model-pear | Partial | Partial | Missing | Pass | Partial | Partial | Partial | Missing | Pass | Missing | Missing |
@@ -70,7 +70,7 @@ Legend: **Pass** = compliant, **Partial** = has the feature but with gaps, **Mis
 | kl-website | Pass | Pass | Pass | N/A | N/A | Pass | Pass | N/A | Pass | Pass | Partial |
 | web-arch | Pass | Partial | Pass | N/A | N/A | Partial | Pass | N/A | Pass | Partial | Pass |
 | dm-website | Pass | Partial | Pass | N/A | N/A | Partial | Pass | N/A | Pass | Missing | Partial |
-| tool-till-tees | Pass | Missing | N/A | N/A | N/A | N/A | ? | ? | N/A | N/A | ? |
+| tool-till-tees | Pass | Missing | N/A | N/A | N/A | N/A | ? | ? | N/A | N/A | Missing |
 
 **The DISCOVERABILITY column is the only one graded against deployed reality.**
 Added 2026-08-04 from the fleet public-visibility audit, and every cell was
@@ -100,10 +100,26 @@ Soft 404s are NOT reflected in the grades: 10 of the 15 origins return 200 with
 the app shell for a nonexistent path, including several graded Pass. It is the
 fleet's most common single defect and is tracked per-repo instead.
 
-One cell is ahead of its deployment: **glow-props' `Pass` counts the structured
-data added 2026-08-04**, which is on a branch. The live site had none when it was
-measured, and the cell is accurate only once that ships. Nothing else in this
-column describes unmerged work.
+**The column is regenerable — do not hand-edit it.** `npm run
+audit:discoverability` fetches every origin and prints the cells;
+`--check` compares them against this table and exits non-zero on drift. That is
+the fix for how the other columns went stale: a grade nobody can recompute is a
+grade nobody notices has expired. Origins come from `public/projects/*/meta.json`,
+so a project added to the portfolio joins the audit automatically. It is
+deliberately NOT a deploy gate — it reaches sixteen third-party origins, and a
+transient 503 on someone else's host must not block publishing a docs change.
+
+Two cells the script corrected on its first run, both worth recording because
+they are the kind of thing hand-maintenance gets wrong:
+
+- **glow-props is `Partial`, not `Pass`.** It was graded `Pass` counting the
+  structured data added 2026-08-04 — which is on a branch. The deployed site has
+  none. A column that claims to measure live sites must not describe unmerged
+  work; this flips to `Pass` when that ships, and the script will say so.
+- **tool-till-tees is `Missing`, not `?`.** It has a live URL and was simply
+  never measured. It needs a posture decision like any other origin: a backend
+  API with a minimal landing page may well want `noindex` rather than the full
+  public setup, but "nobody looked" is not that decision.
 
 **PWA_SYSTEM / ICON_CACHE_BUST columns are pre-audit.** They were assessed before the 2026-08-03 fleet PWA audit, which found open repo-side drift in **every** PWA repo — including several marked `Pass` here. Treat those two columns as "was implemented", not "is currently conformant", and read the per-repo sections below (and each repo's own `docs/TODO.md`, where the findings now live) for what is actually open. `fl-farlume` is downgraded to `Partial` because it still ships the rejected tap-only update design rather than auto-on-launch.
 

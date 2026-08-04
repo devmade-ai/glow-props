@@ -14,7 +14,8 @@
     "verify:icons": "node scripts/verify-icon-cache-bust.mjs",
     "verify:ssr-safety": "node scripts/verify-ssr-safety.mjs",
     "generate:og-image": "node scripts/generate-og-image.mjs",
-    "smoke:seo": "node scripts/smoke-structured-data.mjs"
+    "smoke:seo": "node scripts/smoke-structured-data.mjs",
+    "audit:discoverability": "node scripts/audit-discoverability.mjs"
   },
   "devDependencies": {
     "@tailwindcss/vite": "^4.2.2",

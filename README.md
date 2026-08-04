@@ -154,6 +154,7 @@ item pages, joined by `@id` rather than repeated.
 npm run generate:og-image   # Rebuild the card from assets/icon-source.svg
 npm run verify:seo          # Fails if any of it drifts
 npm run smoke:seo           # Loads the built pages in a browser and re-checks
+npm run audit:discoverability -- --check   # Fleet-wide, against the live sites
 ```
 
 `smoke:seo` exists because `verify:seo` can only see what the build wrote, and
