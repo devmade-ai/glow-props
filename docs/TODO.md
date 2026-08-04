@@ -612,14 +612,9 @@ Several of these fixes are now described directly by the updated pattern docs, s
 
 ### glow-props (self)
 
-1. [ ] **`.catch()` the hourly poll** — `src/lib/pwa.js:474` calls `registration.update()` bare while the visibility handler at `:527` catches with an explicit "rejects offline" rationale. An offline backgrounded tab throws an unhandled rejection every hour, which the head-common capture then logs as noise.
-2. [ ] **Fix or delete the 1s manual-instructions timer** — `src/lib/pwa.js:533-538` schedules a timeout whose callback re-runs `updateInstallVisibility()`, but `showInstallItem` is already true as soon as `supportsManualInstall` is, and `init()` calls it unconditionally at `:566`. The timer gates nothing: either restore the pattern's 1s delay behind a real flag or remove it.
-3. [ ] **Add `CriOS`/`FxiOS`/`EdgiOS` to `detectBrowser()`** — `src/lib/pwa.js:46-59` has the same hole the pattern had; the iOS non-Safari redirect at `:254` is therefore nearly unreachable and those users get Safari-specific copy.
-4. [ ] **Catch `deferredPrompt.prompt()` rejection** — `src/lib/pwa.js:387`; only `userChoice` has a `.catch` today. Also adopt the pattern's clear-before-prompt ordering.
-5. [ ] **Buffer PWA events until the first subscriber attaches** — `emit()` (`src/lib/pwa.js:90-94`) drops toast events fired before `PwaManager` subscribes, so an early `onOfflineReady` loses its toast. The on-mount `force()` resyncs *state*, not events.
-6. [ ] **Move `PwaManager` to `useSyncExternalStore`** — `PwaManager.jsx:25-42` uses force-render over a mutable snapshot, which is the tearing-prone form under React 19 and needs the on-mount resync hack. The proper primitive subsumes both.
-7. [ ] **Tripwire the "entry-server must never import pwa.js" invariant** — enforced only by comments (`entry-server.jsx:5-7`, `PwaManager.jsx:4-6`). A direct import fails loudly, but an indirect one through a shared component fails deep in the SSG pass. A static import-graph check fits the repo's existing verify-script convention.
-8. [ ] **Consider the maskable-at-192+512 form** — the manifest currently ships a single 1024 maskable; 192/512 are the sizes install criteria actually request. Low priority, documented as an accepted alternative in the pattern.
+*(Items 1–7 done 2026-08-03 — see git history. Only the deliberate deferral remains.)*
+
+1. [ ] **Consider the maskable-at-192+512 form** — the manifest currently ships a single 1024 maskable; 192/512 are the sizes install criteria actually request. Low priority, documented as an accepted alternative in the pattern.
 
 ### Round 2 (2026-08-03, second pass — the 9 repos the first pass missed)
 
@@ -712,3 +707,85 @@ Severity-ordered. The two broken service workers (repo-tor, model-pear) are fixe
 5. [ ] `versioned()` doesn't throw on a missing path (`?v=undefined` ships); `transformIndexHtml` unscoped; `SAFE_ZONE = 80` is the inner square, not the 40%-radius circle.
 6. [ ] **`CLAUDE.md:38` claims 23 PWA checks including 9 on the update policy; those tests live in a scratchpad file that is not in the repo.** Either commit them or correct the claim. No precache-manifest tripwire either, and this repo is squarely exposed to the duplicate-entry class.
 7. [ ] `discoverability.test.js:198` justifies its `skipIf` by citing `.github/workflows/ci.yml` — there is no `.github` directory; the real gate is `vercel.json`'s buildCommand.
+
+## Public-visibility drift found in the 2026-08-04 SEO audit
+
+Four parallel audits compared all 15 PWAs against `DISCOVERABILITY.md`. The
+**pattern-side** findings are folded into that doc (commit `5377e2a`). What
+follows is the **repo-side** drift.
+
+**Measured split:** nine repos carry a near-identical full Open Graph set and
+every card that exists is correctly 1200×630 — glow-props, kl-website, graphiki,
+see-veo, qi-invoice, sun-sea-o, web-arch, dm-website, intxt. Six carry nothing at
+all — no OG, no Twitter, no card, no `robots.txt`, no sitemap: canva-grid,
+four-ems, repo-tor, fl-farlume, model-pear, fh-fuelhunt.
+
+**Fixed and merged 2026-08-04** (the three highest-value defects): intxt's
+`Disallow: /join`, which switched off the invite card a whole build step exists
+to produce, for every robots-respecting unfurler; fh-fuelhunt's total absence of
+a `<title>`, plus a description, canonical, full OG/Twitter set and a generated
+1200×630 card; repo-tor's commit-body JSON served with no `robots.txt` and no
+`X-Robots-Tag`. Each of those three repos also carries its own remaining items in
+its own `docs/TODO.md`.
+
+**Caveat on everything below:** all four audits read source, not deployed sites.
+The `curl -sI …/robots.txt` check the pattern itself prescribes is unverified
+everywhere — a Vercel/Cloudflare rewrite can serve the SPA shell for a file that
+exists in the repo, which is exactly how a "present" `robots.txt` becomes absent
+in production.
+
+### Repos with no public-visibility coverage at all
+
+1. [ ] **four-ems** — the fleet's only genuinely **mixed** posture: private by
+   default with a public `/f/:slug` family that is the product's primary
+   distribution channel. A single-`index.html` SPA cannot express a per-route
+   posture in a meta tag, so this needs `X-Robots-Tag` with path granularity.
+   Note that sun-sea-o's tripwire (which asserts `source === '/(.*)'`) would
+   **fail** the correct implementation — don't copy it here.
+2. [ ] **model-pear** — SvelteKit. Its four `<svelte:head>` titles never reach a
+   file, because the routes are not prerendered; a crawler and an unfurler both
+   see the fallback shell. Needs `export const prerender = true` on the routes
+   that should be indexable before any tag work is worth doing.
+3. [ ] **fl-farlume** — private, local-first Vue tool. Posture is correctly
+   "not indexed", but that does **not** exempt it from Open Graph: a shared link
+   still renders as a bare URL today. Needs `useHead` (Vite's
+   `transformIndexHtml` is not available to it) plus a card.
+4. [ ] **canva-grid** — no OG, no card, no `robots.txt`, no canonical, no
+   sitemap, no posture statement, no tripwire, no CI. `<title>CanvaGrid</title>`
+   is a brand token with no value proposition. Candidate for `WebApplication`
+   JSON-LD.
+
+### Repos with coverage but real defects
+
+5. [ ] **kl-website** — otherwise the fleet's best. Its prerendered article pages
+   carry head tags only: `<div id="root">` ships **empty**, so only Googlebot
+   sees the body and every other crawler gets a shell. Also missing
+   `article:published_time`/`modified_time`/`author` (LinkedIn and Facebook read
+   those, not JSON-LD, for the byline on the card), `<lastmod>` in the sitemap
+   (blocked upstream by a display-format date in the content model — store ISO,
+   format for display), `twitter:site`/`creator`, and it soft-404s on an unknown
+   slug.
+6. [ ] **see-veo** — no `robots.txt`, and the SPA rewrite serves `/robots.txt` as
+   the app's HTML (the exact trap the pattern names). No canonical and no host
+   redirects, so `*.vercel.app` and every preview alias are full duplicates. No
+   sitemap, no posture statement, no CI. Its tripwire asserts dimension
+   **literals** and only `existsSync`s the PNGs — it never reads the IHDR, so a
+   resized card passes green. `cv-data.ts` is `sameAs`-ready for Person +
+   ProfilePage JSON-LD.
+7. [ ] **dm-website** — the most sophisticated head machinery in the fleet (edge
+   `HTMLRewriter`, per-route JSON-LD, generated sitemap, real 404s) over **zero
+   tests**, and `HTMLRewriter.on()` is a no-op when its selector matches nothing.
+   Delete a meta tag from the template and every route silently ships generic
+   copy. The only possible fail-loud guard is a source-level assertion that the
+   template still carries every targeted tag.
+8. [ ] **web-arch** — `discoverability.test.js:198` skips itself citing a
+   `.github/workflows/ci.yml` that does not exist (same item as the PWA round).
+9. [ ] **sun-sea-o** — its posture tripwire hardcodes the single-posture
+   assumption (`source === '/(.*)'`). Fine for this repo; flagged so it isn't
+   copied into a mixed-posture one.
+
+### Fleet-wide follow-up
+
+10. [ ] **Distribute items 1–9 into each repo's own `docs/TODO.md`**, the way the
+    PWA round's findings were, so the backlog travels with the code. Not done in
+    this pass — this section is the only durable record.
