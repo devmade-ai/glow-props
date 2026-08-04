@@ -23,7 +23,7 @@
 //
 // See docs/implementations/DISCOVERABILITY.md.
 
-const SITE = 'https://devmade-ai.github.io/glow-props/';
+import { SITE, ORG_ID, WEBSITE_ID, siteNodes, itemNode, graphJson } from './lib/structuredData.js';
 
 function setMeta(selector, attr, key, content) {
   let tag = document.head.querySelector(selector);
@@ -34,9 +34,6 @@ function setMeta(selector, attr, key, content) {
   }
   tag.setAttribute('content', content);
 }
-
-const ORG_ID = SITE + '#org';
-const WEBSITE_ID = SITE + '#website';
 
 // Requirement: the ?name= entry points need the same item node the prerendered
 //   pages get, or a pattern reached that way is described only by the two
@@ -52,35 +49,24 @@ function applyStructuredData({ itemType, title, description, url }) {
   const block = document.getElementById('page-jsonld');
   if (!block) return;
 
-  let graph;
+  // Read the block rather than trusting it: if the template's site nodes are
+  // ever wrong, replacing them with freshly-built ones would hide that from
+  // verify:seo. Both must be present and match before this writes anything.
+  let existing;
   try {
-    graph = JSON.parse(block.textContent);
+    existing = JSON.parse(block.textContent);
   } catch {
     // A malformed block is a build-time mistake, not something to paper over at
     // runtime: leave it alone so verify:seo and Search Console both see it.
     return;
   }
-  const siteNodes = (graph['@graph'] || []).filter(
-    (node) => node['@id'] === ORG_ID || node['@id'] === WEBSITE_ID,
-  );
-  if (siteNodes.length !== 2) return;
+  const ids = (existing['@graph'] || []).map((node) => node['@id']);
+  if (!ids.includes(ORG_ID) || !ids.includes(WEBSITE_ID)) return;
 
-  graph['@graph'] = [
-    ...siteNodes,
-    {
-      '@type': itemType,
-      '@id': url + '#item',
-      ...(itemType === 'TechArticle' ? { headline: title } : { name: title }),
-      description,
-      url,
-      isPartOf: { '@id': WEBSITE_ID },
-      publisher: { '@id': ORG_ID },
-    },
-  ];
-  // Same `<` escape as the build: textContent does not re-parse, but the value
-  // is read back by JSON.parse above on a later call and must survive a
-  // round-trip through a serializer that would otherwise emit a literal tag.
-  block.textContent = JSON.stringify(graph).replace(/</g, '\\u003C');
+  block.textContent = graphJson([
+    ...siteNodes(),
+    itemNode({ itemType, title, description, url }),
+  ]);
 }
 
 /**

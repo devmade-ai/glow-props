@@ -26,7 +26,12 @@ jobs:
         with:
           node-version: 24
           cache: npm
+      # Skip the browser download here and fetch only chromium below — the
+      # playwright package would otherwise pull all three engines on every run
+      # for a check that uses one.
       - run: npm ci
+        env:
+          PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: 1
 
       # Source-level, so it runs before the build — no reason to spend a build
       # on a tree that already fails the check. TIMER_LEAKS.md.
@@ -64,6 +69,19 @@ jobs:
       # virtual module rather than at the import that caused it.
       - name: Verify SSR safety (docs/implementations/PWA_SYSTEM.md)
         run: npm run verify:ssr-safety
+
+      # The only gate that covers the RUNTIME half of the structured data. The
+      # other three read files; this one loads the built pages in a browser,
+      # which is the only way to see what src/seoMeta.js does to the JSON-LD
+      # block on the ?name= entry points.
+      #
+      # It earns the browser: making seoMeta.js append a second block instead of
+      # rewriting the existing one leaves verify:seo green — dist/ is unchanged —
+      # and fails this check on all four item routes.
+      - name: Install Chromium for the smoke check
+        run: npx playwright install --with-deps chromium
+      - name: Smoke structured data in a browser (DISCOVERABILITY.md)
+        run: npm run smoke:seo
 
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3

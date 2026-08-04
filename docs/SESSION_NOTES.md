@@ -98,9 +98,21 @@ marks private) with no `robots.txt` and no `X-Robots-Tag`.
   `prerenderPages()` for the clean URLs and by `src/seoMeta.js` for the `?name=`
   forms — verified in Chromium that the runtime path rewrites the existing block
   rather than adding a second one. `verify:seo` gates title↔`og:title`
-  agreement, a title length budget, and the JSON-LD invariants; four fault
-  injections were confirmed to fail it, including reformatting the template's
-  JSON, which breaks the prerender literal and fails the build.
+  agreement, a title length budget, and the JSON-LD invariants; five fault
+  injections were confirmed to fail the right gate, including reformatting the
+  template's JSON, which breaks the prerender literal and fails the build.
+- **Both writers now build their nodes from `src/lib/structuredData.js`.** They
+  produced the same node in two places, and a tripwire can only check that the
+  node exists — not that two independent builders still agree. One module makes
+  the drift impossible rather than detectable.
+- **New fifth gate: `npm run smoke:seo`** (`scripts/smoke-structured-data.mjs`),
+  wired into the deploy workflow with a chromium-only Playwright install. It
+  serves `dist/` under the real `/glow-props/` base and loads five routes in
+  Chromium. It earns the browser: making `seoMeta.js` append a second block
+  instead of rewriting the existing one leaves `dist/` unchanged and
+  `verify:seo` **green**, and fails this check on all four item routes — that
+  exact injection was run. It FAILS rather than skips when Playwright is
+  missing, on purpose.
 - The verification discipline that worked, and repeatedly caught my own wrong
   conclusions: build → parse the emitted precache manifest → run the real
   workbox code → serve over localhost → drive in headless Chromium → prove the

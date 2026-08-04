@@ -5,6 +5,9 @@ import { VitePWA } from 'vite-plugin-pwa';
 import { copyFileSync, readFileSync, readdirSync, existsSync, mkdirSync, writeFileSync } from 'fs';
 import { resolve, basename } from 'path';
 import { createHash } from 'crypto';
+// Shared with src/seoMeta.js so both writers of the JSON-LD block emit the same
+// node for the same item — see the module header for why this isn't duplicated.
+import { siteNodes, itemNode, graphJson, SITE } from './src/lib/structuredData.js';
 
 // Requirement: icon URLs must change when the icon bytes change, or browser/CDN/
 //   WebAPK caches keep serving the old mark for weeks
@@ -377,7 +380,6 @@ function generatePatternManifest() {
 //   folders of markdown don't justify one, and the fleet standard is plain
 //   Vite + React.
 function prerenderPages() {
-  const SITE = 'https://devmade-ai.github.io/glow-props/';
   const GENERIC_PATTERN_DESC = 'Reusable engineering patterns by devmade-ai — implementation guides shared across every project.';
   const GENERIC_PROJECT_DESC = 'Software projects, internal tools, and reusable engineering patterns by devmade-ai.';
 
@@ -387,40 +389,13 @@ function prerenderPages() {
 
   // Structured data (DISCOVERABILITY.md Step 5). The two site-wide nodes are
   // written into all three templates verbatim; here the same JSON is rebuilt
-  // and the item's own node appended, so the templates' literal is what gets
-  // replaced and applyHead's fail-loud guard covers it like every other tag.
-  const ORG_ID = SITE + '#org';
-  const WEBSITE_ID = SITE + '#website';
-  const SITE_NODES = [
-    {
-      '@type': 'Organization',
-      '@id': ORG_ID,
-      name: 'devmade-ai',
-      url: SITE,
-      logo: SITE + 'assets/images/icon-512.png',
-    },
-    {
-      '@type': 'WebSite',
-      '@id': WEBSITE_ID,
-      url: SITE,
-      name: 'devmade-ai',
-      description: GENERIC_PROJECT_DESC,
-      publisher: { '@id': ORG_ID },
-    },
-  ];
+  // from the same module and the item's own node appended, so the templates'
+  // literal is what gets replaced and applyHead's fail-loud guard covers it
+  // like every other tag.
+  const SITE_JSONLD = graphJson(siteNodes());
 
-  // Escape `<` as < so a title or description containing "</script>" is
-  // data rather than an early end to the block. JSON.stringify does not do this
-  // — it is legal JSON either way, and the browser's HTML tokenizer wins.
-  function jsonLd(nodes) {
-    return JSON.stringify({ '@context': 'https://schema.org', '@graph': nodes })
-      .replace(/</g, '\\u003C');
-  }
-
-  const SITE_JSONLD = jsonLd(SITE_NODES);
-
-  function jsonLdPair(itemNode) {
-    return [SITE_JSONLD, jsonLd([...SITE_NODES, itemNode])];
+  function jsonLdPair(item) {
+    return [SITE_JSONLD, graphJson([...siteNodes(), itemNode(item)])];
   }
 
   // The built templates carry document-relative versioned icon links (correct
@@ -472,16 +447,11 @@ function prerenderPages() {
       ],
       // TechArticle, not Article: these pages are implementation guides, and
       // the type is the one claim structured data makes that the copy doesn't.
-      // Only the fields the page actually renders — headline, description and
-      // the URL it lives at.
       jsonLdPair({
-        '@type': 'TechArticle',
-        '@id': url + '#item',
-        headline: pattern.title,
+        itemType: 'TechArticle',
+        title: pattern.title,
         description: pattern.description,
         url,
-        isPartOf: { '@id': WEBSITE_ID },
-        publisher: { '@id': ORG_ID },
       }),
       ...iconLinkPairs(),
     ];
@@ -519,16 +489,12 @@ function prerenderPages() {
         '<meta name="twitter:description" content="' + desc + '">',
       ],
       // SoftwareApplication: every mirrored project is a running application,
-      // which is what this page documents. No offers/aggregateRating — those
-      // would be fabricated, and their absence costs only a rich result.
+      // which is what this page documents.
       jsonLdPair({
-        '@type': 'SoftwareApplication',
-        '@id': url + '#item',
-        name: meta.title,
+        itemType: 'SoftwareApplication',
+        title: meta.title,
         description: meta.description,
         url,
-        isPartOf: { '@id': WEBSITE_ID },
-        publisher: { '@id': ORG_ID },
       }),
       ...iconLinkPairs(),
     ];
@@ -687,7 +653,6 @@ function listProjectSlugs() {
 //   wrong when this was written.
 // See docs/implementations/DISCOVERABILITY.md.
 function generateSitemap() {
-  const SITE = 'https://devmade-ai.github.io/glow-props/';
 
   return {
     name: 'generate-sitemap',

@@ -820,7 +820,9 @@ description, canonical and full OG set, and repo-tor's `robots.txt` and
 ### glow-props (self) — found by the live check
 
 *(Both items fixed 2026-08-04 — the bare-brand `<title>`, and structured data
-across all three templates plus the prerender and runtime paths. `verify:seo`
-now gates title↔`og:title` agreement, a title length budget, and the
-one-block/required-nodes/no-literal-`</script>` properties; all four fault
-injections were confirmed to fail the gate.)*
+across all three templates plus the prerender and runtime paths. Both writers
+now build their nodes from `src/lib/structuredData.js`, so they cannot drift.
+`verify:seo` gates title↔`og:title` agreement, a title length budget, and the
+one-block/required-nodes/no-literal-`</script>` properties; `npm run smoke:seo`
+loads the built pages in Chromium and gates the runtime half. Five fault
+injections were confirmed to fail the right gate.)*
