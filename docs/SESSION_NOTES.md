@@ -84,6 +84,12 @@ marks private) with no `robots.txt` and no `X-Robots-Tag`.
   rounds' findings are now distributed into each repo's own `docs/TODO.md`** —
   nine SEO notes merged 2026-08-04 (canva-grid, dm-website, fl-farlume,
   four-ems, graphiki, kl-website, model-pear, see-veo, sun-sea-o).
+- **The Gap Matrix has a `DISCOVERABILITY` column**, the only one graded against
+  deployed reality rather than source, with the grading criteria written down so
+  the cells mean something. 4 Pass, 1 Pass (private posture), 6 Partial, 4
+  Missing, 1 unknown. The note above it now says plainly that the eight
+  never-revisited columns carry April-2026 grades from a method that this
+  session proved over-reports `Pass`.
 
 ## Key context for the next session
 

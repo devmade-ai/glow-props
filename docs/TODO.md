@@ -53,26 +53,74 @@ Legend: **Pass** = compliant, **Partial** = has the feature but with gaps, **Mis
 
 ### Gap Matrix
 
-| Repo | CLAUDE.md | APP_ICONS | BURGER_MENU | DEBUG_SYSTEM | DOWNLOAD_PDF | PWA_SYSTEM | THEME_DARK_MODE | EVENT_BUS | Z_INDEX_SCALE | ICON_CACHE_BUST |
-|------|-----------|-----------|-------------|--------------|--------------|------------|-----------------|-----------|---------------|-----------------|
-| glow-props | Pass | Pass | Pass | Pass (DEV) | Pass | Pass | Pass | N/A | Pass | Pass |
-| canva-grid | Pass | Pass | Pass | Pass | Pass (B) | Pass | Pass | N/A | Pass | Pass |
-| fl-farlume | Pass | Pass | Pass | Pass | Pass | Partial | Pass | N/A | Pass | Pass |
-| model-pear | Partial | Partial | Missing | Pass | Partial | Partial | Partial | Missing | Pass | Missing |
-| see-veo | Missing | Partial | N/A | Partial | Partial | Partial | N/A | N/A | Missing | Missing |
-| repo-tor | Pass | Pass | Pass | Pass | Pass | Pass | Pass | N/A | Pass | Pass |
-| fh-fuelhunt | Pass | Pass | Pass | Pass | Missing | Partial | Pass | N/A | Pass | Pass |
-| sun-sea-o | Pass | Pass | Pass | Pass | Pass | Pass | Pass | N/A | Pass | Pass |
-| graphiki | Pass | Pass | Pass | Pass | N/A | Pass | Pass | Pass | Pass | Pass |
-| four-ems | Pass | Pass | Pass | Pass | Pass | Pass | Pass | N/A | Pass | Pass |
-| intxt | Pass | Pass | Pass | Pass | N/A | Pass | Pass | N/A | Pass | Pass |
-| qi-invoice | Pass | Pass | Pass | N/A | Pass (B) | Pass | Pass | N/A | Pass | Pass |
-| kl-website | Pass | Pass | Pass | N/A | N/A | Pass | Pass | N/A | Pass | Pass |
-| web-arch | Pass | Partial | Pass | N/A | N/A | Partial | Pass | N/A | Pass | Partial |
-| dm-website | Pass | Partial | Pass | N/A | N/A | Partial | Pass | N/A | Pass | Missing |
-| tool-till-tees | Pass | Missing | N/A | N/A | N/A | N/A | ? | ? | N/A | N/A |
+| Repo | CLAUDE.md | APP_ICONS | BURGER_MENU | DEBUG_SYSTEM | DOWNLOAD_PDF | PWA_SYSTEM | THEME_DARK_MODE | EVENT_BUS | Z_INDEX_SCALE | ICON_CACHE_BUST | DISCOVERABILITY |
+|------|-----------|-----------|-------------|--------------|--------------|------------|-----------------|-----------|---------------|-----------------|-----------------|
+| glow-props | Pass | Pass | Pass | Pass (DEV) | Pass | Pass | Pass | N/A | Pass | Pass | Pass |
+| canva-grid | Pass | Pass | Pass | Pass | Pass (B) | Pass | Pass | N/A | Pass | Pass | Missing |
+| fl-farlume | Pass | Pass | Pass | Pass | Pass | Partial | Pass | N/A | Pass | Pass | Missing |
+| model-pear | Partial | Partial | Missing | Pass | Partial | Partial | Partial | Missing | Pass | Missing | Missing |
+| see-veo | Missing | Partial | N/A | Partial | Partial | Partial | N/A | N/A | Missing | Missing | Partial |
+| repo-tor | Pass | Pass | Pass | Pass | Pass | Pass | Pass | N/A | Pass | Pass | Partial |
+| fh-fuelhunt | Pass | Pass | Pass | Pass | Missing | Partial | Pass | N/A | Pass | Pass | Partial |
+| sun-sea-o | Pass | Pass | Pass | Pass | Pass | Pass | Pass | N/A | Pass | Pass | Pass (P) |
+| graphiki | Pass | Pass | Pass | Pass | N/A | Pass | Pass | Pass | Pass | Pass | Pass |
+| four-ems | Pass | Pass | Pass | Pass | Pass | Pass | Pass | N/A | Pass | Pass | Missing |
+| intxt | Pass | Pass | Pass | Pass | N/A | Pass | Pass | N/A | Pass | Pass | Partial |
+| qi-invoice | Pass | Pass | Pass | N/A | Pass (B) | Pass | Pass | N/A | Pass | Pass | Pass |
+| kl-website | Pass | Pass | Pass | N/A | N/A | Pass | Pass | N/A | Pass | Pass | Partial |
+| web-arch | Pass | Partial | Pass | N/A | N/A | Partial | Pass | N/A | Pass | Partial | Pass |
+| dm-website | Pass | Partial | Pass | N/A | N/A | Partial | Pass | N/A | Pass | Missing | Partial |
+| tool-till-tees | Pass | Missing | N/A | N/A | N/A | N/A | ? | ? | N/A | N/A | ? |
+
+**The DISCOVERABILITY column is the only one graded against deployed reality.**
+Added 2026-08-04 from the fleet public-visibility audit, and every cell was
+checked by fetching the live origin — the home document as a crawler receives it
+(pre-JavaScript), `/robots.txt`, `/sitemap.xml` and a path that cannot exist —
+not by reading source. That distinction changed several grades: four repos serve
+`/robots.txt` as the app's HTML at 200, which reads as "file present" in a repo
+and "no robots.txt" to a crawler.
+
+Grading used here, so the cells mean something specific:
+
+- **Pass** — posture stated and enforced with the right lever, `robots.txt`
+  reachable, canonical, full Open Graph + Twitter with a real 1200×630 card,
+  a generated sitemap, and structured data.
+- **Partial** — reachable and unfurls, but with at least one substantive gap:
+  no structured data, no canonical, no sitemap, or head tags over a body with
+  no crawlable text.
+- **Missing** — no Open Graph, no card, no `robots.txt`, no canonical, no
+  sitemap. A pasted link renders as a bare URL and nothing states a posture.
+- **Pass (P)** — sun-sea-o, a **private** posture implemented correctly:
+  `robots.txt` allows the crawl and explains why, `noindex` is carried by both
+  the meta tag and the `X-Robots-Tag` header, and Open Graph is present so links
+  still unfurl. Structured data is not expected — there is no search result to
+  enrich. This is the fleet's reference for the private column.
+
+Soft 404s are NOT reflected in the grades: 10 of the 15 origins return 200 with
+the app shell for a nonexistent path, including several graded Pass. It is the
+fleet's most common single defect and is tracked per-repo instead.
+
+One cell is ahead of its deployment: **glow-props' `Pass` counts the structured
+data added 2026-08-04**, which is on a branch. The live site had none when it was
+measured, and the cell is accurate only once that ships. Nothing else in this
+column describes unmerged work.
 
 **PWA_SYSTEM / ICON_CACHE_BUST columns are pre-audit.** They were assessed before the 2026-08-03 fleet PWA audit, which found open repo-side drift in **every** PWA repo — including several marked `Pass` here. Treat those two columns as "was implemented", not "is currently conformant", and read the per-repo sections below (and each repo's own `docs/TODO.md`, where the findings now live) for what is actually open. `fl-farlume` is downgraded to `Partial` because it still ships the rejected tap-only update design rather than auto-on-launch.
+
+**Every other column dates from the April 2026 audits and should be read with
+the same suspicion.** Three patterns have since been re-audited fleet-wide —
+`PWA_SYSTEM`, `ICON_CACHE_BUST` and `APP_ICONS` (2026-08-03) — and the first two
+found open drift in **every** PWA repo, including several graded `Pass` here,
+plus two production service workers that were dead. That is what a four-month-old
+source-level grade is worth. The eight columns nobody has revisited —
+`CLAUDE.md`, `APP_ICONS` (doc corrected, repo cells not regraded),
+`BURGER_MENU`, `DEBUG_SYSTEM`, `DOWNLOAD_PDF`, `THEME_DARK_MODE`, `EVENT_BUS`,
+`Z_INDEX_SCALE` — carry the same over-reporting risk. `DEBUG_SYSTEM`,
+`THEME_DARK_MODE` and `TIMER_LEAKS` (which has no column at all) are the ones to
+distrust most: they are runtime behaviour with silent failure modes, the exact
+class the source-level method graded generously. `TIMER_LEAKS` is also the
+cheapest to re-audit honestly, because `verify:timer-cleanup` is mechanical and
+can be run against every repo rather than judged.
 
 **Coverage**: 16 repos tracked. The 2026-04-25 claim that coverage was "verified complete — 12 tracked + 3 excluded, set difference empty" was **false**: `qi-invoice`, `kl-website`, `web-arch` and `dm-website` were all first-party repos absent from this matrix. Excluded by policy: `plant-fur`, `coin-zapp` (discontinued), `canva-grid-assets` (CDN only), `sp-website`/`sp-backend`/`hf-sculpt` (not yet assessed).
 
