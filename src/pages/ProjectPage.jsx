@@ -303,6 +303,8 @@ export function ProjectPage() {
           // The clean URL is canonical — the ?name= form is the legacy entry
           // point and must not compete with it for the same content.
           path: `projects/${encodeURIComponent(slug)}/`,
+          // Must match the node prerenderPages() writes for the same page.
+          itemType: 'SoftwareApplication',
         });
         setState({ status: 'loaded', meta, slug });
 

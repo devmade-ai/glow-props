@@ -385,6 +385,44 @@ function prerenderPages() {
     return String(text).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
   }
 
+  // Structured data (DISCOVERABILITY.md Step 5). The two site-wide nodes are
+  // written into all three templates verbatim; here the same JSON is rebuilt
+  // and the item's own node appended, so the templates' literal is what gets
+  // replaced and applyHead's fail-loud guard covers it like every other tag.
+  const ORG_ID = SITE + '#org';
+  const WEBSITE_ID = SITE + '#website';
+  const SITE_NODES = [
+    {
+      '@type': 'Organization',
+      '@id': ORG_ID,
+      name: 'devmade-ai',
+      url: SITE,
+      logo: SITE + 'assets/images/icon-512.png',
+    },
+    {
+      '@type': 'WebSite',
+      '@id': WEBSITE_ID,
+      url: SITE,
+      name: 'devmade-ai',
+      description: GENERIC_PROJECT_DESC,
+      publisher: { '@id': ORG_ID },
+    },
+  ];
+
+  // Escape `<` as < so a title or description containing "</script>" is
+  // data rather than an early end to the block. JSON.stringify does not do this
+  // — it is legal JSON either way, and the browser's HTML tokenizer wins.
+  function jsonLd(nodes) {
+    return JSON.stringify({ '@context': 'https://schema.org', '@graph': nodes })
+      .replace(/</g, '\\u003C');
+  }
+
+  const SITE_JSONLD = jsonLd(SITE_NODES);
+
+  function jsonLdPair(itemNode) {
+    return [SITE_JSONLD, jsonLd([...SITE_NODES, itemNode])];
+  }
+
   // The built templates carry document-relative versioned icon links (correct
   // at root level, and the only form that survives Vite's dev-server URL
   // rewriting). Two directories down they 404 — absolutize them per page.
@@ -432,6 +470,19 @@ function prerenderPages() {
         '<meta name="twitter:description" content="' + GENERIC_PATTERN_DESC + '">',
         '<meta name="twitter:description" content="' + desc + '">',
       ],
+      // TechArticle, not Article: these pages are implementation guides, and
+      // the type is the one claim structured data makes that the copy doesn't.
+      // Only the fields the page actually renders — headline, description and
+      // the URL it lives at.
+      jsonLdPair({
+        '@type': 'TechArticle',
+        '@id': url + '#item',
+        headline: pattern.title,
+        description: pattern.description,
+        url,
+        isPartOf: { '@id': WEBSITE_ID },
+        publisher: { '@id': ORG_ID },
+      }),
       ...iconLinkPairs(),
     ];
   }
@@ -467,6 +518,18 @@ function prerenderPages() {
         '<meta name="twitter:description" content="' + GENERIC_PROJECT_DESC + '">',
         '<meta name="twitter:description" content="' + desc + '">',
       ],
+      // SoftwareApplication: every mirrored project is a running application,
+      // which is what this page documents. No offers/aggregateRating — those
+      // would be fabricated, and their absence costs only a rich result.
+      jsonLdPair({
+        '@type': 'SoftwareApplication',
+        '@id': url + '#item',
+        name: meta.title,
+        description: meta.description,
+        url,
+        isPartOf: { '@id': WEBSITE_ID },
+        publisher: { '@id': ORG_ID },
+      }),
       ...iconLinkPairs(),
     ];
   }

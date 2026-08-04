@@ -819,13 +819,8 @@ description, canonical and full OG set, and repo-tor's `robots.txt` and
 
 ### glow-props (self) — found by the live check
 
-1. [ ] **`<title>devmade-ai</title>` is a bare brand token** while `og:title` is
-   `devmade-ai — Project Portfolio`. Two problems in one: the title carries no
-   value proposition (the same defect flagged in canva-grid), and it disagrees
-   with the OG title, so a search result and a shared card describe the site
-   differently. Fix the title; the description is already good.
-2. [ ] **No structured data anywhere**, though this repo is public, indexable and
-   now follows a pattern with a structured-data step. `WebSite` +
-   `Organization` on the landing page and `TechArticle` on each pattern page are
-   the natural nodes. Also the obvious place to dogfood Step 5 before
-   recommending it to nine other repos.
+*(Both items fixed 2026-08-04 — the bare-brand `<title>`, and structured data
+across all three templates plus the prerender and runtime paths. `verify:seo`
+now gates title↔`og:title` agreement, a title length budget, and the
+one-block/required-nodes/no-literal-`</script>` properties; all four fault
+injections were confirmed to fail the gate.)*

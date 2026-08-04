@@ -24,6 +24,19 @@
   <meta name="twitter:description" content="Reusable engineering patterns by devmade-ai — implementation guides shared across every project.">
   <meta name="twitter:image" content="https://devmade-ai.github.io/glow-props/assets/images/og-image.png">
   <meta name="description" content="Reusable engineering patterns by devmade-ai — implementation guides shared across every project.">
+  <!-- Requirement: structured data (DISCOVERABILITY.md Step 5) on a page whose
+       content is chosen by ?name=, so the item node cannot be static here.
+       Approach: the two site-wide nodes are static and honest for every entry
+         point; prerenderPages() replaces this JSON with the same graph plus the
+         pattern's own TechArticle node for /patterns/<slug>/, and seoMeta.js
+         writes the item node at runtime for the legacy ?name= form — the same
+         channel that already sets the title and canonical there.
+       Alternative: a static generic item node — rejected, it would assert that
+         every pattern URL is the same article, which is the structured-data
+         version of the static-canonical mistake this page avoids. -->
+  <script type="application/ld+json" id="page-jsonld">
+  {"@context":"https://schema.org","@graph":[{"@type":"Organization","@id":"https://devmade-ai.github.io/glow-props/#org","name":"devmade-ai","url":"https://devmade-ai.github.io/glow-props/","logo":"https://devmade-ai.github.io/glow-props/assets/images/icon-512.png"},{"@type":"WebSite","@id":"https://devmade-ai.github.io/glow-props/#website","url":"https://devmade-ai.github.io/glow-props/","name":"devmade-ai","description":"Software projects, internal tools, and reusable engineering patterns by devmade-ai.","publisher":{"@id":"https://devmade-ai.github.io/glow-props/#org"}}]}
+  </script>
   <!-- Relative (correct from the root-level entries; Vite's dev server
        rewrites root-relative URLs, so absolute forms break dev). The ?v=
        cache-bust query is appended at build by iconCacheBustHtml(), and

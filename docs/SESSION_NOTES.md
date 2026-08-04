@@ -92,10 +92,15 @@ marks private) with no `robots.txt` and no `X-Robots-Tag`.
   headers). It was worth doing: it widened the SPA-rewrite trap from one repo to
   five, showed **10 of 15 origins soft-404**, and confirmed zero crawlable body
   text in six. The script is disposable; the findings are in TODO.md.
-- **The two glow-props items the live check found are unfixed**: the `<title>`
-  is a bare brand token that disagrees with `og:title`, and there is no
-  structured data at all — in the repo that owns the pattern with a
-  structured-data step.
+- **Both glow-props items the live check found are fixed.** The `<title>` now
+  matches `og:title`, and structured data ships on all three templates: one
+  `@id`-joined graph per page, site nodes static, item node added by
+  `prerenderPages()` for the clean URLs and by `src/seoMeta.js` for the `?name=`
+  forms — verified in Chromium that the runtime path rewrites the existing block
+  rather than adding a second one. `verify:seo` gates title↔`og:title`
+  agreement, a title length budget, and the JSON-LD invariants; four fault
+  injections were confirmed to fail it, including reformatting the template's
+  JSON, which breaks the prerender literal and fails the build.
 - The verification discipline that worked, and repeatedly caught my own wrong
   conclusions: build → parse the emitted precache manifest → run the real
   workbox code → serve over localhost → drive in headless Chromium → prove the
