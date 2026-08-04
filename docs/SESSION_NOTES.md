@@ -112,7 +112,13 @@ marks private) with no `robots.txt` and no `X-Robots-Tag`.
   instead of rewriting the existing one leaves `dist/` unchanged and
   `verify:seo` **green**, and fails this check on all four item routes — that
   exact injection was run. It FAILS rather than skips when Playwright is
-  missing, on purpose.
+  missing, on purpose. The browser is cached in CI keyed on the resolved
+  Playwright version; without that every deploy re-downloaded ~170 MB.
+- **Division of labour between the two SEO gates, checked rather than assumed:**
+  `verify:seo` covers **every** item page (12 patterns + 16 projects) — proven
+  by injecting a literal `</script>` into a project page the smoke test never
+  visits and watching it fail. `smoke:seo` covers the runtime *mechanism*, so
+  one page of each shape is the right scope, not a coverage gap.
 - The verification discipline that worked, and repeatedly caught my own wrong
   conclusions: build → parse the emitted precache manifest → run the real
   workbox code → serve over localhost → drive in headless Chromium → prove the

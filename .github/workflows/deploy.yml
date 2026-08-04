@@ -78,8 +78,28 @@ jobs:
       # It earns the browser: making seoMeta.js append a second block instead of
       # rewriting the existing one leaves verify:seo green — dist/ is unchanged —
       # and fails this check on all four item routes.
+      # Cache the browser: without this every deploy re-downloads ~170 MB, which
+      # both slows the job and adds a network failure mode to a step that has
+      # nothing to do with the code being deployed. Keyed on the resolved
+      # Playwright version — a browser build is only valid for the version that
+      # asked for it, so a bump must miss the cache rather than reuse a stale one.
+      - name: Resolve the Playwright version
+        id: pw
+        run: echo "version=$(node -p "require('./node_modules/playwright/package.json').version")" >> "$GITHUB_OUTPUT"
+      - uses: actions/cache@v4
+        id: pw-cache
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-chromium-${{ runner.os }}-${{ steps.pw.outputs.version }}
+
+      # Two branches because --with-deps also downloads; on a cache hit only the
+      # OS libraries are needed. Both still touch apt, which is the residual cost.
       - name: Install Chromium for the smoke check
+        if: steps.pw-cache.outputs.cache-hit != 'true'
         run: npx playwright install --with-deps chromium
+      - name: Install Chromium system libraries (cached browser)
+        if: steps.pw-cache.outputs.cache-hit == 'true'
+        run: npx playwright install-deps chromium
       - name: Smoke structured data in a browser (DISCOVERABILITY.md)
         run: npm run smoke:seo
 
