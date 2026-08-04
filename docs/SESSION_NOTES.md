@@ -72,14 +72,56 @@ title, description, canonical, full OG/Twitter and a generated 1200×630 card;
 repo-tor served 6.1 MB of commit bodies (including from repos its own config
 marks private) with no `robots.txt` and no `X-Robots-Tag`.
 
+### Round 5 — TIMER_LEAKS audit
+
+Every repo audited against `TIMER_LEAKS.md`. The pattern gained three variants
+the fleet had already invented independently: one-shot vs **looping** rAF (only
+the looping form needs a cancel handle), `.remove()`-style subscription handles
+(React Native `AppState`/`Linking`, which have no `removeEventListener`), and
+service workers being **exempt** (no unmount, no HMR — a `setTimeout` in a
+`waitUntil` is the correct shape, not a leak).
+
+`npm run verify:timer-cleanup` was widened to `.ts/.tsx/.vue/.svelte` and its
+release-verb regex made callback-reference-tolerant — **the tripwire failed the
+pattern's own variant 1**, because `/\bclearTimeout\s*\(/` does not match
+`timeouts.forEach(clearTimeout)`. Proved against the doc's own snippet, then
+fixed.
+
+### Round 6 — the fix pass (all 16 repos)
+
+Every repo-side finding from all three audits worked through in the order the
+user set: dm → fh → sun-sea-o → intxt → fl → see-veo → web-arch → kl → qi → the
+rest. **16 PRs opened and merged.** The per-repo list is in `docs/TODO.md` under
+"Fleet fix pass — 2026-08-04"; the ones that cost a real user something:
+four-ems answered every shared form URL with "You're offline" while online;
+fh-fuelhunt cached Mapbox URLs **with the `access_token` in the cache key**;
+see-veo shipped an empty meta description because a code comment contained a
+literal `<meta name="description">`; canva-grid's installed users were
+offline-capable for exactly one hour.
+
+Three claims I had written down **did not reproduce** and were dropped rather
+than "fixed": fh-fuelhunt's transparent icon raster (fully opaque — the real
+defect was the safe zone, at 49%), sun-sea-o's `handleNeedRefresh` early
+returns (correct suppression), and my own rAF fault injection, which passed
+because I injected into a file that already had a `cancelAnimationFrame`
+elsewhere. My test was wrong, not the code.
+
 ## Current state
 
 - glow-props: source + docs, on `claude/pwa-patterns-review-76cg78`. Build green,
-  all four verify gates green. Verified behaviourally — `dist/` served under its
+  all five verify gates green. Verified behaviourally — `dist/` served under its
   real `/glow-props/` base and driven in headless Chromium: SW activated, React
   mounted, menu interactive, zero page errors.
-- Merged this session: repo-tor #121 + #122, model-pear (SW fix), intxt #161,
-  fh-fuelhunt #78. No PRs left open.
+- **glow-props' own maskable icon was outside its own corrected safe circle** —
+  measured at 40.5% against 40%. `MASKABLE_MARK` 780 → 760, and
+  `assertMaskableSafeZone()` now measures the **rendered ink** in the produced
+  PNG rather than trusting the geometry. The two disagreed by half a percent
+  because a derivation cannot see antialiasing, and pixels are the only thing
+  Android looks at.
+- Merged this session: repo-tor #121 + #122 + #123, model-pear (SW fix) + #122,
+  intxt #161 + #162, fh-fuelhunt #78 + #79, dm-website #23, sun-sea-o #41,
+  fl-farlume #49, see-veo #58, web-arch #11, kl-website #11, qi-invoice #13,
+  four-ems #31, canva-grid #153, graphiki #86. No PRs left open.
 - `docs/TODO.md` carries both audits' remaining repo-side drift, and **both
   rounds' findings are now distributed into each repo's own `docs/TODO.md`** —
   nine SEO notes merged 2026-08-04 (canva-grid, dm-website, fl-farlume,
@@ -146,3 +188,8 @@ marks private) with no `robots.txt` and no `X-Robots-Tag`.
 - `GIT_AUTHOR_EMAIL`/`GIT_COMMITTER_EMAIL` are set as environment variables in
   this container and **override `.git/config`**, so `git config user.email …`
   silently does nothing. Pass `GIT_*` explicitly on every commit.
+- **Two items are decisions, not work, and are the only things left open:**
+  repo-tor publishing private-repo commit bodies (`noindex` is not access
+  control), and tool-till-tees having a live URL with no discoverability posture
+  of any kind. Both are in `docs/TODO.md`; neither can be closed without the
+  user.

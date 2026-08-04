@@ -676,9 +676,17 @@ Several of these fixes are now described directly by the updated pattern docs, s
 
 ### glow-props (self)
 
-*(Items 1–7 done 2026-08-03 — see git history. Only the deliberate deferral remains.)*
+*(Items 1–7 done 2026-08-03, and the last one closed 2026-08-04 — see git history.)*
 
-1. [ ] **Consider the maskable-at-192+512 form** — the manifest currently ships a single 1024 maskable; 192/512 are the sizes install criteria actually request. Low priority, documented as an accepted alternative in the pattern.
+*The maskable-at-192+512 question was reopened by MEASURING the icon we ship
+rather than reading the config: the 1024 maskable's mark reached **40.5%** of the
+width from centre, just outside the 40% safe circle, so Android's circular mask
+was clipping it. The derivation in the generator was sound and modelled the
+mark's corner arcs but not the renderer's antialiasing. Fixed by lowering the
+inset and, more importantly, by asserting the RENDERED pixels — the generator now
+fails if the mark ever leaves the circle again (39.4% today). The single-1024
+form stays: it satisfies install criteria and is an accepted alternative in the
+pattern; the defect was the geometry, not the size list.*
 
 ### Round 2 (2026-08-03, second pass — the 9 repos the first pass missed)
 
@@ -834,6 +842,51 @@ unmount-before-registration-resolves race already recorded for web-arch in the
 PWA round: the cleanup runs before the callback creates the interval, so nothing
 ever clears it. Narrow, and it needs reading rather than grepping to see —
 which is the blind spot now documented in the pattern.
+
+## Fleet fix pass — 2026-08-04 (all 16 repos)
+
+Every repo-side finding from the PWA, discoverability and TIMER_LEAKS audits was
+worked through in the order the user set. **16 PRs opened and merged.** What
+follows is what was FIXED; the per-repo sections below record what was found.
+
+Ordered by how much it cost a user:
+
+- **four-ems** — `navigateFallback: '/offline.html'` meant every SW-controlled
+  deep link showed "You're offline" while online, including every shared
+  `/f/:slug` form URL, and the page's "Try again" reloaded back into it.
+- **fh-fuelhunt** — Mapbox URLs cached **with their `access_token` in the cache
+  key**, permanently, on the device. Also the entire install UI (~550 lines) was
+  imported by nothing.
+- **see-veo** — the meta description shipped EMPTY in production because a code
+  comment contained a literal `<meta name="description">` and the build emitted
+  that instead. GA had been blocked by the repo's own CSP since it landed.
+- **intxt** — API chatter evicted `entry-*.js` from a shared 60-entry LRU, so a
+  chatty session broke the next offline launch.
+- **canva-grid** — installed users were offline-capable for exactly one hour.
+- **sun-sea-o** — the install banner never appeared on Chromium repeat visits.
+- **model-pear** — no route was prerendered, so no `<svelte:head>` title ever
+  reached a file; fixing that exposed a static `<title>` in `app.html` shadowing
+  every page's own.
+- **repo-tor** — "Update Now" was a silent no-op for version-only updates.
+- **kl-website** — article pages had perfect head tags over an empty `<div
+  id="root">`; now ~1,080 characters of crawlable text each.
+- **dm-website** — a missing `/assets/*` returned the SPA shell at 200; the edge
+  rewriter fails open and had no tests.
+- **graphiki** — the 21 MB ONNX wasm was cached by nothing.
+- **web-arch** — registration failures were completely invisible.
+- **fl-farlume** — an uncancellable deferred `location.reload()`.
+- **qi-invoice** — the "Automatic updates" label was correct only by accident.
+- **glow-props** — its own maskable icon was outside the safe circle (above).
+
+**Still open, and both need a decision rather than a fix:**
+
+1. [ ] **repo-tor: are private-repo commit bodies fine to publish at all?**
+   `noindex` keeps them out of search; it is not access control. Recorded in
+   repo-tor's own TODO since the 2026-08-03 pass and untouched here.
+2. [ ] **tool-till-tees: choose a posture.** It has a live URL and no
+   discoverability implementation of any kind. A backend API with a minimal
+   landing page may well want `noindex` — but that is a decision, and "nobody
+   looked" is not one.
 
 ## Public-visibility drift found in the 2026-08-04 SEO audit
 
