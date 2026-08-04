@@ -772,6 +772,69 @@ Severity-ordered. The two broken service workers (repo-tor, model-pear) are fixe
 6. [ ] **`CLAUDE.md:38` claims 23 PWA checks including 9 on the update policy; those tests live in a scratchpad file that is not in the repo.** Either commit them or correct the claim. No precache-manifest tripwire either, and this repo is squarely exposed to the duplicate-entry class.
 7. [ ] `discoverability.test.js:198` justifies its `skipIf` by citing `.github/workflows/ci.yml` — there is no `.github` directory; the real gate is `vercel.json`'s buildCommand.
 
+## TIMER_LEAKS audit — 2026-08-04 (all 15 repos)
+
+Ran a portable version of `verify-timer-cleanup.mjs` over every repo, then read
+every hit. **54 candidates, 4 real findings.** The fleet is in genuinely good
+shape on this pattern — which is worth stating plainly, because the PWA and
+discoverability rounds both found drift everywhere and the honest answer here is
+different.
+
+**Most of the value was in the tripwire, not the repos.** Three defects in the
+checker itself, all now fixed in `scripts/verify-timer-cleanup.mjs` and written
+into `TIMER_LEAKS.md`'s new "Tripwire notes":
+
+1. **It failed the pattern's own canonical variant.** `TIMER_LEAKS.md` variant 1
+   prescribes `return () => timeouts.forEach(clearTimeout)`, which
+   `/\bclearTimeout\s*\(/` does not match. canva-grid implements variant 1
+   correctly and came back as a failure. A repo adopting the checker would have
+   been told to abandon the right idiom.
+2. **The `requestAnimationFrame` pairing rule was wrong.** It demanded
+   `cancelAnimationFrame` for every rAF, but the dominant legitimate use is a
+   one-shot next-frame focus/measure call with nothing to accumulate — present in
+   canva-grid, four-ems, graphiki, model-pear, fl-farlume and intxt, all correct.
+   Now only a stored or self-rescheduling rAF is required to cancel.
+3. **It only read `.js/.mjs/.jsx`.** Copied into a TypeScript, Vue or Svelte repo
+   it examines almost nothing and reports OK. Now reads `.ts/.tsx/.vue/.svelte`
+   too. It also flagged service workers, where module-level `addEventListener` is
+   the only correct form, and rejected the `.remove()` subscription-handle
+   teardown React Native's `AppState`/`Linking` require.
+
+### Real findings
+
+1. [ ] **fl-farlume — an uncancellable deferred `location.reload()`**
+   (`src/composables/usePWAUpdate.ts:209`). After `updateServiceWorker(true)` a
+   2s fallback timer reloads the page unconditionally, with no handle and no
+   cancel path anywhere in the file. If the SW reload lands first the page is
+   gone and it does not matter; if it does not, the user gets a reload they did
+   not ask for, whatever they are doing 2s later. Store the id and clear it in
+   the `controllerchange` path.
+2. [ ] **fl-farlume — auto-dismiss timer never cleared**
+   (`src/composables/usePWAUpdate.ts:76`). `setTimeout(() => offlineReady.value =
+   false, OFFLINE_DISMISS_MS)` stacks a new timer per event with no clear. Minor
+   — Vue tolerates the write — but it is variant 2 and costs one line.
+3. [ ] **graphiki — `setState` after unmount in the debug pill**
+   (`src/components/debug/DebugPill.tsx:152,163`). Two uncleaned 1.5s
+   `setCopyFeedback(false)` timers. Dev-only surface, so low impact, but it is
+   the exact shape variant 2 exists for.
+4. [ ] **Inline capture blocks carry no attach guard** — the
+   `beforeinstallprompt` capture and the pre-module error capture, in see-veo,
+   qi-invoice, sun-sea-o, repo-tor, kl-website, canva-grid, four-ems, fl-farlume
+   and graphiki. A classic head script executes once per document, so the
+   practical impact is near zero on its own; it matters where a MODULE also
+   attaches the same listener, which several of these repos do. Variant 5 costs
+   one line. Recorded as a fleet-wide deviation rather than nine separate items.
+
+### Checked and clean
+
+Every `setInterval` in the fleet — 24 sites across 15 repos — assigns its id to
+something a teardown can reach, and all six PWA update hooks that create their
+poll inside `onRegistered` clear it on unmount. The one residual is the
+unmount-before-registration-resolves race already recorded for web-arch in the
+PWA round: the cleanup runs before the callback creates the interval, so nothing
+ever clears it. Narrow, and it needs reading rather than grepping to see —
+which is the blind spot now documented in the pattern.
+
 ## Public-visibility drift found in the 2026-08-04 SEO audit
 
 Four parallel audits compared all 15 PWAs against `DISCOVERABILITY.md`. The

@@ -159,6 +159,77 @@ if (import.meta.hot) {
 }
 ```
 
+### 6. `requestAnimationFrame` — only the looping form needs cancelling
+
+A one-shot rAF is not a leak:
+
+```ts
+// Fine. Schedules exactly one callback; nothing accumulates.
+requestAnimationFrame(() => firstFocusable.focus());
+```
+
+This is the dominant legitimate use — focus after a dialog opens, measure after
+layout — and it appears in most fleet repos. The callback runs once on the next
+frame and is gone. Cancelling it buys nothing.
+
+The form that does need cancelling keeps itself alive, or stores its id so
+something *can* cancel it:
+
+```ts
+let rafId: number;
+function tick() {
+  rafId = requestAnimationFrame(tick);   // re-arms itself — must be cancellable
+}
+useEffect(() => {
+  tick();
+  return () => cancelAnimationFrame(rafId);
+}, []);
+```
+
+Rule: **cancel a rAF whose id you store or whose callback re-arms it; leave a
+bare one-shot alone.**
+
+### 7. Subscription handles release with `.remove()`, not `removeEventListener`
+
+React Native's `AppState` and `Linking`, and most SDK emitters, return a
+subscription object rather than expecting a symmetric removal call:
+
+```ts
+useEffect(() => {
+  const sub = AppState.addEventListener('change', onChange);
+  return () => sub.remove();      // correct — there is no removeEventListener here
+}, []);
+```
+
+Capture the return value. An `addEventListener` whose result is discarded on
+these APIs cannot be released at all.
+
+### 8. Service workers are exempt from the module-level rule
+
+`self.addEventListener('install' | 'activate' | 'fetch' | …)` at module scope is
+the only correct shape in a service worker. There is no HMR, no import graph to
+dispose, and the listeners *are* the worker's lifecycle. Do not add a dispose
+block, and exclude service workers from the tripwire.
+
+## Tripwire notes
+
+Three things a static checker for this pattern gets wrong unless it is told not
+to — all three found by running the fleet tripwire across every repo:
+
+1. **Accept the release verb as a callback reference, not just a call.**
+   Variant 1 above ends `return () => timeouts.forEach(clearTimeout)`. A
+   `/\bclearTimeout\s*\(/` regex does not match that, so the check fails the
+   pattern it exists to enforce. Match `\bclearTimeout\s*[(,)\]]`.
+2. **Read the extensions the repo actually uses.** A checker that walks only
+   `.js/.mjs/.jsx` reports OK on a TypeScript, Vue or Svelte codebase while
+   examining almost nothing. Include `.ts/.tsx/.vue/.svelte`.
+3. **Same-file pairing is the contract, and it has a known blind spot.** It
+   cannot see a *mismatched* pair — a file containing both `setInterval` and
+   `clearInterval` passes even when they refer to different timers, and it
+   cannot see a registration that lands after teardown has already run (an
+   interval created inside a `.then()` that resolves post-unmount). Those need
+   reading, not grepping. The checker is a floor, not a proof.
+
 ## Key Lessons
 
 1. **Every registration pairs with a release.** Grep the codebase for `setTimeout|setInterval|addEventListener|\.subscribe(` — every hit needs a matching clear/remove/unsubscribe reachable from the owner's teardown.
