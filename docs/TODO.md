@@ -786,6 +786,46 @@ in production.
 
 ### Fleet-wide follow-up
 
-10. [ ] **Distribute items 1–9 into each repo's own `docs/TODO.md`**, the way the
-    PWA round's findings were, so the backlog travels with the code. Not done in
-    this pass — this section is the only durable record.
+10. [x] **Items 1–9 distributed into each repo's own `docs/TODO.md`** (merged
+    2026-08-04), the way the PWA round's findings were, so the backlog travels
+    with the code. Each repo's note carries its own live-verified measurements.
+    graphiki got a short note too (it passed almost everything); qi-invoice and
+    web-arch needed none.
+
+### Live verification against the deployed origins (2026-08-04)
+
+The caveat above is now discharged: all 15 origins were fetched — home document,
+`/robots.txt`, `/sitemap.xml`, a nonexistent path — reading the pre-JavaScript
+document and the real response headers, which is what a crawler and an unfurler
+actually receive. It changed the grading in three ways:
+
+- **The SPA-rewrite trap is much wider than the source audit suggested.** Five
+  repos serve `/robots.txt` as the app's HTML at **200** — canva-grid,
+  fl-farlume, four-ems, model-pear, see-veo — and seven do the same for
+  `/sitemap.xml`. A source-level "no robots.txt" is a *missing file*; live it is
+  a *file that answers wrong*, and the fix (exclude any path with a file
+  extension from the rewrite) is different from just adding the file.
+- **Soft 404s are the fleet's most common defect** — 10 of 15 origins return 200
+  with the app shell for a path that cannot exist. Only glow-props, dm-website,
+  qi-invoice and web-arch 404 correctly.
+- **Zero crawlable body text in the served document** was confirmed for
+  canva-grid, dm-website, fl-farlume, four-ems, **kl-website** (on the home page,
+  not only articles) and see-veo.
+
+The three fixes merged earlier in the day are live and correct: intxt's
+`robots.txt` no longer disallows `/join`, fh-fuelhunt now serves a title,
+description, canonical and full OG set, and repo-tor's `robots.txt` and
+`X-Robots-Tag` are in place.
+
+### glow-props (self) — found by the live check
+
+1. [ ] **`<title>devmade-ai</title>` is a bare brand token** while `og:title` is
+   `devmade-ai — Project Portfolio`. Two problems in one: the title carries no
+   value proposition (the same defect flagged in canva-grid), and it disagrees
+   with the OG title, so a search result and a shared card describe the site
+   differently. Fix the title; the description is already good.
+2. [ ] **No structured data anywhere**, though this repo is public, indexable and
+   now follows a pattern with a structured-data step. `WebSite` +
+   `Organization` on the landing page and `TechArticle` on each pattern page are
+   the natural nodes. Also the obvious place to dogfood Step 5 before
+   recommending it to nine other repos.

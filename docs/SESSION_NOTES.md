@@ -80,18 +80,22 @@ marks private) with no `robots.txt` and no `X-Robots-Tag`.
   mounted, menu interactive, zero page errors.
 - Merged this session: repo-tor #121 + #122, model-pear (SW fix), intxt #161,
   fh-fuelhunt #78. No PRs left open.
-- `docs/TODO.md` carries both audits' remaining repo-side drift. The PWA round's
-  findings were also distributed into each repo's own `docs/TODO.md`; **the SEO
-  round's were not** — items 1–9 of the 2026-08-04 section are the only durable
-  record, and distributing them is item 10.
+- `docs/TODO.md` carries both audits' remaining repo-side drift, and **both
+  rounds' findings are now distributed into each repo's own `docs/TODO.md`** —
+  nine SEO notes merged 2026-08-04 (canva-grid, dm-website, fl-farlume,
+  four-ems, graphiki, kl-website, model-pear, see-veo, sun-sea-o).
 
 ## Key context for the next session
 
-- **Everything below the fix line was read from source, not from deployed sites.**
-  The `curl -sI …/robots.txt` check the pattern itself prescribes is unverified
-  fleet-wide, and a platform rewrite can serve the SPA shell for a file that
-  exists in the repo — which is exactly how a "present" `robots.txt` becomes
-  absent in production. That is the single highest-value next check.
+- **All 15 deployed origins were checked live** (home document, `/robots.txt`,
+  `/sitemap.xml`, a nonexistent path — pre-JavaScript document plus real
+  headers). It was worth doing: it widened the SPA-rewrite trap from one repo to
+  five, showed **10 of 15 origins soft-404**, and confirmed zero crawlable body
+  text in six. The script is disposable; the findings are in TODO.md.
+- **The two glow-props items the live check found are unfixed**: the `<title>`
+  is a bare brand token that disagrees with `og:title`, and there is no
+  structured data at all — in the repo that owns the pattern with a
+  structured-data step.
 - The verification discipline that worked, and repeatedly caught my own wrong
   conclusions: build → parse the emitted precache manifest → run the real
   workbox code → serve over localhost → drive in headless Chromium → prove the
