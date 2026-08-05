@@ -336,6 +336,15 @@ Everything above is stack-independent; the *mechanics* are Vite-plugin-shaped. T
 
 **Prerendering and routing must agree.** A catch-all rewrite silently voids every per-route file the build just emitted. fh-fuelhunt pays the full cost of `output: "static"` and then rewrites `/(.*)` → `/`, discarding all of it.
 
+**The half-broken version is more common than the fully-broken one, and much harder to see.** A host serves an existing file only on an **exact** path match, so `/pricing.html` returns the real prerendered page while `/pricing` — the extensionless URL in the sitemap and in every internal link — matches no file and falls through to the catch-all. model-pear shipped exactly this: 25,903 bytes with a real title at `/pricing.html`, 11,723 bytes with no title at all at `/pricing`, at the same moment, from the same deploy. Every local check passed, because the build output was correct; the deploy config was throwing half of it away, and the sitemap was pointing crawlers at the half being thrown away.
+
+Two consequences for how you check it:
+
+- **Fetch the URL the sitemap advertises, not the file the build emitted.** They are different strings, and only one of them is what a crawler asks for.
+- **Derive the routing expectation from the build.** Every prerendered page except the shells needs a rewrite mapping its clean URL, positioned *before* the catch-all — a rewrite listed after it is dead configuration that reads as active. Both directions are worth asserting; a hardcoded list of routes goes stale the first time someone adds a page.
+
+Prefer explicit rewrites over a host's clean-URL flag when you cannot exercise the routing locally. The flag is fewer lines and implies its effect; the explicit table states it, and can be checked offline against the emitted files.
+
 ### One page per item, when the content is a collection
 
 A page whose content is chosen by a query parameter — `pattern.html?name=x` — is many pages served by one file, and it can only ever carry one set of head tags. Runtime tags fix that for Google and for nobody else, because unfurlers do not run JS: every item unfurls with the same generic title.

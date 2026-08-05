@@ -135,6 +135,29 @@ Four gaps that only implementing the fixes could reveal:
 4. **Assert the install UI has a non-test importer.** fh-fuelhunt's ~550 lines
    were correct, tested, and in the component graph of nothing.
 
+### Round 8 — the audit grew two checks, and each found a live defect
+
+`audit-discoverability.mjs` now **counts** `<title>` on the comment-stripped
+document, and **fetches one item page per origin** from the sitemap's first
+non-home `<loc>`. Both additions paid immediately:
+
+- **fh-fuelhunt and intxt served an EMPTY title** — Expo Router's static export
+  writes react-helmet's `<title data-rh="true"></title>` as the first element
+  in `<head>`, ahead of the real one from `+html.tsx`, and first wins.
+  fh-fuelhunt's had been shadowed since the day I added it. Fixed by a
+  post-export strip in both (#80, #163); `expo-router/head` is unavailable in
+  both because each rewrites `/(.*)` to a single document.
+- **model-pear served the SPA shell at every URL its sitemap advertises.**
+  `/pricing.html` was 25,903 bytes with a real title; `/pricing` was 11,723
+  with none, same deploy. A host serves a file only on an exact path match, so
+  the catch-all rewrite answered every extensionless URL. Fixed with explicit
+  rewrites ahead of the catch-all plus a tripwire that derives the expectation
+  from the build (#124).
+
+Also fixed a bug in the audit itself: `sitemapServed` looked for the root
+element in the first 400 characters, and model-pear's sitemap opens with an
+explanatory comment, so a perfectly good sitemap graded as missing.
+
 ## Current state
 
 - glow-props: source + docs, on `claude/pwa-patterns-review-76cg78`. Build green,

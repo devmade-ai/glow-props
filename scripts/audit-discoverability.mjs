@@ -92,6 +92,34 @@ const tagContent = (html, prop) => {
   return m[0].match(/content=["']([^"']*)["']/i)?.[1] ?? '';
 };
 
+const titlesIn = (html) => (html.match(/<title[^>]*>[\s\S]*?<\/title>/gi) ?? []).length;
+const firstTitle = (html) => html.match(/<title[^>]*>([\s\S]*?)<\/title>/i)?.[1]?.trim() ?? '';
+
+/**
+ * Fetch one item page named by the sitemap and report only what differs from
+ * the home document. Returns null when there is nothing to check — no sitemap,
+ * or a sitemap listing only the home URL — which is not itself a fault here;
+ * the missing sitemap is already graded.
+ */
+async function measureItem(sitemap, homeUrl) {
+  if (!sitemap.ok || sitemap.status !== 200) return null;
+  const locs = [...sitemap.body.matchAll(/<loc>\s*([^<\s]+)\s*<\/loc>/gi)].map((m) => m[1]);
+  const home = new URL(homeUrl).href.replace(/\/$/, '');
+  const target = locs.find((l) => l.replace(/\/$/, '') !== home);
+  if (!target) return null;
+
+  const res = await get(target);
+  if (!res.ok || res.status !== 200) return { url: target, error: res.error ?? `HTTP ${res.status}` };
+
+  const html = stripComments(res.body);
+  return {
+    url: target,
+    titleCount: titlesIn(html),
+    title: firstTitle(html),
+    canonical: html.match(/<link[^>]+rel=["']canonical["'][^>]+href=["']([^"']+)["']/i)?.[1] ?? null,
+  };
+}
+
 /** Everything the grade is computed from, so a surprising grade can be read back. */
 async function measure(url) {
   const home = await get(url);
@@ -109,11 +137,30 @@ async function measure(url) {
   const robots = await get(new URL('robots.txt', url).href);
   const sitemap = await get(new URL('sitemap.xml', url).href);
 
+  // Requirement: the home document is not the whole site, and the failures this
+  //   audit hunts are MORE likely on item pages — they are the ones assembled by
+  //   a prerenderer or an edge rewriter, from a shell nobody looks at.
+  // Approach: take the first non-home <loc> the sitemap already gave us and
+  //   fetch that one too. One extra request per origin, no new configuration,
+  //   and it self-maintains — a new item type joins as soon as it is listed.
+  // Why only one: this is a periodic check against sixteen third-party hosts,
+  //   not a crawler. One item proves the mechanism; the repo's own tripwire is
+  //   what covers every item (glow-props' verify:seo does exactly that split).
+  const item = await measureItem(sitemap, url);
+
   return {
+    item,
     // A robots.txt that 200s with the app's HTML is the SPA-rewrite trap: the
     // file does not exist and the catch-all answered for it.
     robotsServed: robots.ok && robots.status === 200 && !/<html|<!doctype/i.test(robots.body.slice(0, 400)),
-    sitemapServed: sitemap.ok && sitemap.status === 200 && /<urlset|<sitemapindex/i.test(sitemap.body.slice(0, 400)),
+    // The 400-char window this used to look in was too small and produced a
+    // false "missing sitemap" for model-pear, whose sitemap opens with an
+    // explanatory comment — the root element starts at ~430. Strip comments and
+    // look at the whole document instead of guessing how much prologue is
+    // reasonable. Still anchored to the ROOT ELEMENT, not to the word
+    // "sitemap", so an SPA fallback serving HTML at 200 still fails.
+    sitemapServed: sitemap.ok && sitemap.status === 200
+      && /<urlset|<sitemapindex/i.test(stripComments(sitemap.body)),
     canonical: /<link[^>]+rel=["']canonical["']/i.test(html),
     og: Boolean(tagContent(html, 'og:title')) && Boolean(tagContent(html, 'og:image')),
     twitter: Boolean(tagContent(html, 'twitter:card')),
@@ -134,9 +181,45 @@ async function measure(url) {
     //   grep does not know what a comment is. Only stripping first shows it.
     //   Counting also catches the opposite defect: a shell that carries its own
     //   <title> alongside the route's, where the shell's wins.
-    titleCount: (html.match(/<title[^>]*>[\s\S]*?<\/title>/gi) ?? []).length,
-    title: html.match(/<title[^>]*>([\s\S]*?)<\/title>/i)?.[1]?.trim() ?? '',
+    titleCount: titlesIn(html),
+    title: firstTitle(html),
   };
+}
+
+/**
+ * What is wrong on the one item page we sampled, if anything.
+ *
+ * Deliberately narrow: only faults an item page can have that the home page
+ * cannot, so this never double-reports something already graded above.
+ *  - a title fault (same rules as home — this is where shell-shadowing lands);
+ *  - a title IDENTICAL to the home page's, which means the per-item mechanism
+ *    is not running and every item is competing for the same search result;
+ *  - a canonical pointing at the home page, which collapses the whole
+ *    collection onto one URL — the worst of the four, and invisible from the
+ *    home document.
+ */
+function itemFault(m) {
+  const it = m.item;
+  if (!it) return null;
+  const where = it.url.replace(/^https?:\/\/[^/]+/, '');
+  if (it.error) return `sitemap lists ${where} but it does not serve (${it.error})`;
+
+  if (it.titleCount === 0) return `item ${where} has no <title>`;
+  if (it.titleCount > 1) return `item ${where} has ${it.titleCount} <title> tags`;
+  if (!it.title) return `item ${where} has an empty <title>`;
+  if (m.title && it.title === m.title) {
+    return `item ${where} reuses the home page's <title> — the per-item mechanism is not running`;
+  }
+  // Only the unambiguous collapse is flagged: a canonical that resolves to the
+  // site ROOT from a page that is not the root. That is the SPA default —
+  // one static canonical in one template — and it tells search engines the
+  // whole collection is a single page.
+  if (it.canonical) {
+    const resolved = new URL(it.canonical, it.url).href.replace(/\/$/, '');
+    const root = new URL('/', it.url).href.replace(/\/$/, '');
+    if (resolved === root) return `item ${where} canonicalises to the site root`;
+  }
+  return null;
 }
 
 // The criteria from docs/TODO.md, in code. Kept in this order so the reason for
@@ -159,7 +242,8 @@ function grade(m) {
     // Private posture: no search result to enrich, so structured data and a
     // sitemap are not expected. What IS expected is that the crawl is allowed
     // (so the noindex can be read) and that links still unfurl.
-    if (titleFault) return { grade: 'Partial', why: `private posture with ${titleFault}` };
+    const priv = [titleFault, itemFault(m)].filter(Boolean);
+    if (priv.length) return { grade: 'Partial', why: `private posture with ${priv.join('; ')}` };
     return m.robotsServed && m.og
       ? { grade: 'Pass (P)', why: 'private posture: crawl allowed, noindex carried, links unfurl' }
       : { grade: 'Partial', why: 'private posture with ' + (m.robotsServed ? 'no link preview' : 'no reachable robots.txt') };
@@ -176,12 +260,15 @@ function grade(m) {
   if (m.bodyTextLen === 0) missing.push('crawlable body text');
 
   // A title fault is phrased on its own — it is a broken tag, not an absent
-  // feature, and folding it into "missing …" reads as nonsense.
-  const why = (base) => (titleFault ? `${base}; ${titleFault}` : base);
+  // feature, and folding it into "missing …" reads as nonsense. Item-page
+  // faults are appended the same way: they are real defects on real URLs, and
+  // burying them in the home page's list would misattribute them.
+  const faults = [titleFault, itemFault(m)].filter(Boolean);
+  const why = (base) => (faults.length ? `${base}; ${faults.join('; ')}` : base);
 
   if (missing.length === 0) {
-    return titleFault
-      ? { grade: 'Partial', why: titleFault }
+    return faults.length
+      ? { grade: 'Partial', why: faults.join('; ') }
       : { grade: 'Pass', why: 'complete' };
   }
   if (!m.og && !m.robotsServed && !m.canonical && !m.sitemapServed) {

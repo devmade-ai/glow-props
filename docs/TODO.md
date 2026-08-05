@@ -88,6 +88,15 @@ Grading used here, so the cells mean something specific:
 - **Partial** — reachable and unfurls, but with at least one substantive gap:
   no structured data, no canonical, no sitemap, head tags over a body with no
   crawlable text, or a broken `<title>` (see below).
+- **One item page per origin is fetched too**, taken from the first non-home
+  `<loc>` the sitemap already provided. The home document is not the site, and
+  the failures this audit hunts are *more* likely on item pages — those are the
+  ones assembled by a prerenderer or an edge rewriter from a shell nobody looks
+  at. Added 2026-08-05; it immediately found model-pear serving the SPA shell at
+  every URL its own sitemap advertises. Flags: a title fault, a title identical
+  to the home page's (the per-item mechanism is not running), a canonical
+  resolving to the site root (the whole collection collapsed onto one URL), and
+  a `<loc>` that does not serve.
 - **The `<title>` is counted, not merely looked for**, and counted on the
   comment-stripped document. Zero, more than one, or an empty one is a fault
   under **every** posture — a private app's links still unfurl, and the title is
