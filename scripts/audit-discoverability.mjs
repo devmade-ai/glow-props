@@ -123,6 +123,19 @@ async function measure(url) {
     noindex: /<meta[^>]+name=["']robots["'][^>]*noindex/i.test(html)
       || /noindex/i.test(home.headers.get('x-robots-tag') || ''),
     bodyTextLen: bodyText.length,
+    // Requirement: catch a page with no title on the next scheduled run rather
+    //   than by luck.
+    // Why this is counted rather than merely tested for presence, and why it is
+    //   counted on the COMMENT-STRIPPED html: model-pear served three
+    //   prerendered pages with zero titles for a day. Its shell template named
+    //   the framework's head placeholder inside a comment, so the whole injected
+    //   head — title and modulepreloads — was substituted BETWEEN the comment
+    //   markers. `curl | grep '<title>'` found a title the entire time, because
+    //   grep does not know what a comment is. Only stripping first shows it.
+    //   Counting also catches the opposite defect: a shell that carries its own
+    //   <title> alongside the route's, where the shell's wins.
+    titleCount: (html.match(/<title[^>]*>[\s\S]*?<\/title>/gi) ?? []).length,
+    title: html.match(/<title[^>]*>([\s\S]*?)<\/title>/i)?.[1]?.trim() ?? '',
   };
 }
 
@@ -131,10 +144,22 @@ async function measure(url) {
 function grade(m) {
   if (m.error) return { grade: '?', why: `unreachable: ${m.error}` };
 
+  // The title fault is checked before the posture split, because it is the one
+  // defect that is wrong under EVERY posture: a private app's links still
+  // unfurl, and the title is what the recipient reads.
+  const titleFault = m.titleCount === 0
+    ? 'no <title> (none survives comment-stripping)'
+    : m.titleCount > 1
+      ? `${m.titleCount} <title> tags — the first wins, so the page's own may never show`
+      : m.title.length === 0
+        ? 'an empty <title>'
+        : null;
+
   if (m.noindex) {
     // Private posture: no search result to enrich, so structured data and a
     // sitemap are not expected. What IS expected is that the crawl is allowed
     // (so the noindex can be read) and that links still unfurl.
+    if (titleFault) return { grade: 'Partial', why: `private posture with ${titleFault}` };
     return m.robotsServed && m.og
       ? { grade: 'Pass (P)', why: 'private posture: crawl allowed, noindex carried, links unfurl' }
       : { grade: 'Partial', why: 'private posture with ' + (m.robotsServed ? 'no link preview' : 'no reachable robots.txt') };
@@ -150,11 +175,19 @@ function grade(m) {
   // indexable not at all — the distinction the pattern calls unfurl-only.
   if (m.bodyTextLen === 0) missing.push('crawlable body text');
 
-  if (missing.length === 0) return { grade: 'Pass', why: 'complete' };
-  if (!m.og && !m.robotsServed && !m.canonical && !m.sitemapServed) {
-    return { grade: 'Missing', why: 'no open graph, robots.txt, canonical or sitemap' };
+  // A title fault is phrased on its own — it is a broken tag, not an absent
+  // feature, and folding it into "missing …" reads as nonsense.
+  const why = (base) => (titleFault ? `${base}; ${titleFault}` : base);
+
+  if (missing.length === 0) {
+    return titleFault
+      ? { grade: 'Partial', why: titleFault }
+      : { grade: 'Pass', why: 'complete' };
   }
-  return { grade: 'Partial', why: `missing ${missing.join(', ')}` };
+  if (!m.og && !m.robotsServed && !m.canonical && !m.sitemapServed) {
+    return { grade: 'Missing', why: why('no open graph, robots.txt, canonical or sitemap') };
+  }
+  return { grade: 'Partial', why: why(`missing ${missing.join(', ')}`) };
 }
 
 /** The DISCOVERABILITY cell docs/TODO.md currently claims, per repo. */

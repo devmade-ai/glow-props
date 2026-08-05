@@ -86,8 +86,17 @@ Grading used here, so the cells mean something specific:
   reachable, canonical, full Open Graph + Twitter with a real 1200×630 card,
   a generated sitemap, and structured data.
 - **Partial** — reachable and unfurls, but with at least one substantive gap:
-  no structured data, no canonical, no sitemap, or head tags over a body with
-  no crawlable text.
+  no structured data, no canonical, no sitemap, head tags over a body with no
+  crawlable text, or a broken `<title>` (see below).
+- **The `<title>` is counted, not merely looked for**, and counted on the
+  comment-stripped document. Zero, more than one, or an empty one is a fault
+  under **every** posture — a private app's links still unfurl, and the title is
+  what the recipient reads. Added 2026-08-05 after model-pear served three
+  prerendered pages with no title at all for a day while `curl | grep '<title>'`
+  found one the whole time. It immediately found two more: **fh-fuelhunt and
+  intxt each serve an EMPTY `<title data-rh="true"></title>` as the first
+  element in `<head>`**, ahead of their real one, which the first-wins rule
+  makes the operative title.
 - **Missing** — no Open Graph, no card, no `robots.txt`, no canonical, no
   sitemap. A pasted link renders as a bare URL and nothing states a posture.
 - **Pass (P)** — sun-sea-o, a **private** posture implemented correctly:
