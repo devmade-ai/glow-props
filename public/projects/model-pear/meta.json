@@ -10,8 +10,12 @@
   "repoUrl": "https://github.com/devmade-ai/model-pear",
   "tech": [
     "TypeScript",
-    "React",
-    "Vite"
+    "Svelte",
+    "SvelteKit",
+    "Vite",
+    "PWA",
+    "Tailwind CSS",
+    "DaisyUI"
   ],
   "audience": "Founders, sales leads, and finance teams at South African B2B software companies who need to price a deal that works for both sides.",
   "useCases": [

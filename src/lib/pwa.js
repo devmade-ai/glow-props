@@ -43,10 +43,19 @@ export const BROWSER_DISPLAY_NAMES = {
   arc: 'Arc', safari: 'Safari', firefox: 'Firefox', unknown: 'Your Browser',
 };
 
+// iOS browsers are all Safari underneath, but they report themselves with
+// distinct tokens that contain neither "Chrome" nor "Firefox" — CriOS, FxiOS,
+// EdgiOS. Without these three checks they fall through to the Safari test
+// below (their UAs DO contain "Safari"), which made the iOS-non-Safari
+// redirect in getInstallInstructions() unreachable: exactly the users it was
+// written for were told to use a Share sheet their browser cannot install from.
 export function detectBrowser() {
   const ua = navigator.userAgent;
   // Brave Mobile strips "Brave" from the UA string — existence check, not UA match.
   if ('brave' in navigator) return 'brave';
+  if (/CriOS\//i.test(ua)) return 'chrome';
+  if (/FxiOS\//i.test(ua)) return 'firefox';
+  if (/EdgiOS\//i.test(ua)) return 'edge';
   if (/Firefox/i.test(ua)) return 'firefox';
   if (/Safari/i.test(ua) && !/Chrome/i.test(ua) && !/Chromium/i.test(ua)) return 'safari';
   if (/SamsungBrowser/i.test(ua)) return 'samsung';
@@ -68,7 +77,10 @@ let launchApplyUntil = 0;
 let checkPromise = null;
 let deferredPrompt = null;
 
-const state = {
+// Replaced wholesale on every change, never mutated in place: getPwaState is a
+// useSyncExternalStore snapshot, and React compares snapshots with Object.is —
+// a mutated-in-place object keeps its identity and the UI would never update.
+let state = {
   updateBannerVisible: false,
   installModalOpen: false,
   showInstallItem: false,
@@ -78,6 +90,12 @@ const state = {
 
 const listeners = new Set();
 const eventListeners = new Set();
+// Events emitted before any consumer subscribes are held here rather than
+// dropped: PwaManager subscribes in a passive effect, so an onOfflineReady
+// that fires before React mounts would otherwise lose its toast. Capped
+// because nothing guarantees a consumer ever attaches.
+let pendingEvents = [];
+const MAX_PENDING_EVENTS = 10;
 
 function notify() {
   listeners.forEach((fn) => {
@@ -88,6 +106,11 @@ function notify() {
 // Events carry toast-worthy moments ({ type, message?, tone? }) — the
 // PwaManager component turns them into toasts so this module stays DOM-free.
 function emit(event) {
+  if (eventListeners.size === 0) {
+    pendingEvents.push(event);
+    if (pendingEvents.length > MAX_PENDING_EVENTS) pendingEvents.shift();
+    return;
+  }
   eventListeners.forEach((fn) => {
     try { fn(event); } catch (e) { console.error('[pwa] event listener failed:', e); }
   });
@@ -129,11 +152,19 @@ export function subscribePwa(fn) {
 
 export function subscribePwaEvents(fn) {
   eventListeners.add(fn);
+  // Drain anything that fired before this first subscriber existed.
+  if (pendingEvents.length) {
+    const queued = pendingEvents;
+    pendingEvents = [];
+    queued.forEach((event) => {
+      try { fn(event); } catch (e) { console.error('[pwa] event listener failed:', e); }
+    });
+  }
   return () => eventListeners.delete(fn);
 }
 
 function setState(patch) {
-  Object.assign(state, patch);
+  state = { ...state, ...patch };
   notify();
 }
 
@@ -246,8 +277,12 @@ export function checkForUpdates() {
 
 export function getInstallInstructions() {
   const browser = state.browser;
-  const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-  const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
+  // iPadOS 13+ reports itself as "Macintosh", so a UA-only test sends iPad
+  // users to the macOS "File → Add to Dock" steps — a menu that does not exist
+  // there. Touch points disambiguate: desktop Safari reports 0.
+  const isIPadOS = navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1;
+  const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent) || isIPadOS;
+  const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent) || isIPadOS;
 
   // iOS non-Safari browsers cannot install PWAs — redirect to Safari and say
   // why, instead of desktop instructions that are impossible to follow.
@@ -384,17 +419,25 @@ export function closeInstallModal() {
 
 export function triggerInstall() {
   if (deferredPrompt) {
-    deferredPrompt.prompt();
-    deferredPrompt.userChoice
+    // Clear BEFORE prompting: a beforeinstallprompt event may only be
+    // prompt()ed once, so a fast double tap — or any retap after a dismissal —
+    // would call it on a spent event and throw. prompt() itself can also
+    // reject (no user gesture, permission policy), which the old code left
+    // uncaught because only userChoice was wrapped.
+    const promptEvent = deferredPrompt;
+    deferredPrompt = null;
+    Promise.resolve()
+      .then(() => promptEvent.prompt())
+      .then(() => promptEvent.userChoice)
       .then((result) => {
         if (result.outcome === 'dismissed') dismissInstall();
-        deferredPrompt = null;
         updateInstallVisibility();
       })
       .catch((err) => {
-        // Browser rejected the prompt — clear state so it can't go stale.
         console.warn('[PWA] Install prompt error:', err);
-        deferredPrompt = null;
+        // Don't strand the user with no way in — the native path is gone for
+        // this page load, so offer the manual steps instead.
+        manualFallbackArmed = true;
         updateInstallVisibility();
       });
   } else if (supportsManualInstall || manualFallbackArmed) {
@@ -411,12 +454,11 @@ let appInstalledListener = null;
 let displayModeMediaQuery = null;
 let displayModeListener = null;
 let swUpdateIntervalId = null;
-let manualInstallTimeoutId = null;
 let diagnosticTimeoutId = null;
 
 function init() {
-  state.browser = detectBrowser();
-  state.autoUpdateEnabled = isAutoUpdateEnabled();
+  // setState, not direct assignment — `state` is an immutable snapshot now.
+  setState({ browser: detectBrowser(), autoUpdateEnabled: isAutoUpdateEnabled() });
   displayModeMediaQuery = window.matchMedia('(display-mode: standalone)');
   isStandalone = displayModeMediaQuery.matches || navigator.standalone === true;
   supportsAutoInstall = CHROMIUM_BROWSERS.includes(state.browser);
@@ -471,7 +513,13 @@ function init() {
       if (registration.waiting && isAutoUpdateEnabled() && !wasJustUpdated()) {
         launchApplyUntil = Date.now() + LAUNCH_APPLY_WINDOW_MS;
       }
-      swUpdateIntervalId = setInterval(() => registration.update(), CHECK_INTERVAL_MS);
+      // Rejections swallowed for the same reason as the visibility check
+      // below: update() throws when offline, and a backgrounded offline tab
+      // would otherwise emit an unhandled rejection every hour — which the
+      // head-common error capture then dutifully logs as noise.
+      swUpdateIntervalId = setInterval(() => {
+        registration.update().catch(() => { /* offline — the next poll retries */ });
+      }, CHECK_INTERVAL_MS);
     },
     onRegisterError(err) {
       // Permanent for this page load — checkForUpdates uses this to avoid
@@ -529,13 +577,13 @@ function init() {
   };
   document.addEventListener('visibilitychange', visibilityListener);
 
-  // Safari/Firefox: surface manual instructions after 1s if no native prompt.
-  if (!isStandalone && !dismissed && supportsManualInstall) {
-    manualInstallTimeoutId = setTimeout(() => {
-      manualInstallTimeoutId = null;
-      if (!deferredPrompt) updateInstallVisibility();
-    }, 1000);
-  }
+  // NOTE: no 1s "reveal manual instructions" timer here, unlike the pattern's
+  // reference hook. `supportsManualInstall` already grants visibility in
+  // updateInstallVisibility(), and init() calls that unconditionally below, so
+  // the timer's callback recomputed a value that was already true — it gated
+  // nothing. The pattern's delay exists to let a native prompt win the race,
+  // but it only applies to Safari/Firefox, which never fire
+  // beforeinstallprompt at all. Deleted rather than wired to a real flag.
 
   // Chromium whose beforeinstallprompt never fires (90-day suppression after
   // a dismissal): log diagnostics, then fall back to manual instructions.
@@ -577,7 +625,6 @@ if (typeof window !== 'undefined' && !window.__pwaModuleAttached) {
 if (import.meta.hot) {
   import.meta.hot.dispose(() => {
     if (swUpdateIntervalId !== null) clearInterval(swUpdateIntervalId);
-    if (manualInstallTimeoutId !== null) clearTimeout(manualInstallTimeoutId);
     if (diagnosticTimeoutId !== null) clearTimeout(diagnosticTimeoutId);
     if (checkSettleTimeoutId !== null) clearTimeout(checkSettleTimeoutId);
     if (beforeInstallPromptListener) window.removeEventListener('beforeinstallprompt', beforeInstallPromptListener);

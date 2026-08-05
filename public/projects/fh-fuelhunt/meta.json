@@ -13,7 +13,8 @@
     "React Native",
     "Supabase",
     "Mapbox GL",
-    "PostGIS"
+    "PostGIS",
+    "PWA"
   ],
   "audience": "South African drivers, fleet managers, and anyone who buys fuel regularly and wants to stop overpaying at the nearest station when a cheaper one is five minutes away.",
   "useCases": [

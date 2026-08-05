@@ -74,7 +74,7 @@ export const PROJECTS = [
     title: 'Software Transaction Structuring Tool',
     badges: [{ label: 'Finance', primary: true }],
     description: 'B2B software pricing tool. Find optimal pricing where you hit your margin and the client sees ROI. Compare 6 transaction models with 47 variants.',
-    tech: 'TypeScript · React · Vite',
+    tech: 'TypeScript · SvelteKit · PWA',
     live: 'https://model-pear-web.vercel.app/',
     source: 'https://github.com/devmade-ai/model-pear',
   },

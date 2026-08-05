@@ -75,9 +75,106 @@ function eligiblePatterns() {
     })
 }
 
+/**
+ * Read markup for INSPECTION — comments stripped.
+ *
+ * Requirement: these checks must see what a parser sees.
+ * Why: every extraction below is a regex, and a regex cannot tell that it is
+ *   inside `<!-- ... -->`. Heads in this fleet are full of Requirement/Approach
+ *   comments, and those comments quote tag literals. Both directions bite: a
+ *   presence check passes on a tag that exists only in a comment, and a content
+ *   check reads the commented copy instead of the real one. The second is not
+ *   hypothetical — the fleet audit's live checker reported see-veo's meta
+ *   description as EMPTY because a comment above it quoted the tag name; the
+ *   page was fine.
+ * Note: use plain readFileSync where the comment IS the subject (source-literal
+ *   assertions), which is why this is a separate helper rather than a global.
+ */
+const stripComments = (html) => html.replace(/<!--[\s\S]*?-->/g, '')
+const readHtml = (path) => stripComments(readFileSync(path, 'utf8'))
+
 function meta(html, attr, key) {
   const m = html.match(new RegExp(`<meta\\s+${attr}="${key}"\\s+content="([^"]*)"`))
   return m ? m[1] : null
+}
+
+function title(html) {
+  return html.match(/<title>([\s\S]*?)<\/title>/)?.[1] ?? null
+}
+
+// The <title> is the one identity tag with no fallback: a search result shows
+// it, a browser tab shows it, and unlike og:title nothing substitutes for it.
+// The failure this catches is the one that shipped here — a bare brand token
+// that also disagreed with og:title, so a listing and a shared card described
+// the same page differently. Both properties, one check.
+const SITE_NAME = 'devmade-ai'
+const TITLE_MAX = 65
+
+function checkTitle(label, html, { mustMatchOg }) {
+  const value = title(html)
+  if (!value) {
+    fail(`${label}: no <title>`)
+    return
+  }
+  if (value.trim() === SITE_NAME) {
+    fail(
+      `${label}: <title> is the bare brand token "${SITE_NAME}" — a search result ` +
+      'needs to say what the page is, not only who made it',
+    )
+  }
+  if (value.length > TITLE_MAX) {
+    fail(`${label}: <title> is ${value.length} chars, over the ${TITLE_MAX} budget — it will be truncated`)
+  }
+  if (mustMatchOg) {
+    const og = meta(html, 'property', 'og:title')
+    if (value !== og) {
+      fail(`${label}: <title> ("${value}") does not match og:title ("${og}")`)
+    }
+  }
+}
+
+// Structured data (DISCOVERABILITY.md Step 5). Three failure modes are worth
+// gating: a block that does not parse (invisible until Search Console says so),
+// more than one block or a missing site node (the @id joins stop resolving),
+// and an unescaped `</script>` from item copy (which truncates the page's head).
+const ORG_ID = `${SITE}#org`
+const WEBSITE_ID = `${SITE}#website`
+
+function checkJsonLd(label, html, { itemId = null } = {}) {
+  const blocks = [...html.matchAll(/<script type="application\/ld\+json"[^>]*>([\s\S]*?)<\/script>/g)]
+  if (blocks.length !== 1) {
+    fail(`${label}: expected exactly 1 JSON-LD block, found ${blocks.length}`)
+    return
+  }
+  let graph
+  try {
+    graph = JSON.parse(blocks[0][1])
+  } catch (err) {
+    fail(`${label}: JSON-LD does not parse — ${err.message}`)
+    return
+  }
+  if (graph['@context'] !== 'https://schema.org') {
+    fail(`${label}: JSON-LD @context is ${graph['@context']}, expected https://schema.org`)
+  }
+  const nodes = graph['@graph'] || []
+  const ids = nodes.map((n) => n['@id'])
+  for (const required of [ORG_ID, WEBSITE_ID]) {
+    if (!ids.includes(required)) fail(`${label}: JSON-LD is missing the ${required} node`)
+  }
+  if (itemId) {
+    if (!ids.includes(itemId)) {
+      fail(`${label}: JSON-LD has no item node — expected ${itemId}, got ${ids.join(', ')}`)
+    }
+  } else if (nodes.length !== 2) {
+    fail(
+      `${label}: JSON-LD carries ${nodes.length} nodes. A template whose content is ` +
+      'chosen at runtime must claim only the site-wide ones — a static item node ' +
+      'would assert that every item URL is the same thing.',
+    )
+  }
+  if (/<\/script/i.test(blocks[0][1])) {
+    fail(`${label}: JSON-LD contains a literal </script — escape < as \\u003C`)
+  }
 }
 
 // --- per-page head tags -----------------------------------------------------
@@ -90,7 +187,7 @@ const REQUIRED_OG = [
 const REQUIRED_TWITTER = ['twitter:card', 'twitter:title', 'twitter:description', 'twitter:image']
 
 for (const page of PAGES) {
-  const html = readFileSync(join(ROOT, page), 'utf8')
+  const html = readHtml(join(ROOT, page))
 
   for (const key of REQUIRED_OG) {
     if (!meta(html, 'property', key)) fail(`${page}: missing <meta property="${key}">`)
@@ -141,12 +238,18 @@ for (const page of PAGES) {
   if (/<meta\s+name="robots"[^>]*noindex/.test(html)) {
     fail(`${page}: carries a noindex robots meta — this site is meant to be indexed`)
   }
+
+  // og:title agreement only where the <title> is the real one. pattern.html and
+  // project.html carry a placeholder that prerenderPages() and seoMeta.js both
+  // replace, so requiring a match there would forbid the placeholder.
+  checkTitle(page, html, { mustMatchOg: STATIC_CANONICAL_PAGES.includes(page) })
+  checkJsonLd(page, html)
 }
 
 // The landing page's identity must point at the site root exactly — presence
 // and https:// alone pass happily on a copy-pasted wrong origin.
 {
-  const html = readFileSync(join(ROOT, 'index.html'), 'utf8')
+  const html = readHtml(join(ROOT, 'index.html'))
   const canonical = html.match(/<link\s+rel="canonical"\s+href="([^"]+)"/)?.[1]
   if (canonical !== SITE) fail(`index.html: canonical is ${canonical}, expected ${SITE}`)
   if (meta(html, 'property', 'og:url') !== SITE) {
@@ -181,7 +284,7 @@ if (!existsSync(join(ROOT, OG_IMAGE))) {
   // Every page declares the dimensions, so every page can drift — checking
   // index.html alone let an edit to the other two pass silently.
   for (const page of PAGES) {
-    const html = readFileSync(join(ROOT, page), 'utf8')
+    const html = readHtml(join(ROOT, page))
     if (String(width) !== meta(html, 'property', 'og:image:width')) {
       fail(`${page}: og:image:width says ${meta(html, 'property', 'og:image:width')}, the file is ${width}`)
     }
@@ -278,7 +381,7 @@ if (existsSync(distPatternsDir)) {
       fail(`dist/patterns/${slug}/index.html missing — the pattern has no page of its own`)
       continue
     }
-    const html = readFileSync(page, 'utf8')
+    const html = readHtml(page)
 
     // The whole point: its OWN copy, not the template's placeholder.
     if (html.includes('devmade-ai — Pattern Details')) {
@@ -291,6 +394,8 @@ if (existsSync(distPatternsDir)) {
     if (canonical !== `${SITE}patterns/${slug}/`) {
       fail(`dist/patterns/${slug}/: canonical is ${canonical}, expected ${SITE}patterns/${slug}/`)
     }
+    checkTitle(`dist/patterns/${slug}/`, html, { mustMatchOg: true })
+    checkJsonLd(`dist/patterns/${slug}/`, html, { itemId: `${SITE}patterns/${slug}/#item` })
     // Content, not just tags — a crawler that does not run JS must find the
     // document, which is the reason these files exist at all.
     //
@@ -354,7 +459,7 @@ if (existsSync(projectsDir) && existsSync(distProjectsDir)) {
       fail(`dist/projects/${slug}/index.html missing — the project has no page of its own`)
       continue
     }
-    const html = readFileSync(page, 'utf8')
+    const html = readHtml(page)
     const title = JSON.parse(readFileSync(join(projectsDir, slug, 'meta.json'), 'utf8')).title
 
     if (html.includes('devmade-ai — Project Details')) {
@@ -367,6 +472,8 @@ if (existsSync(projectsDir) && existsSync(distProjectsDir)) {
     if (canonical !== `${SITE}projects/${slug}/`) {
       fail(`dist/projects/${slug}/: canonical is ${canonical}, expected ${SITE}projects/${slug}/`)
     }
+    checkTitle(`dist/projects/${slug}/`, html, { mustMatchOg: true })
+    checkJsonLd(`dist/projects/${slug}/`, html, { itemId: `${SITE}projects/${slug}/#item` })
     const appBody = html.match(/<main[^>]*>([\s\S]*?)<\/main>/)?.[1] ?? ''
     if (!/<h1[\s>]/.test(appBody)) {
       fail(`dist/projects/${slug}/: no prerendered content in <main> — a crawler that does not run JS sees an empty page`)
@@ -417,7 +524,7 @@ if (existsSync(distSitemap)) {
 {
   const distIndex = join(ROOT, 'dist/index.html')
   if (existsSync(distIndex)) {
-    const html = readFileSync(distIndex, 'utf8')
+    const html = readHtml(distIndex)
     const patternLinks = new Set(html.match(/href="\/glow-props\/patterns\/[a-z0-9-]+\/"/g) ?? []).size
     if (patternLinks < patternEntries.length) {
       fail(`dist/index.html links ${patternLinks} pattern pages statically, expected ${patternEntries.length} — non-JS crawlers can't discover them`)

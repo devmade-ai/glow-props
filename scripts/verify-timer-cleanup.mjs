@@ -51,7 +51,11 @@ function listJsFiles(dir) {
     const path = join(dir, name);
     if (statSync(path).isDirectory()) {
       out.push(...listJsFiles(path));
-    } else if (name.endsWith('.js') || name.endsWith('.mjs') || name.endsWith('.jsx')) {
+      // .ts/.tsx/.vue/.svelte are here for the fleet, not for this repo — glow-props
+      // has none. Downstream repos copy this script, and one that only reads
+      // .js/.mjs/.jsx checks almost nothing in a TypeScript or Svelte codebase
+      // while still reporting OK.
+    } else if (/\.(js|mjs|cjs|jsx|ts|tsx|vue|svelte)$/.test(name) && !/\.d\.ts$/.test(name)) {
       out.push(path);
     }
   }
@@ -59,13 +63,45 @@ function listJsFiles(dir) {
 }
 
 // Pairing rules for React files: registration verb → required release verb.
+//
+// The release regexes accept the verb as a CALLBACK REFERENCE, not just a call.
+// TIMER_LEAKS.md's own variant 1 ends `return () => timeouts.forEach(clearTimeout)`
+// — a `clearTimeout\s*\(` regex does not match that, so this check used to fail
+// the pattern it exists to enforce. Found by running it across the fleet, where a
+// repo implementing variant 1 correctly came back as a failure.
+const released = (verb) => new RegExp(`\\b${verb}\\s*[(,)\\]]`);
+
 const PAIRS = [
-  [/\.addEventListener\s*\(/, /\.removeEventListener\s*\(/, 'addEventListener without removeEventListener'],
-  [/\bsetTimeout\s*\(/, /\bclearTimeout\s*\(/, 'setTimeout without clearTimeout'],
-  [/\bsetInterval\s*\(/, /\bclearInterval\s*\(/, 'setInterval without clearInterval'],
+  [/\.addEventListener\s*\(/, released('removeEventListener'), 'addEventListener without removeEventListener'],
+  [/\bsetTimeout\s*\(/, released('clearTimeout'), 'setTimeout without clearTimeout'],
+  [/\bsetInterval\s*\(/, released('clearInterval'), 'setInterval without clearInterval'],
   [/\bnew IntersectionObserver\s*\(/, /\.disconnect\s*\(/, 'IntersectionObserver without disconnect'],
-  [/\brequestAnimationFrame\s*\(/, /\bcancelAnimationFrame\s*\(/, 'requestAnimationFrame without cancelAnimationFrame'],
 ];
+
+// requestAnimationFrame is NOT in PAIRS, deliberately. Its dominant legitimate
+// use is a one-shot next-frame call — focus an element after a dialog opens,
+// measure after layout — which schedules exactly one callback and has nothing to
+// accumulate. Requiring cancelAnimationFrame there flags correct code in every
+// repo that implements the focus-after-open idiom.
+//
+// A rAF that DOES need cancelling is one that keeps itself alive (the callback
+// re-arms it) or whose id is stored so something can cancel it. Both are
+// detectable; a bare `requestAnimationFrame(() => …)` is not a leak.
+const RAF_LOOPING = /(\w+|\w+\.current)\s*=\s*requestAnimationFrame\s*\(|requestAnimationFrame\s*\(\s*function\s+\w*\s*\([\s\S]{0,400}?requestAnimationFrame/;
+const RAF_CANCEL = released('cancelAnimationFrame');
+
+// A service worker's listeners ARE its lifecycle. `self.addEventListener('fetch')`
+// at module scope is the only correct shape, there is no HMR, and nothing can
+// dispose it — so the module-level rule does not apply.
+const IS_SERVICE_WORKER = /self\.addEventListener\s*\(\s*['"](install|activate|fetch|push|message|notificationclick)['"]/;
+
+// The subscription form: `const sub = X.addEventListener(...)` returns a handle
+// released with `.remove()`/`.unsubscribe()` rather than a removeEventListener
+// call (React Native's AppState and Linking, and most SDK emitters). Only
+// accepted when the return value is actually captured — `element.remove()` is
+// far too common to treat as proof of teardown on its own.
+const SUBSCRIPTION_FORM = /(?:const|let|var)\s+\w+\s*=\s*[\w.]+\.addEventListener\s*\(/;
+const SUBSCRIPTION_RELEASE = /\.(remove|unsubscribe)\s*\(\s*\)/;
 
 // Inline scripts only — <script src=...> bodies are empty and external files are
 // covered by the src/ and public/ walks. Returned as SEPARATE blocks: each
@@ -87,11 +123,19 @@ for (const file of listJsFiles(join(ROOT, 'src'))) {
   // React files (components, hooks) register inside effects — the pairing rule
   // applies. Anything importing react counts, .jsx or not.
   const isReactFile = file.endsWith('.jsx') || /from 'react'/.test(content);
+  if (IS_SERVICE_WORKER.test(content)) {
+    continue;
+  }
   if (isReactFile) {
     for (const [register, release, message] of PAIRS) {
-      if (register.test(content) && !release.test(content)) {
-        failures.push(`${file}: ${message} in the same file — effects must release what they register`);
-      }
+      if (!register.test(content) || release.test(content)) continue;
+      // The subscription form releases with a handle, not a removeEventListener.
+      if (message.startsWith('addEventListener')
+        && SUBSCRIPTION_FORM.test(content) && SUBSCRIPTION_RELEASE.test(content)) continue;
+      failures.push(`${file}: ${message} in the same file — effects must release what they register`);
+    }
+    if (RAF_LOOPING.test(content) && !RAF_CANCEL.test(content)) {
+      failures.push(`${file}: a self-rescheduling or stored requestAnimationFrame with no cancelAnimationFrame`);
     }
   } else if (REGISTRATION.test(content) && !VITE_DISPOSE.test(content)) {
     failures.push(`${file}: uses setTimeout/setInterval/requestAnimationFrame/addEventListener/subscribe/IntersectionObserver at module level but has no import.meta.hot.dispose() block`);

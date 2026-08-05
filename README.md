@@ -117,6 +117,8 @@ npm run build                # Production build → dist/
 npm run verify:seo           # Static check on the discoverability setup
 npm run verify:icons         # Icon cache-busting contract (build first)
 npm run verify:timer-cleanup # Timer/listener cleanup hygiene
+npm run verify:ssr-safety    # SSR entry never imports a browser-only singleton
+npm run smoke:seo            # Loads the built pages in a browser (build first)
 ```
 
 ## Tech Stack
@@ -144,10 +146,21 @@ allows crawling and points at the sitemap, every page carries a canonical and a
 full Open Graph / Twitter set, and links unfurl with a 1200×630 card rather than
 a cropped app icon.
 
+Each page also carries one block of structured data — `Organization` and
+`WebSite` everywhere, plus a `TechArticle` or `SoftwareApplication` node on the
+item pages, joined by `@id` rather than repeated.
+
 ```bash
 npm run generate:og-image   # Rebuild the card from assets/icon-source.svg
 npm run verify:seo          # Fails if any of it drifts
+npm run smoke:seo           # Loads the built pages in a browser and re-checks
+npm run audit:discoverability -- --check   # Fleet-wide, against the live sites
 ```
+
+`smoke:seo` exists because `verify:seo` can only see what the build wrote, and
+the `?name=` pages get their structured data at runtime. It is the check that
+catches a second JSON-LD block being appended instead of the existing one being
+rewritten — a change that leaves `dist/` untouched and `verify:seo` green.
 
 Every pattern and every project is **prerendered to its own file** at
 `patterns/<slug>/` and `projects/<slug>/` — real content and its own title,

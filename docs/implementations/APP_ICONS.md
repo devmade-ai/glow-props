@@ -92,26 +92,130 @@ generate().catch((err) => {
 **SVG design rules for maskable icons:**
 - Canvas must be square (e.g. `viewBox="0 0 1024 1024"`)
 - Add `shape-rendering="geometricPrecision"` to the root `<svg>` element — tells the rasterizer to prioritize accurate geometry over speed
-- Background fills entire canvas (no transparency)
-- Important content stays within the inner 80% (safe zone for maskable crop)
+- **The maskable safe zone is a CIRCLE of radius 40%** (410px on a 1024 canvas), not the inner-80% square. The distinction matters: artwork can sit inside the square and still have its corners clipped by a circular launcher mask. **Do not derive the mark size — measure it** (see below); ~760px on a 1024 canvas is the value that actually passes.
 - Design must be legible at 48px (favicon) — avoid fine details
+
+**Transparent source, composited maskable.** Maskable icons need an opaque full-bleed background, but the favicon and any in-app logo usage want transparency so they sit on whatever the theme provides. Rather than baking a background into the SVG, keep the source transparent and composite the maskable variant at generation time (glow-props' approach):
+
+```javascript
+// Sharp applies .composite() at the END of its pipeline, so chaining
+// .flatten()/.removeAlpha() alongside it silently runs BEFORE the mark lands —
+// you get a blank plate. Two passes: composite to a buffer, then strip alpha.
+const mark = await sharp(svgBuffer, { density: SVG_DENSITY }).resize(760, 760).png().toBuffer();
+const composited = await sharp({
+  create: { width: 1024, height: 1024, channels: 4, background: '#ffffff' },
+}).composite([{ input: mark, gravity: 'centre' }]).png().toBuffer();
+
+await sharp(composited).flatten({ background: '#ffffff' })
+  .png().toFile(join(IMAGES_DIR, 'icon-1024-maskable.png'));
+```
+
+**Measure the safe zone, don't derive it — this doc's own number was wrong.**
+The value here was 780px, derived from the 40% circle and the mark's corner
+geometry. Glow-props followed it and its produced icon measured **40.5%** of the
+width from centre; fh-fuelhunt's measured **49%**. Two of two repos following
+the rule were outside the circle, and neither build said anything.
+
+A derivation cannot see the rasterizer. Sharp anti-aliases from a 400 DPI
+render, which lays ink a few pixels past the nominal box, and the corner arcs
+the algebra models are exactly where that matters. Android crops against
+**pixels**, so measure pixels:
+
+```javascript
+/** The maskable safe zone, as a fraction of the icon's width from its centre. */
+const MASKABLE_SAFE_RADIUS = 0.4;
+
+async function assertMaskableSafeZone(file, background) {
+  const { data, info } = await sharp(file).ensureAlpha().raw()
+    .toBuffer({ resolveWithObject: true });
+  const bg = [1, 3, 5].map((i) => parseInt(background.slice(i, i + 2), 16));
+
+  // Bounding box of every pixel that differs from the plate colour. The
+  // threshold ignores the anti-aliased fade at the mark's own edge without
+  // ignoring the mark.
+  let minX = Infinity, minY = Infinity, maxX = -1, maxY = -1;
+  for (let y = 0; y < info.height; y += 1) {
+    for (let x = 0; x < info.width; x += 1) {
+      const i = (y * info.width + x) * info.channels;
+      const delta = Math.abs(data[i] - bg[0])
+        + Math.abs(data[i + 1] - bg[1]) + Math.abs(data[i + 2] - bg[2]);
+      if (delta > 24) {
+        if (x < minX) minX = x;
+        if (x > maxX) maxX = x;
+        if (y < minY) minY = y;
+        if (y > maxY) maxY = y;
+      }
+    }
+  }
+  if (maxX < 0) throw new Error(`${file} is blank — no mark rendered.`);
+
+  // The CORNERS of the ink box are what the circular mask clips, not its edges.
+  const cx = info.width / 2, cy = info.height / 2;
+  const radius = Math.max(...[[minX, minY], [maxX, minY], [minX, maxY], [maxX, maxY]]
+    .map(([x, y]) => Math.hypot(x - cx, y - cy)));
+  const fraction = radius / info.width;
+
+  if (fraction > MASKABLE_SAFE_RADIUS) {
+    throw new Error(
+      `maskable mark reaches ${(fraction * 100).toFixed(1)}% of the width from centre, ` +
+      `outside the ${(MASKABLE_SAFE_RADIUS * 100).toFixed(0)}% safe circle. ` +
+      'Android will crop it — lower the mark size until this passes.',
+    );
+  }
+  console.log(`  maskable safe zone ok — mark at ${(fraction * 100).toFixed(1)}% of 40%`);
+}
+```
+
+Call it right after writing the file. Choose the mark size to satisfy the
+assertion rather than the algebra — the blank-icon guard matters as much as the
+overflow one, since the composite trap above produces a plate that measures 0%
+and would otherwise pass silently. The check is O(pixels) on a single 1024²
+image and adds a few milliseconds to a script that already rasterizes eight.
 
 **PWA manifest icons** (`manifest.json`):
 ```json
 "icons": [
   { "src": "/assets/images/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
   { "src": "/assets/images/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
-  { "src": "/assets/images/icon.png", "sizes": "1024x1024", "type": "image/png", "purpose": "maskable" }
+  { "src": "/assets/images/icon-1024-maskable.png", "sizes": "1024x1024", "type": "image/png", "purpose": "maskable" }
 ]
 ```
 
-Separate `purpose` values: `any` for standard display (192, 512), `maskable` for the full-bleed 1024. Don't combine `"any maskable"` — browsers pick the wrong one.
+Separate `purpose` values: `any` for standard display (192, 512), `maskable` for the full-bleed variant. Don't combine `"any maskable"` — browsers pick the wrong one. Maskable at 192 + 512 instead of a single 1024 is equally valid and matches the sizes Chrome's install criteria request.
+
+Icons in `public/assets/` interact with two Workbox traps — precache duplication and `revision: null` — before they ever reach a user. See [PWA_ICON_CACHE_BUST.md](PWA_ICON_CACHE_BUST.md).
+
+## Notification badge (apps that use Web Push)
+
+If the service worker calls `showNotification`, its `badge` is a separate icon with its own rule: **Android alpha-masks and tints it**, so an opaque full-square PNG renders as a solid white block. The badge must be a **white-on-transparent silhouette**, generated from its own source SVG rather than the app icon — the inverse of the maskable requirement above, which is why one source cannot serve both.
+
+Both the `icon` and `badge` passed to `showNotification` are icon URL surfaces, so version them from the same table as the rest (see PWA_ICON_CACHE_BUST.md).
 
 ## Favicon.ico Generation (Optional)
 
-For cross-browser compatibility (Windows taskbar pinning, older browsers), generate a `favicon.ico` from a 32x32 PNG. Two approaches:
+For cross-browser compatibility (Windows taskbar pinning, older browsers), generate a `favicon.ico` from a 32x32 PNG. Two approaches — prefer the manual pack: it has no dependency, and its byte layout is what makes the tripwire below possible.
 
-**With `png-to-ico` package** (see-veo):
+## Verify generated images by their pixels, not their header
+
+Every icon tripwire in the fleet checked dimensions and file existence, and every one of them would pass on a blank image. web-arch generates its rasters by screenshotting with headless Chromium, whose **window width floors at ~500px** — so `--window-size=180,180` emitted a correctly-sized PNG that was a top-left *crop* of a 500px viewport. Every icon under ~500px shipped blank for a month while a dimensions-only test stayed green.
+
+Two rules, whichever generator you use:
+
+- **Assert on content.** Sample a few pixels, or check that the file is not uniformly one colour. A correct `IHDR` proves nothing about what the renderer actually drew.
+- **Byte-identical output after a source change is a failure signal**, not a no-op — it means the source never reached the output.
+
+(A sharp-free generator is a reasonable choice when you want to keep native dependencies out of a hosted build; the trap above is the price.)
+
+**Failure mode worth a test:** writing raw PNG bytes to a `.ico` filename is invisible in browsers (they sniff the content) but rejected by Windows taskbar pinning. Assert the ICO container bytes — reserved `0x0000`, type `0x0001`, image count — so the silent version can't ship:
+
+```javascript
+const ico = readFileSync(join(IMAGES_DIR, 'favicon.ico'));
+assert.equal(ico.readUInt16LE(0), 0);  // reserved
+assert.equal(ico.readUInt16LE(2), 1);  // type: ICO
+assert.ok(ico.readUInt16LE(4) >= 1);   // at least one image
+```
+
+**With `png-to-ico` package:**
 
 ```javascript
 import pngToIco from 'png-to-ico';
@@ -122,7 +226,7 @@ const icoBuffer = await pngToIco(favicon32);
 writeFileSync(join(IMAGES_DIR, 'favicon.ico'), icoBuffer);
 ```
 
-**Manual ICO packing** (fl-farlume) — zero dependencies, stable binary format:
+**Manual ICO packing** (fl-farlume, kl-website) — zero dependencies, stable binary format:
 
 ```javascript
 const favicon32 = await sharp(svgBuffer, { density: SVG_DENSITY })

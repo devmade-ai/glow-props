@@ -23,7 +23,7 @@
 //
 // See docs/implementations/DISCOVERABILITY.md.
 
-const SITE = 'https://devmade-ai.github.io/glow-props/';
+import { SITE, ORG_ID, WEBSITE_ID, siteNodes, itemNode, graphJson } from './lib/structuredData.js';
 
 function setMeta(selector, attr, key, content) {
   let tag = document.head.querySelector(selector);
@@ -35,6 +35,40 @@ function setMeta(selector, attr, key, content) {
   tag.setAttribute('content', content);
 }
 
+// Requirement: the ?name= entry points need the same item node the prerendered
+//   pages get, or a pattern reached that way is described only by the two
+//   site-wide nodes.
+// Approach: rewrite the existing block's contents rather than appending a
+//   second <script>. On a prerendered page this recomputes the node that is
+//   already there — same values, one block, so the "exactly one graph" property
+//   holds whichever route the visitor arrived by.
+// Alternative: append a block when the page is a ?name= form — rejected, it
+//   makes the number of graphs depend on the entry point, which is the kind of
+//   thing that silently doubles after an unrelated change.
+function applyStructuredData({ itemType, title, description, url }) {
+  const block = document.getElementById('page-jsonld');
+  if (!block) return;
+
+  // Read the block rather than trusting it: if the template's site nodes are
+  // ever wrong, replacing them with freshly-built ones would hide that from
+  // verify:seo. Both must be present and match before this writes anything.
+  let existing;
+  try {
+    existing = JSON.parse(block.textContent);
+  } catch {
+    // A malformed block is a build-time mistake, not something to paper over at
+    // runtime: leave it alone so verify:seo and Search Console both see it.
+    return;
+  }
+  const ids = (existing['@graph'] || []).map((node) => node['@id']);
+  if (!ids.includes(ORG_ID) || !ids.includes(WEBSITE_ID)) return;
+
+  block.textContent = graphJson([
+    ...siteNodes(),
+    itemNode({ itemType, title, description, url }),
+  ]);
+}
+
 /**
  * Point the page's identity tags at the item actually being shown.
  *
@@ -42,8 +76,11 @@ function setMeta(selector, attr, key, content) {
  * @param {string} page.title       Item title, without the site suffix.
  * @param {string} page.description One or two sentences about this item.
  * @param {string} page.path        Site-relative canonical path, e.g. "patterns/timer-leaks/".
+ * @param {string} page.itemType    schema.org type for this item — "TechArticle" or
+ *                                  "SoftwareApplication". Must match what
+ *                                  prerenderPages() writes for the same page.
  */
-export function applyPageSeo({ title, description, path }) {
+export function applyPageSeo({ title, description, path, itemType }) {
   const fullTitle = `${title} — devmade-ai`;
   const url = SITE + path;
 
@@ -67,4 +104,6 @@ export function applyPageSeo({ title, description, path }) {
   setMeta('meta[property="og:url"]', 'property', 'og:url', url);
   setMeta('meta[name="twitter:title"]', 'name', 'twitter:title', fullTitle);
   setMeta('meta[name="twitter:description"]', 'name', 'twitter:description', description);
+
+  if (itemType) applyStructuredData({ itemType, title, description, url });
 }

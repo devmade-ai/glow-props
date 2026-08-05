@@ -5,6 +5,9 @@ import { VitePWA } from 'vite-plugin-pwa';
 import { copyFileSync, readFileSync, readdirSync, existsSync, mkdirSync, writeFileSync } from 'fs';
 import { resolve, basename } from 'path';
 import { createHash } from 'crypto';
+// Shared with src/seoMeta.js so both writers of the JSON-LD block emit the same
+// node for the same item — see the module header for why this isn't duplicated.
+import { siteNodes, itemNode, graphJson, SITE } from './src/lib/structuredData.js';
 
 // Requirement: icon URLs must change when the icon bytes change, or browser/CDN/
 //   WebAPK caches keep serving the old mark for weeks
@@ -377,12 +380,22 @@ function generatePatternManifest() {
 //   folders of markdown don't justify one, and the fleet standard is plain
 //   Vite + React.
 function prerenderPages() {
-  const SITE = 'https://devmade-ai.github.io/glow-props/';
   const GENERIC_PATTERN_DESC = 'Reusable engineering patterns by devmade-ai — implementation guides shared across every project.';
   const GENERIC_PROJECT_DESC = 'Software projects, internal tools, and reusable engineering patterns by devmade-ai.';
 
   function escapeAttr(text) {
     return String(text).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  }
+
+  // Structured data (DISCOVERABILITY.md Step 5). The two site-wide nodes are
+  // written into all three templates verbatim; here the same JSON is rebuilt
+  // from the same module and the item's own node appended, so the templates'
+  // literal is what gets replaced and applyHead's fail-loud guard covers it
+  // like every other tag.
+  const SITE_JSONLD = graphJson(siteNodes());
+
+  function jsonLdPair(item) {
+    return [SITE_JSONLD, graphJson([...siteNodes(), itemNode(item)])];
   }
 
   // The built templates carry document-relative versioned icon links (correct
@@ -432,6 +445,14 @@ function prerenderPages() {
         '<meta name="twitter:description" content="' + GENERIC_PATTERN_DESC + '">',
         '<meta name="twitter:description" content="' + desc + '">',
       ],
+      // TechArticle, not Article: these pages are implementation guides, and
+      // the type is the one claim structured data makes that the copy doesn't.
+      jsonLdPair({
+        itemType: 'TechArticle',
+        title: pattern.title,
+        description: pattern.description,
+        url,
+      }),
       ...iconLinkPairs(),
     ];
   }
@@ -467,6 +488,14 @@ function prerenderPages() {
         '<meta name="twitter:description" content="' + GENERIC_PROJECT_DESC + '">',
         '<meta name="twitter:description" content="' + desc + '">',
       ],
+      // SoftwareApplication: every mirrored project is a running application,
+      // which is what this page documents.
+      jsonLdPair({
+        itemType: 'SoftwareApplication',
+        title: meta.title,
+        description: meta.description,
+        url,
+      }),
       ...iconLinkPairs(),
     ];
   }
@@ -624,7 +653,6 @@ function listProjectSlugs() {
 //   wrong when this was written.
 // See docs/implementations/DISCOVERABILITY.md.
 function generateSitemap() {
-  const SITE = 'https://devmade-ai.github.io/glow-props/';
 
   return {
     name: 'generate-sitemap',

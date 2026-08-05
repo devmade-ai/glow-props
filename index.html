@@ -20,7 +20,11 @@
        Alternative: HTTP header — rejected, GitHub Pages doesn't allow custom headers -->
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://www.googletagmanager.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: https:; connect-src 'self' https://www.googletagmanager.com https://*.google-analytics.com https://*.analytics.google.com https://stats.g.doubleclick.net;">
   <link rel="canonical" href="https://devmade-ai.github.io/glow-props/">
-  <title>devmade-ai</title>
+  <!-- Must match og:title / twitter:title. A bare brand token ("devmade-ai")
+       says nothing in a search result, and disagreeing with the OG title makes
+       a shared card and a search listing describe the same page differently.
+       verify:seo enforces both properties. -->
+  <title>devmade-ai — Project Portfolio</title>
   <meta name="description" content="Software projects, internal tools, and reusable engineering patterns by devmade-ai.">
   <meta property="og:type" content="website">
   <meta property="og:site_name" content="devmade-ai">
@@ -36,6 +40,20 @@
   <meta name="twitter:title" content="devmade-ai — Project Portfolio">
   <meta name="twitter:description" content="Software projects, internal tools, and reusable engineering patterns by devmade-ai.">
   <meta name="twitter:image" content="https://devmade-ai.github.io/glow-props/assets/images/og-image.png">
+  <!-- Requirement: let a search engine resolve who publishes this site instead
+       of inferring it from copy (DISCOVERABILITY.md Step 5).
+       Approach: ONE @graph with @id-joined nodes. Organization and WebSite are
+         true on every page of the site, so they are static here; the item pages
+         carry the same two nodes plus their own, joined by @id rather than
+         repeating the publisher inline.
+       Alternatives:
+         - A <script> per node: rejected — @id joins across separate blocks are
+           legal but drift apart, and two blocks invite a duplicate node.
+         - Marking up anything not rendered on the page: rejected — structured
+           data that describes invisible content is a manual-action risk. -->
+  <script type="application/ld+json" id="page-jsonld">
+  {"@context":"https://schema.org","@graph":[{"@type":"Organization","@id":"https://devmade-ai.github.io/glow-props/#org","name":"devmade-ai","url":"https://devmade-ai.github.io/glow-props/","logo":"https://devmade-ai.github.io/glow-props/assets/images/icon-512.png"},{"@type":"WebSite","@id":"https://devmade-ai.github.io/glow-props/#website","url":"https://devmade-ai.github.io/glow-props/","name":"devmade-ai","description":"Software projects, internal tools, and reusable engineering patterns by devmade-ai.","publisher":{"@id":"https://devmade-ai.github.io/glow-props/#org"}}]}
+  </script>
   <!-- Relative (correct from the root-level entries; Vite's dev server
        rewrites root-relative URLs, so absolute forms break dev). The ?v=
        cache-bust query is appended at build by iconCacheBustHtml(), and

@@ -53,24 +53,114 @@ Legend: **Pass** = compliant, **Partial** = has the feature but with gaps, **Mis
 
 ### Gap Matrix
 
-| Repo | CLAUDE.md | APP_ICONS | BURGER_MENU | DEBUG_SYSTEM | DOWNLOAD_PDF | PWA_SYSTEM | THEME_DARK_MODE | EVENT_BUS | Z_INDEX_SCALE | ICON_CACHE_BUST |
-|------|-----------|-----------|-------------|--------------|--------------|------------|-----------------|-----------|---------------|-----------------|
-| glow-props | Pass | Pass | Pass | Pass (DEV) | Pass | Pass | Pass | N/A | Pass | Pass |
-| canva-grid | Pass | Pass | Pass | Pass | Pass (B) | Pass | Pass | N/A | Pass | Pass |
-| fl-farlume | Pass | Pass | Pass | Pass | Pass | Pass | Pass | N/A | Pass | Pass |
-| model-pear | Partial | Pass | Missing | Pass | Partial | Missing | Missing | Missing | Pass | N/A |
-| see-veo | Missing | Partial | N/A | Partial | Partial | Partial | N/A | N/A | Missing | Missing |
-| repo-tor | Pass | Pass | Pass | Pass | Pass | Pass | Pass | N/A | Pass | Pass |
-| fh-fuelhunt | Pass | Pass | Pass | Pass | Missing | Partial | Pass | N/A | Pass | Pass |
-| sun-sea-o | Pass | Pass | Pass | Pass | Pass | Pass | Pass | N/A | Pass | Pass |
-| graphiki | Pass | Pass | Pass | Pass | N/A | Pass | Pass | Pass | Pass | Pass |
-| four-ems | Pass | Pass | Pass | Pass | Pass | Pass | Pass | N/A | Pass | Pass |
-| intxt | Pass | Pass | Pass | Pass | N/A | Pass | Pass | N/A | Pass | Pass |
-| tool-till-tees | Pass | Missing | N/A | N/A | N/A | N/A | ? | ? | N/A | N/A |
+| Repo | CLAUDE.md | APP_ICONS | BURGER_MENU | DEBUG_SYSTEM | DOWNLOAD_PDF | PWA_SYSTEM | THEME_DARK_MODE | EVENT_BUS | Z_INDEX_SCALE | ICON_CACHE_BUST | DISCOVERABILITY |
+|------|-----------|-----------|-------------|--------------|--------------|------------|-----------------|-----------|---------------|-----------------|-----------------|
+| glow-props | Pass | Pass | Pass | Pass (DEV) | Pass | Pass | Pass | N/A | Pass | Pass | Partial |
+| canva-grid | Pass | Pass | Pass | Pass | Pass (B) | Pass | Pass | N/A | Pass | Pass | Missing |
+| fl-farlume | Pass | Pass | Pass | Pass | Pass | Partial | Pass | N/A | Pass | Pass | Missing |
+| model-pear | Partial | Partial | Missing | Pass | Partial | Partial | Partial | Missing | Pass | Missing | Partial |
+| see-veo | Missing | Partial | N/A | Partial | Partial | Partial | N/A | N/A | Missing | Missing | Partial |
+| repo-tor | Pass | Pass | Pass | Pass | Pass | Pass | Pass | N/A | Pass | Pass | Partial |
+| fh-fuelhunt | Pass | Pass | Pass | Pass | Missing | Partial | Pass | N/A | Pass | Pass | Partial |
+| sun-sea-o | Pass | Pass | Pass | Pass | Pass | Pass | Pass | N/A | Pass | Pass | Pass (P) |
+| graphiki | Pass | Pass | Pass | Pass | N/A | Pass | Pass | Pass | Pass | Pass | Pass |
+| four-ems | Pass | Pass | Pass | Pass | Pass | Pass | Pass | N/A | Pass | Pass | Missing |
+| intxt | Pass | Pass | Pass | Pass | N/A | Pass | Pass | N/A | Pass | Pass | Partial |
+| qi-invoice | Pass | Pass | Pass | N/A | Pass (B) | Pass | Pass | N/A | Pass | Pass | Pass |
+| kl-website | Pass | Pass | Pass | N/A | N/A | Pass | Pass | N/A | Pass | Pass | Partial |
+| web-arch | Pass | Partial | Pass | N/A | N/A | Partial | Pass | N/A | Pass | Partial | Pass |
+| dm-website | Pass | Partial | Pass | N/A | N/A | Partial | Pass | N/A | Pass | Missing | Partial |
+| tool-till-tees | Pass | Missing | N/A | N/A | N/A | N/A | ? | ? | N/A | N/A | Missing |
+
+**The DISCOVERABILITY column is the only one graded against deployed reality.**
+Added 2026-08-04 from the fleet public-visibility audit, and every cell was
+checked by fetching the live origin — the home document as a crawler receives it
+(pre-JavaScript), `/robots.txt`, `/sitemap.xml` and a path that cannot exist —
+not by reading source. That distinction changed several grades: four repos serve
+`/robots.txt` as the app's HTML at 200, which reads as "file present" in a repo
+and "no robots.txt" to a crawler.
+
+Grading used here, so the cells mean something specific:
+
+- **Pass** — posture stated and enforced with the right lever, `robots.txt`
+  reachable, canonical, full Open Graph + Twitter with a real 1200×630 card,
+  a generated sitemap, and structured data.
+- **Partial** — reachable and unfurls, but with at least one substantive gap:
+  no structured data, no canonical, no sitemap, head tags over a body with no
+  crawlable text, or a broken `<title>` (see below).
+- **One item page per origin is fetched too**, taken from the first non-home
+  `<loc>` the sitemap already provided. The home document is not the site, and
+  the failures this audit hunts are *more* likely on item pages — those are the
+  ones assembled by a prerenderer or an edge rewriter from a shell nobody looks
+  at. Added 2026-08-05; it immediately found model-pear serving the SPA shell at
+  every URL its own sitemap advertises. Flags: a title fault, a title identical
+  to the home page's (the per-item mechanism is not running), a canonical
+  resolving to the site root (the whole collection collapsed onto one URL), and
+  a `<loc>` that does not serve.
+- **The `<title>` is counted, not merely looked for**, and counted on the
+  comment-stripped document. Zero, more than one, or an empty one is a fault
+  under **every** posture — a private app's links still unfurl, and the title is
+  what the recipient reads. Added 2026-08-05 after model-pear served three
+  prerendered pages with no title at all for a day while `curl | grep '<title>'`
+  found one the whole time. It immediately found two more: **fh-fuelhunt and
+  intxt each serve an EMPTY `<title data-rh="true"></title>` as the first
+  element in `<head>`**, ahead of their real one, which the first-wins rule
+  makes the operative title.
+- **Missing** — no Open Graph, no card, no `robots.txt`, no canonical, no
+  sitemap. A pasted link renders as a bare URL and nothing states a posture.
+- **Pass (P)** — sun-sea-o, a **private** posture implemented correctly:
+  `robots.txt` allows the crawl and explains why, `noindex` is carried by both
+  the meta tag and the `X-Robots-Tag` header, and Open Graph is present so links
+  still unfurl. Structured data is not expected — there is no search result to
+  enrich. This is the fleet's reference for the private column.
+
+Soft 404s are NOT reflected in the grades: 10 of the 15 origins return 200 with
+the app shell for a nonexistent path, including several graded Pass. It is the
+fleet's most common single defect and is tracked per-repo instead.
+
+**The column is regenerable — do not hand-edit it.** `npm run
+audit:discoverability` fetches every origin and prints the cells;
+`--check` compares them against this table and exits non-zero on drift. That is
+the fix for how the other columns went stale: a grade nobody can recompute is a
+grade nobody notices has expired. Origins come from `public/projects/*/meta.json`,
+so a project added to the portfolio joins the audit automatically. It is
+deliberately NOT a deploy gate — it reaches sixteen third-party origins, and a
+transient 503 on someone else's host must not block publishing a docs change.
+
+Two cells the script corrected on its first run, both worth recording because
+they are the kind of thing hand-maintenance gets wrong:
+
+- **glow-props is `Partial`, not `Pass`.** It was graded `Pass` counting the
+  structured data added 2026-08-04 — which is on a branch. The deployed site has
+  none. A column that claims to measure live sites must not describe unmerged
+  work; this flips to `Pass` when that ships, and the script will say so.
+- **tool-till-tees is `Missing`, not `?`.** It has a live URL and was simply
+  never measured. It needs a posture decision like any other origin: a backend
+  API with a minimal landing page may well want `noindex` rather than the full
+  public setup, but "nobody looked" is not that decision.
+
+**PWA_SYSTEM / ICON_CACHE_BUST columns are pre-audit.** They were assessed before the 2026-08-03 fleet PWA audit, which found open repo-side drift in **every** PWA repo — including several marked `Pass` here. Treat those two columns as "was implemented", not "is currently conformant", and read the per-repo sections below (and each repo's own `docs/TODO.md`, where the findings now live) for what is actually open. `fl-farlume` is downgraded to `Partial` because it still ships the rejected tap-only update design rather than auto-on-launch.
+
+**Every other column dates from the April 2026 audits and should be read with
+the same suspicion.** Three patterns have since been re-audited fleet-wide —
+`PWA_SYSTEM`, `ICON_CACHE_BUST` and `APP_ICONS` (2026-08-03) — and the first two
+found open drift in **every** PWA repo, including several graded `Pass` here,
+plus two production service workers that were dead. That is what a four-month-old
+source-level grade is worth. The eight columns nobody has revisited —
+`CLAUDE.md`, `APP_ICONS` (doc corrected, repo cells not regraded),
+`BURGER_MENU`, `DEBUG_SYSTEM`, `DOWNLOAD_PDF`, `THEME_DARK_MODE`, `EVENT_BUS`,
+`Z_INDEX_SCALE` — carry the same over-reporting risk. `DEBUG_SYSTEM`,
+`THEME_DARK_MODE` and `TIMER_LEAKS` (which has no column at all) are the ones to
+distrust most: they are runtime behaviour with silent failure modes, the exact
+class the source-level method graded generously. `TIMER_LEAKS` is also the
+cheapest to re-audit honestly, because `verify:timer-cleanup` is mechanical and
+can be run against every repo rather than judged.
+
+**Coverage**: 16 repos tracked. The 2026-04-25 claim that coverage was "verified complete — 12 tracked + 3 excluded, set difference empty" was **false**: `qi-invoice`, `kl-website`, `web-arch` and `dm-website` were all first-party repos absent from this matrix. Excluded by policy: `plant-fur`, `coin-zapp` (discontinued), `canva-grid-assets` (CDN only), `sp-website`/`sp-backend`/`hf-sculpt` (not yet assessed).
 
 **(B)** = Approach B (pdf-lib) per `docs/implementations/DOWNLOAD_PDF.md` — correct choice for canvas-heavy content
 
-**N/A for ICON_CACHE_BUST**: model-pear (no PWA yet — implement PWA_SYSTEM first). glow-props reclassified `N/A → Pass` 2026-08-01: the old rationale ("static site, no PWA icons") was false — the repo ships a full PWA with three manifest icons; the pattern is now implemented (see glow-props section).
+**model-pear reclassified 2026-08-03**: the old row said "no PWA / no vite-plugin-pwa" and ICON_CACHE_BUST `N/A`. Both were false — it is a **SvelteKit** PWA (not React, as the portfolio also recorded) shipping vite-plugin-pwa with a fuller update policy than several repos marked Pass. ICON_CACHE_BUST is `Missing`, not N/A: three manifest icons, zero `?v=` versioning. Note the glow-props `transformIndexHtml` approach cannot be ported as-is — vite-plugin-pwa's HTML pipeline never runs under SvelteKit. glow-props reclassified `N/A → Pass` 2026-08-01: the old rationale ("static site, no PWA icons") was false — the repo ships a full PWA with three manifest icons; the pattern is now implemented (see glow-props section).
 
 **Pass (DEV) for glow-props DEBUG_SYSTEM**: implemented 2026-08-01 (was falsely N/A, then honestly Missing earlier the same day). DEV-gated like four-ems — dynamic import keeps the subsystem out of production bundles; the pre-module error capture + 20s load watchdog and the localStorage install analytics run in production, the pill itself is dev-only. Documented in glow-props CLAUDE.md AI notes.
 
@@ -537,3 +627,441 @@ Highest-leverage cross-cutting gaps (post-2026-04-25):
 15. **Z_INDEX_SCALE** — Pass in glow-props, canva-grid, fl-farlume, repo-tor, graphiki, model-pear, fh-fuelhunt, sun-sea-o, **intxt, four-ems** (10 repos — four-ems via `scripts/audit-z-index.mjs` + `npm run audit:z-index`). Missing in see-veo. N/A in tool-till-tees.
 16. **DOWNLOAD_PDF** — Pass in canva-grid (Approach B pdf-lib), fl-farlume, repo-tor, sun-sea-o, **four-ems** (`SubmissionDetail.tsx:56` Save-as-PDF + `print-color-adjust: exact` at `index.css:147`). **N/A documented** in graphiki (canvas/SVG editor — `CLAUDE.md:710`), intxt (chat app declined). Still Partial in see-veo (missing `print-color-adjust: exact`), model-pear. Decision pending in fh-fuelhunt.
 17. **TIMER_LEAKS self-compliance + cross-fleet inheritance** — glow-props own audit DONE 2026-04-25, and the React conversion (2026-08-01) superseded the audited files: the canonical examples are now `src/lib/pwa.js` and `src/lib/theme.js` (module-level registrations behind `window.__*Attached` HMR guards with paired `import.meta.hot.dispose()` teardown) plus the React pairing contract in every component/hook (`src/pwa.js`, `src/markdown.js`, and `public/theme.js` no longer exist). Tripwire: `npm run verify:timer-cleanup` (`scripts/verify-timer-cleanup.mjs`). **Cross-fleet `### Timer and Subscription Cleanup` subsection presence verified:** PRESENT in canva-grid, fl-farlume, sun-sea-o, graphiki, intxt, tool-till-tees, glow-props, **four-ems** (8 repos — four-ems at `CLAUDE.md:81`, with canonical-examples bullet listing `debugLog.ts`/`theme.ts`/`pwa.ts`/`useAutoSave.ts`/`embedResize.ts` per commit `a7d63c2`). MISSING in model-pear, see-veo, **repo-tor, fh-fuelhunt** (4 repos — the latter two are flagged "FULLY RESOLVED" elsewhere in this file but predate the 2026-04-22 upstream addition; needs a CLAUDE.md doc-alignment touch-up to inherit the new content).
+
+---
+
+## Fleet coverage correction (2026-08-03)
+
+The first pass of the PWA audit selected repos by the portfolio's `badge`/`tech` metadata and covered 6 of 15. **The metadata does not record PWA-ness reliably** — only 5 repos advertise it, while 15 ship a service worker. Two follow-ups:
+
+*(All four bookkeeping items below are done — 2026-08-03.)*
+
+- [x] **PWA-ness recorded in `public/projects/*/meta.json`** — "PWA" added to `tech` for all 14 mirrored PWA projects (`kl-website` and `qi-invoice` already had it), matching the convention those two already used rather than inventing a new field no consumer reads.
+- [x] **`model-pear`'s tech stack corrected** — it is **SvelteKit**, not React, in both `meta.json` and `src/data/homeContent.js`.
+- [x] **Gap Matrix extended to 16 repos** — `qi-invoice`, `kl-website`, `web-arch` and `dm-website` added; `model-pear`'s row corrected from "no PWA" to a real SvelteKit PWA; `fl-farlume` downgraded to `Partial` on PWA_SYSTEM; the false 2026-04-25 "coverage verified complete" claim replaced with an accurate count and an explicit exclusion list.
+- [x] **`docs/PROJECT_DOCS.md` reconciled** — `kl-website`, `web-arch` and `dm-website` added to the status table, "Last mirrored" corrected from 2026-03-31 to 2026-08-03, and the reason the table drifted recorded so the process gets fixed rather than just the data.
+- [x] **Per-repo findings distributed** — rather than per-repo sections here, each repo's own `docs/TODO.md` now carries its findings (merged 2026-08-03), so the backlog travels with the code.
+
+**App-name → repo map** (from the installed home screen, since several differ): Four Ems=four-ems, CanvaGrid=canva-grid, Model Pear=model-pear, Git Analytics=repo-tor, JT·CV=see-veo, Glow Props=glow-props, Graphiki=graphiki, Farlume=fl-farlume, knowless=kl-website, qi-invoice=qi-invoice, devmade=dm-website, FuelHunt=fh-fuelhunt, inTXT=intxt, **redline=web-arch**, **Sancio=sun-sea-o**.
+
+## PWA drift found in the 2026-08-03 fleet PWA audit
+
+Six parallel audits (fl-farlume, graphiki, see-veo, kl-website, qi-invoice, glow-props) compared every PWA repo against PWA_SYSTEM.md / PWA_ICON_CACHE_BUST.md / APP_ICONS.md. The **pattern-side** findings are already folded into those docs. What follows is the **repo-side** drift — each repo should be fixed to match the (now corrected) patterns. Line references were accurate at audit time.
+
+Several of these fixes are now described directly by the updated pattern docs, so fetch the pattern before starting each one.
+
+### fl-farlume — largest PWA backlog
+
+1. [ ] **Adopt the auto-on-launch update policy** — currently the rejected tap-only design: `usePWAUpdate.ts:10-11` explicitly opts out, `onRegisteredSW` never inspects `registration.waiting`, there is no "Automatic updates" toggle in the menu, and `checkForUpdate()` returns `void` instead of the canonical union. The comment predates the fleet standard; this reads as staleness, not a deliberate deviation. Users get tap-only updates today.
+2. [ ] **Add `woff2` to `globPatterns`** (`vite.config.ts:148`) — eight self-hosted brand fonts land in `dist/assets/` and are not precached, so offline typography falls back to system fonts.
+3. [ ] **Resolve `share_target`** (`vite.config.ts:179-189`) — a POST multipart share target is declared but nothing consumes it: no SW POST handler, no `launchQueue`, zero call sites. Sharing a CSV from Android fails or loses the file. Implement it (needs `injectManifest` or a runtime POST handler) or remove it from the manifest.
+4. [ ] **Remove or fix `apple-touch-startup-image`** (`index.html:21`) — points at the 180px touch icon; iOS needs exact device-sized splash images with media queries, so this is ignored or mis-rendered.
+5. [ ] **Add a `controllerchange` reload latch** — if another tab applies an update, this tab keeps running the old page under the new SW with no reload and no guard.
+6. [ ] **Await `deferredPrompt.userChoice` in `triggerInstall()`** (`usePWAInstall.ts:336-343`) — native-prompt dismissal is currently untrackable, so the funnel undercounts.
+
+### see-veo — no icon cache-busting, plus an install dead end
+
+1. [ ] **Implement PWA_ICON_CACHE_BUST** — manifest icons (`vite.config.ts:67-90`) and HTML links (`index.html:5-8`) use stable un-versioned URLs; no hashing, no `ignoreURLParametersMatching`, no tripwire. If the icon ever changes, installed users keep the old one indefinitely. (Already tracked in see-veo's section above; the audit confirms it is still open.)
+2. [ ] **Give Chromium users an install affordance when the prompt is suppressed** — `showManualInstructions` is `!supportsAutoInstall && !isStandalone()` (`usePWAInstall.ts:61-64`), so under Chrome's 90-day post-dismissal suppression nothing renders at all. Add the pattern's 5s diagnostic-timeout fallback.
+3. [ ] **Remove the dead `navigateFallbackDenylist` entry** (`vite.config.ts:107`) — `[/^https?:\/\/.*\.vercel\.app\/api\//]` can never match: Workbox tests denylist regexes against `pathname + search`, never the origin. The adjacent comment claims it excludes an API domain; it does nothing.
+4. [ ] **Set `cleanupOutdatedCaches: true` explicitly** — the plugin defaults it to true so behavior is correct, but the pattern's tripwire greps the source and would fail.
+5. [ ] **Add the display-mode-change listener and install-funnel analytics** — install-via-browser-menu is currently undetected.
+6. [ ] **Reconcile `APP_ICONS.md`'s see-veo citation** — the doc cited see-veo as the `png-to-ico` reference, but the repo has no `scripts/` directory and no `favicon.ico`, while `sharp` and `png-to-ico` sit unused in devDependencies. Either restore the generator or drop the dead deps. (The doc no longer names see-veo as of this pass.)
+7. [ ] **Fix the CSP blocking Google Analytics** — `vercel.json` `script-src` omits `googletagmanager.com` and `connect-src` omits the GA collection endpoints, yet `index.html` loads gtag (`G-61SDQXZSFT`). GA is almost certainly dead in production. *(Not a PWA item — found during the audit.)*
+
+### graphiki
+
+1. [ ] **Runtime-cache the ORT wasm** — the ~21 MB `ort-wasm-simd-threaded.jsep-*.wasm` is neither in `globPatterns` (no `wasm` extension) nor runtime-cached, so offline ML survives only as long as the HTTP cache keeps it. Add a `CacheFirst` route for `/assets/*.wasm`; do **not** precache it. Also correct the stale comment at `vite.config.ts:162-166` claiming there is nothing to cache at runtime.
+2. [ ] **Set `cleanupOutdatedCaches: true`** (`vite.config.ts:160-171`) — absent, and workbox-build defaults it to false.
+3. [ ] **Fix the install-prompt diagnostic false negative** — `pwaDiagnostics.ts:84` checks `window.__pwaInstallPromptEvent`, which `usePWAInstall.ts:11-18` deletes on consume, so the pill reads "not received" the moment the app mounts. Use the durable `__pwaPromptCaptured` flag the pattern now specifies.
+4. [ ] **Strengthen the icon cache-bust tripwire and make the transform fail loud** — the test drops the dist-level assertions and the `cleanupOutdatedCaches` check; the regex-based href transform (`vite.config.ts:57-63`) silently no-ops if attribute order flips, and a missing icon falls back to `'00000000'` without warning. All three violate invariant 4.
+5. [ ] **Add the `CriOS` check and the 5s Chromium fallback** — Chrome-on-iOS currently misdetects as Safari, and `'other'` browsers get no install affordance.
+6. [ ] **Consume `offlineReady` or delete it** — returned and auto-dismissed in `usePWAUpdate.ts:159-165,203` but never destructured in `App.tsx:103`, while `docs/CODEBASE_DOCUMENTATION.md:186` claims the feedback exists.
+7. [ ] **Move update state to a module singleton** — `usePWAUpdate.ts:69-79` keeps registration in the hook; safe only because `App.tsx:103` is the sole never-remounted consumer.
+
+### qi-invoice
+
+1. [ ] **Emit from `setAutoUpdateEnabled`** (`pwaUpdate.ts:83-85`) — it writes localStorage but never notifies, so the "Automatic updates: on/off" menu label (`App.tsx:560`) only refreshes because a toast in the same handler happens to re-render the subtree. Remove the toast and the label goes stale.
+2. [ ] **Wire the `offlineReady` toast or delete the state** — plumbed through `pwaUpdate.ts:155-157` → `usePwa.ts:59` and consumed nowhere, in an app whose whole pitch is offline invoicing.
+3. [ ] **Add iOS-specific install instructions** — `pwaInstall.ts:78-115` maps `CriOS` to the Chrome steps ("browser menu → Install app"), which don't exist on iOS; the real path is Share → Add to Home Screen. Safari-on-iOS steps are already present, so this is a small data addition.
+4. [ ] **Consider install-funnel analytics / `appinstalled` tracking** — absent; defensible given there's no debug-pill system, but the pattern lists it as standard. Decide and document.
+
+### kl-website — cleanest of the five
+
+1. [ ] **Stop shipping the unused `favicon.png`** — `generate-icons.mjs` emits a 48px favicon nothing references (`index.html:6-8` links `.ico` + SVG + apple-touch), and `**/*.png` still precaches it for every client. Drop it from the generator or add it to `globIgnores`.
+2. [ ] **Fix the `'no-sw'` toast copy** — `pwa.ts:269` returns `'no-sw'` while registration is still in flight, which `useKnowless.ts:239-241` renders as "Updates are not available in this browser". Blames the browser for a timing window. Use the pattern's three-way messaging.
+3. [ ] **Report a never-firing `beforeinstallprompt` on Chromium** — the 5s timer (`usePWAInstall.ts:252-258`) flips to manual steps but never calls `reportError`, even though the repo built exactly that channel for registration failures.
+
+### glow-props (self)
+
+*(Items 1–7 done 2026-08-03, and the last one closed 2026-08-04 — see git history.)*
+
+*The maskable-at-192+512 question was reopened by MEASURING the icon we ship
+rather than reading the config: the 1024 maskable's mark reached **40.5%** of the
+width from centre, just outside the 40% safe circle, so Android's circular mask
+was clipping it. The derivation in the generator was sound and modelled the
+mark's corner arcs but not the renderer's antialiasing. Fixed by lowering the
+inset and, more importantly, by asserting the RENDERED pixels — the generator now
+fails if the mark ever leaves the circle again (39.4% today). The single-1024
+form stays: it satisfies install criteria and is an accepted alternative in the
+pattern; the defect was the geometry, not the size list.*
+
+### Round 2 (2026-08-03, second pass — the 9 repos the first pass missed)
+
+Severity-ordered. The two broken service workers (repo-tor, model-pear) are fixed and pushed; the rest is open.
+
+**Correction to this section's original wording:** both were first written up as "the SW never installs / registration rejects". Measured in Chromium against real builds, that is wrong — in both cases the worker registers and reaches `activated`, and the damage is to its *configuration*. repo-tor precached nothing at all (zero caches, and every route after the throwing line — including all runtimeCaching — never registered), so it was live but completely inert. model-pear precached fine and lost only the navigation fallback, so offline deep links failed while everything else worked. The fixes are unchanged; the impact statements were.
+
+#### repo-tor
+
+*(Fixed and pushed on `claude/pwa-patterns-review-76cg78` — PR #120: glob is now the sole precache source, `dontCacheBustURLsMatching` narrowed so icons keep real revisions, plus two dist tripwires confirmed to fail when the bug is reintroduced. Verified in Chromium: pre-fix the worker activated with **0 cache entries**; post-fix, 17.)*
+
+1. [ ] **Dead code documenting a feature that doesn't exist** — `vite.config.js:232-239` describes a NetworkOnly runtime rule with an offline fallback for embed URLs; there is no such rule. `public/offline.html` is precached and can never be served.
+3. [ ] `registration.update()` uncaught at `pwa.js:518` and `:570`; visibility check unthrottled; `_isChecking` is set but never read, so two taps run two concurrent checks.
+4. [ ] `applyUpdate()` has no plain-reload fallback — and `version.json` can report an update with no SW change at all, so "Update Now" silently does nothing.
+5. [ ] Preference write not read back; the toast unconditionally claims the new state. Install `prompt()` not awaited, throw propagates into an uncaught `await` in `Header.jsx:120`.
+6. [ ] Precaches Expo-era leftovers (`adaptive-icon.png`, `splash-icon.png`, a duplicate `apple-touch-icon.png`) the web app never requests.
+
+#### model-pear (the matrix row is wrong)
+
+*(Fixed and pushed on `claude/pwa-patterns-review-76cg78` — PR #119. Verified in Chromium: pre-fix an offline deep link failed with `ERR_INTERNET_DISCONNECTED`; post-fix the same request returns the shell (HTTP 200). Precaching worked in both cases — only the navigation fallback was lost, not the whole worker. Changes: `/200.html` registered via `additionalManifestEntries`, `json` and `webmanifest` dropped from `globPatterns`, `includeAssets` dropped and `includeManifestIcons: false`. Built manifest now has the fallback precached, zero duplicate URLs and no `_app/version.json`. Tripwire added. Note the audit's claim that `.vite/manifest.json` was precached did **not** reproduce — that build emits no `.vite/` directory; the real second defect was `_app/version.json` freezing SvelteKit's `updated` store.)*
+
+1. [ ] **Consider `@vite-pwa/sveltekit`** — it globs the adapter's real output, removing the root cause that the `additionalManifestEntries` fix compensates for. Deliberately not bundled into the hotfix.
+2. [ ] **`controllerchange` reloads unconditionally** (only a 5s throttle, no apply latch) — tab A reloads and loses in-memory calculator inputs when tab B applies an update. Exactly what the policy exists to prevent, and it defeats the repo's own stated rationale.
+4. [ ] `launchPhase` has no terminal timeout — if registration never settles (known Safari behaviour) the update banner is suppressed for the whole session.
+5. [ ] Google Fonts loaded from CDN with no runtime route → installed PWA falls back to system fonts offline.
+6. [ ] No `?v=` icon versioning at all; `purpose: 'maskable'` on a plain transparent render; no PWA tests despite a custom launch-apply implementation.
+7. [ ] **Correct this file's own record:** model-pear is listed as PWA_SYSTEM "Missing"/"no vite-plugin-pwa" and ICON_CACHE_BUST "N/A (no PWA)". It is a SvelteKit PWA with a fuller update policy than several repos marked Pass. ICON_CACHE_BUST should read **Missing**, not N/A. The neighbouring "no DaisyUI", "`class="dark"` hardcoded" and "BURGER_MENU still `p-2`" claims are also stale.
+
+#### fh-fuelhunt
+
+1. [ ] **The entire install UI is orphaned** — `usePWAInstall.ts` (300 lines) and `InstallInstructionsModal.tsx` (250 lines) are imported by zero components; the live path is 5 lines ending in `window.alert()`. Consequences: the third capture layer doesn't exist at runtime, `IconCacheDisclosure` is unreachable so ICON_CACHE_BUST invariant 5 is unmet in production, and all install analytics are dead. `CLAUDE.md:294` and `TESTING_GUIDE.md:183` claim otherwise.
+2. [ ] **Security: cross-origin cache-first matches by extension and permits query strings**, so Mapbox sprite URLs are cached permanently with the access token in the cache key. Needs a host allowlist; any URL with auth params must be network-only.
+3. [ ] `SW_BUILD` hashes only `dist/_expo/static/`, so `public/` font changes are invisible — fonts are cache-first and unversioned, so replacing one serves stale bytes forever.
+4. [ ] Manifest declares `icon.png` maskable but it is a plain transparent raster, byte-identical to `adaptive-icon.png` and `splash-icon.png`.
+5. [ ] Vercel catch-all not scoped away from `_expo/static/` or `/assets/fonts/`; `watchInstallingWorker` leaks a `statechange` listener; visibility check unthrottled; `checkForUpdates` guarded by React state rather than module state.
+
+#### intxt
+
+1. [ ] **`storeCurrentBuildTime()` is a fire-and-forget fetch issued immediately before `location.reload()`** — the navigation cancels it, so the write never lands and a phantom "Update available" reappears after the suppression window. The launch-apply path does it correctly and synchronously; the inconsistency is the tell.
+2. [ ] **`DYNAMIC_CACHE` mixes Supabase REST responses with the JS/CSS shell under one 60-entry LRU** — a chatty session evicts `entry-*.js` and offline launch silently breaks. `STATIC_CACHE` separately grows unbounded through navigation caching.
+3. [ ] `clearAllData()` deletes the precache too, orphaning it until the next SW *install* — which won't happen, because `sw.js` didn't change.
+4. [ ] Manifest `theme_color`/`background_color` are the dark base-100 while the first-visit default theme is light → near-black status bar over a light app in Android standalone.
+5. [ ] The icon-cache-bust tripwire never gates a deploy (absent from `build:web` and `vercel.json`, no CI) and still hardcodes `synctone.vercel.app`. `console.log` ships in `public/sw.js` (babel's remove-console only touches the Metro bundle).
+6. [ ] Update affordance is home-screen-only *and* installed-only — a user inside a chat has no update surface; no "Updating…" state, no failure UI. `offlineReady` and `dismiss` are exported and unused.
+
+#### four-ems
+
+1. [ ] **`navigateFallback: '/offline.html'`** — every SW-controlled deep link or reload serves "You're offline" while online, including every shared `/f/:slug` form URL, and the "Try again" button reloads straight back into it. Set it to the app shell.
+2. [ ] **The update banner is a data-loss control on public form routes** — mounted app-globally, respondent answers live in `useState` with no persistence and no `beforeunload` anywhere in the repo. Also, the builder's 2s autosave debounce is never flushed before the update reload.
+3. [ ] `checkForUpdate` never reads `registration.waiting`; no shared in-flight promise; `hasUpdate` ORs `needRefresh`; preference write not read back.
+4. [ ] Install capture has no named handler/attach guard/durable flag — so `PwaTab.tsx:197` reports "not captured" forever *and* its truthy-branch copy is backwards. `prompt()` called before clearing; no `CriOS`/`FxiOS`/`EdgiOS`; no iPadOS test.
+5. [ ] No `workbox-window` dependency; no `vercel.json` headers block at all; `pwa-1024x1024.png` declared maskable but is a copy of the transparent icon.
+6. [ ] **The dist tripwire has never run** (`skipIf` + a `npm test` that doesn't build), and `verify-timer-cleanup.mjs` gives a false negative on the module singleton because a `clearInterval` exists in the test-reset helper.
+
+#### canva-grid
+
+1. [ ] **Live offline bug** — `SampleImagesSection.jsx:47-50` appends `?v=<hour>` to a runtime-cached CDN manifest; `ignoreURLParametersMatching` does not apply to runtime routes, so an installed user is offline-capable for at most one hour after their last online visit. Fix with `matchOptions: { ignoreSearch: true }` and raise `maxEntries` above 1.
+2. [ ] Duplicate precache source for `icon.svg` (benign today — root-level, identical revisions — but one config change from fatal).
+3. [ ] `onRegistered` (deprecated); launch-apply from the registration callback with the listener in an effect; `onNeedRefresh` returns before recording; `checkForUpdate` never reads `waiting`; the concurrency guard returns a non-canonical `'checking'` that maps to `null`, so the second tap gives the user **no feedback at all**.
+4. [ ] No preference read-back; visibility check unthrottled; install event cleared after `prompt()` and never deleted from `window`; `'prompted'` tracked only in the late listener.
+5. [ ] No `vercel.json` headers block; tripwire has no duplicate-URL assertion.
+6. [ ] **Write the GA-tail post-mortem.** The incident justifies the entire fleet update policy and exists nowhere — not in `CLAUDE.md`, not in `docs/AI_MISTAKES.md`. The repo's only references cite the fleet doc, which cites the repo.
+
+#### sun-sea-o
+
+1. [ ] **The install banner never appears on Chromium repeat visits** — `deferredPrompt` is React state and the consume-and-delete runs inside the `useState` initializer, so the parent consumer (`AppLayout`) deletes the global before the banner's own hook initializes. StrictMode double-invocation drops it in dev too. Move the consume to module scope and only *seed* state from it.
+2. [ ] **Launch-apply posts `SKIP_WAITING` from `onRegisteredSW` while `controllerchange` is attached in a later effect** — neither sanctioned shape; works only by timing.
+3. [ ] **`ignoreURLParametersMatching: [/^v$/]` replaces the defaults**, so `utm_`/`fbclid` stripping is gone — on a product distributed by tagged invitation links, a `?utm_source=` navigation misses the precached shell.
+4. [ ] Make the no-authed-caching stance explicit and testable, and fix `docs/TODO.md:131`'s false "read-only offline via PWA cache" claim before it invites someone to add the dangerous route.
+5. [ ] `handleNeedRefresh` returns before recording — **and `pwaSingleton.test.ts:101,451` pins that as correct**, so the test changes with the code.
+6. [ ] No `appinstalled` or display-mode listener, no 5s diagnostic → Chromium users in the 90-day suppression window get no install affordance; no `CriOS`/`FxiOS`/`EdgiOS`; no iPadOS test; `'prompted'` measures clicks.
+7. [ ] No `vercel.json` cache headers; `og-image.png` and `icon-source.svg` precached; dist tripwire never parses the precache manifest; `icon.png` declared maskable but has transparent rounded corners (`rx="192"` source).
+8. [ ] `absoluteMetaUrls` must fail loud on a literal miss like its sibling twelve lines earlier, and the two head-rewriting plugins need an ordering contract (also applies to DISCOVERABILITY.md, which carries this plugin verbatim).
+
+#### dm-website (never audited before)
+
+1. [ ] `includeAssets` overlaps `globPatterns` with no `globIgnores`; launch-apply from `onRegistered`; `hasUpdate` ORs `needRefresh`; `onRegistered` deprecated; `update()` uncaught and unthrottled.
+2. [ ] **`checkForUpdate` finds a waiting worker but never re-arms the banner** — the menu says "a new version is ready" while the update prompt stays hidden and no refresh action appears.
+3. [ ] **Missing `/assets/*` returns the SPA shell at 200 with a JS MIME type** — Cloudflare's fallback can't be scoped, so the exclusion has to live in the Worker.
+4. [ ] PWA_ICON_CACHE_BUST entirely unimplemented, and all six icons were regenerated at unchanged URLs on 2026-08-01 — the WebAPK shadow has no signal to refresh.
+5. [ ] `workbox-window` not declared; `_headers` missing the `/workbox-*.js` immutable rule; no tests or verify scripts of any kind; `'no-sw'` before registration resolves is surfaced as "this site isn't set up for offline use in this browser".
+6. [ ] `UpdatePrompt` mounts its live region together with its first message (its own `SiteNav` gets this right).
+
+#### web-arch / "redline" (never audited before)
+
+1. [ ] No `globIgnores` — `public/og-image.png` (60 KB, scraper-only) precached for every install.
+2. [ ] `update()` uncaught in two of three call sites; visibility unthrottled; `hasUpdate` ORs `needRefresh`; `onRegistered` deprecated; hourly interval created inside the registration callback and held in a component ref (leaks if registration resolves after unmount).
+3. [ ] **No `onRegisterError` or `onOfflineReady` at all** — registration failure is invisible, though the repo has a GA channel built for exactly this.
+4. [ ] **The iOS-non-Safari branch is unreachable dead code** — no `CriOS`/`FxiOS`/`EdgiOS`, so those users fall through to `'safari'`. No iPadOS test. `install()` prompts before clearing.
+5. [ ] `versioned()` doesn't throw on a missing path (`?v=undefined` ships); `transformIndexHtml` unscoped; `SAFE_ZONE = 80` is the inner square, not the 40%-radius circle.
+6. [ ] **`CLAUDE.md:38` claims 23 PWA checks including 9 on the update policy; those tests live in a scratchpad file that is not in the repo.** Either commit them or correct the claim. No precache-manifest tripwire either, and this repo is squarely exposed to the duplicate-entry class.
+7. [ ] `discoverability.test.js:198` justifies its `skipIf` by citing `.github/workflows/ci.yml` — there is no `.github` directory; the real gate is `vercel.json`'s buildCommand.
+
+## TIMER_LEAKS audit — 2026-08-04 (all 15 repos)
+
+Ran a portable version of `verify-timer-cleanup.mjs` over every repo, then read
+every hit. **54 candidates, 4 real findings.** The fleet is in genuinely good
+shape on this pattern — which is worth stating plainly, because the PWA and
+discoverability rounds both found drift everywhere and the honest answer here is
+different.
+
+**Most of the value was in the tripwire, not the repos.** Three defects in the
+checker itself, all now fixed in `scripts/verify-timer-cleanup.mjs` and written
+into `TIMER_LEAKS.md`'s new "Tripwire notes":
+
+1. **It failed the pattern's own canonical variant.** `TIMER_LEAKS.md` variant 1
+   prescribes `return () => timeouts.forEach(clearTimeout)`, which
+   `/\bclearTimeout\s*\(/` does not match. canva-grid implements variant 1
+   correctly and came back as a failure. A repo adopting the checker would have
+   been told to abandon the right idiom.
+2. **The `requestAnimationFrame` pairing rule was wrong.** It demanded
+   `cancelAnimationFrame` for every rAF, but the dominant legitimate use is a
+   one-shot next-frame focus/measure call with nothing to accumulate — present in
+   canva-grid, four-ems, graphiki, model-pear, fl-farlume and intxt, all correct.
+   Now only a stored or self-rescheduling rAF is required to cancel.
+3. **It only read `.js/.mjs/.jsx`.** Copied into a TypeScript, Vue or Svelte repo
+   it examines almost nothing and reports OK. Now reads `.ts/.tsx/.vue/.svelte`
+   too. It also flagged service workers, where module-level `addEventListener` is
+   the only correct form, and rejected the `.remove()` subscription-handle
+   teardown React Native's `AppState`/`Linking` require.
+
+### Real findings
+
+1. [ ] **fl-farlume — an uncancellable deferred `location.reload()`**
+   (`src/composables/usePWAUpdate.ts:209`). After `updateServiceWorker(true)` a
+   2s fallback timer reloads the page unconditionally, with no handle and no
+   cancel path anywhere in the file. If the SW reload lands first the page is
+   gone and it does not matter; if it does not, the user gets a reload they did
+   not ask for, whatever they are doing 2s later. Store the id and clear it in
+   the `controllerchange` path.
+2. [ ] **fl-farlume — auto-dismiss timer never cleared**
+   (`src/composables/usePWAUpdate.ts:76`). `setTimeout(() => offlineReady.value =
+   false, OFFLINE_DISMISS_MS)` stacks a new timer per event with no clear. Minor
+   — Vue tolerates the write — but it is variant 2 and costs one line.
+3. [ ] **graphiki — `setState` after unmount in the debug pill**
+   (`src/components/debug/DebugPill.tsx:152,163`). Two uncleaned 1.5s
+   `setCopyFeedback(false)` timers. Dev-only surface, so low impact, but it is
+   the exact shape variant 2 exists for.
+4. [ ] **Inline capture blocks carry no attach guard** — the
+   `beforeinstallprompt` capture and the pre-module error capture, in see-veo,
+   qi-invoice, sun-sea-o, repo-tor, kl-website, canva-grid, four-ems, fl-farlume
+   and graphiki. A classic head script executes once per document, so the
+   practical impact is near zero on its own; it matters where a MODULE also
+   attaches the same listener, which several of these repos do. Variant 5 costs
+   one line. Recorded as a fleet-wide deviation rather than nine separate items.
+
+### Checked and clean
+
+Every `setInterval` in the fleet — 24 sites across 15 repos — assigns its id to
+something a teardown can reach, and all six PWA update hooks that create their
+poll inside `onRegistered` clear it on unmount. The one residual is the
+unmount-before-registration-resolves race already recorded for web-arch in the
+PWA round: the cleanup runs before the callback creates the interval, so nothing
+ever clears it. Narrow, and it needs reading rather than grepping to see —
+which is the blind spot now documented in the pattern.
+
+## Fleet fix pass — 2026-08-04 (all 16 repos)
+
+Every repo-side finding from the PWA, discoverability and TIMER_LEAKS audits was
+worked through in the order the user set. **16 PRs opened and merged.** What
+follows is what was FIXED; the per-repo sections below record what was found.
+
+Ordered by how much it cost a user:
+
+- **four-ems** — `navigateFallback: '/offline.html'` meant every SW-controlled
+  deep link showed "You're offline" while online, including every shared
+  `/f/:slug` form URL, and the page's "Try again" reloaded back into it.
+- **fh-fuelhunt** — Mapbox URLs cached **with their `access_token` in the cache
+  key**, permanently, on the device. Also the entire install UI (~550 lines) was
+  imported by nothing.
+- **see-veo** — GA had been blocked by the repo's own CSP since it landed;
+  `/robots.txt` returned the app; no canonical. **The headline claim in that
+  commit is WRONG and is corrected below.**
+- **intxt** — API chatter evicted `entry-*.js` from a shared 60-entry LRU, so a
+  chatty session broke the next offline launch.
+- **canva-grid** — installed users were offline-capable for exactly one hour.
+- **sun-sea-o** — the install banner never appeared on Chromium repeat visits.
+- **model-pear** — no route was prerendered, so no `<svelte:head>` title ever
+  reached a file; fixing that exposed a static `<title>` in `app.html` shadowing
+  every page's own.
+- **repo-tor** — "Update Now" was a silent no-op for version-only updates.
+- **kl-website** — article pages had perfect head tags over an empty `<div
+  id="root">`; now ~1,080 characters of crawlable text each.
+- **dm-website** — a missing `/assets/*` returned the SPA shell at 200; the edge
+  rewriter fails open and had no tests.
+- **graphiki** — the 21 MB ONNX wasm was cached by nothing.
+- **web-arch** — registration failures were completely invisible.
+- **fl-farlume** — an uncancellable deferred `location.reload()`.
+- **qi-invoice** — the "Automatic updates" label was correct only by accident.
+- **glow-props** — its own maskable icon was outside the safe circle (above).
+
+**Correction — see-veo's meta description was never empty (2026-08-05).**
+Commit `a591e2b` claims "THE META DESCRIPTION SHIPPED EMPTY... production served
+`<meta name="description">` with no content attribute". That is false, and the
+reason is worth more than the finding was. Reproduced by reintroducing the
+comment, rebuilding, and parsing the output: the built HTML carries **two**
+occurrences of the literal — the real tag, with correct copy, and a comment
+fifteen lines above quoting the tag name — and a compliant HTML parser sees
+exactly **one** description meta with the right content.
+
+What actually read it as empty was **this repo's own live checker**.
+`audit-discoverability.mjs` extracted meta tags with a regex, which cannot tell
+it is inside `<!-- -->`, matched the commented literal first, and found no
+`content` attribute on it. A tool defect reported as a production defect, and a
+downstream repo was changed for it.
+
+Fixed at the source: both `audit-discoverability.mjs` and `verify-seo.mjs` now
+strip comments before any extraction — proven by injecting a commented
+`og:title` with the wrong value, which the old code failed on and the new code
+ignores. The rule and the incident are in `DISCOVERABILITY.md`, and see-veo #59
+carries the correction in that repo's own docs.
+
+**Then the same blindness turned up in the build, and it had shipped
+(model-pear #123).** Re-parsing all 16 live origins with a real HTML parser
+instead of a regex found model-pear serving **no `<title>` and no
+modulepreloads** on any of its three prerendered pages. Cause: the comment added
+in #122 explaining why `app.html` has no static title **named the framework's
+head placeholder literally**, and SvelteKit substitutes that token with a plain
+string replace. The entire injected head — the real title, every modulepreload —
+was written between the comment markers. The commit whose only purpose was
+giving those pages titles took them away.
+
+Reading a comment gives a wrong report; writing into one gives a wrong page.
+Identical root cause, and `grep` reassures you in both directions. Fixed, with a
+source assertion (no substituted token inside a comment) and a built-output
+assertion (one non-empty title per page, after stripping comments) — verified by
+reintroducing the literal, which fails 8 of 9. A fleet sweep for the class found
+see-veo's own `%THEME_COLOR%` inside two comments (harmless: a colour string
+substituted into prose) and tag literals in dm-website and repo-tor comments
+(harmless now that the checkers strip comments, but the shape that started all
+of this).
+
+**Still open, and both need a decision rather than a fix:**
+
+1. [ ] **repo-tor: are private-repo commit bodies fine to publish at all?**
+   `noindex` keeps them out of search; it is not access control. Recorded in
+   repo-tor's own TODO since the 2026-08-03 pass and untouched here.
+2. [ ] **tool-till-tees: choose a posture.** It has a live URL and no
+   discoverability implementation of any kind. A backend API with a minimal
+   landing page may well want `noindex` — but that is a decision, and "nobody
+   looked" is not one.
+
+## Public-visibility drift found in the 2026-08-04 SEO audit
+
+Four parallel audits compared all 15 PWAs against `DISCOVERABILITY.md`. The
+**pattern-side** findings are folded into that doc (commit `5377e2a`). What
+follows is the **repo-side** drift.
+
+**Measured split:** nine repos carry a near-identical full Open Graph set and
+every card that exists is correctly 1200×630 — glow-props, kl-website, graphiki,
+see-veo, qi-invoice, sun-sea-o, web-arch, dm-website, intxt. Six carry nothing at
+all — no OG, no Twitter, no card, no `robots.txt`, no sitemap: canva-grid,
+four-ems, repo-tor, fl-farlume, model-pear, fh-fuelhunt.
+
+**Fixed and merged 2026-08-04** (the three highest-value defects): intxt's
+`Disallow: /join`, which switched off the invite card a whole build step exists
+to produce, for every robots-respecting unfurler; fh-fuelhunt's total absence of
+a `<title>`, plus a description, canonical, full OG/Twitter set and a generated
+1200×630 card; repo-tor's commit-body JSON served with no `robots.txt` and no
+`X-Robots-Tag`. Each of those three repos also carries its own remaining items in
+its own `docs/TODO.md`.
+
+**Caveat on everything below:** all four audits read source, not deployed sites.
+The `curl -sI …/robots.txt` check the pattern itself prescribes is unverified
+everywhere — a Vercel/Cloudflare rewrite can serve the SPA shell for a file that
+exists in the repo, which is exactly how a "present" `robots.txt` becomes absent
+in production.
+
+### Repos with no public-visibility coverage at all
+
+1. [ ] **four-ems** — the fleet's only genuinely **mixed** posture: private by
+   default with a public `/f/:slug` family that is the product's primary
+   distribution channel. A single-`index.html` SPA cannot express a per-route
+   posture in a meta tag, so this needs `X-Robots-Tag` with path granularity.
+   Note that sun-sea-o's tripwire (which asserts `source === '/(.*)'`) would
+   **fail** the correct implementation — don't copy it here.
+2. [ ] **model-pear** — SvelteKit. Its four `<svelte:head>` titles never reach a
+   file, because the routes are not prerendered; a crawler and an unfurler both
+   see the fallback shell. Needs `export const prerender = true` on the routes
+   that should be indexable before any tag work is worth doing.
+3. [ ] **fl-farlume** — private, local-first Vue tool. Posture is correctly
+   "not indexed", but that does **not** exempt it from Open Graph: a shared link
+   still renders as a bare URL today. Needs `useHead` (Vite's
+   `transformIndexHtml` is not available to it) plus a card.
+4. [ ] **canva-grid** — no OG, no card, no `robots.txt`, no canonical, no
+   sitemap, no posture statement, no tripwire, no CI. `<title>CanvaGrid</title>`
+   is a brand token with no value proposition. Candidate for `WebApplication`
+   JSON-LD.
+
+### Repos with coverage but real defects
+
+5. [ ] **kl-website** — otherwise the fleet's best. Its prerendered article pages
+   carry head tags only: `<div id="root">` ships **empty**, so only Googlebot
+   sees the body and every other crawler gets a shell. Also missing
+   `article:published_time`/`modified_time`/`author` (LinkedIn and Facebook read
+   those, not JSON-LD, for the byline on the card), `<lastmod>` in the sitemap
+   (blocked upstream by a display-format date in the content model — store ISO,
+   format for display), `twitter:site`/`creator`, and it soft-404s on an unknown
+   slug.
+6. [ ] **see-veo** — no `robots.txt`, and the SPA rewrite serves `/robots.txt` as
+   the app's HTML (the exact trap the pattern names). No canonical and no host
+   redirects, so `*.vercel.app` and every preview alias are full duplicates. No
+   sitemap, no posture statement, no CI. Its tripwire asserts dimension
+   **literals** and only `existsSync`s the PNGs — it never reads the IHDR, so a
+   resized card passes green. `cv-data.ts` is `sameAs`-ready for Person +
+   ProfilePage JSON-LD.
+7. [ ] **dm-website** — the most sophisticated head machinery in the fleet (edge
+   `HTMLRewriter`, per-route JSON-LD, generated sitemap, real 404s) over **zero
+   tests**, and `HTMLRewriter.on()` is a no-op when its selector matches nothing.
+   Delete a meta tag from the template and every route silently ships generic
+   copy. The only possible fail-loud guard is a source-level assertion that the
+   template still carries every targeted tag.
+8. [ ] **web-arch** — `discoverability.test.js:198` skips itself citing a
+   `.github/workflows/ci.yml` that does not exist (same item as the PWA round).
+9. [ ] **sun-sea-o** — its posture tripwire hardcodes the single-posture
+   assumption (`source === '/(.*)'`). Fine for this repo; flagged so it isn't
+   copied into a mixed-posture one.
+
+### Fleet-wide follow-up
+
+10. [x] **Items 1–9 distributed into each repo's own `docs/TODO.md`** (merged
+    2026-08-04), the way the PWA round's findings were, so the backlog travels
+    with the code. Each repo's note carries its own live-verified measurements.
+    graphiki got a short note too (it passed almost everything); qi-invoice and
+    web-arch needed none.
+
+### Live verification against the deployed origins (2026-08-04)
+
+The caveat above is now discharged: all 15 origins were fetched — home document,
+`/robots.txt`, `/sitemap.xml`, a nonexistent path — reading the pre-JavaScript
+document and the real response headers, which is what a crawler and an unfurler
+actually receive. It changed the grading in three ways:
+
+- **The SPA-rewrite trap is much wider than the source audit suggested.** Five
+  repos serve `/robots.txt` as the app's HTML at **200** — canva-grid,
+  fl-farlume, four-ems, model-pear, see-veo — and seven do the same for
+  `/sitemap.xml`. A source-level "no robots.txt" is a *missing file*; live it is
+  a *file that answers wrong*, and the fix (exclude any path with a file
+  extension from the rewrite) is different from just adding the file.
+- **Soft 404s are the fleet's most common defect** — 10 of 15 origins return 200
+  with the app shell for a path that cannot exist. Only glow-props, dm-website,
+  qi-invoice and web-arch 404 correctly.
+- **Zero crawlable body text in the served document** was confirmed for
+  canva-grid, dm-website, fl-farlume, four-ems, **kl-website** (on the home page,
+  not only articles) and see-veo.
+
+The three fixes merged earlier in the day are live and correct: intxt's
+`robots.txt` no longer disallows `/join`, fh-fuelhunt now serves a title,
+description, canonical and full OG set, and repo-tor's `robots.txt` and
+`X-Robots-Tag` are in place.
+
+### glow-props (self) — found by the live check
+
+*(Both items fixed 2026-08-04 — the bare-brand `<title>`, and structured data
+across all three templates plus the prerender and runtime paths. Both writers
+now build their nodes from `src/lib/structuredData.js`, so they cannot drift.
+`verify:seo` gates title↔`og:title` agreement, a title length budget, and the
+one-block/required-nodes/no-literal-`</script>` properties; `npm run smoke:seo`
+loads the built pages in Chromium and gates the runtime half. Five fault
+injections were confirmed to fail the right gate.)*

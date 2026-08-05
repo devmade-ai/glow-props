@@ -26,7 +26,12 @@ jobs:
         with:
           node-version: 24
           cache: npm
+      # Skip the browser download here and fetch only chromium below — the
+      # playwright package would otherwise pull all three engines on every run
+      # for a check that uses one.
       - run: npm ci
+        env:
+          PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: 1
 
       # Source-level, so it runs before the build — no reason to spend a build
       # on a tree that already fails the check. TIMER_LEAKS.md.
@@ -56,6 +61,47 @@ jobs:
       # precache entry ships silently otherwise.
       - name: Verify icon cache-busting (docs/implementations/PWA_ICON_CACHE_BUST.md)
         run: npm run verify:icons
+
+      # Source-graph check, so it does NOT need the build — but it gates the
+      # publish for the same reason as the two above. This is the tripwire for
+      # the invariant that keeps prerenderPages() working at all: if the SSR
+      # entry ever reaches src/lib/pwa.js, the SSG pass fails pointing at a
+      # virtual module rather than at the import that caused it.
+      - name: Verify SSR safety (docs/implementations/PWA_SYSTEM.md)
+        run: npm run verify:ssr-safety
+
+      # The only gate that covers the RUNTIME half of the structured data. The
+      # other three read files; this one loads the built pages in a browser,
+      # which is the only way to see what src/seoMeta.js does to the JSON-LD
+      # block on the ?name= entry points.
+      #
+      # It earns the browser: making seoMeta.js append a second block instead of
+      # rewriting the existing one leaves verify:seo green — dist/ is unchanged —
+      # and fails this check on all four item routes.
+      # Cache the browser: without this every deploy re-downloads ~170 MB, which
+      # both slows the job and adds a network failure mode to a step that has
+      # nothing to do with the code being deployed. Keyed on the resolved
+      # Playwright version — a browser build is only valid for the version that
+      # asked for it, so a bump must miss the cache rather than reuse a stale one.
+      - name: Resolve the Playwright version
+        id: pw
+        run: echo "version=$(node -p "require('./node_modules/playwright/package.json').version")" >> "$GITHUB_OUTPUT"
+      - uses: actions/cache@v4
+        id: pw-cache
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-chromium-${{ runner.os }}-${{ steps.pw.outputs.version }}
+
+      # Two branches because --with-deps also downloads; on a cache hit only the
+      # OS libraries are needed. Both still touch apt, which is the residual cost.
+      - name: Install Chromium for the smoke check
+        if: steps.pw-cache.outputs.cache-hit != 'true'
+        run: npx playwright install --with-deps chromium
+      - name: Install Chromium system libraries (cached browser)
+        if: steps.pw-cache.outputs.cache-hit == 'true'
+        run: npx playwright install-deps chromium
+      - name: Smoke structured data in a browser (DISCOVERABILITY.md)
+        run: npm run smoke:seo
 
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3

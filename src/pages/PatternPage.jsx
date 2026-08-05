@@ -115,6 +115,8 @@ export function PatternPage() {
           // The clean URL is canonical — the ?name= form is the legacy entry
           // point and must not compete with it for the same content.
           path: `patterns/${encodeURIComponent(pattern.slug)}/`,
+          // Must match the node prerenderPages() writes for the same page.
+          itemType: 'TechArticle',
         });
         return fetchWithTimeout(`${BASE}patterns/${pattern.file}`, 15000, (r) => r.text())
           .then((text) => {

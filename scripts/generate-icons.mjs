@@ -31,7 +31,61 @@ const ICONS = [
 // Alternative: put the background rect back in the SVG — rejected, the favicon
 //   and navbar mark are deliberately transparent so they sit on any theme.
 const MASKABLE = { name: 'icon-1024-maskable.png', size: 1024, background: '#ffffff' };
-const MASKABLE_MARK = 780;
+// 780 was derived from the geometry above and MEASURED at 40.5% — just outside
+// the 40% circle, because the derivation models the mark's corner arcs but not
+// the renderer's antialiasing, which puts ink a few pixels further out. The
+// number is now chosen to satisfy the assertion below rather than the algebra,
+// and the assertion is what keeps it honest.
+const MASKABLE_MARK = 760;
+/** The maskable safe zone, as a fraction of the icon's width from its centre. */
+const MASKABLE_SAFE_RADIUS = 0.4;
+
+/**
+ * Assert the RENDERED maskable art fits inside the circular mask.
+ *
+ * Requirement: the launcher masks to a circle; art outside it is cropped on
+ *   device, silently.
+ * Approach: measure the actual ink in the produced PNG, not the geometry we
+ *   think we asked for. The two disagreed here by half a percent, which is the
+ *   whole reason this exists — a derivation cannot see antialiasing, and the
+ *   only thing Android looks at is pixels.
+ */
+async function assertMaskableSafeZone(file, background) {
+  const { data, info } = await sharp(file).ensureAlpha().raw().toBuffer({ resolveWithObject: true });
+  const bg = [
+    parseInt(background.slice(1, 3), 16),
+    parseInt(background.slice(3, 5), 16),
+    parseInt(background.slice(5, 7), 16),
+  ];
+  let minX = Infinity, minY = Infinity, maxX = -1, maxY = -1;
+  for (let y = 0; y < info.height; y += 1) {
+    for (let x = 0; x < info.width; x += 1) {
+      const i = (y * info.width + x) * info.channels;
+      const delta = Math.abs(data[i] - bg[0]) + Math.abs(data[i + 1] - bg[1]) + Math.abs(data[i + 2] - bg[2]);
+      if (delta > 24) {
+        if (x < minX) minX = x;
+        if (x > maxX) maxX = x;
+        if (y < minY) minY = y;
+        if (y > maxY) maxY = y;
+      }
+    }
+  }
+  if (maxX < 0) throw new Error(`[generate-icons] ${file} is blank — no mark rendered.`);
+  const cx = info.width / 2;
+  const cy = info.height / 2;
+  const radius = Math.max(
+    ...[[minX, minY], [maxX, minY], [minX, maxY], [maxX, maxY]].map(([x, y]) => Math.hypot(x - cx, y - cy)),
+  );
+  const fraction = radius / info.width;
+  if (fraction > MASKABLE_SAFE_RADIUS) {
+    throw new Error(
+      `[generate-icons] maskable mark reaches ${(fraction * 100).toFixed(1)}% of the width from ` +
+        `centre, outside the ${(MASKABLE_SAFE_RADIUS * 100).toFixed(0)}% safe circle. ` +
+        'Android will crop it — lower MASKABLE_MARK until this passes.',
+    );
+  }
+  console.log(`  maskable safe zone ok — mark at ${(fraction * 100).toFixed(1)}% of 40%`);
+}
 
 async function generate() {
   const svgBuffer = readFileSync(SVG_SOURCE);
@@ -65,6 +119,7 @@ async function generate() {
     .removeAlpha()
     .png()
     .toFile(join(IMAGES_DIR, MASKABLE.name));
+  await assertMaskableSafeZone(join(IMAGES_DIR, MASKABLE.name), MASKABLE.background);
   console.log(`  ${MASKABLE.name} (${MASKABLE.size}x${MASKABLE.size}, full-bleed, mark ${MASKABLE_MARK}px in safe zone)`);
 
   console.log(`Done — ${ICONS.length + 1} icons generated.`);

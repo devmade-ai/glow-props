@@ -4,7 +4,7 @@
 // This component is CLIENT-ONLY: entry-server must never import it, because
 //   src/lib/pwa.js registers the service worker on import and depends on
 //   virtual:pwa-register, which only resolves inside the full plugin pipeline.
-import { useEffect, useState } from 'react';
+import { useEffect, useSyncExternalStore } from 'react';
 import { PwaContext } from '../context/PwaContext.js';
 import { useToast } from './Toast.jsx';
 import { UpdateBanner } from './UpdateBanner.jsx';
@@ -22,24 +22,23 @@ const actions = {
 
 export function PwaManager({ children }) {
   const showToast = useToast();
-  const [, force] = useState(0);
 
-  // Re-render on singleton state changes; forward its events to toasts.
-  // Both subscriptions return unsubscribe fns invoked on cleanup (TIMER_LEAKS.md).
+  // useSyncExternalStore is the primitive for exactly this shape — an external
+  // mutable store React has to observe. It replaces a force-render subscriber
+  // plus a manual on-mount resync: React reads the snapshot during render, so
+  // a notify() landing between first render and effect commit cannot be
+  // missed, and concurrent rendering can't tear. Requires getPwaState() to
+  // return a NEW object per change, which src/lib/pwa.js now guarantees.
+  const state = useSyncExternalStore(subscribePwa, getPwaState, getPwaState);
+
+  // Events (toasts) stay a plain subscription — they are notifications, not
+  // state, so there is no snapshot to read. The singleton buffers any that
+  // fire before this effect commits and drains them on subscribe.
   useEffect(() => {
-    const unsubState = subscribePwa(() => force((n) => n + 1));
-    const unsubEvents = subscribePwaEvents((event) => {
+    return subscribePwaEvents((event) => {
       if (event.type === 'toast') showToast(event.message, event.tone, event.duration);
     });
-    // Resync once on mount: a notify() that landed between the first render
-    // and this passive effect (SW registering fast, early install prompt)
-    // would otherwise be missed until the next notify — same gap useTheme
-    // closes with its own on-mount update().
-    force((n) => n + 1);
-    return () => { unsubState(); unsubEvents(); };
   }, [showToast]);
-
-  const state = getPwaState();
   const contextValue = {
     showInstallItem: state.showInstallItem,
     autoUpdateEnabled: state.autoUpdateEnabled,

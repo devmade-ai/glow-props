@@ -13,7 +13,8 @@
     "React Native",
     "Supabase",
     "Uniwind",
-    "Zustand"
+    "Zustand",
+    "PWA"
   ],
   "audience": "Anyone who has been misunderstood in text — remote workers, couples, friends, managers, or anyone in a situation where a message could land wrong without the right context.",
   "useCases": [
