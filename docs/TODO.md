@@ -55,7 +55,7 @@ Legend: **Pass** = compliant, **Partial** = has the feature but with gaps, **Mis
 
 | Repo | CLAUDE.md | APP_ICONS | BURGER_MENU | DEBUG_SYSTEM | DOWNLOAD_PDF | PWA_SYSTEM | THEME_DARK_MODE | EVENT_BUS | Z_INDEX_SCALE | ICON_CACHE_BUST | DISCOVERABILITY |
 |------|-----------|-----------|-------------|--------------|--------------|------------|-----------------|-----------|---------------|-----------------|-----------------|
-| glow-props | Pass | Pass | Pass | Pass (DEV) | Pass | Pass | Pass | N/A | Pass | Pass | Partial |
+| glow-props | Pass | Pass | Pass | Pass (DEV) | Pass | Pass | Pass | N/A | Pass | Pass | Pass |
 | canva-grid | Pass | Pass | Pass | Pass | Pass (B) | Pass | Pass | N/A | Pass | Pass | Missing |
 | fl-farlume | Pass | Pass | Pass | Pass | Pass | Partial | Pass | N/A | Pass | Pass | Missing |
 | model-pear | Partial | Partial | Missing | Pass | Partial | Partial | Partial | Missing | Pass | Missing | Partial |
@@ -130,10 +130,15 @@ transient 503 on someone else's host must not block publishing a docs change.
 Two cells the script corrected on its first run, both worth recording because
 they are the kind of thing hand-maintenance gets wrong:
 
-- **glow-props is `Partial`, not `Pass`.** It was graded `Pass` counting the
-  structured data added 2026-08-04 — which is on a branch. The deployed site has
-  none. A column that claims to measure live sites must not describe unmerged
-  work; this flips to `Pass` when that ships, and the script will say so.
+- **glow-props was `Partial`, and is `Pass` as of 2026-08-05.** It had been
+  graded `Pass` counting structured data that was still on a branch; the
+  deployed site had none. A column that claims to measure live sites must not
+  describe unmerged work. The prediction written here — "this flips to `Pass`
+  when that ships, and the script will say so" — is exactly what happened: the
+  branch merged, Pages deployed, and `--check` failed with *matrix says
+  Partial, measured Pass*. Verified on the live origin: one JSON-LD graph per
+  page with the item node present, `<title>` matching `og:title`, per-page
+  canonical, ~50k characters of crawlable text on a pattern page.
 - **tool-till-tees is `Missing`, not `?`.** It has a live URL and was simply
   never measured. It needs a posture decision like any other origin: a backend
   API with a minimal landing page may well want `noindex` rather than the full
