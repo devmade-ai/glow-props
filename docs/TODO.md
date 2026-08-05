@@ -896,13 +896,28 @@ downstream repo was changed for it.
 Fixed at the source: both `audit-discoverability.mjs` and `verify-seo.mjs` now
 strip comments before any extraction — proven by injecting a commented
 `og:title` with the wrong value, which the old code failed on and the new code
-ignores. The rule and the incident are now in `DISCOVERABILITY.md`. The changes
-made to see-veo are harmless (a reworded comment and a guard against tag
-literals in comments), but its commit body overstates what was wrong.
+ignores. The rule and the incident are in `DISCOVERABILITY.md`, and see-veo #59
+carries the correction in that repo's own docs.
 
-- [ ] **see-veo: correct the record.** The repo's own docs now carry a claim
-      that its production description was broken. Worth a note in that repo, not
-      a code change.
+**Then the same blindness turned up in the build, and it had shipped
+(model-pear #123).** Re-parsing all 16 live origins with a real HTML parser
+instead of a regex found model-pear serving **no `<title>` and no
+modulepreloads** on any of its three prerendered pages. Cause: the comment added
+in #122 explaining why `app.html` has no static title **named the framework's
+head placeholder literally**, and SvelteKit substitutes that token with a plain
+string replace. The entire injected head — the real title, every modulepreload —
+was written between the comment markers. The commit whose only purpose was
+giving those pages titles took them away.
+
+Reading a comment gives a wrong report; writing into one gives a wrong page.
+Identical root cause, and `grep` reassures you in both directions. Fixed, with a
+source assertion (no substituted token inside a comment) and a built-output
+assertion (one non-empty title per page, after stripping comments) — verified by
+reintroducing the literal, which fails 8 of 9. A fleet sweep for the class found
+see-veo's own `%THEME_COLOR%` inside two comments (harmless: a colour string
+substituted into prose) and tag literals in dm-website and repo-tor comments
+(harmless now that the checkers strip comments, but the shape that started all
+of this).
 
 **Still open, and both need a decision rather than a fix:**
 

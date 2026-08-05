@@ -539,6 +539,60 @@ The general form: a check that reads markup with a regex is not measuring what a
 parser sees, and the gap is exactly where comments, `<template>` contents and
 CDATA live. If a check ever grows past tag presence, parse instead.
 
+#### The same blindness in the build, which is far worse
+
+Reading a comment produces a wrong *report*. **Writing into one produces a wrong
+*page*, and it is the identical root cause: string substitution has no idea what
+a comment is.**
+
+This shipped. model-pear's `app.html` had its static `<title>` removed, with a
+comment explaining why — and that comment named the framework's head placeholder
+**literally**, to say where the real title comes from. SvelteKit replaces that
+token with a plain string replace. So the entire injected head — the route's
+`<title>` and every `modulepreload` — was written *between the comment markers*:
+
+```html
+<!-- No static <title> here. Each route sets its own, which %sveltekit.head% injects below … -->
+                                                          ↑ the whole head lands HERE
+```
+
+Measured on the live site: **zero titles and zero modulepreloads** survived
+comment-stripping on all three prerendered pages. The commit whose only purpose
+was giving those pages titles took them away instead.
+
+Nothing caught it, and each reason is worth knowing:
+
+- the build succeeded — it did exactly what it was told;
+- `curl … | grep '<title>'` finds the title, because grep does not know what a
+  comment is either — the same blind spot that produced the false report above,
+  now producing a false *reassurance*;
+- the pages render correctly, because the browser boots from the `<body>`;
+- only an HTML parser can see the head is empty.
+
+The rule is one line and it is not framework-specific: **a comment may not
+contain a token the build substitutes.** Name it in prose. It applies to
+`%sveltekit.*%`, Vite's `%VITE_*%`, `<%= %>`, `{{ }}`, and any literal in a
+plugin's replacement table. A fleet sweep found the class in two more repos —
+see-veo's own `%THEME_COLOR%` sat inside two comments and was being substituted
+in place, harmless (a colour string into prose) but self-falsifying.
+
+Both halves are worth asserting, and they are cheap:
+
+```js
+const COMMENT = /<!--[\s\S]*?-->/g
+const TOKEN = /%[A-Za-z_][A-Za-z0-9_.]*%/g
+
+// Source: no substituted token inside a comment.
+const offenders = (shell.match(COMMENT) ?? []).flatMap((c) => c.match(TOKEN) ?? [])
+if (offenders.length) fail(`app.html comment contains ${offenders.join(', ')}`)
+
+// Built output: the title survives comment-stripping. Strip FIRST — a check
+// over raw HTML passes on the broken build, which is how this shipped.
+const live = built.replace(COMMENT, '')
+const titles = [...live.matchAll(/<title[^>]*>([\s\S]*?)<\/title>/g)]
+if (titles.length !== 1) fail(`${page}: ${titles.length} titles after comment-stripping`)
+```
+
 ### Run it in the deploy job, not by hand
 
 A tripwire that fires only when someone remembers to type the command is documentation. Wire it into whatever actually gates publishing:
@@ -614,4 +668,5 @@ Assertions worth adding beyond the exactly-once check:
 - **When you rewrite a template, the bug is a duplicate, not an absence.** Presence checks are all satisfied by a second, wrong tag sitting beside the correct one — assert each identity tag appears exactly once, and never let a substitution *add* a tag the template already has.
 - **The shell template must not carry a tag the routes emit.** Switching prerendering on gives every page a second `<title>`; the shell's wins, and the fix reads as complete.
 - **Strip HTML comments before any regex reads the markup.** A comment quoting a tag satisfies a presence check and hijacks a content check — this doc's own live audit reported a description as empty in production when the page was correct.
+- **A comment may not contain a token the build substitutes.** Same root cause, worse blast radius: model-pear named its head placeholder inside a comment and had every prerendered page's `<title>` and modulepreloads injected between the comment markers, where no crawler could see them. `grep` said the title was there.
 - **An unrun tripwire is documentation.** Wire it into the job that gates publishing; a checker nobody invokes did not fail, it just never ran.

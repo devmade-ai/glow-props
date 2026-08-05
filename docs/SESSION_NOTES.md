@@ -121,7 +121,14 @@ Four gaps that only implementing the fixes could reveal:
    matched a commented tag literal fifteen lines above the real tag. Both that
    script and `verify-seo.mjs` now strip comments first; proven with a
    commented `og:title` carrying a wrong value, which the old code failed on.
-   Full correction in `docs/TODO.md`.
+   Corrected in see-veo's own docs too (#59).
+2b. **Re-parsing all 16 origins with a real parser then found the same
+   blindness in the BUILD, live.** model-pear was serving **no `<title>` and no
+   modulepreloads** on any prerendered page: the comment added in #122 named the
+   framework's head placeholder literally, and SvelteKit substituted the entire
+   injected head *between the comment markers*. Reading a comment gives a wrong
+   report; writing into one gives a wrong page — and `grep` reassures you both
+   times. Fixed in #123 with source + built-output assertions.
 3. **A shell template must not carry a tag its routes emit.** Turning on
    model-pear's prerendering gave every page two `<title>`s; `app.html`'s won.
    Invisible until prerendering starts — i.e. while fixing something else.
