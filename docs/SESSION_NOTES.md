@@ -158,6 +158,28 @@ Also fixed a bug in the audit itself: `sitemapServed` looked for the root
 element in the first 400 characters, and model-pear's sitemap opens with an
 explanatory comment, so a perfectly good sitemap graded as missing.
 
+### Round 9 — the fixes shipped without running
+
+Both Expo title fixes were wired into `package.json`'s build script. **Vercel
+runs `vercel.json`'s `buildCommand`, a hand-copied duplicate of the same
+pipeline, in neither case containing the new step.** Both deploys went green and
+shipped nothing. Caught only by measuring the live documents afterwards.
+
+intxt's first fix attempt then *failed to deploy* — `buildCommand` is capped at
+256 characters and the synced pipeline was 260 — which forced the right answer:
+delete the duplicate rather than sync it. fh-fuelhunt's was 198 and would have
+sat there indefinitely, so it was moved to delegation too (#82).
+
+A sweep of all 15 deploy configs found fh-fuelhunt was the last duplicated one:
+eleven delegate or omit `buildCommand` (Vercel then defaults to `npm run
+build`), web-arch runs `npm run build && npm test`. `DISCOVERABILITY.md` now
+carries the rule and the preference order.
+
+**Verified live with a real HTML parser**, after three wrong readings in a row
+(a `grep -c` counting lines not elements, a 15-byte SSO redirect read as an
+empty page, and the earlier comment-blind regex): `fuelhunt.app`, `intxt.app`
+and `intxt.app/join` each serve exactly one `<title>`, placeholder gone.
+
 ## Current state
 
 - glow-props: source + docs, on `claude/pwa-patterns-review-76cg78`. Build green,

@@ -617,6 +617,38 @@ Failing there is safe: the build has already succeeded and nothing is published 
 
 **No CI at all? Use the platform's build command.** `"buildCommand": "npm run build && npm test"` in `vercel.json` makes a failing assertion fail the *deploy*, with no workflow file to maintain — and it orders build-before-test for free, so `dist/`-level assertions run against fresh output. Locally the same suite degrades to skipped rather than failing on a missing `dist/`.
 
+#### The deploy's build command must not be a second copy of the repo's
+
+Note the shape of the line above: `buildCommand` **delegates** to an npm script. That is not incidental, and getting it wrong is how a fix ships without ever running.
+
+A host's `buildCommand` overrides the default. If it spells out the pipeline — `expo export && node scripts/a.mjs && node scripts/b.mjs` — then the repo has **two** definitions of its build, and only one of them is what production executes. Add a step to `package.json` and nothing tells you the deploy still runs the old list. The build succeeds. The deploy is green. The step never ran.
+
+This shipped twice in one hour, in two repos, from the same cause: a post-export fix added to `package.json`, absent from `vercel.json`, deployed successfully, and the defect it fixed was still live afterwards. Neither the build, the tests, nor the deploy status showed anything wrong — the only signal was the live document.
+
+Worse, one of the two was invisible in a way the other wasn't. `vercel.json`'s `buildCommand` is capped at **256 characters**; intxt's synced pipeline came to 260 and was rejected outright, so the duplication surfaced in a single deploy. fh-fuelhunt's was 198 and would have sat there indefinitely. **A hazard that only announces itself once the string gets long enough is not a hazard you can rely on noticing.**
+
+The rule, in order of preference:
+
+1. **Delegate.** `"buildCommand": "npm run build"`. One definition. Nothing to keep in sync, and nothing to check.
+2. **Delegate and gate.** `"npm run build && npm test"` — the form above, when the deploy is also the test gate.
+3. **Omit it entirely.** With no `buildCommand`, Vercel runs `npm run build` anyway. Same single definition, one less line.
+4. **If you must spell it out** (a monorepo path, a flag the script cannot carry), assert the two agree — and put the assertion in *both* commands, because a checker wired into only one reproduces the bug it exists to catch:
+
+```js
+const steps = (cmd) => [...cmd.matchAll(/node\s+(scripts\/[\w-]+\.mjs)/g)].map((m) => m[1])
+const local = steps(pkg.scripts.build)
+const deployed = steps(vercel.buildCommand)
+if (local.join('|') !== deployed.join('|')) {
+  fail(`MISSING from the deploy: ${local.filter((s) => !deployed.includes(s)).join(', ')}`)
+}
+```
+
+Put it **first** in the chain, not after the expensive export — a divergence should cost a second, not a full build.
+
+Worth a sweep rather than a memory: reading every deploy config in the fleet at once took one script and found exactly one repo still duplicating. The same question applies to any host that lets you override the build — Netlify's `[build] command`, a Dockerfile `RUN`, a workflow step that inlines what `package.json` already defines.
+
+**The general rule this is an instance of:** verify the path production takes, not the artifact you changed. A local build proves your script works. It proves nothing about whether the deploy runs it.
+
 **Express the assertions in whatever runner the repo already has** — `node --test`, vitest, jest, or a plain `scripts/verify-seo.mjs`. What matters is that they read the **built output directory**, whose name varies by framework: `dist/` for Vite and Expo, `build/` for SvelteKit's adapter-static.
 
 Assertions worth adding beyond the exactly-once check:
@@ -680,3 +712,5 @@ Assertions worth adding beyond the exactly-once check:
 - **Strip HTML comments before any regex reads the markup.** A comment quoting a tag satisfies a presence check and hijacks a content check — this doc's own live audit reported a description as empty in production when the page was correct.
 - **A comment may not contain a token the build substitutes.** Same root cause, worse blast radius: model-pear named its head placeholder inside a comment and had every prerendered page's `<title>` and modulepreloads injected between the comment markers, where no crawler could see them. `grep` said the title was there.
 - **An unrun tripwire is documentation.** Wire it into the job that gates publishing; a checker nobody invokes did not fail, it just never ran.
+- **The deploy's build command must not be a second copy of the repo's.** Delegate to the npm script, or a step added in one place silently never runs in the other — a green deploy that shipped nothing. It cost two repos a no-op fix each, in the same hour.
+- **Verify the path production takes, not the artifact you changed.** A local build proves the script works; it says nothing about whether the deploy runs it, or whether the URL a crawler requests serves what the build emitted.
