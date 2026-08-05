@@ -58,7 +58,7 @@ Legend: **Pass** = compliant, **Partial** = has the feature but with gaps, **Mis
 | glow-props | Pass | Pass | Pass | Pass (DEV) | Pass | Pass | Pass | N/A | Pass | Pass | Partial |
 | canva-grid | Pass | Pass | Pass | Pass | Pass (B) | Pass | Pass | N/A | Pass | Pass | Missing |
 | fl-farlume | Pass | Pass | Pass | Pass | Pass | Partial | Pass | N/A | Pass | Pass | Missing |
-| model-pear | Partial | Partial | Missing | Pass | Partial | Partial | Partial | Missing | Pass | Missing | Missing |
+| model-pear | Partial | Partial | Missing | Pass | Partial | Partial | Partial | Missing | Pass | Missing | Partial |
 | see-veo | Missing | Partial | N/A | Partial | Partial | Partial | N/A | N/A | Missing | Missing | Partial |
 | repo-tor | Pass | Pass | Pass | Pass | Pass | Pass | Pass | N/A | Pass | Pass | Partial |
 | fh-fuelhunt | Pass | Pass | Pass | Pass | Missing | Partial | Pass | N/A | Pass | Pass | Partial |
@@ -857,9 +857,9 @@ Ordered by how much it cost a user:
 - **fh-fuelhunt** — Mapbox URLs cached **with their `access_token` in the cache
   key**, permanently, on the device. Also the entire install UI (~550 lines) was
   imported by nothing.
-- **see-veo** — the meta description shipped EMPTY in production because a code
-  comment contained a literal `<meta name="description">` and the build emitted
-  that instead. GA had been blocked by the repo's own CSP since it landed.
+- **see-veo** — GA had been blocked by the repo's own CSP since it landed;
+  `/robots.txt` returned the app; no canonical. **The headline claim in that
+  commit is WRONG and is corrected below.**
 - **intxt** — API chatter evicted `entry-*.js` from a shared 60-entry LRU, so a
   chatty session broke the next offline launch.
 - **canva-grid** — installed users were offline-capable for exactly one hour.
@@ -877,6 +877,32 @@ Ordered by how much it cost a user:
 - **fl-farlume** — an uncancellable deferred `location.reload()`.
 - **qi-invoice** — the "Automatic updates" label was correct only by accident.
 - **glow-props** — its own maskable icon was outside the safe circle (above).
+
+**Correction — see-veo's meta description was never empty (2026-08-05).**
+Commit `a591e2b` claims "THE META DESCRIPTION SHIPPED EMPTY... production served
+`<meta name="description">` with no content attribute". That is false, and the
+reason is worth more than the finding was. Reproduced by reintroducing the
+comment, rebuilding, and parsing the output: the built HTML carries **two**
+occurrences of the literal — the real tag, with correct copy, and a comment
+fifteen lines above quoting the tag name — and a compliant HTML parser sees
+exactly **one** description meta with the right content.
+
+What actually read it as empty was **this repo's own live checker**.
+`audit-discoverability.mjs` extracted meta tags with a regex, which cannot tell
+it is inside `<!-- -->`, matched the commented literal first, and found no
+`content` attribute on it. A tool defect reported as a production defect, and a
+downstream repo was changed for it.
+
+Fixed at the source: both `audit-discoverability.mjs` and `verify-seo.mjs` now
+strip comments before any extraction — proven by injecting a commented
+`og:title` with the wrong value, which the old code failed on and the new code
+ignores. The rule and the incident are now in `DISCOVERABILITY.md`. The changes
+made to see-veo are harmless (a reworded comment and a guard against tag
+literals in comments), but its commit body overstates what was wrong.
+
+- [ ] **see-veo: correct the record.** The repo's own docs now carry a claim
+      that its production description was broken. Worth a note in that repo, not
+      a code change.
 
 **Still open, and both need a decision rather than a fix:**
 

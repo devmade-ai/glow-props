@@ -325,6 +325,8 @@ Everything above is stack-independent; the *mechanics* are Vite-plugin-shaped. T
 
 **SvelteKit.** `<svelte:head>` is the per-route mechanism and it is **worth nothing unless the route is prerendered**. model-pear is the worked failure: four `<svelte:head>` blocks carrying real titles, `adapter-static` with `fallback: '200.html'`, and **no route setting `export const prerender = true`** — so the build emits `200.html` and nothing else, and those four titles never reach a file. One line in `src/routes/+layout.ts` turns them into four real HTML documents. Also: `static/` is SvelteKit's `public/` (model-pear has no `static/robots.txt`, so `/robots.txt` returns HTML), and the sitemap is an **endpoint**, not a static file — `src/routes/sitemap.xml/+server.ts` returning XML with `export const prerender = true`.
 
+**Turning prerendering on exposes the shell template's own head tags.** The moment model-pear's routes started emitting files, every page had **two** `<title>` elements — its own, and the static one already sitting in `app.html`. The first wins, so all three pages still showed the generic title and the fix looked complete while changing nothing. The rule generalises past SvelteKit: **the shell template (`app.html`, `index.html`, `_document.tsx`) must not carry any identity tag that a per-route mechanism also emits.** Either the shell owns it or the route does. This is the exactly-once check above, aimed at the one duplicate whose two halves are written by different people months apart — and it is invisible until prerendering starts, which is exactly when nobody is looking for a second bug.
+
 **Expo Router (`output: "static"`).** `app/+html.tsx` is **one template for every route** — anything written there is global by construction. Three consequences:
 
 - **`<Stack.Screen options={{ title }}>` is not a head tag.** It sets the in-app header and `document.title` after mount. Both Expo repos have per-screen titles; neither reaches the served HTML.
@@ -497,6 +499,46 @@ for (const [label, literal] of [
 
 The generator-side rule that prevents it: **no substitution may introduce a tag the template also carries.** Replace in place, always — which also brings each tag under the generator's fail-loud "expected literal not found" guard, so rewording the template breaks the build instead of silently restoring the generic copy.
 
+### Strip comments before any regex touches the markup
+
+Every check on this page — and every audit script that grades a live origin —
+extracts tags with a regular expression. **A regex cannot tell that it is inside
+`<!-- … -->`.** The heads in this fleet are full of Requirement/Approach
+comments, and those comments quote tag literals, because that is how you explain
+a tag. So the comment is indistinguishable from the thing it documents.
+
+It bites in both directions, and the second one is not hypothetical:
+
+- **False negative.** A presence assertion is satisfied by a tag that exists
+  only inside a comment. The check is green and the page has nothing.
+- **False positive.** A content extraction matches the *commented* copy first
+  and reads its (absent, or example) `content` attribute. This is what happened
+  during the fleet audit: see-veo has an explanatory comment reading
+  `… so <meta name="description">, the Open Graph copy below …` fifteen lines
+  above the real tag, and the live checker reported the description as **empty
+  in production**. It was not. A compliant parser sees exactly one description
+  meta with the correct copy; the build output was correct the whole time. A
+  downstream repo was changed for a defect that did not exist.
+
+One line removes the entire failure mode, and it belongs at the read, not at
+each pattern — a per-pattern lookbehind is unreadable and the next check added
+will forget it:
+
+```js
+const stripComments = (html) => html.replace(/<!--[\s\S]*?-->/g, '')
+const readHtml = (path) => stripComments(readFileSync(path, 'utf8'))
+```
+
+Two follow-ons. **Body-text extraction needs it too** — a crawlable-text
+heuristic that strips `<script>` and `<style>` but not comments counts a block
+of documentation prose as page content, and over-reports. And **keep the plain
+read for assertions whose subject IS the comment** (source-literal checks),
+which is why this is a separate helper rather than applied globally.
+
+The general form: a check that reads markup with a regex is not measuring what a
+parser sees, and the gap is exactly where comments, `<template>` contents and
+CDATA live. If a check ever grows past tag presence, parse instead.
+
 ### Run it in the deploy job, not by hand
 
 A tripwire that fires only when someone remembers to type the command is documentation. Wire it into whatever actually gates publishing:
@@ -570,4 +612,6 @@ Assertions worth adding beyond the exactly-once check:
 - **A dist-level check is only worth as much as the build behind it.** Assertions over generated output pass happily against a stale `dist/`; rebuild before trusting them, and rebuild between fault injections or the check never sees the fault.
 - **Assert prerendered content INSIDE its container.** The item's title is also in `<title>` and `og:title`, so a whole-file search for it passes on a page whose body was never injected.
 - **When you rewrite a template, the bug is a duplicate, not an absence.** Presence checks are all satisfied by a second, wrong tag sitting beside the correct one — assert each identity tag appears exactly once, and never let a substitution *add* a tag the template already has.
+- **The shell template must not carry a tag the routes emit.** Switching prerendering on gives every page a second `<title>`; the shell's wins, and the fix reads as complete.
+- **Strip HTML comments before any regex reads the markup.** A comment quoting a tag satisfies a presence check and hijacks a content check — this doc's own live audit reported a description as empty in production when the page was correct.
 - **An unrun tripwire is documentation.** Wire it into the job that gates publishing; a checker nobody invokes did not fail, it just never ran.

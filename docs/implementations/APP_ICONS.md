@@ -92,7 +92,7 @@ generate().catch((err) => {
 **SVG design rules for maskable icons:**
 - Canvas must be square (e.g. `viewBox="0 0 1024 1024"`)
 - Add `shape-rendering="geometricPrecision"` to the root `<svg>` element — tells the rasterizer to prioritize accurate geometry over speed
-- **The maskable safe zone is a CIRCLE of radius 40%** (410px on a 1024 canvas), not the inner-80% square. The distinction matters: artwork can sit inside the square and still have its corners clipped by a circular launcher mask. Scale the mark to ~780px within the 1024 canvas and document the math where you generate it.
+- **The maskable safe zone is a CIRCLE of radius 40%** (410px on a 1024 canvas), not the inner-80% square. The distinction matters: artwork can sit inside the square and still have its corners clipped by a circular launcher mask. **Do not derive the mark size — measure it** (see below); ~760px on a 1024 canvas is the value that actually passes.
 - Design must be legible at 48px (favicon) — avoid fine details
 
 **Transparent source, composited maskable.** Maskable icons need an opaque full-bleed background, but the favicon and any in-app logo usage want transparency so they sit on whatever the theme provides. Rather than baking a background into the SVG, keep the source transparent and composite the maskable variant at generation time (glow-props' approach):
@@ -101,7 +101,7 @@ generate().catch((err) => {
 // Sharp applies .composite() at the END of its pipeline, so chaining
 // .flatten()/.removeAlpha() alongside it silently runs BEFORE the mark lands —
 // you get a blank plate. Two passes: composite to a buffer, then strip alpha.
-const mark = await sharp(svgBuffer, { density: SVG_DENSITY }).resize(780, 780).png().toBuffer();
+const mark = await sharp(svgBuffer, { density: SVG_DENSITY }).resize(760, 760).png().toBuffer();
 const composited = await sharp({
   create: { width: 1024, height: 1024, channels: 4, background: '#ffffff' },
 }).composite([{ input: mark, gravity: 'centre' }]).png().toBuffer();
@@ -109,6 +109,68 @@ const composited = await sharp({
 await sharp(composited).flatten({ background: '#ffffff' })
   .png().toFile(join(IMAGES_DIR, 'icon-1024-maskable.png'));
 ```
+
+**Measure the safe zone, don't derive it — this doc's own number was wrong.**
+The value here was 780px, derived from the 40% circle and the mark's corner
+geometry. Glow-props followed it and its produced icon measured **40.5%** of the
+width from centre; fh-fuelhunt's measured **49%**. Two of two repos following
+the rule were outside the circle, and neither build said anything.
+
+A derivation cannot see the rasterizer. Sharp anti-aliases from a 400 DPI
+render, which lays ink a few pixels past the nominal box, and the corner arcs
+the algebra models are exactly where that matters. Android crops against
+**pixels**, so measure pixels:
+
+```javascript
+/** The maskable safe zone, as a fraction of the icon's width from its centre. */
+const MASKABLE_SAFE_RADIUS = 0.4;
+
+async function assertMaskableSafeZone(file, background) {
+  const { data, info } = await sharp(file).ensureAlpha().raw()
+    .toBuffer({ resolveWithObject: true });
+  const bg = [1, 3, 5].map((i) => parseInt(background.slice(i, i + 2), 16));
+
+  // Bounding box of every pixel that differs from the plate colour. The
+  // threshold ignores the anti-aliased fade at the mark's own edge without
+  // ignoring the mark.
+  let minX = Infinity, minY = Infinity, maxX = -1, maxY = -1;
+  for (let y = 0; y < info.height; y += 1) {
+    for (let x = 0; x < info.width; x += 1) {
+      const i = (y * info.width + x) * info.channels;
+      const delta = Math.abs(data[i] - bg[0])
+        + Math.abs(data[i + 1] - bg[1]) + Math.abs(data[i + 2] - bg[2]);
+      if (delta > 24) {
+        if (x < minX) minX = x;
+        if (x > maxX) maxX = x;
+        if (y < minY) minY = y;
+        if (y > maxY) maxY = y;
+      }
+    }
+  }
+  if (maxX < 0) throw new Error(`${file} is blank — no mark rendered.`);
+
+  // The CORNERS of the ink box are what the circular mask clips, not its edges.
+  const cx = info.width / 2, cy = info.height / 2;
+  const radius = Math.max(...[[minX, minY], [maxX, minY], [minX, maxY], [maxX, maxY]]
+    .map(([x, y]) => Math.hypot(x - cx, y - cy)));
+  const fraction = radius / info.width;
+
+  if (fraction > MASKABLE_SAFE_RADIUS) {
+    throw new Error(
+      `maskable mark reaches ${(fraction * 100).toFixed(1)}% of the width from centre, ` +
+      `outside the ${(MASKABLE_SAFE_RADIUS * 100).toFixed(0)}% safe circle. ` +
+      'Android will crop it — lower the mark size until this passes.',
+    );
+  }
+  console.log(`  maskable safe zone ok — mark at ${(fraction * 100).toFixed(1)}% of 40%`);
+}
+```
+
+Call it right after writing the file. Choose the mark size to satisfy the
+assertion rather than the algebra — the blank-icon guard matters as much as the
+overflow one, since the composite trap above produces a plate that measures 0%
+and would otherwise pass silently. The check is O(pixels) on a single 1024²
+image and adds a few milliseconds to a script that already rasterizes eight.
 
 **PWA manifest icons** (`manifest.json`):
 ```json

@@ -65,6 +65,27 @@ async function get(url) {
   }
 }
 
+/**
+ * Strip HTML comments before any regex looks at the markup.
+ *
+ * Requirement: a grade must describe what a browser or crawler sees.
+ * Why: a regex has no idea it is inside a comment, and a `<head>` full of
+ *   documentation comments routinely contains meta-tag literals. see-veo has an
+ *   explanatory comment reading `... so <meta name="description">, the Open
+ *   Graph copy below ...` fifteen lines above the real tag — `tagContent` below
+ *   matched THAT, found no `content` attribute, and reported the description as
+ *   empty. It is not: a compliant parser sees exactly one description meta with
+ *   the correct copy. This audit reported a defect that did not exist, and the
+ *   downstream repo was "fixed" for it.
+ * Alternatives:
+ *   - Parse with a real HTML parser: correct, and the right answer if this
+ *     grows. Rejected for now — it is one dependency for one line, and stripping
+ *     comments removes the entire failure mode these regexes have.
+ *   - Negative lookbehind per pattern: rejected, unreadable and easy to forget
+ *     on the next check added.
+ */
+const stripComments = (html) => html.replace(/<!--[\s\S]*?-->/g, '');
+
 const tagContent = (html, prop) => {
   const m = html.match(new RegExp(`<meta[^>]+(?:property|name)=["']${prop}["'][^>]*>`, 'i'));
   if (!m) return null;
@@ -76,7 +97,7 @@ async function measure(url) {
   const home = await get(url);
   if (!home.ok) return { error: home.error };
 
-  const html = home.body;
+  const html = stripComments(home.body);
   const inner = html.match(/<body[\s\S]*?>([\s\S]*)<\/body>/i)?.[1] ?? '';
   const bodyText = inner
     .replace(/<script[\s\S]*?<\/script>/gi, '')

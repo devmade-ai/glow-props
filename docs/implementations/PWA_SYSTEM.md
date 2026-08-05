@@ -1157,6 +1157,47 @@ export default memo(function InstallInstructionsModal({ isOpen, onClose, instruc
 - `showManualInstructions` (Safari/Firefox) → "How to Install" opens `InstallInstructionsModal`
 - Dismiss → persists to `localStorage('pwa-install-dismissed')`
 
+### Assert the install UI is actually in the component graph
+
+**fh-fuelhunt's entire install UI — `usePWAInstall.ts` and
+`InstallInstructionsModal.tsx`, ~550 lines, per-browser copy, keyboard
+accessible — was imported by nothing.** Not feature-flagged, not hidden behind a
+condition: absent from the tree. The live path read the raw `window` global and
+fell back to `window.alert()` with generic browser-menu text. Everything in this
+document about capture layers and platform detection was running nowhere, and
+the repo's own docs described the good version.
+
+This is the cheapest possible check and no repo had it, because "the file
+exists, the tests pass, the code is good" is where review stops. The failure is
+one level up from the code: **nothing imports it.**
+
+```js
+// Every module the install flow needs a caller for, and the thing that proves
+// it. A grep, not a test framework — it costs nothing and catches the class.
+for (const mod of ['usePWAInstall', 'InstallInstructionsModal']) {
+  const importers = files.filter(
+    (f) => !f.includes(mod) && !/\.test\./.test(f) && readFileSync(f, 'utf8').includes(mod),
+  )
+  if (importers.length === 0) {
+    fail(`${mod} is imported by nothing — the install UI cannot render`)
+  }
+}
+```
+
+Excluding test files is the load-bearing part. A well-tested orphan has
+importers; only its *tests* import it, and that is precisely the shape that
+survives review looking healthy.
+
+Two related reachability failures, worth checking at the same time since they
+answer the same question and only one of the three is about imports:
+
+- **Reachable but never shown.** The reinstall guidance in
+  [PWA_ICON_CACHE_BUST.md](PWA_ICON_CACHE_BUST.md) lives inside the install
+  modal, and every implementation hides the install affordance once installed —
+  so the users it is written for can never open it.
+- **Rendered but inert.** A button wired to a handler that early-returns on a
+  state that is never true. Only a browser catches this one.
+
 ## Fix: Timer Leaks on Unmount (Nested Timeouts)
 
 Debounce patterns using `setTimeout` leak when a component unmounts mid-timeout. The nested case is worse: a timeout callback sets *another* timeout, and cleaning up only the outer one leaves the inner one orphaned — it fires after unmount, updating state or triggering side effects on a dead component.
@@ -1583,6 +1624,7 @@ This applies to glow-props itself, which keeps four inline classic scripts in it
 14. **5-second diagnostic timeout** — if `beforeinstallprompt` hasn't fired on Chromium, log manifest/SW status and fall back to manual instructions. Chrome suppresses the prompt for 90 days after dismissal, and without the fallback those users get no install affordance at all.
 15. **Install instructions should be data-driven** — `getInstallInstructions()` returns `{ browser, steps, note }`. The modal renders whatever it gets. One switch case per browser, not one component.
 16. **Focus trap the install modal** — keyboard users must be able to Tab within the modal without escaping to background content.
+16b. **Assert the install UI is imported by something other than its tests** — fh-fuelhunt's ~550-line install hook and modal were in the repo, correct, and in the component graph of nothing; the live path fell back to `window.alert()`. Reviewing the code cannot find this, because the code is fine.
 
 ### Service Worker Updates
 17. **Auto-on-launch is the fleet update policy** — `registerType: 'prompt'` as the mechanism, auto-apply at launch + defer mid-session + "Automatic updates" toggle (default ON) + "Check for updates" action as the behavior. Raw `autoUpdate` reloads over unsaved work; tap-only prompt leaves stale clients forever (the canva-grid GA-tail incident).

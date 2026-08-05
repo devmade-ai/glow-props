@@ -106,6 +106,28 @@ returns (correct suppression), and my own rAF fault injection, which passed
 because I injected into a file that already had a `cancelAnimationFrame`
 elsewhere. My test was wrong, not the code.
 
+### Round 7 — improvements the fix pass surfaced, folded back in
+
+Four gaps that only implementing the fixes could reveal:
+
+1. **APP_ICONS.md prescribed 780px**, which measures at 40.5% against its own
+   40% safe circle. fh-fuelhunt measured 49%. Two of two repos following the
+   rule were outside it, because a derivation cannot see the rasterizer's
+   antialiasing. The doc now carries `assertMaskableSafeZone()` and says
+   measure, not derive.
+2. **A regex reading HTML reads comments too** — and this one is a correction,
+   not a finding. see-veo's "meta description shipped empty in production" was
+   **wrong**: the page was always correct, and `audit-discoverability.mjs`
+   matched a commented tag literal fifteen lines above the real tag. Both that
+   script and `verify-seo.mjs` now strip comments first; proven with a
+   commented `og:title` carrying a wrong value, which the old code failed on.
+   Full correction in `docs/TODO.md`.
+3. **A shell template must not carry a tag its routes emit.** Turning on
+   model-pear's prerendering gave every page two `<title>`s; `app.html`'s won.
+   Invisible until prerendering starts — i.e. while fixing something else.
+4. **Assert the install UI has a non-test importer.** fh-fuelhunt's ~550 lines
+   were correct, tested, and in the component graph of nothing.
+
 ## Current state
 
 - glow-props: source + docs, on `claude/pwa-patterns-review-76cg78`. Build green,
