@@ -96,6 +96,26 @@ const titlesIn = (html) => (html.match(/<title[^>]*>[\s\S]*?<\/title>/gi) ?? [])
 const firstTitle = (html) => html.match(/<title[^>]*>([\s\S]*?)<\/title>/i)?.[1]?.trim() ?? '';
 
 /**
+ * Readable characters in <body>, scripts and styles removed.
+ *
+ * Shared by the home document and the sampled item page, because "does this URL
+ * say anything" is the same question at both — and asking it only of the home
+ * page mis-grades a whole shape of site. dm-website's landings are app shells by
+ * design while its posts and case studies carry real text; measuring the home
+ * page alone reported it as having no crawlable content when twelve of its
+ * pages had just been given some.
+ */
+function bodyTextLength(html) {
+  const inner = html.match(/<body[\s\S]*?>([\s\S]*)<\/body>/i)?.[1] ?? '';
+  return inner
+    .replace(/<script[\s\S]*?<\/script>/gi, '')
+    .replace(/<style[\s\S]*?<\/style>/gi, '')
+    .replace(/<[^>]+>/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim().length;
+}
+
+/**
  * Fetch one item page named by the sitemap and report only what differs from
  * the home document. Returns null when there is nothing to check — no sitemap,
  * or a sitemap listing only the home URL — which is not itself a fault here;
@@ -105,8 +125,30 @@ async function measureItem(sitemap, homeUrl) {
   if (!sitemap.ok || sitemap.status !== 200) return null;
   const locs = [...sitemap.body.matchAll(/<loc>\s*([^<\s]+)\s*<\/loc>/gi)].map((m) => m[1]);
   const home = new URL(homeUrl).href.replace(/\/$/, '');
-  const target = locs.find((l) => l.replace(/\/$/, '') !== home);
-  if (!target) return null;
+  const candidates = locs.filter((l) => l.replace(/\/$/, '') !== home);
+  if (!candidates.length) return null;
+
+  // Prefer the DEEPEST path, not the first listed.
+  //
+  // Item pages live under their collection — /blog/<slug>, /case-studies/<slug>
+  // — while the shallow entries are section landings. Sitemaps are usually
+  // written breadth-first, so "first non-home entry" reliably picks a landing
+  // and never sees an item at all. dm-website is the worked example: its first
+  // non-home <loc> is /vibe-rescue, and sampling that reported "no crawlable
+  // body text" while twelve posts and case studies underneath it carried
+  // thousands of characters each.
+  //
+  // Deepest is the right bias for what this sample is FOR: item pages are the
+  // ones assembled per-request or per-build from a shell, which is where the
+  // failures this audit hunts actually live. A landing that a human wrote is
+  // the least interesting page on any of these origins.
+  // Among equally deep candidates, take the LAST listed. Sitemap generators
+  // emit static routes first and append the dynamic collections, so the tail is
+  // where the generated item pages are. Depth alone was not enough on
+  // dm-website: /legal/terms is also two segments deep and is a hand-written
+  // page, so "first of the deepest" picked that and still missed every post.
+  const depth = (u) => new URL(u).pathname.replace(/\/+$/, '').split('/').filter(Boolean).length;
+  const target = candidates.reduce((best, l) => (depth(l) >= depth(best) ? l : best), candidates[0]);
 
   const res = await get(target);
   if (!res.ok || res.status !== 200) return { url: target, error: res.error ?? `HTTP ${res.status}` };
@@ -117,6 +159,7 @@ async function measureItem(sitemap, homeUrl) {
     titleCount: titlesIn(html),
     title: firstTitle(html),
     canonical: html.match(/<link[^>]+rel=["']canonical["'][^>]+href=["']([^"']+)["']/i)?.[1] ?? null,
+    bodyTextLen: bodyTextLength(html),
   };
 }
 
@@ -126,13 +169,6 @@ async function measure(url) {
   if (!home.ok) return { error: home.error };
 
   const html = stripComments(home.body);
-  const inner = html.match(/<body[\s\S]*?>([\s\S]*)<\/body>/i)?.[1] ?? '';
-  const bodyText = inner
-    .replace(/<script[\s\S]*?<\/script>/gi, '')
-    .replace(/<style[\s\S]*?<\/style>/gi, '')
-    .replace(/<[^>]+>/g, ' ')
-    .replace(/\s+/g, ' ')
-    .trim();
 
   const robots = await get(new URL('robots.txt', url).href);
   const sitemap = await get(new URL('sitemap.xml', url).href);
@@ -169,7 +205,7 @@ async function measure(url) {
     // single-index.html SPA, which is why the header exists.
     noindex: /<meta[^>]+name=["']robots["'][^>]*noindex/i.test(html)
       || /noindex/i.test(home.headers.get('x-robots-tag') || ''),
-    bodyTextLen: bodyText.length,
+    bodyTextLen: bodyTextLength(html),
     // Requirement: catch a page with no title on the next scheduled run rather
     //   than by luck.
     // Why this is counted rather than merely tested for presence, and why it is
@@ -250,6 +286,9 @@ function grade(m) {
   }
 
   const missing = [];
+  // Observations that are NOT gaps but must not vanish — a grade that hides how
+  // it was reached is the thing this script exists to replace.
+  const notes = [];
   if (!m.robotsServed) missing.push('robots.txt');
   if (!m.sitemapServed) missing.push('sitemap');
   if (!m.canonical) missing.push('canonical');
@@ -257,19 +296,38 @@ function grade(m) {
   if (!m.jsonld) missing.push('structured data');
   // Head tags over an empty mount point make a link preview well and a page
   // indexable not at all — the distinction the pattern calls unfurl-only.
-  if (m.bodyTextLen === 0) missing.push('crawlable body text');
+  //
+  // Judged across BOTH sampled pages, not the home document alone. Some sites
+  // legitimately have a shell for a landing page and their substance at item
+  // URLs: dm-website's /blog and /case-studies are navigation, while each post
+  // and case study carries real text. Grading only the home page called that
+  // "missing crawlable body text" at the moment twelve of its pages had just
+  // been given some.
+  //
+  // This is deliberately NOT a loosening. The gap is still reported when
+  // NOTHING sampled says anything — which is the actual defect, a site that is
+  // indexable for nothing but its description. What changes is that a shell
+  // landing over rich item pages is described accurately instead of being
+  // called broken. And because "accurate" must not mean "silent", the shell is
+  // still named in the reason line.
+  const itemBodyLen = m.item && !m.item.error ? m.item.bodyTextLen : null;
+  if (m.bodyTextLen === 0 && !itemBodyLen) {
+    missing.push('crawlable body text');
+  } else if (m.bodyTextLen === 0) {
+    notes.push(`landing page is a shell (item page carries ${itemBodyLen} chars)`);
+  }
 
   // A title fault is phrased on its own — it is a broken tag, not an absent
   // feature, and folding it into "missing …" reads as nonsense. Item-page
   // faults are appended the same way: they are real defects on real URLs, and
   // burying them in the home page's list would misattribute them.
   const faults = [titleFault, itemFault(m)].filter(Boolean);
-  const why = (base) => (faults.length ? `${base}; ${faults.join('; ')}` : base);
+  const why = (base) => [base, ...faults, ...notes].filter(Boolean).join('; ');
 
   if (missing.length === 0) {
     return faults.length
-      ? { grade: 'Partial', why: faults.join('; ') }
-      : { grade: 'Pass', why: 'complete' };
+      ? { grade: 'Partial', why: [...faults, ...notes].join('; ') }
+      : { grade: 'Pass', why: notes.length ? `complete; ${notes.join('; ')}` : 'complete' };
   }
   if (!m.og && !m.robotsServed && !m.canonical && !m.sitemapServed) {
     return { grade: 'Missing', why: why('no open graph, robots.txt, canonical or sitemap') };
