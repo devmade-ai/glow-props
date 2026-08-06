@@ -31,4 +31,4 @@ follows the system setting on a first visit — with no flash of the wrong theme
 
 ## Part of the devmade-ai fleet
 
-Shared engineering patterns and conventions live in **glow-props**, the fleet's source of truth.
+Shared engineering patterns and conventions live in **gp-props**, the fleet's source of truth.

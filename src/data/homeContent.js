@@ -136,7 +136,7 @@ export const TOOLS = [
     badge: 'Config',
     description: 'This site. Hosts shared AI assistant rules, engineering patterns, and the project portfolio. Also serves as the canonical CLAUDE.md reference.',
     claudeMd: true,
-    source: 'https://github.com/devmade-ai/glow-props',
+    source: 'https://github.com/devmade-ai/gp-props',
   },
   {
     slug: 'canva-grid-assets',

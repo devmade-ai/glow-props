@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // Tripwire: verify timer/listener cleanup hygiene against docs/implementations/TIMER_LEAKS.md.
 //
-// Approach: static check that every glow-props script registering timers, intervals,
+// Approach: static check that every gp-props script registering timers, intervals,
 // listeners, or subscriptions exposes a documented teardown path:
 //   - Plain modules under src/ (.js — the lib singletons) that register at module
 //     level must declare import.meta.hot.dispose() so HMR doesn't accumulate
@@ -51,7 +51,7 @@ function listJsFiles(dir) {
     const path = join(dir, name);
     if (statSync(path).isDirectory()) {
       out.push(...listJsFiles(path));
-      // .ts/.tsx/.vue/.svelte are here for the fleet, not for this repo — glow-props
+      // .ts/.tsx/.vue/.svelte are here for the fleet, not for this repo — gp-props
       // has none. Downstream repos copy this script, and one that only reads
       // .js/.mjs/.jsx checks almost nothing in a TypeScript or Svelte codebase
       // while still reporting OK.

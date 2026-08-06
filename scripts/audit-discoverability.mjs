@@ -35,9 +35,9 @@ const TIMEOUT_MS = 20000;
 
 // Origins come from the mirrored project metadata, not a list in this file —
 // a project added to the portfolio joins the audit without anyone remembering
-// to. glow-props is not among its own mirrors, so it is named explicitly.
+// to. gp-props is not among its own mirrors, so it is named explicitly.
 function origins() {
-  const found = [['glow-props', SITE]];
+  const found = [['gp-props', SITE]];
   for (const slug of readdirSync(PROJECTS_DIR).sort()) {
     const metaPath = join(PROJECTS_DIR, slug, 'meta.json');
     if (!existsSync(metaPath)) continue;
@@ -216,7 +216,7 @@ async function measure(url) {
   //   and it self-maintains — a new item type joins as soon as it is listed.
   // Why only one: this is a periodic check against sixteen third-party hosts,
   //   not a crawler. One item proves the mechanism; the repo's own tripwire is
-  //   what covers every item (glow-props' verify:seo does exactly that split).
+  //   what covers every item (gp-props' verify:seo does exactly that split).
   const item = await measureItem(sitemap, url);
 
   return {

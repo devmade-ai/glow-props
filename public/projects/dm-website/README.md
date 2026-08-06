@@ -4,8 +4,8 @@ The **devmade-ai front-door site** — the public brand homepage for devmade-ai.
 routes visitors to its two product lines: the **vibe rescue** service and **apps for business**. Live at
 **[devmade.app](https://www.devmade.app)**.
 
-> Not to be confused with **glow-props**, the portfolio / resource hub. dm-website is the top-level brand
-> landing; glow-props is the deep project showcase. The front door links out to it.
+> Not to be confused with **gp-props**, the portfolio / resource hub. dm-website is the top-level brand
+> landing; gp-props is the deep project showcase. The front door links out to it.
 
 ## What's here
 
@@ -37,5 +37,5 @@ The intake and subscribe forms deliver an email through the shared **tool-till-t
 
 ## Related repos (devmade-ai)
 
-- **glow-props** — portfolio / resource hub + the fleet's implementation-pattern source of truth
+- **gp-props** — portfolio / resource hub + the fleet's implementation-pattern source of truth
 - **tool-till-tees** — shared utilities API backend (handles the contact forms)

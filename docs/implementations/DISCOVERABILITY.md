@@ -201,7 +201,7 @@ The tags above are the easy half. The strings are the half that decides whether 
 - **`<title>` ~60 characters, description ~155**, before search results and unfurl cards truncate. Write to the budget rather than discovering it in the SERP.
 - **A brand token is not a title.** `<title>CanvaGrid</title>` says nothing to someone who has never heard of it; `CanvaGrid — design social images in the browser` does. Pick one suffix convention (`${item} — ${brand}`) and define it in one place so every surface composes it identically.
 - **Every item in a collection needs its own description.** The exactly-once tripwire in Step 6 is *structural* — it counts tags — so a build where all twelve articles carry an identical description passes green. Duplicate descriptions across a collection are a ranking problem with no structural signal; assert cross-item uniqueness explicitly.
-- **`<title>` belongs in the "one message" rule.** Tripwires usually pair `twitter:*` against `og:*` and leave `<title>` out, which is how glow-props ended up with `<title>devmade-ai</title>` beside `og:title` = `devmade-ai — Project Portfolio`. Either they match or the difference is deliberate and written down.
+- **`<title>` belongs in the "one message" rule.** Tripwires usually pair `twitter:*` against `og:*` and leave `<title>` out, which is how gp-props ended up with `<title>devmade-ai</title>` beside `og:title` = `devmade-ai — Project Portfolio`. Either they match or the difference is deliberate and written down.
 
 ### `og:image` and `og:url` must be absolute
 

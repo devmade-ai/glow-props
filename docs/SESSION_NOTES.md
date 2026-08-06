@@ -37,7 +37,7 @@ in-flight promise I added to `checkForUpdate` turned a hang into a *permanent*
 one (`registration.update()` can never settle — measured), now bounded by
 `Promise.race`.
 
-Round 3 was the first source change: seven of glow-props' own eight self-audit
+Round 3 was the first source change: seven of gp-props' own eight self-audit
 items closed in `src/lib/pwa.js` + `src/components/PwaManager.jsx` (iOS browser
 detection, poll `.catch()`, clear-before-prompt, event buffering,
 `useSyncExternalStore` over immutable snapshots, dead timer removed), plus a new
@@ -263,11 +263,11 @@ prerendered with a `TechArticle` node and 9,680 characters of body.
 
 ## Current state
 
-- glow-props: source + docs, on `claude/pwa-patterns-review-76cg78`. Build green,
+- gp-props: source + docs, on `claude/pwa-patterns-review-76cg78`. Build green,
   all five verify gates green. Verified behaviourally — `dist/` served under its
-  real `/glow-props/` base and driven in headless Chromium: SW activated, React
+  real `/gp-props/` base and driven in headless Chromium: SW activated, React
   mounted, menu interactive, zero page errors.
-- **glow-props' own maskable icon was outside its own corrected safe circle** —
+- **gp-props' own maskable icon was outside its own corrected safe circle** —
   measured at 40.5% against 40%. `MASKABLE_MARK` 780 → 760, and
   `assertMaskableSafeZone()` now measures the **rendered ink** in the produced
   PNG rather than trusting the geometry. The two disagreed by half a percent
@@ -292,7 +292,7 @@ prerendered with a `TechArticle` node and 9,680 characters of body.
   deploy gate on purpose — sixteen third-party origins, and someone else's 503
   must not block a docs change.
 - **The script reproduced the hand grading on 14 of 16 and corrected the other
-  two**, which is the acceptance test: glow-props was graded `Pass` counting
+  two**, which is the acceptance test: gp-props was graded `Pass` counting
   structured data that is still on a branch (live has none — now `Partial`), and
   tool-till-tees was `?` purely because nobody had looked (now `Missing`, and it
   needs a posture decision). Final: 3 Pass, 1 Pass (private), 7 Partial, 5
@@ -308,7 +308,7 @@ prerendered with a `TechArticle` node and 9,680 characters of body.
   headers). It was worth doing: it widened the SPA-rewrite trap from one repo to
   five, showed **10 of 15 origins soft-404**, and confirmed zero crawlable body
   text in six. The script is disposable; the findings are in TODO.md.
-- **Both glow-props items the live check found are fixed.** The `<title>` now
+- **Both gp-props items the live check found are fixed.** The `<title>` now
   matches `og:title`, and structured data ships on all three templates: one
   `@id`-joined graph per page, site nodes static, item node added by
   `prerenderPages()` for the clean URLs and by `src/seoMeta.js` for the `?name=`
@@ -323,7 +323,7 @@ prerendered with a `TechArticle` node and 9,680 characters of body.
   the drift impossible rather than detectable.
 - **New fifth gate: `npm run smoke:seo`** (`scripts/smoke-structured-data.mjs`),
   wired into the deploy workflow with a chromium-only Playwright install. It
-  serves `dist/` under the real `/glow-props/` base and loads five routes in
+  serves `dist/` under the real `/gp-props/` base and loads five routes in
   Chromium. It earns the browser: making `seoMeta.js` append a second block
   instead of rewriting the existing one leaves `dist/` unchanged and
   `verify:seo` **green**, and fails this check on all four item routes — that

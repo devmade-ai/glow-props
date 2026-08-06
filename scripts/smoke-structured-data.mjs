@@ -2,8 +2,8 @@
 // Requirement: prove the JSON-LD block is correct on the pages a crawler
 //   actually loads — including the ?name= forms, where the item node is written
 //   at runtime by src/seoMeta.js.
-// Approach: serve dist/ under the real /glow-props/ base and drive it in
-//   headless Chromium, reading the DOM after the page settles.
+// Approach: serve dist/ under the real base (root, since the Vercel move) and
+//   drive it in headless Chromium, reading the DOM after the page settles.
 // Why a browser and not a static check over dist/: verify:seo can only see what
 //   the build wrote. Half of this feature runs in the browser, and the failure
 //   it guards against — seoMeta.js appending a SECOND block instead of rewriting
@@ -23,13 +23,13 @@ import { readFile } from 'fs/promises';
 import { existsSync } from 'fs';
 import { join, extname, resolve, dirname } from 'path';
 import { fileURLToPath } from 'url';
+import { SITE } from '../src/lib/structuredData.js';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const DIST = join(ROOT, 'dist');
-const BASE_PATH = '/glow-props/';
+const BASE_PATH = '/';
 const PORT = 8123;
 const ORIGIN = `http://localhost:${PORT}${BASE_PATH}`;
-const SITE = 'https://devmade-ai.github.io/glow-props/';
 
 const failures = [];
 const fail = (msg) => failures.push(msg);

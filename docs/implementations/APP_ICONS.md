@@ -95,7 +95,7 @@ generate().catch((err) => {
 - **The maskable safe zone is a CIRCLE of radius 40%** (410px on a 1024 canvas), not the inner-80% square. The distinction matters: artwork can sit inside the square and still have its corners clipped by a circular launcher mask. **Do not derive the mark size — measure it** (see below); ~760px on a 1024 canvas is the value that actually passes.
 - Design must be legible at 48px (favicon) — avoid fine details
 
-**Transparent source, composited maskable.** Maskable icons need an opaque full-bleed background, but the favicon and any in-app logo usage want transparency so they sit on whatever the theme provides. Rather than baking a background into the SVG, keep the source transparent and composite the maskable variant at generation time (glow-props' approach):
+**Transparent source, composited maskable.** Maskable icons need an opaque full-bleed background, but the favicon and any in-app logo usage want transparency so they sit on whatever the theme provides. Rather than baking a background into the SVG, keep the source transparent and composite the maskable variant at generation time (gp-props' approach):
 
 ```javascript
 // Sharp applies .composite() at the END of its pipeline, so chaining
@@ -112,7 +112,7 @@ await sharp(composited).flatten({ background: '#ffffff' })
 
 **Measure the safe zone, don't derive it — this doc's own number was wrong.**
 The value here was 780px, derived from the 40% circle and the mark's corner
-geometry. Glow-props followed it and its produced icon measured **40.5%** of the
+geometry. gp-props followed it and its produced icon measured **40.5%** of the
 width from centre; fh-fuelhunt's measured **49%**. Two of two repos following
 the rule were outside the circle, and neither build said anything.
 

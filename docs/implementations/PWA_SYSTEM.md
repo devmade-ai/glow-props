@@ -14,7 +14,7 @@ order: 1
 
 Four parts, built on `vite-plugin-pwa` (^1.2.0) with React. Adapt patterns for other frameworks — see "Framework variants" below for the Vue form and the SSR/SSG form.
 
-**Reference implementations:** glow-props (React 19 MPA, framework-agnostic singleton + React bridge), kl-website and qi-invoice (React SPA, singleton + `useSyncExternalStore`), fl-farlume (Vue 3, module-scope `useRegisterSW`).
+**Reference implementations:** gp-props (React 19 MPA, framework-agnostic singleton + React bridge), kl-website and qi-invoice (React SPA, singleton + `useSyncExternalStore`), fl-farlume (Vue 3, module-scope `useRegisterSW`).
 
 **Related patterns:**
 - [Z_INDEX_SCALE.md](Z_INDEX_SCALE.md) — Update banner/toast at z-70, install instructions modal at z-60
@@ -96,7 +96,7 @@ VitePWA({
 - **`workbox.globIgnores`**: The inverse rule. Exclude anything the app itself never fetches — OG/Twitter card images are requested only by external scrapers, so precaching them taxes every install for zero benefit. Any repo following DISCOVERABILITY ships these.
 - **`navigateFallback`**: names the **app shell**, and it is the most misunderstood option in the plugin. Three facts, each of which has cost a repo:
   1. **It is not a network-failure fallback.** Workbox registers a `NavigationRoute` that matches every `request.mode === 'navigate'` — online or offline, with no connectivity check anywhere. Whatever URL you name is served for *every* navigation whose URL isn't otherwise resolvable. four-ems set it to `/offline.html` (comment: "serve offline.html when a navigation request fails") and every deep link — including every shared `/f/:slug` form URL, the product's main distribution channel — served "You're offline" to fully-online users, with a "Try again" button that reloaded straight back into it.
-  2. **Omitting the key does not disable it.** vite-plugin-pwa defaults it to `'index.html'` and merges via `Object.assign({}, defaults, yourWorkbox)`. To actually turn it off for a multi-page app you must pass `navigateFallback: null` — which glow-props' own config does, and which this doc previously told you to achieve by omission. Confirmed independently in model-pear and sun-sea-o.
+  2. **Omitting the key does not disable it.** vite-plugin-pwa defaults it to `'index.html'` and merges via `Object.assign({}, defaults, yourWorkbox)`. To actually turn it off for a multi-page app you must pass `navigateFallback: null` — which gp-props' own config does, and which this doc previously told you to achieve by omission. Confirmed independently in model-pear and sun-sea-o.
   3. **The URL must be in the precache manifest, or the navigation fallback is silently lost.** Workbox emits `createHandlerBoundToURL(<value>)`, which throws `non-precached-url` for an unprecached URL. In a plain Vite SPA `index.html` is globbed automatically so nobody hits this; it fires the moment the shell is produced **outside the globbed directory** (SvelteKit's `200.html`, any adapter-generated shell) — model-pear shipped exactly that.
 
      **Where that throw lands depends on `inlineWorkboxRuntime`.** With the default (`false`) the generated `sw.js` runs its body inside an async `define()` callback, so the worker still installs and activates, precaching still succeeds, and *only the routes after the throwing line* are lost. Measured A/B in Chromium on a real build: precache populated with 31 entries either way, but an offline navigation returned the shell (HTTP 200) with the fallback precached and failed outright (`ERR_INTERNET_DISCONNECTED`) without it. With the runtime inlined it is a synchronous top-level throw and takes the whole worker down, like the duplicate-entry case above.
@@ -105,7 +105,7 @@ VitePWA({
 - **`navigateFallbackDenylist`**: mandatory once anything same-origin is served from outside the build — `/api/*` routes, an edge-generated `/sitemap.xml`, `/feed.xml`. A directly-typed or linked URL is a *navigation*, so without a denylist an SW-controlled client gets the app shell instead: a 200 HTML body where JSON was expected. The failure is silent, hits only returning/installed users, and never reproduces in a fresh dev profile.
 - **`id`**: Stable app identity. Without it, Chrome derives from `start_url` — breaks on config changes or redeployments.
 - **`prefer_related_applications: false`**: Without this, Chrome may skip `beforeinstallprompt` if it thinks a native app exists.
-- **Separate icon purposes**: `any` for standard display (192, 512), `maskable` full-bleed. Never combine `"any maskable"` — browsers pick the wrong one. Either a dedicated 1024x1024 maskable (glow-props, qi-invoice) or maskable entries at 192 **and** 512 (see-veo) is correct; the latter matches the sizes Chrome's install criteria and Lighthouse actually request, so prefer it when you have no other use for a 1024 asset.
+- **Separate icon purposes**: `any` for standard display (192, 512), `maskable` full-bleed. Never combine `"any maskable"` — browsers pick the wrong one. Either a dedicated 1024x1024 maskable (gp-props, qi-invoice) or maskable entries at 192 **and** 512 (see-veo) is correct; the latter matches the sizes Chrome's install criteria and Lighthouse actually request, so prefer it when you have no other use for a 1024 asset.
 - **`theme_color`**: Static fallback for the browser chrome — and in Android standalone mode the manifest value **wins over the meta tags entirely**. It must therefore equal your *default/light* theme's `<meta name="theme-color">` value, not a dark accent. kl-website shipped `#15110b` here and rendered a near-black status bar over a light app; intxt and four-ems have the same mismatch today. **This doc owns the rule** — THEME_DARK_MODE.md only points back here, and four-ems followed that circular pointer into the dark value. If your default theme is *system-derived* there is no single default: match `background_color` and the splash, and accept that Android standalone chrome cannot track the in-app theme. Pair it with dual `<meta name="theme-color" media="(prefers-color-scheme: light|dark)">` tags for correct pre-JS chrome in both themes, and assert manifest `theme_color` === `background_color` === the light meta in a test — three values that must agree and silently drift otherwise.
 
 ### Exactly one precache source per URL
@@ -132,7 +132,7 @@ Two valid resolutions — pick one, never both:
 | Resolution | How | Used by |
 |---|---|---|
 | **Glob is the sole source** | Drop `includeAssets` entirely (and set `includeManifestIcons: false`); let `globPatterns` match the icons | qi-invoice, fl-farlume |
-| **`includeAssets` is the sole source** | `globIgnores` every referenced icon, list them in `includeAssets` with **bare** paths | glow-props |
+| **`includeAssets` is the sole source** | `globIgnores` every referenced icon, list them in `includeAssets` with **bare** paths | gp-props |
 
 In the second form the bare path matters: the plugin strips a leading slash and hands the string to a globber, where `?` is a single-character wildcard — so a `?v=` path matches nothing and the icon silently drops out of the precache altogether.
 
@@ -140,7 +140,7 @@ The only reliable detector is a dist-level check that parses the built `dist/sw.
 
 ### The `dontCacheBustURLsMatching` trap
 
-vite-plugin-pwa's default treats **everything under `assets/`** as content-hashed and precaches it with `revision: null`. Any plain-named (non-hashed) file living there — icons, fonts, OG images copied from `public/assets/` — therefore gets an entry that can **never** be invalidated: change the bytes, and installed clients keep serving the old ones forever. Discovered independently in qi-invoice, kl-website, and glow-props.
+vite-plugin-pwa's default treats **everything under `assets/`** as content-hashed and precaches it with `revision: null`. Any plain-named (non-hashed) file living there — icons, fonts, OG images copied from `public/assets/` — therefore gets an entry that can **never** be invalidated: change the bytes, and installed clients keep serving the old ones forever. Discovered independently in qi-invoice, kl-website, and gp-props.
 
 ```js
 workbox: {
@@ -317,7 +317,7 @@ notifyListeners()
 
 **The one invariant: a reload listener must already exist when skipWaiting is posted.** Everything below follows from it.
 
-In vite-plugin-pwa's prompt-mode client the reload-on-`controlling` listener is installed *inside* the `'waiting'` handler — the same handler that calls `onNeedRefresh` — and workbox-window dispatches `'waiting'` for an already-waiting worker on a ~200 ms timer. Applying straight from `onRegisteredSW` can therefore skipWaiting before that listener exists, stranding the user on a stale page under the new worker. Found independently in glow-props, qi-invoice, and kl-website.
+In vite-plugin-pwa's prompt-mode client the reload-on-`controlling` listener is installed *inside* the `'waiting'` handler — the same handler that calls `onNeedRefresh` — and workbox-window dispatches `'waiting'` for an already-waiting worker on a ~200 ms timer. Applying straight from `onRegisteredSW` can therefore skipWaiting before that listener exists, stranding the user on a stale page under the new worker. Found independently in gp-props, qi-invoice, and kl-website.
 
 **Two architectures satisfy the invariant. Pick one deliberately:**
 
@@ -377,7 +377,7 @@ Wraps `vite-plugin-pwa`'s React hook. Exposes `hasUpdate`, `update()`, `checkFor
 
 Three repos reproduced this by following this doc faithfully — dm-website (two consumers, one of them per-route), four-ems (three consumers), canva-grid. Symptoms are diffuse and easy to misattribute: consumers disagreeing about whether an update exists, the hourly poll's phase resetting whenever the last registration resolves, and N `controllerchange` listeners racing to reload.
 
-**The rule: `registerSW()` / `useRegisterSW` must be called exactly once per app** — from the module singleton at import time (glow-props, kl-website, qi-invoice), or from a single `<PwaManager/>` mounted at the app root and never inside a routed subtree. Then the hook is a pure reader.
+**The rule: `registerSW()` / `useRegisterSW` must be called exactly once per app** — from the module singleton at import time (gp-props, kl-website, qi-invoice), or from a single `<PwaManager/>` mounted at the app root and never inside a routed subtree. Then the hook is a pure reader.
 
 **The diagnostic tell:** if you found yourself adding a shared latch so several `controllerchange` handlers wouldn't each call `reload()`, or your poll interval restarts on every registration callback — you have more than one registration. Fix the registration, then delete the latch.
 
@@ -566,7 +566,7 @@ export function usePWAUpdate() {
 
 **A faster settle:** the flat 1500 ms is a worst-case guess. Subscribe to a shared deferred that `onNeedRefresh` resolves, subscribe *before* calling `update()`, then `Promise.race([announcement, deadline])` — the deadline stays as the backstop for the genuine no-update case. The common path returns in tens of milliseconds instead of always blocking a spinner for a second and a half (sun-sea-o). Keep the `waiting || installing` read after the race; sun-sea-o dropped it during that refactor.
 
-**`'no-sw'` covers four different truths** and deserves four messages: registration failed outright (`onRegisterError` fired — "try again in a moment" would be a lie forever); registration is still in flight (the first second of page life — blaming the browser here is wrong); **no service worker was built for this environment** (`devOptions.enabled: false` is the sane default, so every dev-mode check lands here and "not available in this browser" is simply false — branch on `import.meta.env.DEV`); or the browser genuinely lacks service worker support. glow-props' `checkForUpdates()` is the reference for the first, second and fourth.
+**`'no-sw'` covers four different truths** and deserves four messages: registration failed outright (`onRegisterError` fired — "try again in a moment" would be a lie forever); registration is still in flight (the first second of page life — blaming the browser here is wrong); **no service worker was built for this environment** (`devOptions.enabled: false` is the sane default, so every dev-mode check lands here and "not available in this browser" is simply false — branch on `import.meta.env.DEV`); or the browser genuinely lacks service worker support. gp-props' `checkForUpdates()` is the reference for the first, second and fourth.
 
 **`navigator.serviceWorker.ready` never resolves if registration failed.** If your check awaits it as a fallback, race it with a timeout — otherwise one failed registration pins `checkForUpdate` at `'no-sw'` for the page's lifetime (intxt).
 
@@ -925,7 +925,7 @@ function trackInstallEvent(
 
 The snippets above call `debugAdd` directly. Two variations matter:
 
-- **Repos with a DEV-gated debug system** (glow-props): production modules must never *import* the debug subsystem, or it ships in the bundle. Reach it through an optional `window.__debugAdd` bridge that is simply null in production. Don't mirror `console.warn` call sites into it either — the debug store already intercepts console, so mirroring double-logs.
+- **Repos with a DEV-gated debug system** (gp-props): production modules must never *import* the debug subsystem, or it ships in the bundle. Reach it through an optional `window.__debugAdd` bridge that is simply null in production. Don't mirror `console.warn` call sites into it either — the debug store already intercepts console, so mirroring double-logs.
 - **Repos with no debug system at all** (kl-website, by design — a consumer app): `onRegisterError` still needs to reach *somewhere*, or SW registration failures are invisible in the field. Route it to whatever analytics channel exists, with redaction: strip query strings and fragments from URLs, truncate to a few hundred characters, use fixed source labels. Note also that the localStorage install-funnel block is deliberately **optional** — for a privacy-sensitive app (an anonymous tip line, say), even a local event log is surface area worth declining.
 
 ## Toast System (`Toast.tsx`)
@@ -1139,7 +1139,7 @@ export default memo(function InstallInstructionsModal({ isOpen, onClose, instruc
 
 | Pattern | When to use | Examples |
 |---------|-------------|---------|
-| **Burger menu item** | App has a nav menu | canva-grid, glow-props, repo-tor |
+| **Burger menu item** | App has a nav menu | canva-grid, gp-props, repo-tor |
 | **Fixed bottom banner** | No nav menu, or high visibility needed | dm-website |
 | **Corner toast** | Non-blocking, app already has a toast system | four-ems |
 | **Inline button** | Fits within existing page layout | see-veo |
@@ -1516,7 +1516,7 @@ export function usePWAUpdate() { return { needRefresh, updateServiceWorker, /* �
 
 Three consequences:
 - **Suppression works differently.** The Vue binding sets `needRefresh` itself, so a `return` inside `onNeedRefresh` can't stop it. `watch` the ref and reset it to `false` inside the 30s window instead.
-- **HMR discipline is mandatory.** Module scope means dev HMR re-runs the module. Guard listener attachment behind `window.__pwaUpdateAttached` / `__pwaInstallAttached` and release listeners, intervals, media-query subscriptions and timers in `import.meta.hot.dispose()` (TIMER_LEAKS.md variants 4 + 5). React hooks get this free from effect cleanup; every module-singleton consumer — Vue *or* vanilla, including the glow-props reference — must do it explicitly.
+- **HMR discipline is mandatory.** Module scope means dev HMR re-runs the module. Guard listener attachment behind `window.__pwaUpdateAttached` / `__pwaInstallAttached` and release listeners, intervals, media-query subscriptions and timers in `import.meta.hot.dispose()` (TIMER_LEAKS.md variants 4 + 5). React hooks get this free from effect cleanup; every module-singleton consumer — Vue *or* vanilla, including the gp-props reference — must do it explicitly.
 - **Types:** add `/// <reference types="vite-plugin-pwa/client" />`; `virtual:pwa-register/vue` returns refs, not tuples.
 
 For tests, mock `virtual:pwa-register/vue` the same way, with `vi.resetModules()` between cases.
@@ -1540,7 +1540,7 @@ Kit also ships this doc's `version.json` mechanism natively (`_app/version.json`
 
 If any component that reads PWA state is rendered at build time or on a server, three rules apply:
 
-1. **The server entry must never import the PWA module** — *if that module registers on import*, which glow-props' does. Route state to SSR-rendered components through a context whose **default value is the SSR-safe shape**, so a build-time render falls through to markup identical to the pre-hydration client UI.
+1. **The server entry must never import the PWA module** — *if that module registers on import*, which gp-props' does. Route state to SSR-rendered components through a context whose **default value is the SSR-safe shape**, so a build-time render falls through to markup identical to the pre-hydration client UI.
 
    The sharper form of the rule, for frameworks like SvelteKit that have **no separate server entry** (a shared layout compiles into both bundles, making the rule as stated unsatisfiable): *if the PWA module is import-safe — registration deferred to a call, every `window` access guarded — a shared layout may import it statically.* The plain `registerSW` from `virtual:pwa-register` is import-safe (it resolves fine in an SSR graph and lazily `await import()`s workbox-window only when called); a module that registers at import time is not, and must be dynamically imported behind a `browser` check.
 2. **`getServerSnapshot`** is the third argument to `useSyncExternalStore` — return the same SSR-safe snapshot.
@@ -1583,7 +1583,7 @@ The hash-based alternative (`script-src 'sha256-...'`) is tempting but brittle: 
 
 Two directives silently break a PWA and belong in any policy: **`worker-src 'self'`** (the service worker) and **`manifest-src 'self'`** (the webmanifest).
 
-This applies to glow-props itself, which keeps four inline classic scripts in its head partial — all four would need externalising the day it adopts a strict CSP.
+This applies to gp-props itself, which keeps four inline classic scripts in its head partial — all four would need externalising the day it adopts a strict CSP.
 
 ## Platform Gotchas
 
