@@ -14,12 +14,12 @@
     "React",
     "Vite"
   ],
-  "audience": "Internal \u2014 the backend that powers contact forms, the form builder (four-ems), and agreement management (sun-sea-o). Not used directly by end users.",
+  "audience": "Internal — the backend that powers contact forms, the form builder (four-ems), and agreement management (sun-sea-o). Not used directly by end users.",
   "useCases": [
-    "A visitor submits a contact form on see-veo \u2014 tool-till-tees receives the data, validates it, and delivers it via email",
-    "A form built in four-ems collects submissions \u2014 tool-till-tees stores them with row-level security and exposes them to the form owner\u2019s dashboard",
-    "Two parties sign an agreement module in sun-sea-o \u2014 tool-till-tees records the signatures, sends notifications, and generates a verifiable PDF",
-    "A new frontend needs a form endpoint \u2014 tool-till-tees provides a multi-tenant API with CORS allowlisting and input validation out of the box"
+    "A visitor submits a contact form on see-veo — tool-till-tees receives the data, validates it, and delivers it via email",
+    "A form built in four-ems collects submissions — tool-till-tees stores them with row-level security and exposes them to the form owner’s dashboard",
+    "Two parties sign an agreement module in sun-sea-o — tool-till-tees records the signatures, sends notifications, and generates a verifiable PDF",
+    "A new frontend needs a form endpoint — tool-till-tees provides a multi-tenant API with CORS allowlisting and input validation out of the box"
   ],
   "dataPrivacy": {
     "storage": "All data stored in Supabase (PostgreSQL) with row-level security.",
@@ -32,5 +32,10 @@
     "testingGuide": true,
     "tutorial": false
   },
-  "liveUrl": "https://tool-till-tees.vercel.app/"
+  "liveUrl": "https://tool-till-tees.vercel.app/",
+  "discoverability": {
+    "grade": "N/A",
+    "reason": "internal backend API — no public audience, nothing to find or unfurl",
+    "decidedOn": "2026-08-06"
+  }
 }
