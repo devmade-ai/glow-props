@@ -781,9 +781,24 @@ export default defineConfig({
       // strips ?v= on lookup.
       includeAssets: [...ICON_PATHS, 'assets/images/og-image.png'],
       manifest: {
-        name: 'Glow Props — Project Portfolio',
-        short_name: 'Glow Props',
-        description: 'Portfolio of tools and patterns by devmade.ai',
+        // Requirement: the installed app needs a name that survives a home
+        //   screen full of sibling devmade-ai apps.
+        // Approach: a proper noun carrying the repo/domain identity (gp-props),
+        //   short enough that short_name is not truncated under the icon.
+        // Alternatives:
+        //   - 'Portfolio': Rejected — a category, not a name. dm-website already
+        //     installs as 'devmade' (the brand landing) and this is the project
+        //     showcase; two generic labels for what reads as the same thing.
+        //     It also describes half of the site, which is projects AND the
+        //     patterns 18 repos fetch their ruleset from.
+        //   - 'devmade-ai': Rejected — one character from dm-website's 'devmade'.
+        //   - Keeping 'Glow Props': Rejected — stranded on the old repo name.
+        // description mirrors SITE_DESCRIPTION in src/lib/structuredData.js, and
+        // fixes 'devmade.ai' (dot) — the title, Organization and WebSite nodes
+        // all say devmade-ai, and this string is what the install prompt shows.
+        name: 'Props — Projects & Patterns',
+        short_name: 'Props',
+        description: 'Software projects, internal tools, and reusable engineering patterns by devmade-ai.',
         id: '/',
         // Matches the coffee (--prefersdark default) base-100 — THEME_DARK_MODE
         // requires the manifest fallback to be a real theme color, and this is the
