@@ -70,7 +70,7 @@ Legend: **Pass** = compliant, **Partial** = has the feature but with gaps, **Mis
 | kl-website | Pass | Pass | Pass | N/A | N/A | Pass | Pass | N/A | Pass | Pass | Pass |
 | web-arch | Pass | Partial | Pass | N/A | N/A | Partial | Pass | N/A | Pass | Partial | Pass |
 | dm-website | Pass | Partial | Pass | N/A | N/A | Partial | Pass | N/A | Pass | Missing | Pass |
-| tool-till-tees | Pass | Missing | N/A | N/A | N/A | N/A | ? | ? | N/A | N/A | Missing |
+| tool-till-tees | Pass | Missing | N/A | N/A | N/A | N/A | ? | ? | N/A | N/A | N/A |
 
 **The DISCOVERABILITY column is the only one graded against deployed reality.**
 Added 2026-08-04 from the fleet public-visibility audit, and every cell was
@@ -116,6 +116,10 @@ Grading used here, so the cells mean something specific:
   makes the operative title.
 - **Missing** — no Open Graph, no card, no `robots.txt`, no canonical, no
   sitemap. A pasted link renders as a bare URL and nothing states a posture.
+- **N/A** — declared, in the project's own `meta.json`, with a written reason.
+  For origins that are not products: an internal API, a CDN bucket, anything
+  with no public audience. The audit still fetches them and says so if the
+  declaration stops being true. An `N/A` without a reason is rejected.
 - **Pass (P)** — sun-sea-o, a **private** posture implemented correctly:
   `robots.txt` allows the crawl and explains why, `noindex` is carried by both
   the meta tag and the `X-Robots-Tag` header, and Open Graph is present so links
@@ -147,10 +151,32 @@ they are the kind of thing hand-maintenance gets wrong:
   Partial, measured Pass*. Verified on the live origin: one JSON-LD graph per
   page with the item node present, `<title>` matching `og:title`, per-page
   canonical, ~50k characters of crawlable text on a pattern page.
-- **tool-till-tees is `Missing`, not `?`.** It has a live URL and was simply
-  never measured. It needs a posture decision like any other origin: a backend
-  API with a minimal landing page may well want `noindex` rather than the full
-  public setup, but "nobody looked" is not that decision.
+- **tool-till-tees is `N/A` — decided 2026-08-06, not defaulted.** It went `?`
+  (nobody had looked) → `Missing` (measured, genuinely absent) → `N/A` (the
+  absence is correct). It is an **internal backend API**: `category: internal`,
+  audience recorded as "not used directly by end users", and a root that serves
+  a 399-byte placeholder shell. There is no public audience, so there is nothing
+  to find and nothing to unfurl, and grading it against the public criteria
+  produced a permanent red cell whose only meaning was "we decided this on
+  purpose" — the same noise as a stale grade, and the same effect: people stop
+  reading the column.
+
+  **The declaration lives in `public/projects/tool-till-tees/meta.json`**, next
+  to the `liveUrl` the audit already reads from there, so it travels with the
+  project instead of becoming an exception list inside the script. Two guards,
+  because `N/A` is exactly the shape a silencer takes:
+
+  1. **A reason is required.** An `N/A` with no argument throws. If you cannot
+     say why in a sentence, you have not decided, you have deferred.
+  2. **The origin is still fetched and measured.** If it starts serving Open
+     Graph, a sitemap, or real body text, it has stopped being what the
+     declaration says it is, and the run appends *"BUT it now serves … ;
+     revisit the declaration"*. Both were fault-injected.
+
+  What `N/A` does NOT mean: the placeholder page is still publicly reachable and
+  carries no `noindex`. That was the alternative on the table and was not
+  chosen. If it is ever indexed, that is the accepted consequence of this
+  decision rather than a defect to re-report.
 
 **PWA_SYSTEM / ICON_CACHE_BUST columns are pre-audit.** They were assessed before the 2026-08-03 fleet PWA audit, which found open repo-side drift in **every** PWA repo — including several marked `Pass` here. Treat those two columns as "was implemented", not "is currently conformant", and read the per-repo sections below (and each repo's own `docs/TODO.md`, where the findings now live) for what is actually open. `fl-farlume` is downgraded to `Partial` because it still ships the rejected tap-only update design rather than auto-on-launch.
 

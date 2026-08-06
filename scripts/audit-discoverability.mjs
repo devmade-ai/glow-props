@@ -50,9 +50,44 @@ function origins() {
       console.error(`  (skipped ${slug}: no liveUrl in meta.json)`);
       continue;
     }
-    found.push([slug, url]);
+    found.push([slug, url, meta.discoverability ?? null]);
   }
   return found;
+}
+
+/**
+ * A repo may DECLARE that discoverability does not apply to it.
+ *
+ * Requirement: not every origin in this fleet is a product. tool-till-tees is an
+ *   internal backend API whose root is a placeholder shell — no public
+ *   audience, nothing to find, nothing to unfurl. Grading it against the public
+ *   criteria produces a permanent red cell that means "we decided this on
+ *   purpose", which is the same noise as a stale grade and trains people to
+ *   ignore the column.
+ *
+ * Approach: the declaration lives in the project's own meta.json, next to the
+ *   liveUrl the audit already reads from it — so it travels with the project
+ *   rather than becoming a hardcoded exception list in this script that nobody
+ *   revisits.
+ *
+ * Two guards, because "N/A" is exactly the shape a silencer takes:
+ *   - A REASON IS REQUIRED. An N/A with no argument is rejected loudly. If you
+ *     cannot say why in a sentence, you have not decided, you have deferred.
+ *   - The origin is still MEASURED. If a declared-N/A site starts carrying
+ *     Open Graph tags, a sitemap, or real body text, it has stopped being what
+ *     the declaration says it is, and the run says so. A decision that outlives
+ *     its premise is the failure mode every other column in this matrix already
+ *     demonstrates.
+ */
+function declaredNotApplicable(decl) {
+  if (!decl || decl.grade !== 'N/A') return null;
+  if (!decl.reason || !decl.reason.trim()) {
+    throw new Error(
+      'a discoverability declaration of N/A requires a "reason" in meta.json.\n' +
+      '  An N/A with no argument is a mute, not a decision.',
+    );
+  }
+  return decl.reason.trim();
 }
 
 async function get(url) {
@@ -353,8 +388,26 @@ function claimedGrades() {
 
 const sites = origins();
 const results = [];
-for (const [name, url] of sites) {
+for (const [name, url, declaration] of sites) {
+  const naReason = declaredNotApplicable(declaration);
   const m = await measure(url);
+  if (naReason) {
+    // Still measured, deliberately. A declaration that has outlived its premise
+    // is the failure every other column in this matrix already demonstrates —
+    // so if a "nothing to find here" origin starts carrying the marks of a
+    // public site, the run says so instead of quietly honouring a stale note.
+    const looksPublic = [
+      m.og && 'open graph',
+      m.sitemapServed && 'a sitemap',
+      m.bodyTextLen > 200 && `${m.bodyTextLen} chars of body text`,
+    ].filter(Boolean);
+    const why = looksPublic.length
+      ? `${naReason} — BUT it now serves ${looksPublic.join(', ')}; revisit the declaration`
+      : naReason;
+    results.push({ name, url, grade: 'N/A', why, declared: true, measured: m });
+    process.stderr.write(`. ${name} (declared N/A)\n`);
+    continue;
+  }
   results.push({ name, url, ...grade(m), measured: m });
   process.stderr.write(`. ${name}\n`);
 }
