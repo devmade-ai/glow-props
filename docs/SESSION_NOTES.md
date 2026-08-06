@@ -225,6 +225,42 @@ still reported when nothing sampled says anything, and the shell is named.
 **Final board: 14 of 16 Pass or Pass (P).** The two that are not are decisions,
 not work.
 
+### Round 11 — what the implementations taught, folded back
+
+Checked first rather than assumed: three candidate learnings were already in
+`DISCOVERABILITY.md` (the shared-copy-module rule, and precache exclusion
+already applying to any card, not only per-item ones). Four were not, and are
+now added:
+
+1. **Where the page's content IS data, project the body from that data** — no
+   second copy at all, which is stronger than "hold both in one module". With
+   its own failure mode: a renderer that emits the scaffolding and drops the
+   substance. see-veo's first version would have shipped roles and headings
+   without the highlights.
+2. **Not every page needs a body** — landings are navigation, item pages carry
+   the value. dm-website asserts its landings return null so "nothing here"
+   stays a decision.
+3. **One template means one BODY for every route**, exactly as it means one
+   head — four-ems' landing copy also reaches `/f/<slug>`.
+4. Two checker traps: a lazy `</div>` regex reports an empty body for nested
+   markup (it did, against a page carrying 1,630 chars), and the first sitemap
+   entry is the least representative page to sample.
+
+**New pattern: `BUILD_OUTPUT_REWRITING.md`** (13th). Everything else learned
+this session was not about discoverability at all — it was about rewriting
+emitted files, and the rules were scattered across two docs and three repos'
+comments. Seven rules, each a real deploy defect: fail loud on a missing
+literal; count matches; a comment is not a comment to a string operation (both
+directions — reading one gave a false report, writing into one emptied
+model-pear's head); assert the output not the input; the deploy must run the
+step; edge rewriting fails open; ordering is load-bearing.
+
+It earns its own doc rather than a section because none of those five defects
+were in icon or SEO code — that is just where each was first met. The purpose
+docs link to it instead of duplicating it. The manifest, sitemap and prerender
+picked it up with no other edit: 13 patterns, 30 sitemap URLs, its page
+prerendered with a `TechArticle` node and 9,680 characters of body.
+
 ## Current state
 
 - glow-props: source + docs, on `claude/pwa-patterns-review-76cg78`. Build green,
