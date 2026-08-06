@@ -90,7 +90,7 @@ These properties on a parent element trap all children — a child with `z-[80]`
 A sticky navbar using `backdrop-blur-md` creates a stacking context. Any element positioned inside it (like a burger menu dropdown) is trapped within the navbar's z-index. Solutions:
 
 1. **Render the menu dropdown outside the navbar** — as a sibling in the DOM, not a child
-2. **Use a document-level click handler** instead of a backdrop overlay (glow-props approach)
+2. **Use a document-level click handler** instead of a backdrop overlay (gp-props approach)
 3. **Portal the dropdown** to `document.body` (React `createPortal`)
 
 ### Separate React Roots

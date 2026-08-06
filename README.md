@@ -1,8 +1,8 @@
-# glow-props
+# gp-props
 
 Portfolio and resource hub for devmade-ai projects. Deployed via GitHub Pages.
 
-**Live site:** [devmade-ai.github.io/glow-props](https://devmade-ai.github.io/glow-props/)
+**Live site:** [gp-props.vercel.app](https://gp-props.vercel.app/)
 
 ## What It Is
 
@@ -39,7 +39,7 @@ Also hosts `CLAUDE.md` — a comprehensive AI assistant ruleset used as a refere
 |---------|-------------|
 | [repo-tor](https://repo-tor.vercel.app/) | Git analytics dashboard |
 | [tool-till-tees](https://github.com/devmade-ai/tool-till-tees) | Utilities API (contact forms, form builder, agreements) |
-| [glow-props](https://devmade-ai.github.io/glow-props/) | This site — portfolio, patterns, and CLAUDE.md reference |
+| [gp-props](https://gp-props.vercel.app/) | This site — portfolio, patterns, and CLAUDE.md reference |
 | [canva-grid-assets](https://github.com/devmade-ai/canva-grid-assets) | CDN assets for canva-grid |
 
 ## Engineering Patterns
@@ -48,12 +48,12 @@ The site documents reusable implementation patterns. Each pattern has YAML front
 
 Currently 12 patterns: PWA System, Theme & Dark Mode, Burger Menu, App Icons from SVG, Download as PDF, HTTPS Proxy Support, Debug System, Event Bus, Z-Index Scale, PWA Icon Cache Busting, Timer & Subscription Cleanup, Discoverability.
 
-Full pattern reference: [CLAUDE.md](https://devmade-ai.github.io/glow-props/CLAUDE.md)
+Full pattern reference: [CLAUDE.md](https://gp-props.vercel.app/CLAUDE.md)
 
 ## Project Structure
 
 ```
-glow-props/
+gp-props/
   CLAUDE.md                     # AI assistant ruleset (reference for all projects)
   README.md                     # This file
   package.json                  # React + Vite + Tailwind + DaisyUI + Sharp

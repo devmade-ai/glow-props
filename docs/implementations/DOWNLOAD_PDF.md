@@ -30,7 +30,7 @@ Two approaches depending on content type. Choose one per project — or use both
 **Default to `window.print()` unless you have a specific reason not to.** It's zero-dependency, works offline, and the browser handles all the layout complexity. Only reach for pdf-lib when the browser's print engine can't produce the output you need.
 
 Project variants:
-- **window.print()**: glow-props, repo-tor, see-veo, model-pear, sun-sea-o
+- **window.print()**: gp-props, repo-tor, see-veo, model-pear, sun-sea-o
 - **pdf-lib**: canva-grid (canvas-heavy grid layouts)
 
 ---

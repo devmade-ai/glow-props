@@ -1,6 +1,6 @@
 # Project Documentation
 
-How to maintain the mirrored project docs on the glow-props portfolio site.
+How to maintain the mirrored project docs on the gp-props portfolio site.
 
 **Last mirrored:** 2026-08-03
 
@@ -33,7 +33,7 @@ How to maintain the mirrored project docs on the glow-props portfolio site.
 |---------|------|--------|------------|---------------|----------|-------|
 | repo-tor | public | Yes | Yes | Yes | No | No tutorial (dashboard tool) |
 | tool-till-tees | private | Scrubbed | Scrubbed | Yes | No | README: removed env vars, deployment details, SMTP config. User guide: removed env var table, service role references. |
-| glow-props | public | N/A | N/A | N/A | N/A | This repo — not a mirrored project. |
+| gp-props | public | N/A | N/A | N/A | N/A | This repo — not a mirrored project. |
 | canva-grid-assets | public | Yes | **No** | **No** | **No** | Supporting repo — minimal docs expected. |
 
 ### Status Key
@@ -148,7 +148,7 @@ Create `meta.json`:
 Field notes:
 - `category`: `"user-facing"` or `"internal"`
 - `badge`: Short label (PWA, Design, Mobile, Finance, API, Forms, Legal, etc.)
-- `liveUrl`: Must end with `/`. All apps use Vercel except glow-props.
+- `liveUrl`: Must end with `/`. All apps use Vercel except gp-props.
 - `repoUrl`: Only for public repos. Omit entirely for private repos.
 - `docs`: Set each flag to `true` only after the corresponding file exists.
 

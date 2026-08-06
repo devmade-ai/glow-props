@@ -26,7 +26,7 @@ User-controlled dark/light mode with system preference fallback, persistence, fl
 - [DOWNLOAD_PDF.md](DOWNLOAD_PDF.md) — Print CSS forces white bg / black text regardless of dark mode (see [Print Override](#print-override))
 
 Project variants demonstrating this pattern:
-- **glow-props**: Vanilla HTML/CSS/JS + Vite, full 35-theme catalog, per-mode independent selection (3 keys: `darkMode`, `lightTheme`, `darkTheme`)
+- **gp-props**: Vanilla HTML/CSS/JS + Vite, full 35-theme catalog, per-mode independent selection (3 keys: `darkMode`, `lightTheme`, `darkTheme`)
 - **canva-grid**: React + Vite, combo-based selection with curated presets (2 keys: `darkMode`, `themeCombo`)
 - **graphiki**: React + Vite, combo-based with DaisyUI v5, auto-generated meta colors
 - **fh-fuelhunt**: React Native (Expo) + Uniwind, named combos (light/dark pairs), CSS variable themes
@@ -317,7 +317,7 @@ Choose one approach per project. Both use `darkMode` for the dark/light toggle. 
 
 > **UI specification:** The dark/light toggle and theme picker UI components live inside the burger menu. See [BURGER_MENU.md — Theme UI in Burger Menu](BURGER_MENU.md#theme-ui-in-burger-menu) for the complete UI spec including toggle item, scrollable picker (Approach A), combo selector (Approach B), active theme indicator, and recommended menu item order.
 
-### Approach A: Per-Mode Independent Selection (glow-props)
+### Approach A: Per-Mode Independent Selection (gp-props)
 
 Each mode (light/dark) stores its own DaisyUI theme independently. Users pick any theme from the full catalog for each mode. Three localStorage keys:
 
@@ -418,7 +418,7 @@ function persistTheme(dark, comboId) {
 | Design coherence | User might pick clashing themes | Combos are pre-vetted to look good |
 | Storage keys | 3 (`darkMode`, `lightTheme`, `darkTheme`) | 2 (`darkMode`, `themeCombo`) |
 | Mobile suitability | Needs scrollable picker, lots of screen space | Small dropdown, works well on mobile |
-| Used by | glow-props | canva-grid, graphiki, fh-fuelhunt, intxt |
+| Used by | gp-props | canva-grid, graphiki, fh-fuelhunt, intxt |
 
 ## Theme Catalog
 
@@ -864,7 +864,7 @@ System preference is a **fallback, not an override**. Overriding a manual choice
 
 ## Random Theme on Load (Optional)
 
-glow-props implements an optional "random theme on load" feature. When enabled, the bootstrap script picks a random theme from the current mode's list before first paint:
+gp-props implements an optional "random theme on load" feature. When enabled, the bootstrap script picks a random theme from the current mode's list before first paint:
 
 ```html
 <script>
@@ -1060,7 +1060,7 @@ Pairs with the [Download as PDF](DOWNLOAD_PDF.md) implementation.
 
 **Theme persistence:**
 
-5. **Choose per-mode independent OR named combos — not both.** Per-mode (3 keys) gives users full freedom. Combos (2 keys) give designers control over coherence. Most projects use combos — only glow-props uses per-mode independent.
+5. **Choose per-mode independent OR named combos — not both.** Per-mode (3 keys) gives users full freedom. Combos (2 keys) give designers control over coherence. Most projects use combos — only gp-props uses per-mode independent.
 6. **Validate stored values against the catalog.** Users may have outdated values from a previous version. Invalid IDs should silently fall back to defaults — no crash, no unstyled page. For combos, the combo map itself acts as the validation allowlist.
 7. **Curate for quality, not quantity.** All 35 DaisyUI themes is fine for a portfolio, but utility apps should pick 2-5 curated combos (or 8-10 themes per mode). Novelty themes (cyberpunk, halloween) look unprofessional.
 8. **PWA meta theme-color hex values should be auto-generated.** Use `scripts/generate-theme-meta.mjs` to extract oklch→hex from `daisyui/theme/object.js`. For combos, store `metaColorLight` and `metaColorDark` per combo so the correct color is applied per mode.

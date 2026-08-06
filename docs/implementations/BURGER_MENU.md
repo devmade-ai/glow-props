@@ -68,7 +68,7 @@ Always present. Single menu item that toggles between modes.
 
 ### Theme Picker — Approach A: Per-Mode Independent
 
-For projects using per-mode independent selection (e.g., glow-props with 35 themes). Each mode has its own scrollable list.
+For projects using per-mode independent selection (e.g., gp-props with 35 themes). Each mode has its own scrollable list.
 
 ```jsx
 // Section header changes based on current mode

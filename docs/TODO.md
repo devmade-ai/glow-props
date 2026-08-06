@@ -37,17 +37,17 @@ Audited 2026-04-06 against updated `docs/implementations/*.md` pattern docs. Upd
 
 **Parallel re-validation 2026-04-25 (13 agents: 1 coverage + 12 per-repo) — large fleet-wide progress since 2026-04-21:**
 - **Coverage:** Verified complete. 12 tracked + 3 excluded (plant-fur, coin-zapp discontinued; canva-grid-assets is canva-grid's CDN). Set difference between devmade-ai org repos and (tracked ∪ excluded) is empty.
-- **intxt — FULLY RESOLVED.** PR #119 merged 2026-04-24 (commit `e47254fa`) landed everything: HISTORY.md gone, CLAUDE.md aligned (Communication L33, Triggers L1304 with all 8 groups, Implementation Patterns L1790, AI Note "fetch from glow-props" L73), `docs/implementations/` folder deleted, separate maskable icon (`icon-1024-maskable.png` + `icon-512.png` with distinct `purpose`), `ModalBackdrop` + `expo-haptics` extracted, Z_INDEX_SCALE adopted (`constants/zIndex.ts` + 8 tiers + Android elevation rule at CLAUDE.md L1837), DEBUG_SYSTEM fully hardened (`debugLog.ts` numeric `id`, `details: Record<string, unknown>`, separate `#debug-root`, HMR guard, pre-React inline pill, ClipboardItem Blob, subscriber replay with try/catch, `debugGenerateReport()` in module, 3 tabs `'log' | 'env' | 'pwa'`), PWA visibility checks + typed `CheckForUpdatesResult`, THEME flash prevention + `data-theme` + `.dark` class + `color-scheme` + `@custom-variant dark`, ICON_CACHE_BUST (SHA hashes in `icon-hashes.json`, `+html.tsx` injection, `sw.js` precache between markers, manifest `?v=<hash>`).
+- **intxt — FULLY RESOLVED.** PR #119 merged 2026-04-24 (commit `e47254fa`) landed everything: HISTORY.md gone, CLAUDE.md aligned (Communication L33, Triggers L1304 with all 8 groups, Implementation Patterns L1790, AI Note "fetch from gp-props" L73), `docs/implementations/` folder deleted, separate maskable icon (`icon-1024-maskable.png` + `icon-512.png` with distinct `purpose`), `ModalBackdrop` + `expo-haptics` extracted, Z_INDEX_SCALE adopted (`constants/zIndex.ts` + 8 tiers + Android elevation rule at CLAUDE.md L1837), DEBUG_SYSTEM fully hardened (`debugLog.ts` numeric `id`, `details: Record<string, unknown>`, separate `#debug-root`, HMR guard, pre-React inline pill, ClipboardItem Blob, subscriber replay with try/catch, `debugGenerateReport()` in module, 3 tabs `'log' | 'env' | 'pwa'`), PWA visibility checks + typed `CheckForUpdatesResult`, THEME flash prevention + `data-theme` + `.dark` class + `color-scheme` + `@custom-variant dark`, ICON_CACHE_BUST (SHA hashes in `icon-hashes.json`, `+html.tsx` injection, `sw.js` precache between markers, manifest `?v=<hash>`).
 - **graphiki — FULLY RESOLVED.** Triggers replaced (commit `1241878750`, 2026-04-22) with all 8 groups + Meta sweeps + Reflective passes + scope modifiers. DOWNLOAD_PDF intentionally skipped, documented at `CLAUDE.md:710` with rationale (canvas/SVG output, JSON export covers data portability).
 - **tool-till-tees — major progress.** PR #24 (2026-04-23) landed: Suggested Implementations deleted, Implementation Patterns at L594, AI Note at L415, prohibition at L425, full Communication section at L168–183, HISTORY.md gone, Triggers replaced at L441 with 8 groups. Remaining: trigger-name collision AI Note, APP_ICONS decision (no `scripts/` icon generator, bare `index.html`), THEME_DARK_MODE decision, EVENT_BUS N/A documentation, backend pattern upstream proposals.
 - **see-veo — N/A flips and corrections.** BURGER_MENU, THEME_DARK_MODE, and EVENT_BUS reclassified `Missing → N/A` (resume site uses simple `<nav>` for social links, single dark theme is intentional, no service-layer pub/sub needs). HISTORY.md path is `docs/HISTORY.md` (root `/HISTORY.md` already absent). `## Communication Style` is already a section header (not a bullet) — body needs replacing, not promoting. Suggested Implementations is L323–606 (~284 lines), not L322–603 (~280). All other items still open.
 - **fh-fuelhunt, model-pear, four-ems:** No progress, items still valid with line-drift / wording corrections (see per-repo sections).
 - **canva-grid:** Resolved status holds, but **EVENT_BUS rationale ("decided against — React Context dispatch") is not actually documented in canva-grid's CLAUDE.md** — no Not Applicable Patterns section, zero hits for `event bus`/`pubsub`. Either add the rationale in canva-grid or drop the claim from this file.
 - **fl-farlume, repo-tor, sun-sea-o:** FULLY RESOLVED holds, no regressions. Minor line-drift fixes applied below.
-- **glow-props (self):** New TIMER_LEAKS self-compliance item — pattern was upstreamed but the then-current `src/pwa.js` and `src/markdown.js` had raw `setTimeout`/`setInterval` without visible cleanup. Eat own dog food. (Resolved; those files are now `src/lib/pwa.js` / `src/lib/markdown.js` after the React conversion, with dispose blocks + the `verify:timer-cleanup` tripwire.)
+- **gp-props (self):** New TIMER_LEAKS self-compliance item — pattern was upstreamed but the then-current `src/pwa.js` and `src/markdown.js` had raw `setTimeout`/`setInterval` without visible cleanup. Eat own dog food. (Resolved; those files are now `src/lib/pwa.js` / `src/lib/markdown.js` after the React conversion, with dispose blocks + the `verify:timer-cleanup` tripwire.)
 
 **four-ems re-validation 2026-05-01 (full per-pattern re-audit) — FULLY RESOLVED:**
-- **four-ems — FULLY RESOLVED.** Massive sweep landed 2026-04-25 → 2026-05-01 across ~70 commits (latest `b4c783b`, PR #27 merged 2026-05-01). HISTORY.md deleted. CLAUDE.md realigned (957 → 723 lines): Communication L32, Triggers L313 with all 8 groups + Meta sweeps L437 + Reflective passes L450, Implementation Patterns L466, Project section preserved L500, Timer and Subscription Cleanup subsection L81, AI Note + prohibition for fetching patterns from glow-props. APP_ICONS complete (`apple-touch-icon.png` + link in `index.html:6`). BURGER_MENU complete (`src/components/BurgerMenu.tsx` 228 lines, `useDisclosureFocus`/`useEscapeKey` hooks, ArrowUp/Down/Home/End wrapping, `BurgerMenu.test.tsx` tripwire; AppHeader wires dark-mode toggle, check-for-updates, install-app, reset-session). DEBUG_SYSTEM hardened (`details: Record<string, unknown>`, console interception with HMR guard, 3 tabs `'log' | 'env' | 'pwa'` split into focused files, pre-React inline pill with 20s timeout, ClipboardItem Blob fallback chain; DEV-only gate intentional, documented in CLAUDE.md "Not Applicable Patterns"). DOWNLOAD_PDF complete (`SubmissionDetail.tsx:56` Save-as-PDF, `print-color-adjust: exact` at `index.css:147`). PWA_SYSTEM complete (module singleton in `src/lib/pwa.ts`, `wasJustUpdated()` 30s suppression, `visibilitychange` + `controllerchange` listeners, typed `checkForUpdate()`, `cleanupOutdatedCaches`, `ignoreURLParametersMatching`). THEME_DARK_MODE Approach B complete (DaisyUI v5 named-combo, `applyTheme(dark, comboId)`, dual-layer `.dark` + `data-theme`, `@custom-variant dark`, `color-scheme`, flash-prevention inline script, `migrateLegacyKeys`, dual `theme-color` meta gated by `prefers-color-scheme`, generator-managed `themeCatalog.ts`, 6 tripwire tests). Z_INDEX_SCALE adopted (`scripts/audit-z-index.mjs` + `npm run audit:z-index`). ICON_CACHE_BUST complete (`iconCacheBustHtml()` before `VitePWA()` at `vite.config.ts:103`, 8-hex content hash, `iconCacheBust.test.ts` tripwire, "Already installed" collapsible at `InstallInstructionsModal.tsx:204-206`). EVENT_BUS N/A documented in CLAUDE.md "Not Applicable Patterns" (no service layer, three pub/sub singletons each emit a single "state changed" event).
+- **four-ems — FULLY RESOLVED.** Massive sweep landed 2026-04-25 → 2026-05-01 across ~70 commits (latest `b4c783b`, PR #27 merged 2026-05-01). HISTORY.md deleted. CLAUDE.md realigned (957 → 723 lines): Communication L32, Triggers L313 with all 8 groups + Meta sweeps L437 + Reflective passes L450, Implementation Patterns L466, Project section preserved L500, Timer and Subscription Cleanup subsection L81, AI Note + prohibition for fetching patterns from gp-props. APP_ICONS complete (`apple-touch-icon.png` + link in `index.html:6`). BURGER_MENU complete (`src/components/BurgerMenu.tsx` 228 lines, `useDisclosureFocus`/`useEscapeKey` hooks, ArrowUp/Down/Home/End wrapping, `BurgerMenu.test.tsx` tripwire; AppHeader wires dark-mode toggle, check-for-updates, install-app, reset-session). DEBUG_SYSTEM hardened (`details: Record<string, unknown>`, console interception with HMR guard, 3 tabs `'log' | 'env' | 'pwa'` split into focused files, pre-React inline pill with 20s timeout, ClipboardItem Blob fallback chain; DEV-only gate intentional, documented in CLAUDE.md "Not Applicable Patterns"). DOWNLOAD_PDF complete (`SubmissionDetail.tsx:56` Save-as-PDF, `print-color-adjust: exact` at `index.css:147`). PWA_SYSTEM complete (module singleton in `src/lib/pwa.ts`, `wasJustUpdated()` 30s suppression, `visibilitychange` + `controllerchange` listeners, typed `checkForUpdate()`, `cleanupOutdatedCaches`, `ignoreURLParametersMatching`). THEME_DARK_MODE Approach B complete (DaisyUI v5 named-combo, `applyTheme(dark, comboId)`, dual-layer `.dark` + `data-theme`, `@custom-variant dark`, `color-scheme`, flash-prevention inline script, `migrateLegacyKeys`, dual `theme-color` meta gated by `prefers-color-scheme`, generator-managed `themeCatalog.ts`, 6 tripwire tests). Z_INDEX_SCALE adopted (`scripts/audit-z-index.mjs` + `npm run audit:z-index`). ICON_CACHE_BUST complete (`iconCacheBustHtml()` before `VitePWA()` at `vite.config.ts:103`, 8-hex content hash, `iconCacheBust.test.ts` tripwire, "Already installed" collapsible at `InstallInstructionsModal.tsx:204-206`). EVENT_BUS N/A documented in CLAUDE.md "Not Applicable Patterns" (no service layer, three pub/sub singletons each emit a single "state changed" event).
 
 Legend: **Pass** = compliant, **Partial** = has the feature but with gaps, **Missing** = not implemented, **N/A** = not applicable
 
@@ -55,7 +55,7 @@ Legend: **Pass** = compliant, **Partial** = has the feature but with gaps, **Mis
 
 | Repo | CLAUDE.md | APP_ICONS | BURGER_MENU | DEBUG_SYSTEM | DOWNLOAD_PDF | PWA_SYSTEM | THEME_DARK_MODE | EVENT_BUS | Z_INDEX_SCALE | ICON_CACHE_BUST | DISCOVERABILITY |
 |------|-----------|-----------|-------------|--------------|--------------|------------|-----------------|-----------|---------------|-----------------|-----------------|
-| glow-props | Pass | Pass | Pass | Pass (DEV) | Pass | Pass | Pass | N/A | Pass | Pass | Pass |
+| gp-props | Pass | Pass | Pass | Pass (DEV) | Pass | Pass | Pass | N/A | Pass | Pass | Pass |
 | canva-grid | Pass | Pass | Pass | Pass | Pass (B) | Pass | Pass | N/A | Pass | Pass | Pass |
 | fl-farlume | Pass | Pass | Pass | Pass | Pass | Partial | Pass | N/A | Pass | Pass | Pass (P) |
 | model-pear | Partial | Partial | Missing | Pass | Partial | Partial | Partial | Missing | Pass | Missing | Pass |
@@ -142,7 +142,7 @@ transient 503 on someone else's host must not block publishing a docs change.
 Two cells the script corrected on its first run, both worth recording because
 they are the kind of thing hand-maintenance gets wrong:
 
-- **glow-props was `Partial`, and is `Pass` as of 2026-08-05.** It had been
+- **gp-props was `Partial`, and is `Pass` as of 2026-08-05.** It had been
   graded `Pass` counting structured data that was still on a branch; the
   deployed site had none. A column that claims to measure live sites must not
   describe unmerged work. The prediction written here — "this flips to `Pass`
@@ -199,11 +199,11 @@ can be run against every repo rather than judged.
 
 **(B)** = Approach B (pdf-lib) per `docs/implementations/DOWNLOAD_PDF.md` — correct choice for canvas-heavy content
 
-**model-pear reclassified 2026-08-03**: the old row said "no PWA / no vite-plugin-pwa" and ICON_CACHE_BUST `N/A`. Both were false — it is a **SvelteKit** PWA (not React, as the portfolio also recorded) shipping vite-plugin-pwa with a fuller update policy than several repos marked Pass. ICON_CACHE_BUST is `Missing`, not N/A: three manifest icons, zero `?v=` versioning. Note the glow-props `transformIndexHtml` approach cannot be ported as-is — vite-plugin-pwa's HTML pipeline never runs under SvelteKit. glow-props reclassified `N/A → Pass` 2026-08-01: the old rationale ("static site, no PWA icons") was false — the repo ships a full PWA with three manifest icons; the pattern is now implemented (see glow-props section).
+**model-pear reclassified 2026-08-03**: the old row said "no PWA / no vite-plugin-pwa" and ICON_CACHE_BUST `N/A`. Both were false — it is a **SvelteKit** PWA (not React, as the portfolio also recorded) shipping vite-plugin-pwa with a fuller update policy than several repos marked Pass. ICON_CACHE_BUST is `Missing`, not N/A: three manifest icons, zero `?v=` versioning. Note the gp-props `transformIndexHtml` approach cannot be ported as-is — vite-plugin-pwa's HTML pipeline never runs under SvelteKit. gp-props reclassified `N/A → Pass` 2026-08-01: the old rationale ("static site, no PWA icons") was false — the repo ships a full PWA with three manifest icons; the pattern is now implemented (see gp-props section).
 
-**Pass (DEV) for glow-props DEBUG_SYSTEM**: implemented 2026-08-01 (was falsely N/A, then honestly Missing earlier the same day). DEV-gated like four-ems — dynamic import keeps the subsystem out of production bundles; the pre-module error capture + 20s load watchdog and the localStorage install analytics run in production, the pill itself is dev-only. Documented in glow-props CLAUDE.md AI notes.
+**Pass (DEV) for gp-props DEBUG_SYSTEM**: implemented 2026-08-01 (was falsely N/A, then honestly Missing earlier the same day). DEV-gated like four-ems — dynamic import keeps the subsystem out of production bundles; the pre-module error capture + 20s load watchdog and the localStorage install analytics run in production, the pill itself is dev-only. Documented in gp-props CLAUDE.md AI notes.
 
-**N/A for glow-props EVENT_BUS**: static four-module site, no service layer; cross-tab theme sync uses the `storage` event (the route EVENT_BUS.md prescribes), the install-prompt handoff is a one-shot callback. Documented in glow-props CLAUDE.md "Not Applicable Patterns" 2026-08-01.
+**N/A for gp-props EVENT_BUS**: static four-module site, no service layer; cross-tab theme sync uses the `storage` event (the route EVENT_BUS.md prescribes), the install-prompt handoff is a one-shot callback. Documented in gp-props CLAUDE.md "Not Applicable Patterns" 2026-08-01.
 
 **N/A for DOWNLOAD_PDF**: graphiki (intentional skip — canvas/SVG editor, JSON export covers data portability, documented at `CLAUDE.md:710`), intxt (chat app, declined).
 
@@ -211,7 +211,7 @@ can be run against every repo rather than judged.
 
 **`?` for tool-till-tees**: two cells pending a decision (THEME_DARK_MODE — does the minimal landing page need theming? EVENT_BUS — does the backend API need internal pub/sub?). Most other cells are `N/A` because tool-till-tees is a hybrid backend-API + minimal landing page, not a user-facing PWA. APP_ICONS reclassified `Partial → Missing` 2026-04-25 — `index.html` has no icon links and no `scripts/` directory exists; decision needed.
 
-### glow-props (self) — React conversion 2026-08-01 (same day as the audit fix pass below)
+### gp-props (self) — React conversion 2026-08-01 (same day as the audit fix pass below)
 
 Converted from vanilla JS to **React 19 + Vite, MPA with build-time SSG** — and
 is now the fleet's reference implementation of the patterns' React variants:
@@ -241,7 +241,7 @@ is now the fleet's reference implementation of the patterns' React variants:
   (menu, theme toggle staying open, theme picking, Escape, prerendered
   pattern/project pages, legacy `?name=` canonicals, doc tabs) passes.
 
-### glow-props (self) — full self-audit + fix pass 2026-08-01
+### gp-props (self) — full self-audit + fix pass 2026-08-01
 
 12-pattern self-audit found the prior matrix row (all Pass/N-A) inaccurate, including two production breaks. Fixed the same day:
 
@@ -282,14 +282,14 @@ SvelteKit app. APP_ICONS done, DEBUG_SYSTEM foundations done, Implementation Pat
 
 **New gaps spotted 2026-04-25 re-validation:**
 - model-pear's local `docs/TODO.md` mixes 8+ `[x]` completed items with `[ ]` open items (lines 40-53, e.g. "Add Industry Standard badges", "One-click save") — needs cleanup as part of the HISTORY.md removal chunk regardless of HISTORY decision.
-- model-pear CLAUDE.md uses non-standard top-level headings: `## HARD RULES` (L11) and `## AI SESSION MANAGEMENT` (where `### Principles` lives at L124) instead of glow-props's `## Principles` / `## Code Standards`. Header drift goes beyond just the missing Communication section.
-- **TIMER_LEAKS subsection missing** from CLAUDE.md Code Standards — pattern was upstreamed to glow-props 2026-04-22; downstream CLAUDE.md should inherit `### Timer and Subscription Cleanup` between `### Cleanup` and `### Quality Checks`.
+- model-pear CLAUDE.md uses non-standard top-level headings: `## HARD RULES` (L11) and `## AI SESSION MANAGEMENT` (where `### Principles` lives at L124) instead of gp-props's `## Principles` / `## Code Standards`. Header drift goes beyond just the missing Communication section.
+- **TIMER_LEAKS subsection missing** from CLAUDE.md Code Standards — pattern was upstreamed to gp-props 2026-04-22; downstream CLAUDE.md should inherit `### Timer and Subscription Cleanup` between `### Cleanup` and `### Quality Checks`.
 
 #### CLAUDE.md — Add Communication section
 
 "Implementation Patterns (Source of Truth)" section + prohibition already present. Remaining: Communication section. Live-verified: no `^## Communication$` heading exists in model-pear CLAUDE.md — only `## Implementation Patterns (Source of Truth)` at line 365 and `## Triggers` at line 461.
 
-1. [ ] **Add `## Communication` section** — Copy from glow-props CLAUDE.md. Place between Principles and Code Standards. Update top-of-file header line to include COMMUNICATION. Remove any duplicate "ASK before assuming" or "Communication style" bullets from AI Notes.
+1. [ ] **Add `## Communication` section** — Copy from gp-props CLAUDE.md. Place between Principles and Code Standards. Update top-of-file header line to include COMMUNICATION. Remove any duplicate "ASK before assuming" or "Communication style" bullets from AI Notes.
 2. **Confirm:** `grep -c "^## Communication$" CLAUDE.md` returns `1`. Section exists between Principles and Code Standards.
 
 #### HISTORY.md — Remove (cross-fleet policy 2026-04-16)
@@ -303,11 +303,11 @@ Git history already tracks completions; a separate changelog is redundant.
 
 (README.md already has no HISTORY references — verified 2026-04-25, sub-task removed.)
 
-#### Triggers — Replace with glow-props version (cross-fleet policy 2026-04-17)
+#### Triggers — Replace with gp-props version (cross-fleet policy 2026-04-17)
 
-glow-props CLAUDE.md has a redesigned Triggers section: 48 triggers in 8 groups, 6 cadence meta sweeps (`hot` / `quick` / `ship` / `session` / `tidy` / `all`), 7 reflective passes (`risk` / `surface` / `wrap` / `skipped` / `assumed` / `approach` / `cold`), and scope modifiers (`branch` / `staged` / `file <path>`). Replaces the older single-word Triggers section (`rev`/`aud`/`mobile`/`clean`/`start`/etc.).
+gp-props CLAUDE.md has a redesigned Triggers section: 48 triggers in 8 groups, 6 cadence meta sweeps (`hot` / `quick` / `ship` / `session` / `tidy` / `all`), 7 reflective passes (`risk` / `surface` / `wrap` / `skipped` / `assumed` / `approach` / `cold`), and scope modifiers (`branch` / `staged` / `file <path>`). Replaces the older single-word Triggers section (`rev`/`aud`/`mobile`/`clean`/`start`/etc.).
 
-1. [ ] **Replace the existing `## Triggers` section** — Copy the full new `## Triggers` section from glow-props CLAUDE.md verbatim, including How to invoke, Scope modifiers, Behavior rules, all 8 group tables (`correctness`, `trust`, `speed`, `frontend`, `quality`, `ops`, `design`, `fleet`), Meta sweeps table, and Reflective passes table.
+1. [ ] **Replace the existing `## Triggers` section** — Copy the full new `## Triggers` section from gp-props CLAUDE.md verbatim, including How to invoke, Scope modifiers, Behavior rules, all 8 group tables (`correctness`, `trust`, `speed`, `frontend`, `quality`, `ops`, `design`, `fleet`), Meta sweeps table, and Reflective passes table.
 2. [ ] **Note any name collisions** — If the repo has npm scripts, folders, or conventions using single-word names matching trigger names (e.g. `docs/`, `tests/`, `config/`, `api/`), add a line in AI Notes clarifying context precedence.
 3. **Confirm:** `grep -c "^## Triggers$" CLAUDE.md` returns `1`. All 8 group tables present. No old single-word triggers (`rev`/`aud`/`start`/`go`) remain.
 
@@ -371,26 +371,26 @@ Git history already tracks completions; a separate changelog is redundant. READM
 1. [ ] Delete `docs/HISTORY.md` (the file is at `docs/HISTORY.md`, not root `/HISTORY.md`)
 2. **Confirm:** `curl -sf -H "Authorization: token $TOKEN" "https://api.github.com/repos/devmade-ai/see-veo/contents/docs/HISTORY.md"` returns 404.
 
-#### CLAUDE.md — Align with glow-props
+#### CLAUDE.md — Align with gp-props
 
-No local `docs/implementations/` folder (correct). CLAUDE.md is **717 lines**. Has **~284 lines of hardcoded inline patterns** in a "Suggested Implementations" section spanning **lines 323–606** (next section "Project-Specific Configuration" at line 607) covering PWA System, App Icons, Download as PDF, Timer Leaks, and HTTPS Proxy — full code examples embedded directly. Missing: any reference to glow-props as pattern source. **Correction 2026-04-25:** `## Communication Style` is already a top-level section header at line 273 (not a bullet list as previously stated). Body content needs replacing with the full glow-props version, not "promoting from a bullet".
+No local `docs/implementations/` folder (correct). CLAUDE.md is **717 lines**. Has **~284 lines of hardcoded inline patterns** in a "Suggested Implementations" section spanning **lines 323–606** (next section "Project-Specific Configuration" at line 607) covering PWA System, App Icons, Download as PDF, Timer Leaks, and HTTPS Proxy — full code examples embedded directly. Missing: any reference to gp-props as pattern source. **Correction 2026-04-25:** `## Communication Style` is already a top-level section header at line 273 (not a bullet list as previously stated). Body content needs replacing with the full gp-props version, not "promoting from a bullet".
 
 1. [ ] **Delete entire "Suggested Implementations" section** — Remove lines 323–606 (~284 lines of inline pattern code for PWA System, App Icons, Download as PDF, Timer Leaks, HTTPS Proxy).
-2. [ ] **Add "Implementation Patterns (Source of Truth)" section** — Replace deleted section with the standard glow-props reference block (source location, fetch via GitHub Pages/API, listing command, rules).
-3. [ ] **Add AI Note** — Add: `**Implementation patterns — always fetch from glow-props.** Never look for local copies of implementation pattern files (e.g., docs/implementations/*.md) in downstream repos. They do not exist locally — the single source of truth is the docs/implementations/ folder in the glow-props repo. Fetch the latest version before every implementation task.`
-4. [ ] **Add prohibition** — Add to Prohibitions: "Create local copies of implementation pattern files in any repo — always fetch from glow-props".
-5. [ ] **Replace `## Communication Style` body with full glow-props `## Communication` content** — Section already exists at line 273; rename to `## Communication` and replace body. Place between Principles and Code Standards. Update header line to include COMMUNICATION. Remove the duplicate "**ASK before assuming.**" bullet from AI Notes (it currently overlaps with Communication content).
-6. **Confirm:** CLAUDE.md is ~284 lines shorter. No inline code examples for patterns remain. Standard fetch commands point to glow-props. Communication section exists between Principles and Code Standards.
+2. [ ] **Add "Implementation Patterns (Source of Truth)" section** — Replace deleted section with the standard gp-props reference block (source location, fetch via GitHub Pages/API, listing command, rules).
+3. [ ] **Add AI Note** — Add: `**Implementation patterns — always fetch from gp-props.** Never look for local copies of implementation pattern files (e.g., docs/implementations/*.md) in downstream repos. They do not exist locally — the single source of truth is the docs/implementations/ folder in the gp-props repo. Fetch the latest version before every implementation task.`
+4. [ ] **Add prohibition** — Add to Prohibitions: "Create local copies of implementation pattern files in any repo — always fetch from gp-props".
+5. [ ] **Replace `## Communication Style` body with full gp-props `## Communication` content** — Section already exists at line 273; rename to `## Communication` and replace body. Place between Principles and Code Standards. Update header line to include COMMUNICATION. Remove the duplicate "**ASK before assuming.**" bullet from AI Notes (it currently overlaps with Communication content).
+6. **Confirm:** CLAUDE.md is ~284 lines shorter. No inline code examples for patterns remain. Standard fetch commands point to gp-props. Communication section exists between Principles and Code Standards.
 
 **New gaps spotted 2026-04-25:**
-- `## Workflow` section in CLAUDE.md (line 635) is custom and not in the glow-props template — evaluate whether to keep, fold into AI Notes, or drop.
-- `docs/working/` directory exists in repo — verify whether it should be in `.gitignore` per glow-props convention.
+- `## Workflow` section in CLAUDE.md (line 635) is custom and not in the gp-props template — evaluate whether to keep, fold into AI Notes, or drop.
+- `docs/working/` directory exists in repo — verify whether it should be in `.gitignore` per gp-props convention.
 
-#### Triggers — Replace with glow-props version (cross-fleet policy 2026-04-17)
+#### Triggers — Replace with gp-props version (cross-fleet policy 2026-04-17)
 
-glow-props CLAUDE.md has a redesigned Triggers section: 48 triggers in 8 groups, 6 cadence meta sweeps (`hot` / `quick` / `ship` / `session` / `tidy` / `all`), 7 reflective passes (`risk` / `surface` / `wrap` / `skipped` / `assumed` / `approach` / `cold`), and scope modifiers (`branch` / `staged` / `file <path>`). Replaces the older single-word Triggers section (`rev`/`aud`/`mobile`/`clean`/`start`/etc.).
+gp-props CLAUDE.md has a redesigned Triggers section: 48 triggers in 8 groups, 6 cadence meta sweeps (`hot` / `quick` / `ship` / `session` / `tidy` / `all`), 7 reflective passes (`risk` / `surface` / `wrap` / `skipped` / `assumed` / `approach` / `cold`), and scope modifiers (`branch` / `staged` / `file <path>`). Replaces the older single-word Triggers section (`rev`/`aud`/`mobile`/`clean`/`start`/etc.).
 
-1. [ ] **Replace the existing `## Triggers` section** — Copy the full new `## Triggers` section from glow-props CLAUDE.md verbatim, including How to invoke, Scope modifiers, Behavior rules, all 8 group tables (`correctness`, `trust`, `speed`, `frontend`, `quality`, `ops`, `design`, `fleet`), Meta sweeps table, and Reflective passes table.
+1. [ ] **Replace the existing `## Triggers` section** — Copy the full new `## Triggers` section from gp-props CLAUDE.md verbatim, including How to invoke, Scope modifiers, Behavior rules, all 8 group tables (`correctness`, `trust`, `speed`, `frontend`, `quality`, `ops`, `design`, `fleet`), Meta sweeps table, and Reflective passes table.
 2. [ ] **Note any name collisions** — If the repo has npm scripts, folders, or conventions using single-word names matching trigger names (e.g. `docs/`, `tests/`, `config/`, `api/`), add a line in AI Notes clarifying context precedence.
 3. **Confirm:** `grep -c "^## Triggers$" CLAUDE.md` returns `1`. All 8 group tables present. No old single-word triggers (`rev`/`aud`/`start`/`go`) remain.
 
@@ -458,7 +458,7 @@ Reference: `docs/implementations/Z_INDEX_SCALE.md`
 
 #### ICON_CACHE_BUST — Missing → Implement
 
-Reference: `docs/implementations/PWA_ICON_CACHE_BUST.md` (fetch from glow-props)
+Reference: `docs/implementations/PWA_ICON_CACHE_BUST.md` (fetch from gp-props)
 
 see-veo uses vite-plugin-pwa. Icons served with stable filenames.
 
@@ -501,9 +501,9 @@ React Native (Expo) app (package name `fuelhunt`). Metro bundler + Uniwind + cus
 
 #### CLAUDE.md — Add Timer and Subscription Cleanup subsection (2026-04-25)
 
-Cross-fleet TIMER_LEAKS pattern was upstreamed to glow-props 2026-04-22 with a `### Timer and Subscription Cleanup` subsection in CLAUDE.md Code Standards. fh-fuelhunt's CLAUDE.md predates this and is missing the subsection.
+Cross-fleet TIMER_LEAKS pattern was upstreamed to gp-props 2026-04-22 with a `### Timer and Subscription Cleanup` subsection in CLAUDE.md Code Standards. fh-fuelhunt's CLAUDE.md predates this and is missing the subsection.
 
-1. [ ] **Add `### Timer and Subscription Cleanup` subsection** between `### Cleanup` and `### Quality Checks` in CLAUDE.md, fetched verbatim from glow-props.
+1. [ ] **Add `### Timer and Subscription Cleanup` subsection** between `### Cleanup` and `### Quality Checks` in CLAUDE.md, fetched verbatim from gp-props.
 
 **Bonus finding (not a pattern gap — STILL UNADDRESSED):** `src/debug/debugLog.ts` has a leftover `// TEMPORARY: always-on for PWA alpha diagnostics. Restore` comment (lines 6, 218, 353). The `__DEV__` guard is still missing on `debugAdd()` and the global listener registration — production debug-pill leak risk. Restore:
 
@@ -523,7 +523,7 @@ Reference: `docs/implementations/DOWNLOAD_PDF.md`
 
 ### sun-sea-o — FULLY RESOLVED (2026-04-29)
 
-React + Vite app. All 10 glow-props patterns compliant. Re-verified 2026-04-29 against `ceb527da8d` (PR #27 "review-guidelines" merged 2026-04-29) — original alignment from `b261e4e0` (2026-04-25) holds; line numbers and one path below reflect current state:
+React + Vite app. All 10 gp-props patterns compliant. Re-verified 2026-04-29 against `ceb527da8d` (PR #27 "review-guidelines" merged 2026-04-29) — original alignment from `b261e4e0` (2026-04-25) holds; line numbers and one path below reflect current state:
 - HISTORY.md removed (HTTP 404 at both `/HISTORY.md` and `/docs/HISTORY.md`); CLAUDE.md fully aligned: Communication at `CLAUDE.md:136`, `### Timer and Subscription Cleanup` subsection at `CLAUDE.md:185`, AI Note at `CLAUDE.md:384`, prohibition at `CLAUDE.md:402`, Triggers at `CLAUDE.md:417` with all 8 group tables (correctness L453, trust L463, speed L471, frontend L480, quality L494, ops L513, design L525, fleet L534) + Meta sweeps L541 + Reflective passes L554 + scope modifiers L428. Suggested Implementations deleted.
 - BurgerMenu with WAI-ARIA disclosure + focus hooks + arrow/Home/End keyboard nav.
 - DaisyUI 5.5.19 installed (`package.json` `"daisyui": "^5.5.19"`); THEME_DARK_MODE framework complete (Approach A, dual-layer, cross-tab sync, OS fallback, dynamic meta theme-color); color migration complete — `src/components/agreements/PdfPreview.tsx` uses `print:text-gray-*` utilities at lines 56, 58, 75, 77, 82, 93, 97, 100 (8 occurrences, intentional print-media fallback documented in file header at L16).
@@ -537,9 +537,9 @@ No pending items.
 
 ### graphiki — FULLY RESOLVED (2026-04-29)
 
-React + Vite graph editor. All 10 glow-props patterns compliant. Re-verified 2026-04-29 against `9d3c87c9c9` (PR #54 "debug-graphiki-mobile" merged 2026-04-29) — original alignment from PR #53 (`66b5e7ec6a`, 2026-04-23 "review-claude-md") holds; line numbers below reflect current state:
+React + Vite graph editor. All 10 gp-props patterns compliant. Re-verified 2026-04-29 against `9d3c87c9c9` (PR #54 "debug-graphiki-mobile" merged 2026-04-29) — original alignment from PR #53 (`66b5e7ec6a`, 2026-04-23 "review-claude-md") holds; line numbers below reflect current state:
 - CLAUDE.md fully aligned (Communication L343, Implementation Patterns, AI Note L710, prohibition L908).
-- **Triggers replaced** at `CLAUDE.md:721` (commit `1241878750`, 2026-04-22 "docs(claude-md): align with glow-props CLAUDE.md") — all 8 group tables: correctness L757, trust L767, speed L775, frontend L784, quality L798, ops L817, design L829, fleet L838 + Meta sweeps L845 + Reflective passes L858 + scope modifiers L732. No old `rev`/`aud`/`start` triggers remain.
+- **Triggers replaced** at `CLAUDE.md:721` (commit `1241878750`, 2026-04-22 "docs(claude-md): align with gp-props CLAUDE.md") — all 8 group tables: correctness L757, trust L767, speed L775, frontend L784, quality L798, ops L817, design L829, fleet L838 + Meta sweeps L845 + Reflective passes L858 + scope modifiers L732. No old `rev`/`aud`/`start` triggers remain.
 - **DOWNLOAD_PDF intentionally skipped** — documented at `CLAUDE.md:709`: *"PDF export — intentionally skipped. Graphiki is a graph editor with canvas/SVG output — `window.print()` can't reliably capture it, and `pdf-lib` + `html-to-image` adds bundle cost for a niche use case. JSON export covers data portability."* `pdf-lib` and `html-to-image` confirmed absent from `package.json`.
 - BURGER_MENU disclosure, DEBUG_SYSTEM hardened, PWA visibility checks + 30s suppression (`UPDATE_SUPPRESSION_MS = 30_000` at `usePWAUpdate.ts:15`, `visibilitychange` listener L62-67), EVENT_BUS typed `EventBus<M>`.
 - Z_INDEX_SCALE compliant: Toast `z-[70]`, BurgerMenu `zIndex: 49/50`, ContextMenu `z-50`.
@@ -552,7 +552,7 @@ No pending items.
 React + Vite form-builder app. Massive cross-fleet alignment work landed between 2026-04-25 and 2026-05-01 (DaisyUI v5 + theme rewrite, BurgerMenu, PWA hardening, icon cache-bust, debug system rewrite, z-index audit, Save-as-PDF, CLAUDE.md realignment). Verified 2026-05-01 against live `main` at commit `b4c783b` (PR #27 merged 2026-05-01) via GitHub API.
 
 - **HISTORY.md** — deleted (HTTP 404 at both `/HISTORY.md` and `/docs/HISTORY.md`). No HISTORY references in CLAUDE.md.
-- **CLAUDE.md alignment** (723 lines, down from 957). `## Communication` at L32, `## Triggers` at L313 with all 8 group tables in order — Correctness L349 / Trust L359 / Speed L367 / Frontend L376 / Quality L390 / Ops L409 / Design L421 / Fleet L430 — plus Meta sweeps L437, Reflective passes L450, Scope modifiers L324, Behavior rules L338. `## Implementation Patterns (Source of Truth)` at L466. AI Note "Implementation patterns — always fetch from glow-props" present in AI Notes section. Prohibition "Create local copies of implementation pattern files in any repo — always fetch from glow-props" at L296. `### Timer and Subscription Cleanup` subsection at L81 (between `### Cleanup` and `### Quality Checks`). `## Project: Four Ems — Form Builder` preserved at L500. No "Suggested Implementations" section. No local `docs/implementations/` folder.
+- **CLAUDE.md alignment** (723 lines, down from 957). `## Communication` at L32, `## Triggers` at L313 with all 8 group tables in order — Correctness L349 / Trust L359 / Speed L367 / Frontend L376 / Quality L390 / Ops L409 / Design L421 / Fleet L430 — plus Meta sweeps L437, Reflective passes L450, Scope modifiers L324, Behavior rules L338. `## Implementation Patterns (Source of Truth)` at L466. AI Note "Implementation patterns — always fetch from gp-props" present in AI Notes section. Prohibition "Create local copies of implementation pattern files in any repo — always fetch from gp-props" at L296. `### Timer and Subscription Cleanup` subsection at L81 (between `### Cleanup` and `### Quality Checks`). `## Project: Four Ems — Form Builder` preserved at L500. No "Suggested Implementations" section. No local `docs/implementations/` folder.
 - **APP_ICONS** — `public/apple-touch-icon.png` exists. `index.html:6` carries `<link rel="apple-touch-icon" href="/apple-touch-icon.png" />`. `scripts/generate-icons.mjs` produces the 180×180 output. `public/favicon.svg` present.
 - **BURGER_MENU** — `src/components/BurgerMenu.tsx` (228 lines) is a full WAI-ARIA disclosure menu: `aria-expanded`/`aria-controls` at L155-156, `useDisclosureFocus`/`useEscapeKey` hooks at L72-73 (sources at `src/hooks/useDisclosureFocus.ts` + `src/hooks/useEscapeKey.ts`), ArrowDown/ArrowUp/Home/End cycling with wrapping at L125-137. `src/components/AppHeader.tsx` wires standard items: dark-mode toggle (L200, label flips with `.dark` class), check-for-updates / update-now (L205), install-app (L216), reset-session (L226). Tripwire `src/components/__tests__/BurgerMenu.test.tsx` locks the disclosure contract (aria-expanded, ESC + backdrop close, ArrowUp/Down/Home/End cycling, disabled-skip, `visible: false` filter, error→`__debugPushError`).
 - **DEBUG_SYSTEM** — `src/lib/debugLog.ts:38-49` `interface DebugEntry` with `details?: Record<string, unknown>` (was `string`, CHANGED). Console.error/warn interception at L209/214 behind HMR guard `window.__debugLogListenersAttached` (L171, set at L197-198, torn down via `import.meta.hot.dispose` at L268-272). Three tabs in `src/components/DebugPill.tsx:27` (`type Tab = 'log' | 'env' | 'pwa'`); split into focused files at `src/components/debug/{LogTab,EnvTab,PwaTab}.tsx`. Pre-React inline pill in `index.html` (`window.__debugErrors`, `__debugPushError`, `__debugLoadTimer`, `__debugClearLoadTimer`, `__debugReactMounted`, 20s startup-timeout fallback). `src/lib/clipboard.ts` has the full ClipboardItem Blob → `navigator.clipboard.writeText` → `document.execCommand('copy')` fallback chain. **DEV-only gate intentional** (`src/main.tsx:40` `if (import.meta.env.DEV)`) — documented in CLAUDE.md "Not Applicable Patterns" with rationale (alpha stage, end users on `/f/:slug` shouldn't see operational detail, form owners are technical enough to repro in dev). DebugPill skipped in embed contexts (commit `7835dcb`).
@@ -569,10 +569,10 @@ No pending pattern items.
 
 ### intxt — FULLY RESOLVED (2026-04-25)
 
-React Native (Expo) chat app. PR #119 (commit `e47254fa`, 2026-04-24) "Align intxt with glow-props patterns: debug pill, PWA, theme, icons" landed every outstanding item. Verified 2026-04-25 against live `main`.
+React Native (Expo) chat app. PR #119 (commit `e47254fa`, 2026-04-24) "Align intxt with gp-props patterns: debug pill, PWA, theme, icons" landed every outstanding item. Verified 2026-04-25 against live `main`.
 
 - **HISTORY.md** — deleted (HTTP 404).
-- **CLAUDE.md alignment** (1891 lines): `## Communication` at L33, `## Triggers` at L1304, `## Implementation Patterns (Source of Truth)` at L1790, AI Note "Implementation patterns — always fetch from glow-props" at L73. No "Suggested Implementations" section. `docs/implementations/` folder deleted (all 8 local pattern files gone). Old TIMER_LEAKS reference at L1227 now points at the glow-props URL.
+- **CLAUDE.md alignment** (1891 lines): `## Communication` at L33, `## Triggers` at L1304, `## Implementation Patterns (Source of Truth)` at L1790, AI Note "Implementation patterns — always fetch from gp-props" at L73. No "Suggested Implementations" section. `docs/implementations/` folder deleted (all 8 local pattern files gone). Old TIMER_LEAKS reference at L1227 now points at the gp-props URL.
 - **Triggers** — All 8 group headers in order: Correctness L1340, Security/trust L1350, Performance L1358, User-facing L1367, Maintainability L1381, Operational L1400, Design-level L1412, Fleet alignment L1421 + Meta sweeps L1428 + Reflective passes L1441.
 - **APP_ICONS** — `public/icon-1024-maskable.png` exists as a separate file. `public/manifest.json` lists `icon-512.png` with `purpose: "any"` and `icon-1024-maskable.png` with `purpose: "maskable"` (no purpose collision). `public/favicon.ico` present. Hashed URLs from `icon-hashes.json` injected into manifest, html, and sw.js.
 - **BURGER_MENU / shared modal scaffolding** — `components/common/ModalBackdrop.tsx` exists; `components/ChatHeaderMenu.tsx:11` imports it; L13 imports `hapticLight`/`hapticWarning` from `utils/haptics.ts`; haptics called at L137,167,181,193,206,222,242.
@@ -590,13 +590,13 @@ No pending pattern items.
 
 ### tool-till-tees
 
-**Hybrid repo:** Vercel-hosted Node.js API (`api/`) + a minimal React 19 / Vite landing page (`src/App.tsx`, `src/main.tsx`, `index.css`). Backs three systems: contact/notification endpoint, Four Ems form-builder API, Sancio agreement management — all backed by Supabase. Serves 4 frontend consumers (four-ems, glow-props, see-veo, sun-sea-o) per CORS allowlist in `lib/cors.ts`. Tech stack: React 19.2 + Vite + Tailwind v4 + Vitest 4 + Supabase + Vercel serverless functions + bcryptjs + nodemailer.
+**Hybrid repo:** Vercel-hosted Node.js API (`api/`) + a minimal React 19 / Vite landing page (`src/App.tsx`, `src/main.tsx`, `index.css`). Backs three systems: contact/notification endpoint, Four Ems form-builder API, Sancio agreement management — all backed by Supabase. Serves 4 frontend consumers (four-ems, gp-props, see-veo, sun-sea-o) per CORS allowlist in `lib/cors.ts`. Tech stack: React 19.2 + Vite + Tailwind v4 + Vitest 4 + Supabase + Vercel serverless functions + bcryptjs + nodemailer.
 
 **Migration COMPLETE 2026-04-23 via PR #24 (commit `f7b2f29`); re-verified 2026-04-29 against `99e5172a55` (PR #27 "debug-api-caching" merged 2026-04-29) — alignment intact, line numbers below reflect current state:**
 - HISTORY.md gone (404 at both `/HISTORY.md` and `/docs/HISTORY.md`). No HISTORY references in CLAUDE.md.
 - Suggested Implementations section deleted.
 - Implementation Patterns (Source of Truth) at `CLAUDE.md:621`.
-- AI Note "Implementation patterns — always fetch from glow-props" at `CLAUDE.md:444`.
+- AI Note "Implementation patterns — always fetch from gp-props" at `CLAUDE.md:444`.
 - Prohibition "Create local copies of implementation pattern files…" at `CLAUDE.md:453`.
 - Full `## Communication` section at `CLAUDE.md:194-210` (between Principles L182 and Code Standards L211).
 - `## Triggers` at `CLAUDE.md:468` with all 8 groups (Correctness L504 / Trust L514 / Speed L522 / Frontend L531 / Quality L545 / Ops L564 / Design L576 / Fleet L585) + Meta sweeps L592 + Reflective passes L605 + Scope modifiers L479 + Behavior rules L493.
@@ -612,7 +612,7 @@ No pending pattern items.
 
 Re-classified `Partial → Missing` 2026-04-25; **still bare 2026-04-29**. `index.html` has no favicon, no apple-touch-icon, no manifest, no theme-color. There's no `scripts/` directory.
 
-1. [ ] **Decide: does the landing page warrant icon polish?** If the landing page is customer-facing (it is — referenced from four-ems/glow-props/see-veo/sun-sea-o per CORS allowlist), at minimum add a favicon and meta description. If brochureware-only, mark N/A in CLAUDE.md with rationale.
+1. [ ] **Decide: does the landing page warrant icon polish?** If the landing page is customer-facing (it is — referenced from four-ems/gp-props/see-veo/sun-sea-o per CORS allowlist), at minimum add a favicon and meta description. If brochureware-only, mark N/A in CLAUDE.md with rationale.
 2. [ ] If implementing: add `scripts/generate-icons.mjs` with `sharp({ density: 400 })`, generate favicon.png + apple-touch-icon.png + maskable variants. Add `<link rel="icon">` and `<link rel="apple-touch-icon">` to `index.html`.
 
 #### THEME_DARK_MODE — Decide
@@ -629,12 +629,12 @@ Re-classified `Partial → Missing` 2026-04-25; **still bare 2026-04-29**. `inde
 
 #### Backend-specific patterns — flag for upstream
 
-1. [ ] **Propose to glow-props if recurring:** CORS allowlist discipline (`lib/cors.ts`), env-var schema validation (Zod on `process.env`), serverless error surfacing, RLS policy tests, SMTP failure handling. If any becomes a recurring need across backends, propose as a new glow-props pattern.
+1. [ ] **Propose to gp-props if recurring:** CORS allowlist discipline (`lib/cors.ts`), env-var schema validation (Zod on `process.env`), serverless error surfacing, RLS policy tests, SMTP failure handling. If any becomes a recurring need across backends, propose as a new gp-props pattern.
 
 **New gaps spotted 2026-04-25, status as of 2026-04-29:**
 - `index.html` still lacks `<meta name="description">`, Open Graph tags, favicon, and `theme-color` — even brochureware should have these for link previews and browser-tab clarity. (Same finding as APP_ICONS — fixing one fixes both.)
 - `docs/SPEC_API_NAMING_CONSISTENCY.md` and `docs/BACKEND_SPEC.md` are non-standard doc files not referenced in CLAUDE.md Documentation section. Either reference them (with purpose + when-to-read + when-to-update) or fold their content into `docs/USER_GUIDE.md` / `docs/API.md`. (Both files confirmed present 2026-04-29.)
-- ~~Verify recent commits include the full glow-props commit footer block (Tags/Complexity/Urgency/Impact/Risk/Debt/Epic/Semver) per Code Standards.~~ **Resolved 2026-04-29:** spot-check of last 5 non-merge commits shows all 4 carry the full footer block.
+- ~~Verify recent commits include the full gp-props commit footer block (Tags/Complexity/Urgency/Impact/Risk/Debt/Epic/Semver) per Code Standards.~~ **Resolved 2026-04-29:** spot-check of last 5 non-merge commits shows all 4 carry the full footer block.
 
 ---
 
@@ -642,7 +642,7 @@ Re-classified `Partial → Missing` 2026-04-25; **still bare 2026-04-29**. `inde
 
 Updated 2026-04-25 after parallel full-sweep re-validation (13 agents — 1 coverage + 12 per-repo).
 
-Fully clean (no pending items): **glow-props, canva-grid, fl-farlume, sun-sea-o, graphiki, intxt, repo-tor** (7 repos — repo-tor's TIMER_LEAKS subsection landed in PR #117 2026-04-29). glow-props left this list 2026-08-01 when a full self-audit found the earlier self-reported row inaccurate, and rejoined it the same day: every gap was fixed across the audit fix pass, the React conversion, and the PR #59 review-fix passes (see glow-props section).
+Fully clean (no pending items): **gp-props, canva-grid, fl-farlume, sun-sea-o, graphiki, intxt, repo-tor** (7 repos — repo-tor's TIMER_LEAKS subsection landed in PR #117 2026-04-29). gp-props left this list 2026-08-01 when a full self-audit found the earlier self-reported row inaccurate, and rejoined it the same day: every gap was fixed across the audit fix pass, the React conversion, and the PR #59 review-fix passes (see gp-props section).
 Fully clean on patterns, doc-alignment touch-ups only: **fh-fuelhunt** (TIMER_LEAKS subsection + DOWNLOAD_PDF decision + __DEV__ guard restore).
 Mid-backlog: **tool-till-tees** (CLAUDE.md/HISTORY/Triggers DONE via PR #24; remaining: trigger-name collision note, APP_ICONS decision, THEME N/A, EVENT_BUS N/A documentation, backend pattern upstream proposals), **model-pear** (Communication + Z-index done; still needs PWA, THEME_DARK_MODE, BURGER_MENU, HISTORY.md, Triggers, DOWNLOAD_PDF button, EVENT_BUS, TIMER_LEAKS subsection, non-standard headings).
 Largest backlog: **see-veo**. (four-ems FULLY RESOLVED 2026-05-01 — see four-ems section below.)
@@ -652,20 +652,20 @@ Highest-leverage cross-cutting gaps (post-2026-04-25):
 1. **Triggers redesign** — Cross-fleet policy 2026-04-17. **Done in canva-grid, fl-farlume, repo-tor, fh-fuelhunt, sun-sea-o, graphiki, intxt, tool-till-tees, four-ems** (9 repos). Still missing in **model-pear, see-veo** (2 repos).
 2. **CLAUDE.md alignment** — Pass in canva-grid, fl-farlume, repo-tor, graphiki, fh-fuelhunt, sun-sea-o, **intxt, tool-till-tees, four-ems** (9 repos — four-ems landed 2026-05-01, 723 lines down from 957). Partial in **model-pear** (Implementation Patterns + prohibition present; Communication section still missing; non-standard `## HARD RULES` / `## AI SESSION MANAGEMENT` headings; TIMER_LEAKS subsection missing). Worst remaining: see-veo (~284 lines at L323-606, CLAUDE.md = 717 lines).
 3. **HISTORY.md removal** — Done in canva-grid, fl-farlume, repo-tor, graphiki, fh-fuelhunt, sun-sea-o, **intxt, tool-till-tees, four-ems**. Still present in **model-pear, see-veo**.
-4. **PWA_ICON_CACHE_BUST** — Full Pass in canva-grid, fl-farlume, repo-tor, graphiki, fh-fuelhunt, sun-sea-o, **intxt, four-ems, glow-props** (9 repos — glow-props implemented 2026-08-01, correcting a false "static site, no PWA icons" N/A). Missing in see-veo. N/A for model-pear (no PWA), tool-till-tees (no PWA).
-5. **EVENT_BUS** — N/A in canva-grid, fl-farlume, repo-tor, sun-sea-o, **intxt**, **see-veo** (minimal resume site), **four-ems** (no service layer; documented in CLAUDE.md "Not Applicable Patterns"), **glow-props** (no service layer; documented in CLAUDE.md "Not Applicable Patterns" 2026-08-01). Pass in graphiki (typed `EventBus<M>`). 3 repos still need an evaluate decision: model-pear, fh-fuelhunt, tool-till-tees.
-6. **DEBUG_SYSTEM: console interception** — Done in canva-grid, fl-farlume, repo-tor, graphiki, model-pear, fh-fuelhunt, sun-sea-o, **intxt, four-ems, glow-props** (2026-08-01, DEV-gated). Still missing in see-veo.
-7. **DEBUG_SYSTEM: pre-React inline pill** — Done in canva-grid, fl-farlume, repo-tor, sun-sea-o, graphiki, model-pear, fh-fuelhunt, **intxt, four-ems, glow-props** (capture + 20s watchdog in partials/head-common.html; pill UI is React/DEV-only by design). Still missing in see-veo.
+4. **PWA_ICON_CACHE_BUST** — Full Pass in canva-grid, fl-farlume, repo-tor, graphiki, fh-fuelhunt, sun-sea-o, **intxt, four-ems, gp-props** (9 repos — gp-props implemented 2026-08-01, correcting a false "static site, no PWA icons" N/A). Missing in see-veo. N/A for model-pear (no PWA), tool-till-tees (no PWA).
+5. **EVENT_BUS** — N/A in canva-grid, fl-farlume, repo-tor, sun-sea-o, **intxt**, **see-veo** (minimal resume site), **four-ems** (no service layer; documented in CLAUDE.md "Not Applicable Patterns"), **gp-props** (no service layer; documented in CLAUDE.md "Not Applicable Patterns" 2026-08-01). Pass in graphiki (typed `EventBus<M>`). 3 repos still need an evaluate decision: model-pear, fh-fuelhunt, tool-till-tees.
+6. **DEBUG_SYSTEM: console interception** — Done in canva-grid, fl-farlume, repo-tor, graphiki, model-pear, fh-fuelhunt, sun-sea-o, **intxt, four-ems, gp-props** (2026-08-01, DEV-gated). Still missing in see-veo.
+7. **DEBUG_SYSTEM: pre-React inline pill** — Done in canva-grid, fl-farlume, repo-tor, sun-sea-o, graphiki, model-pear, fh-fuelhunt, **intxt, four-ems, gp-props** (capture + 20s watchdog in partials/head-common.html; pill UI is React/DEV-only by design). Still missing in see-veo.
 8. **DEBUG_SYSTEM: inline styles** — Done in canva-grid, repo-tor, graphiki, model-pear, fh-fuelhunt, sun-sea-o, **intxt**. four-ems uses DaisyUI tokens via `--color-base-300`/`--color-base-content` + `color-mix` rather than literal inline styles — equivalent visual contract per the pattern's intent (chrome that flips with theme). see-veo still uses Tailwind/DaisyUI without the contract.
-9. **DEBUG_SYSTEM: PWA Diagnostics tab** — Done in canva-grid, fl-farlume, repo-tor, graphiki, model-pear, sun-sea-o, **intxt, four-ems, glow-props** (2026-08-01: live probes + install-funnel view in the DEV-gated pill). Still missing in see-veo (only 2 tabs), fh-fuelhunt.
-10. **PWA_SYSTEM: visibility-based update checks** — Done in canva-grid, fl-farlume, repo-tor, glow-props, graphiki, fh-fuelhunt, sun-sea-o, **intxt, four-ems**. Still missing in see-veo.
-11. **PWA_SYSTEM: 30-second suppression** — Done in canva-grid, fl-farlume, repo-tor, glow-props, graphiki, sun-sea-o, **four-ems** (`pwa.ts:96-117` + `usePWAUpdate.ts:67`). Still missing in see-veo, fh-fuelhunt. N/A in intxt (chat app, hourly polling adequate).
-12. **PWA_SYSTEM: module singleton** — Done in canva-grid, fl-farlume, glow-props, repo-tor, graphiki, sun-sea-o, **four-ems** (`src/lib/pwa.ts`, 123 lines). Hooks-based but compliant: intxt, fh-fuelhunt. Still missing in see-veo, model-pear.
+9. **DEBUG_SYSTEM: PWA Diagnostics tab** — Done in canva-grid, fl-farlume, repo-tor, graphiki, model-pear, sun-sea-o, **intxt, four-ems, gp-props** (2026-08-01: live probes + install-funnel view in the DEV-gated pill). Still missing in see-veo (only 2 tabs), fh-fuelhunt.
+10. **PWA_SYSTEM: visibility-based update checks** — Done in canva-grid, fl-farlume, repo-tor, gp-props, graphiki, fh-fuelhunt, sun-sea-o, **intxt, four-ems**. Still missing in see-veo.
+11. **PWA_SYSTEM: 30-second suppression** — Done in canva-grid, fl-farlume, repo-tor, gp-props, graphiki, sun-sea-o, **four-ems** (`pwa.ts:96-117` + `usePWAUpdate.ts:67`). Still missing in see-veo, fh-fuelhunt. N/A in intxt (chat app, hourly polling adequate).
+12. **PWA_SYSTEM: module singleton** — Done in canva-grid, fl-farlume, gp-props, repo-tor, graphiki, sun-sea-o, **four-ems** (`src/lib/pwa.ts`, 123 lines). Hooks-based but compliant: intxt, fh-fuelhunt. Still missing in see-veo, model-pear.
 13. **BURGER_MENU: focus hooks / shared modal scaffolding** — Done in canva-grid, fl-farlume, repo-tor, graphiki, fh-fuelhunt, sun-sea-o, **intxt** (ModalBackdrop + expo-haptics), **four-ems** (`useDisclosureFocus`/`useEscapeKey` hooks at `src/hooks/`, BurgerMenu disclosure at `src/components/BurgerMenu.tsx`). Still missing in model-pear. N/A in see-veo (resume site, no menu).
 14. **THEME_DARK_MODE** — Full in canva-grid, fl-farlume, repo-tor, graphiki, sun-sea-o (Approach A). Approach B in **four-ems** (DaisyUI v5 named-combo, `applyTheme(dark, comboId)` + cross-tab + OS fallback + flash prevention + dual `theme-color` + `migrateLegacyKeys` + 6-tripwire battery). Uniwind variant in fh-fuelhunt, **intxt**. Missing in model-pear. N/A in see-veo. tool-till-tees decision pending.
-15. **Z_INDEX_SCALE** — Pass in glow-props, canva-grid, fl-farlume, repo-tor, graphiki, model-pear, fh-fuelhunt, sun-sea-o, **intxt, four-ems** (10 repos — four-ems via `scripts/audit-z-index.mjs` + `npm run audit:z-index`). Missing in see-veo. N/A in tool-till-tees.
+15. **Z_INDEX_SCALE** — Pass in gp-props, canva-grid, fl-farlume, repo-tor, graphiki, model-pear, fh-fuelhunt, sun-sea-o, **intxt, four-ems** (10 repos — four-ems via `scripts/audit-z-index.mjs` + `npm run audit:z-index`). Missing in see-veo. N/A in tool-till-tees.
 16. **DOWNLOAD_PDF** — Pass in canva-grid (Approach B pdf-lib), fl-farlume, repo-tor, sun-sea-o, **four-ems** (`SubmissionDetail.tsx:56` Save-as-PDF + `print-color-adjust: exact` at `index.css:147`). **N/A documented** in graphiki (canvas/SVG editor — `CLAUDE.md:710`), intxt (chat app declined). Still Partial in see-veo (missing `print-color-adjust: exact`), model-pear. Decision pending in fh-fuelhunt.
-17. **TIMER_LEAKS self-compliance + cross-fleet inheritance** — glow-props own audit DONE 2026-04-25, and the React conversion (2026-08-01) superseded the audited files: the canonical examples are now `src/lib/pwa.js` and `src/lib/theme.js` (module-level registrations behind `window.__*Attached` HMR guards with paired `import.meta.hot.dispose()` teardown) plus the React pairing contract in every component/hook (`src/pwa.js`, `src/markdown.js`, and `public/theme.js` no longer exist). Tripwire: `npm run verify:timer-cleanup` (`scripts/verify-timer-cleanup.mjs`). **Cross-fleet `### Timer and Subscription Cleanup` subsection presence verified:** PRESENT in canva-grid, fl-farlume, sun-sea-o, graphiki, intxt, tool-till-tees, glow-props, **four-ems** (8 repos — four-ems at `CLAUDE.md:81`, with canonical-examples bullet listing `debugLog.ts`/`theme.ts`/`pwa.ts`/`useAutoSave.ts`/`embedResize.ts` per commit `a7d63c2`). MISSING in model-pear, see-veo, **repo-tor, fh-fuelhunt** (4 repos — the latter two are flagged "FULLY RESOLVED" elsewhere in this file but predate the 2026-04-22 upstream addition; needs a CLAUDE.md doc-alignment touch-up to inherit the new content).
+17. **TIMER_LEAKS self-compliance + cross-fleet inheritance** — gp-props own audit DONE 2026-04-25, and the React conversion (2026-08-01) superseded the audited files: the canonical examples are now `src/lib/pwa.js` and `src/lib/theme.js` (module-level registrations behind `window.__*Attached` HMR guards with paired `import.meta.hot.dispose()` teardown) plus the React pairing contract in every component/hook (`src/pwa.js`, `src/markdown.js`, and `public/theme.js` no longer exist). Tripwire: `npm run verify:timer-cleanup` (`scripts/verify-timer-cleanup.mjs`). **Cross-fleet `### Timer and Subscription Cleanup` subsection presence verified:** PRESENT in canva-grid, fl-farlume, sun-sea-o, graphiki, intxt, tool-till-tees, gp-props, **four-ems** (8 repos — four-ems at `CLAUDE.md:81`, with canonical-examples bullet listing `debugLog.ts`/`theme.ts`/`pwa.ts`/`useAutoSave.ts`/`embedResize.ts` per commit `a7d63c2`). MISSING in model-pear, see-veo, **repo-tor, fh-fuelhunt** (4 repos — the latter two are flagged "FULLY RESOLVED" elsewhere in this file but predate the 2026-04-22 upstream addition; needs a CLAUDE.md doc-alignment touch-up to inherit the new content).
 
 ---
 
@@ -681,11 +681,11 @@ The first pass of the PWA audit selected repos by the portfolio's `badge`/`tech`
 - [x] **`docs/PROJECT_DOCS.md` reconciled** — `kl-website`, `web-arch` and `dm-website` added to the status table, "Last mirrored" corrected from 2026-03-31 to 2026-08-03, and the reason the table drifted recorded so the process gets fixed rather than just the data.
 - [x] **Per-repo findings distributed** — rather than per-repo sections here, each repo's own `docs/TODO.md` now carries its findings (merged 2026-08-03), so the backlog travels with the code.
 
-**App-name → repo map** (from the installed home screen, since several differ): Four Ems=four-ems, CanvaGrid=canva-grid, Model Pear=model-pear, Git Analytics=repo-tor, JT·CV=see-veo, Glow Props=glow-props, Graphiki=graphiki, Farlume=fl-farlume, knowless=kl-website, qi-invoice=qi-invoice, devmade=dm-website, FuelHunt=fh-fuelhunt, inTXT=intxt, **redline=web-arch**, **Sancio=sun-sea-o**.
+**App-name → repo map** (from the installed home screen, since several differ): Four Ems=four-ems, CanvaGrid=canva-grid, Model Pear=model-pear, Git Analytics=repo-tor, JT·CV=see-veo, Glow Props=gp-props, Graphiki=graphiki, Farlume=fl-farlume, knowless=kl-website, qi-invoice=qi-invoice, devmade=dm-website, FuelHunt=fh-fuelhunt, inTXT=intxt, **redline=web-arch**, **Sancio=sun-sea-o**.
 
 ## PWA drift found in the 2026-08-03 fleet PWA audit
 
-Six parallel audits (fl-farlume, graphiki, see-veo, kl-website, qi-invoice, glow-props) compared every PWA repo against PWA_SYSTEM.md / PWA_ICON_CACHE_BUST.md / APP_ICONS.md. The **pattern-side** findings are already folded into those docs. What follows is the **repo-side** drift — each repo should be fixed to match the (now corrected) patterns. Line references were accurate at audit time.
+Six parallel audits (fl-farlume, graphiki, see-veo, kl-website, qi-invoice, gp-props) compared every PWA repo against PWA_SYSTEM.md / PWA_ICON_CACHE_BUST.md / APP_ICONS.md. The **pattern-side** findings are already folded into those docs. What follows is the **repo-side** drift — each repo should be fixed to match the (now corrected) patterns. Line references were accurate at audit time.
 
 Several of these fixes are now described directly by the updated pattern docs, so fetch the pattern before starting each one.
 
@@ -731,7 +731,7 @@ Several of these fixes are now described directly by the updated pattern docs, s
 2. [ ] **Fix the `'no-sw'` toast copy** — `pwa.ts:269` returns `'no-sw'` while registration is still in flight, which `useKnowless.ts:239-241` renders as "Updates are not available in this browser". Blames the browser for a timing window. Use the pattern's three-way messaging.
 3. [ ] **Report a never-firing `beforeinstallprompt` on Chromium** — the 5s timer (`usePWAInstall.ts:252-258`) flips to manual steps but never calls `reportError`, even though the repo built exactly that channel for registration failures.
 
-### glow-props (self)
+### gp-props (self)
 
 *(Items 1–7 done 2026-08-03, and the last one closed 2026-08-04 — see git history.)*
 
@@ -933,7 +933,7 @@ Ordered by how much it cost a user:
 - **web-arch** — registration failures were completely invisible.
 - **fl-farlume** — an uncancellable deferred `location.reload()`.
 - **qi-invoice** — the "Automatic updates" label was correct only by accident.
-- **glow-props** — its own maskable icon was outside the safe circle (above).
+- **gp-props** — its own maskable icon was outside the safe circle (above).
 
 **Correction — see-veo's meta description was never empty (2026-08-05).**
 Commit `a591e2b` claims "THE META DESCRIPTION SHIPPED EMPTY... production served
@@ -993,7 +993,7 @@ Four parallel audits compared all 15 PWAs against `DISCOVERABILITY.md`. The
 follows is the **repo-side** drift.
 
 **Measured split:** nine repos carry a near-identical full Open Graph set and
-every card that exists is correctly 1200×630 — glow-props, kl-website, graphiki,
+every card that exists is correctly 1200×630 — gp-props, kl-website, graphiki,
 see-veo, qi-invoice, sun-sea-o, web-arch, dm-website, intxt. Six carry nothing at
 all — no OG, no Twitter, no card, no `robots.txt`, no sitemap: canva-grid,
 four-ems, repo-tor, fl-farlume, model-pear, fh-fuelhunt.
@@ -1084,7 +1084,7 @@ actually receive. It changed the grading in three ways:
   a *file that answers wrong*, and the fix (exclude any path with a file
   extension from the rewrite) is different from just adding the file.
 - **Soft 404s are the fleet's most common defect** — 10 of 15 origins return 200
-  with the app shell for a path that cannot exist. Only glow-props, dm-website,
+  with the app shell for a path that cannot exist. Only gp-props, dm-website,
   qi-invoice and web-arch 404 correctly.
 - **Zero crawlable body text in the served document** was confirmed for
   canva-grid, dm-website, fl-farlume, four-ems, **kl-website** (on the home page,
@@ -1095,7 +1095,7 @@ The three fixes merged earlier in the day are live and correct: intxt's
 description, canonical and full OG set, and repo-tor's `robots.txt` and
 `X-Robots-Tag` are in place.
 
-### glow-props (self) — found by the live check
+### gp-props (self) — found by the live check
 
 *(Both items fixed 2026-08-04 — the bare-brand `<title>`, and structured data
 across all three templates plus the prerender and runtime paths. Both writers

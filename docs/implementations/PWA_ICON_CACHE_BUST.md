@@ -184,7 +184,7 @@ Pick one source and stick to it:
 | Resolution | How | Used by |
 |---|---|---|
 | **Glob is the sole source** | No `includeAssets` at all; `globPatterns` matches the icons | qi-invoice, fl-farlume |
-| **`includeAssets` is the sole source** | `globIgnores` every icon, list bare paths in `includeAssets` (shown above) | glow-props |
+| **`includeAssets` is the sole source** | `globIgnores` every icon, list bare paths in `includeAssets` (shown above) | gp-props |
 
 The second form is what makes each icon a *revisioned* entry that versioned requests still resolve to via `ignoreURLParametersMatching` — which is the whole point. Verify it in the built manifest (checklist item 5), never by reading the config.
 
@@ -313,7 +313,7 @@ The OS icon cache is the one layer the web app can't touch. Surface it in the in
 
 Plain language. No jargon ("OS", "cache", "Springboard"). Tells the user what to do, not what's wrong.
 
-**Invariant 5 is unmet in most implementations, including this doc's own recommendation.** The disclosure above lives in the *install modal* — and every implementation hides the install affordance once the app is installed (`!isStandalone && …`). A user staring at a stale home-screen icon is, by definition, installed. So the modal never opens for them and the per-platform reinstall copy is dead code in production. Confirmed in sun-sea-o, glow-props and fh-fuelhunt.
+**Invariant 5 is unmet in most implementations, including this doc's own recommendation.** The disclosure above lives in the *install modal* — and every implementation hides the install affordance once the app is installed (`!isStandalone && …`). A user staring at a stale home-screen icon is, by definition, installed. So the modal never opens for them and the per-platform reinstall copy is dead code in production. Confirmed in sun-sea-o, gp-props and fh-fuelhunt.
 
 Give the guidance its own always-available entry point — a menu item, or drop the installed-check on the path that opens the modal. The checklist item is **"reachable while installed"**, not merely "present".
 
