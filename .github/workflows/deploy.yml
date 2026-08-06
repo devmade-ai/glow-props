@@ -10,17 +10,9 @@ permissions:
   pages: write
   id-token: write
 
-# Requirement: only one Pages deploy in flight at a time.
-# Approach: queue them — a later run waits rather than killing the one running.
-# Alternatives:
-#   - cancel-in-progress: true (what this was): Rejected — GitHub's own Pages
-#     workflow specifies false, because killing a run mid-deploy-pages leaves the
-#     Pages backend holding a deployment that never completes, and the next
-#     deployment then queues behind it indefinitely. Cancelling a publish to save
-#     a few runner-minutes trades a cheap wait for a wedged environment.
 concurrency:
   group: pages
-  cancel-in-progress: false
+  cancel-in-progress: true
 
 jobs:
   deploy:
@@ -115,18 +107,5 @@ jobs:
       - uses: actions/upload-pages-artifact@v3
         with:
           path: dist
-      # Requirement: don't report a slow Pages queue as a dead one.
-      # Approach: 30 minutes instead of the 10-minute default.
-      # Why: the action polls `deployment_queued` and, on timeout, CANCELS the
-      # deployment it was waiting for — so a queue that merely drains slowly is
-      # both misreported as a failure and actively torn down. Waiting longer
-      # costs runner-minutes only when something is already wrong.
-      # Alternatives:
-      #   - Leave the default and re-run: Rejected — a re-run reuses the run's
-      #     artifact, so the second upload makes two named `github-pages` and
-      #     deploy-pages aborts with "Artifact count is 2". Retrying is the one
-      #     recovery that is guaranteed not to work.
       - id: deployment
         uses: actions/deploy-pages@v4
-        with:
-          timeout: 1800000
