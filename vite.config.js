@@ -69,7 +69,7 @@ function iconCacheBustHtml() {
         for (const [attr, relPath] of REPLACEMENTS) {
           const forms = [
             attr + '="' + relPath + '"',                    // build
-            attr + '="/glow-props/' + relPath + '"',        // dev (base-rewritten)
+            attr + '="/' + relPath + '"',                   // dev (base-rewritten)
           ];
           const found = forms.filter((literal) => out.includes(literal));
           if (found.length === 0) {
@@ -118,22 +118,22 @@ function htmlPartials() {
 }
 
 // Requirement: CLAUDE.md must live at repo root (Claude Code reads it there)
-// but also be served via GitHub Pages at /glow-props/CLAUDE.md.
+// but also be served at /CLAUDE.md so downstream repos can curl it.
 // Also copies implementation pattern docs to dist/patterns/ so pattern.html can fetch them.
 // Approach: Small plugin copies files into dist/ after build.
 // Alternative: Symlink in public/ — rejected, fragile with git across platforms.
 // Alternative: Put patterns in public/ — rejected, they live in docs/implementations/
 //   which is the canonical location referenced by CLAUDE.md.
-// Dev-server requests reach configureServer middlewares BEFORE Vite's own
-// base middleware strips the base — req.url is /glow-props/patterns/x.md, not
-// /patterns/x.md. Both dev middlewares below match on the stripped form.
-// The query string is dropped too: a ?cache-bust suffix would otherwise dodge
+// The query string is dropped here: a ?cache-bust suffix would otherwise dodge
 // the match and fall through to Vite's SPA fallback, serving 200 text/html
 // where the caller expected markdown/JSON — wrong content is worse than a 404.
-function stripBase(url) {
+// This used to strip a '/glow-props/' base too, because configureServer
+// middlewares run BEFORE Vite's base middleware. The site is served from the
+// root on Vercel, so there is no prefix left to remove — but the function
+// stays, because the query-strip above is the part that was load-bearing.
+function requestPath(url) {
   if (!url) return url;
-  const path = url.split('?')[0];
-  return path.startsWith('/glow-props/') ? path.slice('/glow-props'.length) : path;
+  return url.split('?')[0];
 }
 
 function copyRootFiles() {
@@ -144,12 +144,12 @@ function copyRootFiles() {
     // Requirement: Serve pattern docs during dev so pattern.html works locally
     // Approach: Dev server middleware rewrites /patterns/*.md to docs/implementations/*.md.
     //   Uses basename() to prevent path traversal (e.g., /patterns/../../../etc/passwd).
-    //   configureServer middlewares run BEFORE Vite strips the base, so requests
-    //   arrive as /glow-props/patterns/*.md — strip the base prefix first, or
-    //   every dev fetch misses this handler and 404s.
+    //   The query string is stripped first (see requestPath) — a ?cache-bust
+    //   suffix would otherwise miss this handler and fall through to the SPA
+    //   fallback, serving HTML where the caller asked for markdown.
     configureServer(server) {
       server.middlewares.use(function (req, res, next) {
-        const url = stripBase(req.url);
+        const url = requestPath(req.url);
         if (url && url.startsWith('/patterns/')) {
           const fileName = basename(url.replace('/patterns/', ''));
           if (!fileName.endsWith('.md')) { next(); return; }
@@ -347,7 +347,7 @@ function generatePatternManifest() {
       server.middlewares.use(function (req, res, next) {
         // Same base-prefix note as copyRootFiles(): dev requests arrive
         // un-stripped, so match on the base-stripped form.
-        if (stripBase(req.url) === '/patterns/manifest.json') {
+        if (requestPath(req.url) === '/patterns/manifest.json') {
           var manifest = buildManifest();
           res.setHeader('Content-Type', 'application/json');
           res.end(JSON.stringify(manifest, null, 2));
@@ -405,7 +405,7 @@ function prerenderPages() {
     return ['assets/images/favicon.png', 'assets/images/apple-touch-icon.png'].map(
       (relPath) => [
         'href="' + versioned(relPath) + '"',
-        'href="/glow-props/' + versioned(relPath) + '"',
+        'href="/' + versioned(relPath) + '"',
       ],
     );
   }
@@ -544,7 +544,7 @@ function prerenderPages() {
       const server = await createServer({
         configFile: false,
         root: __dirname,
-        base: '/glow-props/',
+        base: '/',
         logLevel: 'error',
         appType: 'custom',
         server: { middlewareMode: true },
@@ -694,7 +694,7 @@ function generateSitemap() {
 // Approach: Vite build.rollupOptions.input for multiple HTML entry points
 // Alternative: Single-page with client-side routing — rejected, unnecessary complexity
 export default defineConfig({
-  base: '/glow-props/',
+  base: '/',
   plugins: [
     validateProjectMeta(),
     htmlPartials(),
@@ -784,7 +784,7 @@ export default defineConfig({
         name: 'Glow Props — Project Portfolio',
         short_name: 'Glow Props',
         description: 'Portfolio of tools and patterns by devmade.ai',
-        id: '/glow-props/',
+        id: '/',
         // Matches the coffee (--prefersdark default) base-100 — THEME_DARK_MODE
         // requires the manifest fallback to be a real theme color, and this is the
         // same value the dark <meta name="theme-color"> ships with. If the default
@@ -793,8 +793,8 @@ export default defineConfig({
         theme_color: '#261b25',
         background_color: '#ffffff',
         display: 'standalone',
-        scope: '/glow-props/',
-        start_url: '/glow-props/',
+        scope: '/',
+        start_url: '/',
         prefer_related_applications: false,
         icons: [
           {

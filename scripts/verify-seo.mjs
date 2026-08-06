@@ -11,10 +11,27 @@
 import { readFileSync, existsSync, readdirSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import { dirname, join } from 'node:path'
+import { SITE } from '../src/lib/structuredData.js'
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..')
-const SITE = 'https://devmade-ai.github.io/glow-props/'
 const OG_IMAGE = 'public/assets/images/og-image.png'
+
+// Requirement: the link checks below must keep working across a base change.
+// Approach: read the base out of vite.config.js — the same value the build
+//   emits links with — instead of hardcoding it here.
+// Why: these three checks hardcoded '/glow-props/' and all three reported the
+//   site as broken the moment it moved to a root-served host, while the built
+//   output was correct. A checker that has its own copy of a config value
+//   fails on the day that value changes, which is the day you need it most.
+const VITE_CONFIG = readFileSync(join(ROOT, 'vite.config.js'), 'utf8')
+const BASE = VITE_CONFIG.match(/^ {2}base: '([^']+)',$/m)?.[1]
+if (!BASE) {
+  console.error("✗ could not read the top-level `base:` from vite.config.js.\n" +
+    '  The link checks build their expected URLs from it — fix the pattern here rather\n' +
+    '  than letting them silently match nothing.')
+  process.exit(1)
+}
+const rx = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
 
 const PAGES = ['index.html', 'pattern.html', 'project.html']
 
@@ -328,8 +345,7 @@ if (existsSync(join(ROOT, 'public/sitemap.xml'))) {
 // includes() passes happily on a config where the plugin is defined and never
 // used. Caught by fault injection, which is the only reason it is written this
 // way.
-const viteConfig = readFileSync(join(ROOT, 'vite.config.js'), 'utf8')
-if (!/^\s*generateSitemap\(\),\s*$/m.test(viteConfig)) {
+if (!/^\s*generateSitemap\(\),\s*$/m.test(VITE_CONFIG)) {
   fail('vite.config.js defines generateSitemap() but does not register it in the plugins array')
 }
 
@@ -337,7 +353,7 @@ const distSitemap = join(ROOT, 'dist/sitemap.xml')
 if (existsSync(distSitemap)) {
   const xml = readFileSync(distSitemap, 'utf8')
   const patternCount = eligiblePatterns().length
-  const listed = (xml.match(/glow-props\/patterns\/[a-z0-9-]+\//g) ?? []).length
+  const listed = (xml.match(new RegExp(rx(SITE) + 'patterns/[a-z0-9-]+/', 'g')) ?? []).length
   if (listed !== patternCount) {
     fail(`dist/sitemap.xml lists ${listed} patterns, docs/implementations has ${patternCount} manifest-eligible`)
   }
@@ -348,7 +364,7 @@ if (existsSync(distSitemap)) {
 // Each pattern/project gets a real HTML file so it has its own crawlable
 // content AND its own link preview. Runtime tags cover neither: unfurlers do
 // not run JS.
-if (!/^\s*prerenderPages\(\),\s*$/m.test(viteConfig)) {
+if (!/^\s*prerenderPages\(\),\s*$/m.test(VITE_CONFIG)) {
   fail('vite.config.js defines prerenderPages() but does not register it in the plugins array')
 }
 
@@ -525,11 +541,11 @@ if (existsSync(distSitemap)) {
   const distIndex = join(ROOT, 'dist/index.html')
   if (existsSync(distIndex)) {
     const html = readHtml(distIndex)
-    const patternLinks = new Set(html.match(/href="\/glow-props\/patterns\/[a-z0-9-]+\/"/g) ?? []).size
+    const patternLinks = new Set(html.match(new RegExp('href="' + rx(BASE) + 'patterns/[a-z0-9-]+/"', 'g')) ?? []).size
     if (patternLinks < patternEntries.length) {
       fail(`dist/index.html links ${patternLinks} pattern pages statically, expected ${patternEntries.length} — non-JS crawlers can't discover them`)
     }
-    const projectLinks = new Set(html.match(/href="\/glow-props\/projects\/[a-z0-9-]+\/"/g) ?? []).size
+    const projectLinks = new Set(html.match(new RegExp('href="' + rx(BASE) + 'projects/[a-z0-9-]+/"', 'g')) ?? []).size
     if (projectLinks === 0) {
       fail('dist/index.html has no static project-page links — non-JS crawlers can\'t discover them')
     }

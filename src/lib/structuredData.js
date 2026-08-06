@@ -13,7 +13,10 @@
 // No DOM and no Node APIs: this module is imported by a Vite config running in
 // Node, by browser bundles, and (through seoMeta.js) by the SSR entry's graph.
 
-export const SITE = 'https://devmade-ai.github.io/glow-props/';
+// The one place the public origin is written down. The verify and smoke scripts
+// import it rather than repeating it — a second copy is a second thing to
+// forget on the next move (BUILD_OUTPUT_REWRITING.md rule 6).
+export const SITE = 'https://gp-props.vercel.app/';
 export const ORG_ID = SITE + '#org';
 export const WEBSITE_ID = SITE + '#website';
 

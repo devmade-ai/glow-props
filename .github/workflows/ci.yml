@@ -1,0 +1,76 @@
+name: CI
+
+# Requirement: the five tripwires must still gate every change now that Vercel,
+#   not this workflow, does the publishing.
+# Approach: Vercel's buildCommand runs the four FILE-BASED gates (`npm run
+#   verify`), so a failing one turns the deploy red at source. This workflow
+#   exists for the fifth — `smoke:seo` drives the built pages in real Chromium,
+#   which a Vercel build image cannot do.
+# Alternatives:
+#   - Everything here, nothing on Vercel: Rejected — a green CI run does not
+#     stop a deploy, so a broken build would publish anyway.
+#   - Everything on Vercel: Rejected — no browser, and smoke:seo is the ONLY
+#     gate that can see src/seoMeta.js appending a second JSON-LD block
+#     instead of rewriting the existing one (that change leaves dist/
+#     untouched, so verify:seo stays green).
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      # Skip the browser download here and fetch only chromium below — the
+      # playwright package would otherwise pull all three engines on every run
+      # for a check that uses one.
+      - run: npm ci
+        env:
+          PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: 1
+
+      # Same command Vercel runs, so a divergence between the two shows up
+      # here rather than as a surprise failed deploy.
+      - run: npm run build
+      - run: npm run verify
+
+      # Cache the browser: without this every run re-downloads ~170 MB, which
+      # both slows the job and adds a network failure mode to a step that has
+      # nothing to do with the code being checked. Keyed on the resolved
+      # Playwright version — a browser build is only valid for the version that
+      # asked for it, so a bump must miss the cache rather than reuse a stale one.
+      - name: Resolve the Playwright version
+        id: pw
+        run: echo "version=$(node -p "require('./node_modules/playwright/package.json').version")" >> "$GITHUB_OUTPUT"
+      - uses: actions/cache@v4
+        id: pw-cache
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-chromium-${{ runner.os }}-${{ steps.pw.outputs.version }}
+
+      # Two branches because --with-deps also downloads; on a cache hit only the
+      # OS libraries are needed. Both still touch apt, which is the residual cost.
+      - name: Install Chromium for the smoke check
+        if: steps.pw-cache.outputs.cache-hit != 'true'
+        run: npx playwright install --with-deps chromium
+      - name: Install Chromium system libraries (cached browser)
+        if: steps.pw-cache.outputs.cache-hit == 'true'
+        run: npx playwright install-deps chromium
+
+      - name: Smoke structured data in a browser (DISCOVERABILITY.md)
+        run: npm run smoke:seo

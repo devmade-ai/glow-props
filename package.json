@@ -1,5 +1,6 @@
 {
-  "name": "glow-props",
+  "name": "gp-props",
+  "type": "module",
   "version": "1.0.0",
   "private": true,
   "description": "Portfolio and resource hub for devmade-ai projects, deployed via GitHub Pages.",
@@ -15,7 +16,8 @@
     "verify:ssr-safety": "node scripts/verify-ssr-safety.mjs",
     "generate:og-image": "node scripts/generate-og-image.mjs",
     "smoke:seo": "node scripts/smoke-structured-data.mjs",
-    "audit:discoverability": "node scripts/audit-discoverability.mjs"
+    "audit:discoverability": "node scripts/audit-discoverability.mjs",
+    "verify": "npm run verify:timer-cleanup && npm run verify:ssr-safety && npm run verify:seo && npm run verify:icons"
   },
   "devDependencies": {
     "@tailwindcss/vite": "^4.2.2",
