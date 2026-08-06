@@ -24,6 +24,7 @@ Doing nothing answers question 1 with "yes, and with whatever the crawler happen
 - [PWA_SYSTEM.md](PWA_SYSTEM.md) — the manifest carries its own `name` / `description`; keep them consistent with the `og:` copy
 - [APP_ICONS.md](APP_ICONS.md) — the app icon is square and maskable; a link-preview card is 1.91:1 and is a different asset
 - [PWA_ICON_CACHE_BUST.md](PWA_ICON_CACHE_BUST.md) — same build-plugin shape (`transformIndexHtml` + a source-level tripwire)
+- [BUILD_OUTPUT_REWRITING.md](BUILD_OUTPUT_REWRITING.md) — the rules every injection on this page relies on: fail loud, count matches, and never let a substituted token sit inside a comment
 
 ## Step 1: state the posture
 
@@ -393,6 +394,14 @@ export const LANDING_LEDE = '…'
 export const LANDING_FEATURES: { heading: string; body: string }[] = [ … ]
 ```
 
+**Where the page's content IS data, project the body from that data — do not author a second copy.** The rule above is about shared marketing copy. It does not cover the commoner case: a CV, an article index, a set of posts or case studies, where the app already renders from a typed array. There the crawlable body should be a **projection of that array**, generated at build (or at the edge) from the same module the app imports. Not "two copies held in one place" — no second copy at all. see-veo generates from `cv-data.ts`, kl-website from `ARTICLES`, dm-website from the same modules its edge `routeMeta` uses. A hand-written mirror of a CV drifts the first time a role changes, and a stale CV is worse than no crawlable text.
+
+This has a failure mode of its own, and it is the reason it needs stating rather than just doing: **a renderer that emits the scaffolding and drops the substance.** Headings, titles and dates are the easy fields; the bullet points, the highlights, the body blocks are the part someone actually searches for, and they are also the part a quick renderer skips. The crawlable version then looks structurally fine and says nothing. Assert the *substance* item by item — every highlight, every block — not just that the page is non-empty.
+
+**Not every page needs a body. Decide by page shape, and make "no" a decision.** Section landings are navigation; item pages are where the value is. dm-website renders bodies only for its two dynamic collections and **asserts that the landings return null**, so "nothing here" stays deliberate rather than becoming an accident of a broken prefix check. This distinction also changes how you read a grade: a site with a shell landing over rich item pages is not the same as a site that says nothing anywhere, and a check that only ever looks at the home page cannot tell them apart.
+
+**One template means one body for every route, exactly as it means one head.** On a single-`index.html` SPA the injected landing copy is what a crawler sees at *every* path — including the item routes. That is fine where those routes are `noindex`ed, and wrong where they are the product: four-ems' published `/f/<slug>` forms unfurl with the generic product copy because the per-form text needs the form's data at request time. Generic-but-accurate beats empty and beats wrong, but say which one you have shipped, in the template, next to the tags.
+
 **When the build host can't render, commit the snapshot.** web-arch prerenders with a browser, which Vercel's build image doesn't have — so it builds, serves `dist/` locally, screenshots the DOM with playwright-core, and **commits** the fragment; the deploy build is then a pure string inject. That is a legitimate third shape, and it introduces a staleness mode the module-sharing rule above doesn't cover: the snapshot can silently fall behind the app. Two guards, both cheap — the generator must build *first* so a stale injected fragment can't be re-snapshotted into itself, and the tripwire asserts the load-bearing copy strings actually appear in the committed snapshot, so rewording the landing without regenerating fails the deploy.
 
 ### The sitemap
@@ -705,6 +714,8 @@ Assertions worth adding beyond the exactly-once check:
 - **A square app icon is not a preview card.** Different ratio, different asset.
 - **Keep text out of a generated card** unless the generator can genuinely load the brand font — silently wrong typography is worse than none.
 - **Verify by rendering with a crawler UA.** Reading source cannot tell you what a JS-rendering crawler actually sees.
+- **A lazy `</div>` regex reports an EMPTY BODY for a perfectly good page.** Injected content nests, and `<div id="root">([\s\S]*?)</div>` stops at the first close tag it finds — which is the first *child's*. Walk div depth, or the check that exists to prove the body arrived is the thing that says it did not. This produced a confident "0 crawlable characters" against a page carrying 1,630.
+- **The first URL in a sitemap is the least representative page on the site.** Sitemaps are written breadth-first, so entry one is the home page and entry two is a section landing. Sample the **deepest** path, and the last of those when several tie — generators emit static routes first and append the dynamic collections. Sampling the first non-home entry checks a hand-written landing and never sees a generated item page, which is where the failures this document describes actually live.
 - **A dist-level check is only worth as much as the build behind it.** Assertions over generated output pass happily against a stale `dist/`; rebuild before trusting them, and rebuild between fault injections or the check never sees the fault.
 - **Assert prerendered content INSIDE its container.** The item's title is also in `<title>` and `og:title`, so a whole-file search for it passes on a page whose body was never injected.
 - **When you rewrite a template, the bug is a duplicate, not an absence.** Presence checks are all satisfied by a second, wrong tag sitting beside the correct one — assert each identity tag appears exactly once, and never let a substitution *add* a tag the template already has.

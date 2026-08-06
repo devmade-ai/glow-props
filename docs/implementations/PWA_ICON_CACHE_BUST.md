@@ -12,6 +12,11 @@ order: 10
 
 # PWA Icon Cache Busting
 
+**Related patterns:**
+- [BUILD_OUTPUT_REWRITING.md](BUILD_OUTPUT_REWRITING.md) — the general rules behind the fail-loud literal and `replaceAll` discipline below. They were first written down here, for icons, and then re-learned the hard way in four other repos that were not rewriting icons.
+- [APP_ICONS.md](APP_ICONS.md) — generating the icons this versions
+- [DISCOVERABILITY.md](DISCOVERABILITY.md) — the OG card is another stable-named asset with the same problem
+
 ## Problem
 
 PWA icons referenced by stable filenames (`icon-192.png`, `apple-touch-icon.png`, `favicon.ico`) survive "clear site data" and PWA reinstall because every cache layer below the OS keys off URL. When you deploy a new icon, users see the old one — sometimes for weeks.
