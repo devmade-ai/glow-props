@@ -180,6 +180,51 @@ carries the rule and the preference order.
 empty page, and the earlier comment-blind regex): `fuelhunt.app`, `intxt.app`
 and `intxt.app/join` each serve exactly one `<title>`, placeholder gone.
 
+### Round 10 — the absent features, actually built
+
+Nine repos gained what they were missing, each posture decided from the notes
+already distributed to them rather than guessed:
+
+- **canva-grid** (#154) — had NO implementation at all. robots, sitemap,
+  canonical, title, OG + generated card, `WebApplication`, and 0 -> 775
+  crawlable characters.
+- **fl-farlume** (#50) — **not indexed, still shareable**. noindex twice (meta +
+  header), robots that ALLOWS the crawl, full OG + card. The reflex fix
+  (`Disallow: /`) is the one thing that must never appear: it blocks the crawl
+  that delivers the noindex AND kills the card on every major unfurler. The
+  test fails if anyone adds one.
+- **four-ems** (#32, #33) — the fleet's only **mixed** posture. `X-Robots-Tag`
+  narrowed to `/forms/*` alone; widening it to `/(.*)` would noindex the front
+  door and every published form, and the test pins both halves. Landing body
+  added separately.
+- **intxt** (#165), **fh-fuelhunt** (#84), **model-pear** (#125) — structured
+  data, sitemaps, per-page identity tags.
+- **see-veo** (#60) — a CV serving 0 characters. Now 6,564, GENERATED from
+  `cv-data.ts` (a hand-written second copy of a CV drifts the first time a role
+  changes) including every highlight, which is the part a recruiter searches.
+- **kl-website** (#12) — the articles already had bodies; the HOME page did not.
+  0 -> 1,630, an index of the investigations with links to each prerendered URL.
+- **dm-website** (#24) — the best head machinery in the fleet over an empty
+  root: 12 pages, 0 characters. Now 14,839 rendered AT THE EDGE from the same
+  data modules `routeMeta.ts` imports. Its existing `verify-head-selectors`
+  CAUGHT ITSELF being outgrown — it refused the new `div#root` selector as
+  unparseable rather than passing blind.
+
+**model-pear's new test found a third shadowing instance on its first run**:
+`app.html` still carried a static `<meta name="description">`, sibling of the
+`<title>` removed in #123, so all three pages served the shell copy to crawlers.
+
+The audit gained two corrections of its own. It sampled the FIRST non-home
+`<loc>`, which is always a section landing — it never saw an item page. Now the
+DEEPEST, last-of-ties (depth alone still picked `/legal/terms`). And crawlable
+body is judged across both sampled pages, so a shell landing over rich item
+pages is described accurately — `complete; landing page is a shell (item page
+carries 1312 chars)` — rather than called broken. Not a loosening: the gap is
+still reported when nothing sampled says anything, and the shell is named.
+
+**Final board: 14 of 16 Pass or Pass (P).** The two that are not are decisions,
+not work.
+
 ## Current state
 
 - glow-props: source + docs, on `claude/pwa-patterns-review-76cg78`. Build green,

@@ -56,20 +56,20 @@ Legend: **Pass** = compliant, **Partial** = has the feature but with gaps, **Mis
 | Repo | CLAUDE.md | APP_ICONS | BURGER_MENU | DEBUG_SYSTEM | DOWNLOAD_PDF | PWA_SYSTEM | THEME_DARK_MODE | EVENT_BUS | Z_INDEX_SCALE | ICON_CACHE_BUST | DISCOVERABILITY |
 |------|-----------|-----------|-------------|--------------|--------------|------------|-----------------|-----------|---------------|-----------------|-----------------|
 | glow-props | Pass | Pass | Pass | Pass (DEV) | Pass | Pass | Pass | N/A | Pass | Pass | Pass |
-| canva-grid | Pass | Pass | Pass | Pass | Pass (B) | Pass | Pass | N/A | Pass | Pass | Missing |
-| fl-farlume | Pass | Pass | Pass | Pass | Pass | Partial | Pass | N/A | Pass | Pass | Missing |
-| model-pear | Partial | Partial | Missing | Pass | Partial | Partial | Partial | Missing | Pass | Missing | Partial |
-| see-veo | Missing | Partial | N/A | Partial | Partial | Partial | N/A | N/A | Missing | Missing | Partial |
+| canva-grid | Pass | Pass | Pass | Pass | Pass (B) | Pass | Pass | N/A | Pass | Pass | Pass |
+| fl-farlume | Pass | Pass | Pass | Pass | Pass | Partial | Pass | N/A | Pass | Pass | Pass (P) |
+| model-pear | Partial | Partial | Missing | Pass | Partial | Partial | Partial | Missing | Pass | Missing | Pass |
+| see-veo | Missing | Partial | N/A | Partial | Partial | Partial | N/A | N/A | Missing | Missing | Pass |
 | repo-tor | Pass | Pass | Pass | Pass | Pass | Pass | Pass | N/A | Pass | Pass | Partial |
-| fh-fuelhunt | Pass | Pass | Pass | Pass | Missing | Partial | Pass | N/A | Pass | Pass | Partial |
+| fh-fuelhunt | Pass | Pass | Pass | Pass | Missing | Partial | Pass | N/A | Pass | Pass | Pass |
 | sun-sea-o | Pass | Pass | Pass | Pass | Pass | Pass | Pass | N/A | Pass | Pass | Pass (P) |
 | graphiki | Pass | Pass | Pass | Pass | N/A | Pass | Pass | Pass | Pass | Pass | Pass |
-| four-ems | Pass | Pass | Pass | Pass | Pass | Pass | Pass | N/A | Pass | Pass | Missing |
-| intxt | Pass | Pass | Pass | Pass | N/A | Pass | Pass | N/A | Pass | Pass | Partial |
+| four-ems | Pass | Pass | Pass | Pass | Pass | Pass | Pass | N/A | Pass | Pass | Pass |
+| intxt | Pass | Pass | Pass | Pass | N/A | Pass | Pass | N/A | Pass | Pass | Pass |
 | qi-invoice | Pass | Pass | Pass | N/A | Pass (B) | Pass | Pass | N/A | Pass | Pass | Pass |
-| kl-website | Pass | Pass | Pass | N/A | N/A | Pass | Pass | N/A | Pass | Pass | Partial |
+| kl-website | Pass | Pass | Pass | N/A | N/A | Pass | Pass | N/A | Pass | Pass | Pass |
 | web-arch | Pass | Partial | Pass | N/A | N/A | Partial | Pass | N/A | Pass | Partial | Pass |
-| dm-website | Pass | Partial | Pass | N/A | N/A | Partial | Pass | N/A | Pass | Missing | Partial |
+| dm-website | Pass | Partial | Pass | N/A | N/A | Partial | Pass | N/A | Pass | Missing | Pass |
 | tool-till-tees | Pass | Missing | N/A | N/A | N/A | N/A | ? | ? | N/A | N/A | Missing |
 
 **The DISCOVERABILITY column is the only one graded against deployed reality.**
@@ -88,8 +88,8 @@ Grading used here, so the cells mean something specific:
 - **Partial** — reachable and unfurls, but with at least one substantive gap:
   no structured data, no canonical, no sitemap, head tags over a body with no
   crawlable text, or a broken `<title>` (see below).
-- **One item page per origin is fetched too**, taken from the first non-home
-  `<loc>` the sitemap already provided. The home document is not the site, and
+- **One item page per origin is fetched too**, taken from the DEEPEST non-home
+  `<loc>` the sitemap already provided, and the last of those when several tie. The home document is not the site, and
   the failures this audit hunts are *more* likely on item pages — those are the
   ones assembled by a prerenderer or an edge rewriter from a shell nobody looks
   at. Added 2026-08-05; it immediately found model-pear serving the SPA shell at
@@ -97,6 +97,14 @@ Grading used here, so the cells mean something specific:
   to the home page's (the per-item mechanism is not running), a canonical
   resolving to the site root (the whole collection collapsed onto one URL), and
   a `<loc>` that does not serve.
+- **Crawlable body text is judged across BOTH sampled pages**, not the home
+  document alone. Some sites legitimately put a shell at their landing and the
+  substance at item URLs — dm-website's `/blog` and `/case-studies` are
+  navigation while each post and case study carries real text. Grading the home
+  page alone called that "missing crawlable body text" at the moment twelve of
+  its pages had just been given some. This is not a loosening: the gap is still
+  reported when NOTHING sampled says anything, and where the landing IS a shell
+  the reason line says so rather than passing quietly.
 - **The `<title>` is counted, not merely looked for**, and counted on the
   comment-stripped document. Zero, more than one, or an empty one is a fault
   under **every** posture — a private app's links still unfurl, and the title is
