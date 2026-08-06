@@ -1,6 +1,6 @@
 # gp-props
 
-Portfolio and resource hub for devmade-ai projects. Deployed via GitHub Pages.
+Portfolio and resource hub for devmade-ai projects. Deployed via Vercel.
 
 **Live site:** [gp-props.vercel.app](https://gp-props.vercel.app/)
 
@@ -57,6 +57,7 @@ gp-props/
   CLAUDE.md                     # AI assistant ruleset (reference for all projects)
   README.md                     # This file
   package.json                  # React + Vite + Tailwind + DaisyUI + Sharp
+  vercel.json                   # Deploy config (framework, output dir, build command)
   vite.config.js                # Build config (MPA entries, SSG prerender, PWA, icon cache-bust)
   index.html                    # Landing page entry (head tags + React root)
   project.html                  # Project detail entry (legacy ?name= form)
@@ -105,7 +106,7 @@ gp-props/
     implementations/            # Implementation patterns (12 files, YAML frontmatter)
   .github/
     workflows/
-      deploy.yml                # GitHub Pages deployment on push to main
+      ci.yml                    # Build + the four file-based gates, plus the browser smoke check
 ```
 
 ## Development
@@ -177,9 +178,19 @@ output are only as current as `dist/`.
 
 ## Deployment
 
-Automated via GitHub Actions. Pushes to `main` trigger a build and deploy to GitHub Pages.
+Automated via Vercel. Pushes to `main` trigger a production deploy; every other
+push gets a preview deploy.
 
-**Setup:** In repo Settings > Pages, set the source to **GitHub Actions**.
+`vercel.json` sets the build: framework `vite`, output `dist`, build command
+`npm run build && npm run verify`. The four file-based tripwires therefore run
+*inside* the deploy — a failing one turns the deploy red instead of publishing.
+
+The fifth tripwire, `npm run smoke:seo`, needs real Chromium, which a Vercel
+build image has no browser for. It runs in GitHub Actions (`.github/workflows/ci.yml`)
+alongside the same build-and-verify command, so a divergence between the two
+surfaces there rather than as a surprise failed deploy.
+
+GitHub Pages is no longer used — see `docs/USER_ACTIONS.md` for turning it off.
 
 ## Analytics
 

@@ -54,7 +54,10 @@ export function InstallModal({ instructions, onClose, onDismiss }) {
             </svg>
           </div>
           <div>
-            <h3 id="install-modal-title" className="text-lg font-semibold text-base-content">Install Glow Props</h3>
+            {/* "Props" is the manifest short_name (vite.config.js) — the name the
+                browser itself shows in its install prompt. A heading that says
+                anything else reads as a different app to a non-technical user. */}
+            <h3 id="install-modal-title" className="text-lg font-semibold text-base-content">Install Props</h3>
             <p className="text-sm text-base-content/70">{instructions.browser}</p>
           </div>
         </div>

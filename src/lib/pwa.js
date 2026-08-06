@@ -275,6 +275,10 @@ export function checkForUpdates() {
 
 // ===== Install instructions (data, not markup) =====
 
+// Steps that quote a browser menu item ("Install Props...") must use the
+// manifest short_name from vite.config.js verbatim — the browser builds that
+// menu label from the manifest, so any other wording tells the user to look for
+// an entry that isn't there. Rename the app and these strings change with it.
 export function getInstallInstructions() {
   const browser = state.browser;
   // iPadOS 13+ reports itself as "Macintosh", so a UA-only test sends iPad
@@ -344,7 +348,7 @@ export function getInstallInstructions() {
         browser: 'Brave',
         steps: [
           'Click the install icon in the address bar (computer with down arrow)',
-          'Or click the menu (≡) → "Install Glow Props..."',
+          'Or click the menu (≡) → "Install Props..."',
           'Click "Install" to confirm',
         ],
         note: 'If the install option doesn\'t appear, check that Brave Shields isn\'t blocking it.',
@@ -374,7 +378,7 @@ export function getInstallInstructions() {
         browser: BROWSER_DISPLAY_NAMES[browser],
         steps: [
           'Click the install icon in the address bar (computer with down arrow)',
-          'Or click the menu (⋮) → "Install Glow Props..."',
+          'Or click the menu (⋮) → "Install Props..."',
           'Click "Install" to confirm',
         ],
       };
