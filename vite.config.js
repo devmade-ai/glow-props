@@ -8,6 +8,7 @@ import { createHash } from 'crypto';
 // Shared with src/seoMeta.js so both writers of the JSON-LD block emit the same
 // node for the same item — see the module header for why this isn't duplicated.
 import { siteNodes, itemNode, graphJson, SITE } from './src/lib/structuredData.js';
+import { APP_NAME, APP_SHORT_NAME } from './src/lib/appIdentity.js';
 
 // Requirement: icon URLs must change when the icon bytes change, or browser/CDN/
 //   WebAPK caches keep serving the old mark for weeks
@@ -793,11 +794,14 @@ export default defineConfig({
         //     patterns 18 repos fetch their ruleset from.
         //   - 'devmade-ai': Rejected — one character from dm-website's 'devmade'.
         //   - Keeping 'Glow Props': Rejected — stranded on the old repo name.
+        // The two names come from src/lib/appIdentity.js because the install
+        // copy has to quote them verbatim — see that module for why they are
+        // not literals here.
         // description mirrors SITE_DESCRIPTION in src/lib/structuredData.js, and
         // fixes 'devmade.ai' (dot) — the title, Organization and WebSite nodes
         // all say devmade-ai, and this string is what the install prompt shows.
-        name: 'Props — Projects & Patterns',
-        short_name: 'Props',
+        name: APP_NAME,
+        short_name: APP_SHORT_NAME,
         description: 'Software projects, internal tools, and reusable engineering patterns by devmade-ai.',
         id: '/',
         // Matches the coffee (--prefersdark default) base-100 — THEME_DARK_MODE
