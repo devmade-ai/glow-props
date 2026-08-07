@@ -9,7 +9,6 @@
 
 - [ ] **sun-sea-o** — Add TutorialModal in source repo, then extract as TUTORIAL.md here
 - [ ] **four-ems** — Add TutorialModal in source repo, then extract as TUTORIAL.md here
-- [ ] **Cross-repo link checker** — Nothing verifies that a hardcoded URL in one repo pointing at another repo's deployment still resolves. Found the hard way 2026-08-07: `tool-till-tees` shipped an "Open See Veo App →" button — the only call to action on the page — pointing at `devmade-ai.github.io/see-veo/`, dead since see-veo left Pages. Its typecheck, 588 tests and build all passed either side of the fix, because a hardcoded cross-project URL has no build step, no type and no test that can notice the other end moved. It was caught only because the rename sweep happened to grep for `github.io`; an equivalent link to a **Vercel** URL that later moved would still be invisible today. **Action:** extend `scripts/audit-discoverability.mjs` — it already reaches all sixteen live origins and reads them from `public/projects/*/meta.json`, so it is the same shape of tool. Grep each repo for absolute URLs naming a sibling's origin, resolve each, and report non-200s. Keep it out of the deploy gate for the reason the discoverability audit already is: it reaches third-party hosts, and someone else's 503 must not block publishing.
 
 ## Technical Debt
 
