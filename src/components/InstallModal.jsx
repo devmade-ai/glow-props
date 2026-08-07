@@ -5,6 +5,7 @@
 import { useEffect, useRef } from 'react';
 import { useFocusTrap } from '../hooks/useFocusTrap.js';
 import { useEscapeKey } from '../hooks/useEscapeKey.js';
+import { APP_SHORT_NAME } from '../lib/appIdentity.js';
 
 const CHECK_PATH = 'M5 13l4 4L19 7';
 
@@ -54,7 +55,10 @@ export function InstallModal({ instructions, onClose, onDismiss }) {
             </svg>
           </div>
           <div>
-            <h3 id="install-modal-title" className="text-lg font-semibold text-base-content">Install Glow Props</h3>
+            {/* The manifest short_name — the name the browser itself shows in its
+                install prompt. A heading that says anything else reads as a
+                different app to a non-technical user (src/lib/appIdentity.js). */}
+            <h3 id="install-modal-title" className="text-lg font-semibold text-base-content">Install {APP_SHORT_NAME}</h3>
             <p className="text-sm text-base-content/70">{instructions.browser}</p>
           </div>
         </div>

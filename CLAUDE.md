@@ -477,7 +477,7 @@ All implementation patterns live in the **gp-props** repo and are the single sou
 **Source location:** `docs/implementations/` in the gp-props repo
 
 **How to access from any repo:**
-- Fetch via GitHub Pages: `curl -sf "https://gp-props.vercel.app/patterns/{PATTERN_NAME}.md"`
+- Fetch from the live site: `curl -sf "https://gp-props.vercel.app/patterns/{PATTERN_NAME}.md"`
 - Fetch via GitHub API: `curl -sf -H "Authorization: token $(printenv GITHUB_ALL_REPO_TOKEN)" "https://api.github.com/repos/devmade-ai/gp-props/contents/docs/implementations/{PATTERN_NAME}.md" | jq -r .content | base64 -d`
 - To list all available patterns: `curl -sf -H "Authorization: token $(printenv GITHUB_ALL_REPO_TOKEN)" "https://api.github.com/repos/devmade-ai/gp-props/contents/docs/implementations" | jq -r '.[].name'`
 

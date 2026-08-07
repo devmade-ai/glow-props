@@ -21,6 +21,7 @@
 
 import { registerSW } from 'virtual:pwa-register';
 import { safeLocalGet, safeLocalSet, safeSessionGet, safeSessionSet } from './safeStorage.js';
+import { APP_SHORT_NAME } from './appIdentity.js';
 
 const CHECK_INTERVAL_MS = 60 * 60 * 1000;
 const AUTO_UPDATE_KEY = 'pwa-auto-update';       // localStorage: 'true' | 'false', absent = ON
@@ -275,6 +276,10 @@ export function checkForUpdates() {
 
 // ===== Install instructions (data, not markup) =====
 
+// Steps that quote a browser menu item interpolate APP_SHORT_NAME rather than
+// spelling the name out: the browser builds that menu label from the manifest,
+// so any wording of our own tells the user to look for an entry that isn't
+// there. Same constant feeds the manifest — see src/lib/appIdentity.js.
 export function getInstallInstructions() {
   const browser = state.browser;
   // iPadOS 13+ reports itself as "Macintosh", so a UA-only test sends iPad
@@ -344,7 +349,7 @@ export function getInstallInstructions() {
         browser: 'Brave',
         steps: [
           'Click the install icon in the address bar (computer with down arrow)',
-          'Or click the menu (≡) → "Install Glow Props..."',
+          `Or click the menu (≡) → "Install ${APP_SHORT_NAME}..."`,
           'Click "Install" to confirm',
         ],
         note: 'If the install option doesn\'t appear, check that Brave Shields isn\'t blocking it.',
@@ -374,7 +379,7 @@ export function getInstallInstructions() {
         browser: BROWSER_DISPLAY_NAMES[browser],
         steps: [
           'Click the install icon in the address bar (computer with down arrow)',
-          'Or click the menu (⋮) → "Install Glow Props..."',
+          `Or click the menu (⋮) → "Install ${APP_SHORT_NAME}..."`,
           'Click "Install" to confirm',
         ],
       };

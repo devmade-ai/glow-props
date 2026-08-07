@@ -17,7 +17,13 @@
        Approach: CSP meta tag allowing self, inline scripts (required for flash prevention),
          Google Fonts, and Google Analytics (gtag.js + GA4 beacons).
          GA hosts must be kept in sync with the snippet in partials/head-common.html.
-       Alternative: HTTP header — rejected, GitHub Pages doesn't allow custom headers -->
+       Alternative: HTTP header via vercel.json `headers` — possible since the move
+         off GitHub Pages, but rejected: the policy would then only exist on Vercel,
+         so `vite preview` and any local serve of dist/ would run unprotected and a
+         CSP break would surface for the first time in production. Kept in the
+         document so it ships with the page it protects. Cost: a meta-tag CSP
+         cannot express `frame-ancestors` or `report-uri` — add a header if either
+         is ever needed, and keep both in sync. -->
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://www.googletagmanager.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: https:; connect-src 'self' https://www.googletagmanager.com https://*.google-analytics.com https://*.analytics.google.com https://stats.g.doubleclick.net;">
   <link rel="canonical" href="https://gp-props.vercel.app/">
   <!-- Must match og:title / twitter:title. A bare brand token ("devmade-ai")

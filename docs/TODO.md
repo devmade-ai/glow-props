@@ -9,6 +9,7 @@
 
 - [ ] **sun-sea-o** — Add TutorialModal in source repo, then extract as TUTORIAL.md here
 - [ ] **four-ems** — Add TutorialModal in source repo, then extract as TUTORIAL.md here
+- [ ] **Cross-repo link checker** — Nothing verifies that a hardcoded URL in one repo pointing at another repo's deployment still resolves. Found the hard way 2026-08-07: `tool-till-tees` shipped an "Open See Veo App →" button — the only call to action on the page — pointing at `devmade-ai.github.io/see-veo/`, dead since see-veo left Pages. Its typecheck, 588 tests and build all passed either side of the fix, because a hardcoded cross-project URL has no build step, no type and no test that can notice the other end moved. It was caught only because the rename sweep happened to grep for `github.io`; an equivalent link to a **Vercel** URL that later moved would still be invisible today. **Action:** extend `scripts/audit-discoverability.mjs` — it already reaches all sixteen live origins and reads them from `public/projects/*/meta.json`, so it is the same shape of tool. Grep each repo for absolute URLs naming a sibling's origin, resolve each, and report non-200s. Keep it out of the deploy gate for the reason the discoverability audit already is: it reaches third-party hosts, and someone else's 503 must not block publishing.
 
 ## Technical Debt
 
@@ -376,7 +377,7 @@ Git history already tracks completions; a separate changelog is redundant. READM
 No local `docs/implementations/` folder (correct). CLAUDE.md is **717 lines**. Has **~284 lines of hardcoded inline patterns** in a "Suggested Implementations" section spanning **lines 323–606** (next section "Project-Specific Configuration" at line 607) covering PWA System, App Icons, Download as PDF, Timer Leaks, and HTTPS Proxy — full code examples embedded directly. Missing: any reference to gp-props as pattern source. **Correction 2026-04-25:** `## Communication Style` is already a top-level section header at line 273 (not a bullet list as previously stated). Body content needs replacing with the full gp-props version, not "promoting from a bullet".
 
 1. [ ] **Delete entire "Suggested Implementations" section** — Remove lines 323–606 (~284 lines of inline pattern code for PWA System, App Icons, Download as PDF, Timer Leaks, HTTPS Proxy).
-2. [ ] **Add "Implementation Patterns (Source of Truth)" section** — Replace deleted section with the standard gp-props reference block (source location, fetch via GitHub Pages/API, listing command, rules).
+2. [ ] **Add "Implementation Patterns (Source of Truth)" section** — Replace deleted section with the standard gp-props reference block (source location, fetch from the live site / GitHub API, listing command, rules).
 3. [ ] **Add AI Note** — Add: `**Implementation patterns — always fetch from gp-props.** Never look for local copies of implementation pattern files (e.g., docs/implementations/*.md) in downstream repos. They do not exist locally — the single source of truth is the docs/implementations/ folder in the gp-props repo. Fetch the latest version before every implementation task.`
 4. [ ] **Add prohibition** — Add to Prohibitions: "Create local copies of implementation pattern files in any repo — always fetch from gp-props".
 5. [ ] **Replace `## Communication Style` body with full gp-props `## Communication` content** — Section already exists at line 273; rename to `## Communication` and replace body. Place between Principles and Code Standards. Update header line to include COMMUNICATION. Remove the duplicate "**ASK before assuming.**" bullet from AI Notes (it currently overlaps with Communication content).
@@ -681,7 +682,7 @@ The first pass of the PWA audit selected repos by the portfolio's `badge`/`tech`
 - [x] **`docs/PROJECT_DOCS.md` reconciled** — `kl-website`, `web-arch` and `dm-website` added to the status table, "Last mirrored" corrected from 2026-03-31 to 2026-08-03, and the reason the table drifted recorded so the process gets fixed rather than just the data.
 - [x] **Per-repo findings distributed** — rather than per-repo sections here, each repo's own `docs/TODO.md` now carries its findings (merged 2026-08-03), so the backlog travels with the code.
 
-**App-name → repo map** (from the installed home screen, since several differ): Four Ems=four-ems, CanvaGrid=canva-grid, Model Pear=model-pear, Git Analytics=repo-tor, JT·CV=see-veo, Glow Props=gp-props, Graphiki=graphiki, Farlume=fl-farlume, knowless=kl-website, qi-invoice=qi-invoice, devmade=dm-website, FuelHunt=fh-fuelhunt, inTXT=intxt, **redline=web-arch**, **Sancio=sun-sea-o**.
+**App-name → repo map** (from the installed home screen, since several differ): Four Ems=four-ems, CanvaGrid=canva-grid, Model Pear=model-pear, Git Analytics=repo-tor, JT·CV=see-veo, Props=gp-props, Graphiki=graphiki, Farlume=fl-farlume, knowless=kl-website, qi-invoice=qi-invoice, devmade=dm-website, FuelHunt=fh-fuelhunt, inTXT=intxt, **redline=web-arch**, **Sancio=sun-sea-o**.
 
 ## PWA drift found in the 2026-08-03 fleet PWA audit
 
