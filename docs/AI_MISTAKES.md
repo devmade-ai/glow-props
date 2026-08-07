@@ -1,5 +1,15 @@
 # AI Mistakes
 
+## 2026-08-06: Pushed a fleet-wide change to every repo at once and starved CI of runners
+
+**What went wrong:** The `glow-props` → `gp-props` rename was pushed to ~16 repos inside about two minutes (19:33–19:35), each opening a PR, each firing both a push and a pull_request run. That burst exceeded the account's concurrent-job allowance. Four jobs never got a runner at all and were cancelled ~15 minutes later: `verify` in gp-props (CI #1), `verify` in qi-invoice (CI #29), `Docker image` in sp-backend (CI #36), and `check` in sun-sea-o (CI #48). The last one was the merge commit landing on **main**, so sun-sea-o's default branch showed red for 10 hours over a job that never executed. Re-running all four with no code change passed — every job was assigned a runner within ~3 seconds.
+
+**Why it happened:** A fleet-wide edit is naturally executed as a loop over repos, and nothing in that loop is aware that CI capacity is a *shared, account-level* resource. Each individual push was correct and cheap; the aggregate was what broke. The cost is invisible at authoring time because it lands minutes later, in a different repo, as someone else's problem.
+
+**How to recognise it (the diagnostic signature):** the run shows ✗ but there is **no failing job** — `get_job_logs --failed_only` returns "No failed jobs found". The job's conclusion is `cancelled`, `runner_id` is `0`, `runner_name` is `""`, `started_at == created_at`, and there is **no `steps` array at all**, because the job never began. Duration is ~15 minutes, GitHub's cancel point for an unassignable job. Corroborate with a sibling: in sp-backend CI #36 the other two jobs in the SAME run with the SAME `ubuntu-latest` label got runners in 3 seconds and passed — which rules out label mismatch, workflow error, and the commit itself. This reads exactly like a broken build to anyone who does not check `runner_id`, so the wasted hours go into hunting a bug that was never there.
+
+**How to prevent it:** Stagger fleet-wide pushes rather than firing every repo in one loop — the per-repo workflows are fine and need no change. When a red run has no failing step, check `runner_id`/`steps` BEFORE reading any code, and re-run rather than debug. Remediation is just `rerun_workflow_run`; nothing needs fixing in the repos.
+
 ## 2026-08-01: Self-reported pattern compliance without verifying it
 
 **What went wrong:** The Gap Matrix in `docs/TODO.md` graded gp-props "Pass" or "N/A" in every column. A full 12-pattern self-audit found the row wrong in six columns — including two production breaks that had shipped: the service worker threw `add-to-cache-list-conflicting-entries` at evaluation (duplicate icon precache entries — the entire offline layer was dead), and all 12 prerendered pattern pages loaded `theme.js` from a relative path that 404s (theme picker and burger menu dead on the canonical URLs). The ICON_CACHE_BUST "N/A" rested on a premise ("static site, no PWA icons") that the same matrix row contradicted by marking PWA_SYSTEM "Pass".
