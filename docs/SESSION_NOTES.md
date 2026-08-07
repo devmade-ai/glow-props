@@ -53,11 +53,25 @@ pointer already use `gp-props.vercel.app`; `canva-grid-assets` has none, correct
 for an asset repo. Live-checked `CLAUDE.md`, two pattern docs, a clean pattern
 URL, `sitemap.xml`, `robots.txt` — all 200.
 
-Three greps hit but are not misses: `fh-fuelhunt`'s `BrandGlowProps` (a TS
-interface), `four-ems`' `AI_MISTAKES.md` describing a past CORS bug, and
-`tool-till-tees:src/App.tsx:46` linking `devmade-ai.github.io/see-veo/` — a
-*different* repo's Pages site, unrelated to this rename but worth checking
-separately.
+Two greps hit but are not misses: `fh-fuelhunt`'s `BrandGlowProps` (a TS
+interface) and `four-ems`' `AI_MISTAKES.md` describing a past CORS bug.
+
+### tool-till-tees — a dead button, found by the sweep (`5c6b045`)
+
+The third grep hit was **not** a false positive. `src/App.tsx:46` pointed
+"Open See Veo App →" — the only call to action on that page — at
+`devmade-ai.github.io/see-veo/`, which **404s**. see-veo serves from
+`see-veo.vercel.app`. Unrelated to this rename in cause (it broke when *see-veo*
+left Pages) but identical in shape, and it was live.
+
+Worth remembering how nearly it was missed: it was dismissed as "a different
+repo's Pages site, worth checking separately" and only caught on a second pass.
+A hardcoded cross-project URL has no build step, no type and no test that can
+notice the other end moved — typecheck, 588 tests and the build all pass either
+side of the fix. **The sweep only found it because it happened to be a Pages
+URL**; an equivalent link to a Vercel URL that later moved would have been
+invisible to everything done here. There is no inventory of which repo links to
+which, and nothing checks that those links resolve — see `docs/TODO.md`.
 
 ### repo-tor — 236 records keyed by the old name (`813697f`, `f3fa6cb`, `82fe7b1`)
 
@@ -83,15 +97,24 @@ since the failure misrepresents itself as a broken build.
 
 ## Current state
 
-- **gp-props** — branch `claude/gp-props-rename-refs-ps9c9q`: `cb048ba`,
-  `cf6dc61`, `e66f163`. Build clean, four file gates green, `smoke:seo` green
-  over 5 routes.
-- **repo-tor** — branch `claude/gp-props-rename-refs-ps9c9q`: `813697f`,
-  `f3fa6cb`, `82fe7b1`.
-- GitHub Pages is **off** — `devmade-ai.github.io/glow-props/` and `.../gp-props/`
-  both 404, verified. `USER_ACTIONS.md` is down to one human-only item
-  (bookmarks, re-installing the PWA — the manifest `id` changed so an existing
-  install cannot update itself, external links).
+All three branches are named `claude/gp-props-rename-refs-ps9c9q`. Verified
+against the server (`ls-remote`), clean trees, all gates re-run from scratch:
+
+- **gp-props** — `cb048ba`, `cf6dc61`, `e66f163`, `8f20c58` (+ this note).
+  Clean build, four file gates green, `smoke:seo` green over 5 routes. Built
+  bundle resolves the app name to the manifest's own `short_name`
+  (`const Yf="Props"` feeding both install steps and the modal heading).
+- **repo-tor** — `813697f`, `f3fa6cb`, `82fe7b1`, `1d10da0`. 89 tests pass;
+  all 236 records key to `gp-props`, none to `glow-props`. The new tripwire was
+  verified to actually trip: reintroducing the bug in one record fails the suite
+  and names the file, restoring returns to green.
+- **tool-till-tees** — `5c6b045`. Typecheck clean, 588 tests pass, build clean,
+  bundle contains `see-veo.vercel.app` and zero `github.io`.
+- GitHub Pages is **off** — `devmade-ai.github.io/glow-props/`, `.../gp-props/`
+  and `.../see-veo/` all 404, verified. `gp-props.vercel.app` root, `CLAUDE.md`,
+  the pattern docs and `see-veo.vercel.app` all 200. `USER_ACTIONS.md` is down to
+  one human-only item (bookmarks, re-installing the PWA — the manifest `id`
+  changed so an existing install cannot update itself, external links).
 
 ## Key context for the next session
 
