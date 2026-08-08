@@ -166,8 +166,10 @@ weeks with a clean typecheck, 588 passing tests and a clean build, because a
 cross-project URL has nothing on either side that can notice. It reports **dead**
 (404/gone) separately from **stale** (resolves, but is no longer that project's
 origin — the case that looks fine). `--self-test` checks its own logic with no
-network. Neither audit is wired into the deploy: both reach third-party hosts,
-and someone else's outage must not block publishing.
+network, and every run prints what it examined — each origin, its bundles, and
+every cross-repo target with a status — so a clean report can be told apart from
+a blind one. Neither audit is wired into the deploy: both reach third-party
+hosts, and someone else's outage must not block publishing.
 
 `smoke:seo` exists because `verify:seo` can only see what the build wrote, and
 the `?name=` pages get their structured data at runtime. It is the check that

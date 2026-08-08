@@ -208,6 +208,14 @@ async function statusOf(url) {
 
 const findings = [];
 const truncated = [];
+// What was actually looked at, per origin. Reported alongside the findings
+// because "0 problems" and "0 links examined" print identically otherwise, and
+// only one of them is good news. This gap was real: answering "is the coverage
+// meaningful" required measuring the fleet with a separate script, because the
+// audit's own output could not say what it had checked. A checker that cannot
+// show its coverage cannot be trusted to have any — the same "no silent caps"
+// rule this file already applies to MAX_BUNDLES_PER_ORIGIN.
+const coverage = [];
 
 for (const [slug, originUrl] of fleet) {
   process.stderr.write(`. ${slug}\n`);
@@ -220,6 +228,7 @@ for (const [slug, originUrl] of fleet) {
       url: originUrl,
       detail: `could not fetch the origin itself: ${page.error}`,
     });
+    coverage.push({ from: slug, origin: originUrl, reached: false, bundles: 0, targets: [] });
     continue;
   }
 
@@ -228,10 +237,20 @@ for (const [slug, originUrl] of fleet) {
   if (bundles.length > MAX_BUNDLES_PER_ORIGIN) {
     truncated.push(`${slug}: ${bundles.length} scripts, checked the first ${MAX_BUNDLES_PER_ORIGIN}`);
   }
-  for (const b of bundles.slice(0, MAX_BUNDLES_PER_ORIGIN)) {
+  const fetched = bundles.slice(0, MAX_BUNDLES_PER_ORIGIN);
+  for (const b of fetched) {
     const res = await get(b);
     if (res.ok) texts.push(res.body);
   }
+  const originTargets = [];
+  coverage.push({
+    from: slug,
+    origin: originUrl,
+    reached: true,
+    bundles: fetched.length,
+    bundlesSeen: bundles.length,
+    targets: originTargets,
+  });
 
   const seen = new Set();
   for (const text of texts) {
@@ -247,6 +266,9 @@ for (const [slug, originUrl] of fleet) {
       const status = await statusOf(url);
       const verdict = verdictFor(status);
       const alive = verdict === 'alive';
+      // Recorded BEFORE any decision to skip, so coverage reflects what was
+      // examined rather than only what survived to become a finding.
+      originTargets.push({ url, to: target.slug, kind: target.kind, status, verdict });
       // Someone else's 5xx is not this fleet's defect — do not manufacture a
       // finding out of it, except where the link is stale regardless of status.
       if (verdict === 'indeterminate' && target.kind === 'fleet') continue;
@@ -280,7 +302,7 @@ for (const [slug, originUrl] of fleet) {
 }
 
 if (AS_JSON) {
-  console.log(JSON.stringify({ findings, truncated }, null, 2));
+  console.log(JSON.stringify({ findings, truncated, coverage }, null, 2));
   process.exit(0);
 }
 
@@ -297,6 +319,28 @@ if (!findings.length) {
   }
 }
 for (const t of truncated) console.log(`\n  (capped) ${t}`);
+
+// Coverage, always — a clean run has to be distinguishable from a blind one.
+console.log('\nCOVERAGE — what was examined\n');
+const totalTargets = coverage.reduce((n, c) => n + c.targets.length, 0);
+for (const c of coverage) {
+  if (!c.reached) {
+    console.log(`  ${c.from.padEnd(18)} origin unreachable — nothing examined`);
+    continue;
+  }
+  const bundleNote = c.bundlesSeen === c.bundles
+    ? `${c.bundles} bundle(s)`
+    : `${c.bundles} of ${c.bundlesSeen} bundle(s)`;
+  const n = c.targets.length;
+  console.log(`  ${c.from.padEnd(18)} ${String(n).padStart(2)} cross-repo link(s)   [html + ${bundleNote}]`);
+  for (const t of c.targets) {
+    console.log(`       → ${t.to ?? '?'}`.padEnd(28) + `${String(t.status).padEnd(8)} ${t.verdict}   ${t.url}`);
+  }
+}
+if (!totalTargets) {
+  console.log('\n  NOTHING was examined. Zero findings here means the audit found no');
+  console.log('  cross-repo links at all — not that the links are healthy.');
+}
 
 // `unknown` and `unreachable-origin` do not fail the run: the first is a guess
 // about someone else's host, the second is a network condition. Only a link
