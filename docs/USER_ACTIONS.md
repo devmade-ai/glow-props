@@ -1,16 +1,42 @@
 # User Actions
 
-## 1. Four stray Vercel origins — dashboard only
+## 1. Stray and non-canonical deployment origins — dashboard only
 
-**Why:** four `*.vercel.app` hostnames carrying this fleet's project names serve
-public, crawlable content that is either not ours or not canonical. None is
-fixable from a repo: the deployment platform is the only place these exist.
+_Across Vercel, Cloudflare and Railway. Last swept 2026-08-07._
 
-Swept 2026-08-07 across all 26 default hostnames (every repo, plus five
-pre-rename names). These four are the entire finding — the other 22 either 404
-or are the project's real canonical origin.
+**Why:** several platform-generated hostnames carrying this fleet's project
+names serve public, crawlable content that is either not ours or not canonical.
+None is fixable from a repo: the deployment platform is the only place these
+exist.
 
-### 1a. Off-brand soft-404s — worst of the four
+**Scope warning — read this before trusting the list. It is a floor, not a
+ceiling.** The fleet deploys across **three** platforms, which the first sweep
+did not account for. Measured from response headers 2026-08-07:
+
+| Platform | Portfolio origins | Default hostname | Sweepable? |
+|---|---|---|---|
+| Vercel | 15 of 16 | `<project>.vercel.app` | **yes** — deterministic |
+| Cloudflare | 1 of 16 (`www.devmade.app`) | `<project>.pages.dev` / `*.workers.dev` | **partly** |
+| Railway | outside the portfolio (`sp-*`) | `<project>-production-<rand>.up.railway.app` | **no** |
+
+What that means for each:
+
+- **Vercel** — swept properly. 26 hostnames (every repo plus five pre-rename
+  names). §1a and §1b are the complete finding *for this platform*.
+- **Cloudflare** — the same 26 names were swept against `*.pages.dev` with
+  **zero hits**, so nothing is exposed under a guessable Pages name. But Workers
+  hostnames are `<name>.<account-subdomain>.workers.dev`, and the account
+  subdomain cannot be derived from a repo name, so that surface is unswept.
+- **Railway** — **cannot be enumerated at all.** Its hostnames carry a random
+  suffix (`sp-website-production-c9a1.up.railway.app`), so guessing is
+  impossible. The two in §1c are known only because they were pointed out. There
+  may be others; nothing here can tell you.
+
+The Vercel sweep worked only because `<project>.vercel.app` is deterministic.
+Any *complete* inventory has to come from the platform dashboards, not from
+enumeration — which is also why this is a user action and not a script.
+
+### 1a. Off-brand soft-404s (Vercel) — the worst of these
 
 | Host | HTTP | Body | Title |
 |---|---|---|---|
@@ -48,7 +74,7 @@ the only place to confirm that.
    deleting — de-indexing an already-indexed host is slower than removing it,
    and you want to know whether "Datamoire" is ranking under your account.
 
-### 1b. Live duplicate origins under pre-rename names
+### 1b. Live duplicate origins under pre-rename names (Vercel)
 
 | Host | Serves | Canonical tag | Crawl signal |
 |---|---|---|---|
@@ -71,6 +97,43 @@ serves a full allow-all `robots.txt` written for FuelHunt, on the wrong host.
 2. If a redirect is not possible, at minimum flip the old host to `noindex` —
    `synctone`'s current `index,follow` undercuts its own canonical.
 
+### 1c. Railway — a live storefront indexing under a throwaway hostname
+
+| Origin | Serves | Canonical | robots.txt |
+|---|---|---|---|
+| `sp-website-production-c9a1.up.railway.app` | **Snuffle Pet** — a real storefront, 62 KB | → **itself**, `/za` | 200, allow-all + a sitemap |
+| `sp-backend-production-80c6.up.railway.app/app` | an SPA shell (581 bytes, no title) | none | 404 |
+
+Not a stray and not a duplicate — the storefront is genuinely served from here.
+That is the problem. Its `rel="canonical"`, its `robots.txt` and its
+`sitemap.xml` all point at `sp-website-production-c9a1.up.railway.app`, so every
+URL a search engine indexes for this shop is a Railway-generated hostname with a
+random suffix. Attaching a real domain later does not move those; it creates a
+second origin and the whole catalogue has to be re-indexed and redirected.
+
+The `robots.txt` is otherwise well made — it disallows `/*/cart`, `/*/checkout`,
+`/*/account`, `/*/order/` — which is what makes the hostname the odd part: this
+is a deliberately configured production shop running on a placeholder address.
+
+**Steps**
+1. Attach a real domain to the Snuffle Pet Railway service, make it canonical,
+   and 301 the `up.railway.app` hostname to it. Do it before the catalogue
+   accumulates more indexed URLs.
+2. `sp-backend-production-80c6.up.railway.app/app` serves an app shell with no
+   `robots.txt` — decide whether it should be reachable publicly at all, and
+   `noindex` or protect it if not.
+3. Neither `sp-website` nor `sp-backend` has a `public/projects/` entry, so both
+   sit outside `audit:discoverability` and `audit:cross-links` entirely. If they
+   are meant to be tracked, add mirrored metadata; if not, that is fine, but it
+   is why no automated check has ever looked at them.
+
+**Also worth confirming:** `sp-website.vercel.app` returns 200 with the title
+**"Stefan Pedratscher"** — different content from the Snuffle Pet site on
+Railway, under the same project name. Either it is an unrelated project holding
+the name, or a stale deployment. The dashboard is the only way to tell; this
+note deliberately does not guess, because guessing ownership from content is
+exactly the mistake that let §1a sit unreported earlier the same day.
+
 ### Notes — not defects, but they will bite later
 
 - **`fl-farlume`'s canonical origin is `budgy-ting.vercel.app`**, the pre-rename
@@ -85,11 +148,22 @@ serves a full allow-all `robots.txt` written for FuelHunt, on the wrong host.
 ### Why no script caught this
 
 `npm run audit:discoverability` grades the origins `meta.json` names.
-`npm run audit:cross-links` checks links that are actually shipped. These four
-are origins nothing points at and nothing declares — invisible to both by
-construction. Closing that properly needs the deployment platform as the source
-of truth, not hostname guessing: this sweep guessed 26 names and the guesses are
-only as good as the naming convention held.
+`npm run audit:cross-links` checks links that are actually shipped. Every origin
+above is one that nothing points at and nothing declares — invisible to both by
+construction.
+
+It is worth being precise about why this is not simply a missing script. A
+checker can only look where it is told to look, and the three platforms differ
+in whether that is even possible: Vercel and Cloudflare Pages have deterministic
+hostnames and can be enumerated, Cloudflare Workers and Railway cannot. So no
+amount of scripting reaches a complete answer from inside a repo. The source of
+truth is the platform account list, which is why this is a user action.
+
+If it is worth automating later, the tractable version is: read the deployment
+list from each platform's API, compare it against `public/projects/*/meta.json`,
+and report anything serving publicly that the portfolio does not declare. That
+inverts the current model — it starts from what exists rather than from what is
+written down, which is the only direction that could have found any of this.
 
 ## 2. Re-point anything outside the repos
 
