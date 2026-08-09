@@ -16,13 +16,13 @@
 //
 // Run: npm run audit:discoverability [--check] [--json]
 
-import { readFileSync, readdirSync, existsSync } from 'fs';
+import { readFileSync } from 'fs';
 import { join, resolve, dirname } from 'path';
 import { fileURLToPath } from 'url';
-import { SITE } from '../src/lib/structuredData.js';
+// Shared with audit-cross-links.mjs — one resolution of "what is the fleet".
+import { origins } from './lib/fleetOrigins.mjs';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
-const PROJECTS_DIR = join(ROOT, 'public', 'projects');
 const TODO = join(ROOT, 'docs', 'TODO.md');
 
 const CHECK = process.argv.includes('--check');
@@ -32,28 +32,6 @@ const AS_JSON = process.argv.includes('--json');
 // view is the one being graded.
 const UA = 'Mozilla/5.0 (compatible; devmade-audit/1.0; +https://devmade.app)';
 const TIMEOUT_MS = 20000;
-
-// Origins come from the mirrored project metadata, not a list in this file —
-// a project added to the portfolio joins the audit without anyone remembering
-// to. gp-props is not among its own mirrors, so it is named explicitly.
-function origins() {
-  const found = [['gp-props', SITE]];
-  for (const slug of readdirSync(PROJECTS_DIR).sort()) {
-    const metaPath = join(PROJECTS_DIR, slug, 'meta.json');
-    if (!existsSync(metaPath)) continue;
-    const meta = JSON.parse(readFileSync(metaPath, 'utf8'));
-    const url = meta.liveUrl || meta.url;
-    // No live URL is not a gap — canva-grid-assets is a CDN bucket with nothing
-    // to discover. Silently skipping would hide a genuinely missing one, so the
-    // caller is told.
-    if (!url) {
-      console.error(`  (skipped ${slug}: no liveUrl in meta.json)`);
-      continue;
-    }
-    found.push([slug, url, meta.discoverability ?? null]);
-  }
-  return found;
-}
 
 /**
  * A repo may DECLARE that discoverability does not apply to it.
