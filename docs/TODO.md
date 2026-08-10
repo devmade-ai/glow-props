@@ -29,7 +29,7 @@ acting on any of them**, and delete what has landed.
 ## Fleet sync — session-behaviour rewrite (2026-08-10)
 
 gp-props `CLAUDE.md` was rewritten in three places that every downstream repo
-copies. Until they are synced, `align` will flag all 18 and each repo still runs
+copies. Until they are synced, `align` will flag all 15 and each repo still runs
 the old rules — the ones that let a session stop early and call undone work "out
 of scope".
 
