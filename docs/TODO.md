@@ -29,12 +29,23 @@ acting on any of them**, and delete what has landed.
 ## Fleet sync — session-behaviour rewrite (2026-08-10)
 
 gp-props `CLAUDE.md` was rewritten in three places that every downstream repo
-copies. Until they are synced, `align` will flag all 15 and each repo still runs
-the old rules — the ones that let a session stop early and call undone work "out
-of scope".
+copies. Until they are synced, each repo still runs the old rules — the ones that
+let a session stop early and call undone work "out of scope".
+
+**Target: 18 repos.** Enumerated from the org, not from `public/projects/` — the
+portfolio set is the *audit* set and is smaller by design (see the AI Note "The
+convention set is NOT the audit set").
+
+| | Repos |
+|---|---|
+| Portfolio (15) | canva-grid, dm-website, fh-fuelhunt, fl-farlume, four-ems, graphiki, intxt, kl-website, model-pear, qi-invoice, repo-tor, see-veo, sun-sea-o, tool-till-tees, web-arch |
+| No portfolio entry (3) | sp-website, sp-backend, **hf-sculpt** |
+| Excluded | plant-fur, coin-zapp (discontinued), canva-grid-assets (asset bucket, no app) |
 
 - [ ] **Propagate `## Communication` + new `## Scope and Completion`** — replaces the old Concerns/Suggestions/Ask footer with `### How a reply ends`, and adds the scope-ownership, invented-requirement, assume-vs-ask, and when-to-stop rules. Downstream `CLAUDE.md` files also need the H1 section list updated, the five new/changed Prohibitions, the Triggers pause carve-out, and the `skipped`/`assumed` trigger rewordings.
 - [ ] **Propagate the `docs/SESSION_NOTES.md` rule** — default state is empty; only what the next session cannot work without. Clear each repo's existing notes file to the placeholder when syncing.
+- [ ] **Propagate the doc-maintenance rule** — `TODO.md` / `USER_ACTIONS.md` / `SESSION_NOTES.md` are maintained against reality: check before assuming an entry is still pending, then delete rather than annotate. Several downstream repos received distributed audit findings on 2026-08-03/04 that have the same never-ticked problem this repo just cleaned up, so the sync pass should sweep each one while it is there.
+- [ ] **`hf-sculpt` has never been assessed** — it is in the org, was pushed in the 2026-08-06 fleet burst alongside every other repo, and appears in no matrix, no audit and no exclusion list. It gets the convention sync like the rest; separately, decide whether it belongs in the portfolio (and therefore in the audits) or in the exclusion list, and record the reason either way.
 - [ ] **Stagger the pushes.** Per [`AI_MISTAKES.md`](AI_MISTAKES.md) 2026-08-06, ~16 repos pushed inside two minutes starved the account's shared CI runners; four jobs never got a runner and one default branch showed red for 10 hours over a job that never executed.
 
 ---
