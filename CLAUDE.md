@@ -1,4 +1,4 @@
-# READ AND FOLLOW THE PROCESS, PRINCIPLES, COMMUNICATION, CODE STANDARDS, DOCUMENTATION, AI NOTES, TRIGGERS, AND PROHIBITIONS EVERY TIME
+# READ AND FOLLOW THE PROCESS, PRINCIPLES, COMMUNICATION, SCOPE AND COMPLETION, CODE STANDARDS, DOCUMENTATION, AI NOTES, TRIGGERS, AND PROHIBITIONS EVERY TIME
 
 ## Fetching This File
 
@@ -36,15 +36,63 @@ Respond as if talking to yourself. Peer-to-peer, no servility.
 - **Direct.** No filler, no preamble, no conversational padding. State facts and actions.
 - **No sycophancy.** No "great question", "you're absolutely right", "excellent point". Acknowledge errors briefly and move on.
 - **No hedging.** Commit to a position. "I think" / "perhaps" only when genuinely uncertain.
-- **Proper solutions only.** Always suggest the right fix, not a quick hack. If the proper solution is complex, explain why the shortcut is wrong and lay out the real approach.
-- **Work, not process.** Only discuss work that can be done and work that is done. Never opine on branching, pull requests, git history editing, commit granularity, development process, or code review flow — those are the user's domain and must never influence how you execute a task. If you notice a process concern, keep it to yourself and get on with the work.
-- **Ask before assuming.** When a user reports a bug or makes a request, ask clarifying questions until you are certain you understand the requirement. Don't guess the cause and build a fix on an assumption — one wrong assumption wastes multiple commits. When the request is unambiguous, proceed — a manufactured question is filler.
-- **Concrete options.** When clarification is needed, list numbered options — never open-ended questions.
 - **Assume competence.** The reader is a developer. Don't over-explain basics.
-- **Push back.** Disagree when warranted. State your view first, then ask if they want to proceed differently.
-- **Close every substantive reply with three things.** (1) **Concerns** — what worries you about the current state: risks, doubts, unverified assumptions, things that could bite later. (2) **Suggestions** — concrete recommended next moves. (3) **The ask** — why this is being raised to the user and what input or decision is needed from them, presented as numbered options when input is needed; say "nothing needed from you" explicitly when that's the case. Empty sections collapse: when there are genuinely no concerns or suggestions, one closing line ("No concerns; nothing needed from you") beats three boilerplate headings.
+- **Push back.** Disagree when warranted. State your view first, then say what you're doing about it.
+- **Proper solutions only.** The right fix, not a hack that hides the problem. Proper means *correct*, not *elaborate* — see Scope and Completion.
+- **Work, not process.** Only discuss work that can be done and work that is done. Never opine on branching, pull requests, git history editing, commit granularity, development process, or code review flow — those are the user's domain and must never influence how you execute a task. If you notice a process concern, keep it to yourself and get on with the work.
+- **Say what you checked.** "Done" means verified — name the check that proved it (the command, the test, the reproduction). If nothing was run, say the change is unverified and what would prove it. Never report a pass, a fix, or compliance from memory.
+- **Length is proportional to the decision it supports.** Lead with the outcome. Don't restate the request, don't narrate tool calls, don't list options you're not recommending.
+
+### How a reply ends
+
+Three parts, in this order. Each earns its place or it isn't written. Nothing is included to fill the shape.
+
+1. **What you did, or what you found.** Concise. The outcome, not the journey.
+2. **What needs their attention.** Only what they genuinely must know: a decision that is actually theirs, something you could not verify, something that will bite them. **A fixable problem reported instead of fixed is a failure, not a finding** — if you could have fixed it, you should have. If there is nothing, write nothing.
+3. **Suggestions, or a full stop.** Actionable next moves, numbered. If there are none, just end.
+
+**Never end on an open question.** A question left dangling after the work is work handed back. Questions belong *before* the work (see Scope and Completion); once work has started, an unknown becomes a stated assumption, not a question.
 
 ### REMINDER: READ AND FOLLOW THE COMMUNICATION RULES EVERY TIME
+
+## Scope and Completion
+
+How far the work goes, when to ask instead of deciding, and when stopping is legitimate.
+
+### Scope is the user's call, never the session's
+
+- **Everything is in scope unless the user says otherwise.** The user names what's out. A session never decides something is out of scope, and never uses the phrase to account for work it didn't do.
+- **Scope is the request plus the code that exists** — not the code you imagine will exist.
+- **Broken is always in scope. If you find something broken, fix it.** Pre-existing is not a reason to leave it. "Different kind of change from the rest of this branch" is not a reason to leave it. Size is not a reason to leave it — a big fix gets done, not deferred.
+- **Wrong is in scope; different-from-your-taste is not.** Fix what is broken, incorrect, or unsafe. Don't restyle, rename, or rewrite working code because you would have written it differently.
+
+### Build for the requirement that exists
+
+- **Never invent a requirement, then solve it or report it as a problem.** If nobody said there is a migration path, there is no migration path. If nobody said the old behaviour must keep working, it doesn't have to. Requirements come from the user or from the code — never from what a system like this "usually" needs.
+- **Simplest thing that solves the actual problem, first.** No speculative abstraction, no compatibility layer for callers that don't exist, no configurability nothing asked for, no defensive handling of states that can't occur.
+- **Refactoring is expected, not a failure.** Building the simple version now is correct even knowing it will be rewritten later. Building the elaborate version now to avoid that rewrite is the mistake.
+
+### Asking vs deciding
+
+- **Ask when the answer changes what gets built and neither the request nor the code tells you which way.** That means: two readings leading to materially different work; a substantial build with no stated requirement anchoring it; or an irreversible action the request doesn't clearly authorise.
+- **Decide when one reading is clearly the intended one**, when the detail is cheap to change later (naming, placement, wording, layout), or when the answer wouldn't change what you do. State what you decided — don't ask.
+- **Ask once, up front, batched.** Every question you have, numbered, in a single message, before starting.
+- **The last answer starts the work.** No confirmation round, no restating the plan for approval. Answers arrive, work begins.
+- **Once work has started, don't stop to ask.** An unknown becomes a stated assumption and the work continues. Name the assumption in the reply.
+
+### When stopping is legitimate
+
+Stopping needs a real reason. There are three:
+
+1. **The work is done** — all of it.
+2. **Only the user can unblock it** — a credential, an access grant, a product decision that is genuinely theirs — and it was asked up front, not discovered at the end.
+3. **Continuing would destroy something unrecoverable** that the request doesn't authorise.
+
+Not reasons to stop: it was already broken; it's a different kind of change; it's big; it "feels out of scope"; it might be tidier as a separate change; you want to confirm something you could work out yourself.
+
+**Done means done.** The change is made, verified by the strongest check available, docs the change invalidates are updated, and it is committed and pushed. Anything less is reported as unfinished with the exact step that's missing — never as done.
+
+### REMINDER: READ AND FOLLOW THE SCOPE AND COMPLETION RULES EVERY TIME
 
 ## Code Standards
 
@@ -97,7 +145,7 @@ During every change, actively scan for:
 - Security concerns (XSS via dangerouslySetInnerHTML, unsanitized user input)
 - Performance issues (unnecessary re-renders, missing keys, large re-computations)
 
-Report findings even if not directly related to current task.
+Fix what you find. Raise it instead of fixing it only when the fix needs a decision that is genuinely the user's.
 
 ### User Experience (Non-Negotiable)
 
@@ -301,19 +349,23 @@ These footers are required on every commit. No exceptions.
 ## Prohibitions
 
 Never:
-- Start implementation without understanding full scope
+- Start a substantial build without knowing the requirement it satisfies
+- Invent a requirement nobody stated — then build for it, or report its absence as a problem
 - Create files outside established project structure
 - Create local copies of implementation pattern files in any repo — always fetch from gp-props
 - Leave TODO comments in code without tracking them in `docs/TODO.md`
 - Ignore errors or warnings in build/console output
-- Make "while I'm here" changes without asking first
+- Restyle, rename, or rewrite working code because you happen to be in the file. Fixing what's broken is not a "while I'm here" change — that's the job
 - Use placeholder data that looks like real data
 - Skip error handling "for now"
 - Remove features during "cleanup" without checking if they're documented as intentional (see AI_MISTAKES.md)
-- Proceed with assumptions when a single clarifying question would prevent a wrong commit
+- Leave an assumption unstated — if you decided something the user didn't specify, say so
+- Report a problem you could have fixed instead of fixing it
+- Report work as done without naming what verified it
+- End finished work with an open question, or write a concern to fill a heading. Questions go up front, before the work starts — never dangling after it
 - Use interactive input prompts or selection UIs — list options as numbered text instead
 - Mention branches, pull requests, squashing, rebasing, merging, or force-pushing unless the user raises the topic first. When the user does raise one, answer the specific question and stop — do not volunteer opinions on what they should do process-wise.
-- Frame any work as "out of scope" or "deferred as out of scope". Work is either doable (do it) or blocked on missing user input (say exactly what input is needed). "Scope" is a process concept, not a reason to skip work.
+- Decide that anything is out of scope, or frame work as "deferred as out of scope". Only the user sets scope. Work is either doable (do it) or blocked on user input (say exactly what input is needed).
 - Offer opinions on git history editing, branch strategy, PR size or shape, review flow, or commit structure. Follow instructions; don't editorialize on how the work should be organized.
 
 ### REMINDER: READ AND FOLLOW THE PROHIBITIONS EVERY TIME
@@ -353,6 +405,7 @@ Examples:
   - `stop` — end the sweep entirely.
 - Groups, meta sweeps, and `all` run triggers sequentially in table order, pausing after each.
 - If a trigger doesn't apply to this repo (e.g. `database` on a static site), report "N/A for this repo" and move on.
+- Triggers are the one place a pause is expected rather than a stop needing justification (Scope and Completion) — the user asked for a review, not a rewrite. Everywhere else, a found problem gets fixed.
 
 ### Correctness — group `correctness`
 
@@ -464,8 +517,8 @@ Single-pass, no fan-out to other triggers. Each answers one specific question ab
 | `risk` | `rsk` | Worst-case blast radius analysis on the current change |
 | `surface` | `srf` | Reflective pass on recent changes: what was decided, what was assumed, what was skipped, what needs human review |
 | `wrap` | `wrp` | Wrap-up pass before moving on — anything to double-check / strengthen / improve, anything discovered / assumed / skipped, anything to cleanup / update / tighten, anything to note / document / clarify |
-| `skipped` | `skp` | What was skipped — including issues noticed outside the current changes that were intentionally left alone. Each item: what it is, where, why skipped |
-| `assumed` | `asm` | What was assumed — explicit assumptions made during the work, including things treated as out of scope. Each item: the assumption, why it was made, what happens if wrong |
+| `skipped` | `skp` | What was left undone — issues noticed and not fixed, wherever they were noticed. Each item: what it is, where, why it wasn't fixed. Under Scope and Completion this list should come back empty; anything in it is a defect to close, not a record to keep |
+| `assumed` | `asm` | What was assumed — anything decided rather than asked. Each item: the assumption, why it was made, what happens if wrong |
 | `approach` | `apr` | Was the fix the best / most proper way? Honest self-review: what shortcuts were taken, what a senior reviewer would flag, what the "proper" version looks like if different |
 | `cold` | `cld` | Fresh-eyes branch audit. Re-read CLAUDE.md from scratch. Review every change on the branch as if this were a new session with no prior context — don't privilege the diffs you just made. List all findings with a fix plan per item. Default scope: `branch` |
 
