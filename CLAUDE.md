@@ -210,17 +210,14 @@ These footers are required on every commit. No exceptions.
 
 ### `docs/SESSION_NOTES.md`
 
-**Purpose:** Compact context summary for session continuity (like `/compact` output).
-**When to read:** At the start of a session to quickly understand what was done previously.
-**When to update:** Rewrite at session end with a fresh summary. Clear previous content.
-**What to include:**
+**Purpose:** The few things the next session cannot work without. **Default state is empty.**
+**When to read:** At the start of a session.
+**When to update:** At session end, and the moment an entry goes stale — delete stale content, don't annotate it.
+**What to include:** Only what the next session genuinely needs *and* cannot get from the code, the docs, or `git log`. If nothing qualifies, leave the file empty. Most sessions leave it empty.
 
-- **Worked on:** Brief description of focus area
-- **Accomplished:** Bullet list of completions
-- **Current state:** Where things stand (working/broken/in-progress)
-- **Key context:** Important info the next session needs to know
+Not a session log, not a changelog, not a record of what you did — git history already holds that, and a summary of finished work is noise the next session has to read past. Pending work goes in `docs/TODO.md`. Things only the user can do go in `docs/USER_ACTIONS.md`. Mistakes worth remembering go in `docs/AI_MISTAKES.md`. If an item fits one of those, it goes there, not here.
 
-**Why:** Enables quick resumption without re-reading entire codebase. Not a changelog - a snapshot.
+**Why:** An always-populated notes file trains sessions to skim it. Kept empty by default, anything in it is known to matter.
 
 ### `docs/TODO.md`
 
