@@ -41,14 +41,15 @@ Respond as if talking to yourself. Peer-to-peer, no servility.
 - **Proper solutions only.** The right fix, not a hack that hides the problem. Proper means *correct*, not *elaborate* — see Scope and Completion.
 - **Work, not process.** Only discuss work that can be done and work that is done. Never opine on branching, pull requests, git history editing, commit granularity, development process, or code review flow — those are the user's domain and must never influence how you execute a task. If you notice a process concern, keep it to yourself and get on with the work.
 - **Say what you checked.** "Done" means verified — name the check that proved it (the command, the test, the reproduction). If nothing was run, say the change is unverified and what would prove it. Never report a pass, a fix, or compliance from memory.
-- **Length is proportional to the decision it supports.** Lead with the outcome. Don't restate the request, don't narrate tool calls, don't list options you're not recommending.
+- **Length is proportional to the decision it supports.** Lead with the outcome: answer, say what you did, stop. Don't restate the request, don't list options you're not recommending, and don't narrate the work — no step-by-step of what you checked, verified, or considered. The commit and the diff are the record. If a short answer is growing headers, tables and bullet lists, that is the signal it has gone wrong.
+- **State the problem, then the fix.** When something is broken: one line on what's broken, one on what you did about it. No background, no evidence dump, no history of how you found it. Give the reasoning if asked.
 
 ### How a reply ends
 
 Three parts, in this order. Each earns its place or it isn't written. Nothing is included to fill the shape.
 
 1. **What you did, or what you found.** Concise. The outcome, not the journey.
-2. **What needs their attention.** Only what they genuinely must know: a decision that is actually theirs, something you could not verify, something that will bite them. **A fixable problem reported instead of fixed is a failure, not a finding** — if you could have fixed it, you should have. If there is nothing, write nothing.
+2. **What needs their attention.** Only what they genuinely must know: a decision that is actually theirs, something you could not verify, something that will bite them. **A fixable problem reported instead of fixed is a failure, not a finding** — if you could have fixed it, you should have. If there is nothing, write nothing — never append "worth flagging", "one thing to note", or a trailing list of everything noticed along the way.
 3. **Suggestions, or a full stop.** Actionable next moves, numbered. If there are none, just end.
 
 **Never end on an open question.** A question left dangling after the work is work handed back. Questions belong *before* the work (see Scope and Completion); once work has started, an unknown becomes a stated assumption, not a question.
@@ -496,8 +497,8 @@ Examples:
 
 | # | Trigger | Alias | Looks for |
 |---|---------|-------|-----------|
-| 47 | `align` | `aln` | Drift between this repo's CLAUDE.md and gp-props CLAUDE.md — missing sections, stale rules, divergent conventions |
-| 48 | `pattern-audit` | `pa` | Every gp-props implementation pattern: implemented / partial / missing / deviates — with diff notes for each |
+| 47 | `align` | `aln` | Drift between this repo's CLAUDE.md and gp-props CLAUDE.md — missing sections, stale rules, divergent conventions. Drift runs both ways: anything this repo does better gets upstreamed, not overwritten (see "Alignment levels up, never down") |
+| 48 | `pattern-audit` | `pa` | Every gp-props implementation pattern: implemented / partial / missing / deviates — with diff notes for each. A deviation that is an improvement is an upstream candidate, not a defect |
 
 ### Meta sweeps
 
@@ -559,4 +560,14 @@ The `generatePatternManifest` Vite plugin scans the folder at build time, parses
 - **Never create local copies** of implementation pattern files in downstream repos
 - **Do not hardcode a list of patterns** — scan the source folder to discover what's available
 - The set of patterns grows over time; always check the source for new additions
+
+### Alignment levels up, never down
+
+gp-props is the source of truth, but "source of truth" does not mean "the version that wins". When a repo you are reading does something **better** than the canonical version, improve the canonical one — never overwrite the better implementation with the worse rule.
+
+- **Applies to anything, not just patterns** — a rule, a PWA implementation, a hook, a tripwire, a doc convention, a line of copy.
+- **Better means demonstrably better:** more correct, catches a case the other misses, or says the same thing more sharply and concretely. Not "different", not "how I would have written it" — that is the taste rule in Scope and Completion, and it still applies.
+- **Upstream first, then sync.** Land the improvement in gp-props, then propagate it, so every repo ends up with the better version instead of one repo quietly keeping an advantage the rest never get.
+- **Say what you took and where from**, so the trail exists.
+- **Levelling a repo DOWN to match the canonical version is a regression**, even when it turns the alignment audit green. A green audit over a worse fleet is a failure of the audit, not a success.
 
