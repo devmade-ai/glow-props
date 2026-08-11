@@ -1,5 +1,28 @@
 # AI Mistakes
 
+## 2026-08-10: Ran a fleet-wide edit script twice and double-applied it across 12 repos
+
+**What went wrong:** The CLAUDE.md convention sync was applied by one script over 14 repos. Some steps reported "skipped" because their anchor text had a local variant, so the script was patched and re-run to close them. Two of its steps had no idempotence guard, and the re-run inserted the entire `## Scope and Completion` section a **second** time in all 12 repos it had already touched, and duplicated the `SCOPE AND COMPLETION,` token in the H1 — three times in some files, because a third run followed. Caught before any of it was committed, by counting occurrences rather than eyeballing a diff: `grep -c '^## Scope and Completion'` returned 2. Repaired with `git checkout -- CLAUDE.md` across all 12, since they were fresh clones with no other changes.
+
+**Then it happened again, more subtly.** After adding guards to those two steps, an idempotence *probe* — running the script twice and diffing — re-fired a third step, `proh:out-of-scope`. Its guard checked for the OLD string; once the first run had replaced it, the second run fell through to the "this repo never received these prohibitions" branch and appended three more. The probe intended to prove safety caused the same damage it was testing for.
+
+**Why it happened:** An edit expressed as "replace A with B" is only idempotent if B cannot also match the search, or if a guard checks for B's presence. Two of the steps were pure insertions with no guard at all. The third had a guard, but keyed on the *absence of the old text* rather than the *presence of the new* — and those are not the same condition when the step has a fallback branch. A fourth guard failed for a different reason worth naming on its own: it tested `t.includes('Alignment levels up')`, which was true as soon as an earlier step inserted a trigger-table row **quoting that section's title**. A guard has to key on something only the insertion produces.
+
+**How to prevent it:**
+- **A multi-repo edit script is not finished until running it twice is a proven no-op.** Assert it — run the whole thing a second time and fail loudly if any step reports work. Do not reason about idempotence; measure it.
+- **Guard on the presence of what you insert, never on the absence of what you replace** — a step with a fallback branch will take the fallback once the old text is gone.
+- **Make the guard string unique to the insertion.** Section titles get quoted elsewhere; pick the heading with its `###` prefix, or a sentence that appears nowhere else.
+- **Verify by counting, not by reading.** `grep -c` over every repo catches a double-insertion that a skimmed diff will not.
+- Work on fresh clones with nothing else uncommitted, so `git checkout --` is a complete undo.
+
+## 2026-08-10: Deleted 14 files first and verified they were safe to delete afterwards
+
+**What went wrong:** `docs/SESSION_NOTES.md` was emptied across 14 repos inside the same batch script that applied the convention sync. Only afterwards was each file's content checked against its repo's `CLAUDE.md` to confirm nothing durable was lost. It happened to be safe in the two repos checked first, and the remaining twelve were then checked properly — seven turned out to hold facts recorded nowhere else, which were moved to `CLAUDE.md` AI Notes or `TODO.md` before those files were rewritten.
+
+**Why it happened:** The rule being propagated in that very commit says to **check reality first, then delete**. Emptying the notes was treated as part of the mechanical sync — one more line in the loop — rather than as fourteen separate judgement calls about fourteen different files. Batching is what hid it: a per-repo step invites a per-repo decision, a loop does not.
+
+**How to prevent it:** Deletion is never a batch step. Read each file, decide what survives and where it goes, move it, and only then delete — per file, in that order. If a sync script also deletes, split it: the mechanical edits can loop, the deletions cannot. Note that the outcome was fine and that is exactly the trap — the order was wrong, and the next batch is the one where it costs something.
+
 ## 2026-08-06: Pushed a fleet-wide change to every repo at once and starved CI of runners
 
 **What went wrong:** The `glow-props` → `gp-props` rename was pushed to ~16 repos inside about two minutes (19:33–19:35), each opening a PR, each firing both a push and a pull_request run. That burst exceeded the account's concurrent-job allowance. Four jobs never got a runner at all and were cancelled ~15 minutes later: `verify` in gp-props (CI #1), `verify` in qi-invoice (CI #29), `Docker image` in sp-backend (CI #36), and `check` in sun-sea-o (CI #48). The last one was the merge commit landing on **main**, so sun-sea-o's default branch showed red for 10 hours over a job that never executed. Re-running all four with no code change passed — every job was assigned a runner within ~3 seconds.
@@ -9,6 +32,8 @@
 **How to recognise it (the diagnostic signature):** the run shows ✗ but there is **no failing job** — `get_job_logs --failed_only` returns "No failed jobs found". The job's conclusion is `cancelled`, `runner_id` is `0`, `runner_name` is `""`, `started_at == created_at`, and there is **no `steps` array at all**, because the job never began. Duration is ~15 minutes, GitHub's cancel point for an unassignable job. Corroborate with a sibling: in sp-backend CI #36 the other two jobs in the SAME run with the SAME `ubuntu-latest` label got runners in 3 seconds and passed — which rules out label mismatch, workflow error, and the commit itself. This reads exactly like a broken build to anyone who does not check `runner_id`, so the wasted hours go into hunting a bug that was never there.
 
 **How to prevent it:** Stagger fleet-wide pushes rather than firing every repo in one loop — the per-repo workflows are fine and need no change. When a red run has no failing step, check `runner_id`/`steps` BEFORE reading any code, and re-run rather than debug. Remediation is just `rerun_workflow_run`; nothing needs fixing in the repos.
+
+**Measured 2026-08-10 — the exposure is far narrower than "16 repos" implies.** Only **5 of 18** repos run GitHub Actions at all (`kl-website`, `qi-invoice`, `sun-sea-o`, `sp-website`, `sp-backend`); the other 13 build on Vercel or Cloudflare, which have their own capacity and never touch the account's runner pool. A second fleet-wide sync pushed all 18 branches and opened 16 PRs, and every Actions job got a runner within seconds — sp-backend's three jobs, sp-website's lint-and-typecheck, sun-sea-o's check, kl-website's build, qi-invoice's verify, all green. **Stagger the five that have workflows; the rest is theatre.** Confirm the set before assuming, with `ls .github/workflows/` per repo — the split moves as repos change host.
 
 ## 2026-08-01: Self-reported pattern compliance without verifying it
 
