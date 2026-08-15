@@ -1,5 +1,23 @@
 # AI Mistakes
 
+## 2026-08-15: Destroyed the first line of CLAUDE.md in 14 repos, verified it as green, and shipped it
+
+**What went wrong:** The convention sync replaced **line 1 — the H1 — with a trigger-table row** in 14 of the 18 repos, and it was merged to `main` in every one of them. `repo-tor` lost `# Git Analytics Reporting System`; `see-veo` lost `# see-veo`; the other twelve lost the fleet `# READ AND FOLLOW…` banner. Each file then opened with `| 48 | \`pattern-audit\` | \`pa\` | …` sitting above the project description. It was found four days later, by accident, because the user asked for unrelated work on see-veo and reading the top of that file made it visible. **Nothing in the process would ever have caught it.**
+
+**Why it happened — the mechanical cause.** The trigger-row step matched on `` /^\\| *\\d+ *\\| `align` \| `aln` \|.*$/m ``. In a JavaScript regex literal `\\|` is an **escaped backslash followed by the alternation operator**, not an escaped pipe. The pattern therefore parsed as a list of alternatives — `^\\`, `` *\\d+ *\\ ``, `` `align` \\ ``, `` `aln` \\ ``, `.*$` — whose final branch `.*$` matches *any line*. `String.prototype.match` returns the leftmost match, which is line 1 of the file. So the step replaced the H1 with the canonical row instead of finding the row it was looking for. As a bonus, the update it actually existed to make never landed anywhere: `` | 47 | `align` | `` was absent from all 14 repos afterwards.
+
+**Where the escaping came from, which is the reusable part.** The script was edited *programmatically* — patched with `node -e` and `sed` one-liners whose own quoting layers doubled every backslash. The same corruption had already been hit once in the same file, in the `SESSION_NOTES` matcher, where it surfaced as a harmless "step skipped". That one was fixed by hand and **the rest of the file was never swept for the same class**. One instance of a bug class was treated as one bug.
+
+**Why the verification passed anyway — the expensive part.** The sync was checked with a 14-point grep per repo: presence of every canonical block, absence of every superseded string. Both directions were about **the change**. A grep for what you added cannot see what you destroyed. Worse, the H1 assertion searched for `SCOPE AND COMPLETION` — a string that also appears in `### REMINDER: READ AND FOLLOW THE SCOPE AND COMPLETION RULES EVERY TIME`. It matched the reminder line and reported the H1 present while the H1 was gone. **An assertion that can be satisfied by something other than the thing it asserts is not an assertion**, and this one was reported to the user as proof the sync was clean.
+
+**How to prevent it:**
+- **Never patch a script's source with `sed`/`node -e` one-liners.** Quoting layers silently double backslashes and turn `\|` into alternation. Edit the file as a file.
+- **When you find one instance of a bug class, sweep the file for the whole class.** The first double-escaped regex only "skipped a step"; the second destroyed 14 repos. They were four lines apart.
+- **An assertion string must be unique to the thing asserted.** Before trusting `grep -c 'X' == 1`, check that `X` cannot appear anywhere else in the file. Anchor on the whole line (`^# READ AND FOLLOW`), never on a fragment that recurs.
+- **Verify deletions, not just additions.** `git diff | grep '^-[^-]'` and read every removed line. Additions are what you meant; deletions are what you did by accident.
+- **Assert structural invariants unrelated to the change.** "Line 1 is a heading" would have caught this instantly and is blind to whatever the edit was about. Change-specific checks cannot see collateral damage by construction.
+- On a fleet-scale edit, spot-read one whole file end to end before pushing any of them. The 14-point grep never rendered a single file to a human.
+
 ## 2026-08-10: Ran a fleet-wide edit script twice and double-applied it across 12 repos
 
 **What went wrong:** The CLAUDE.md convention sync was applied by one script over 14 repos. Some steps reported "skipped" because their anchor text had a local variant, so the script was patched and re-run to close them. Two of its steps had no idempotence guard, and the re-run inserted the entire `## Scope and Completion` section a **second** time in all 12 repos it had already touched, and duplicated the `SCOPE AND COMPLETION,` token in the H1 — three times in some files, because a third run followed. Caught before any of it was committed, by counting occurrences rather than eyeballing a diff: `grep -c '^## Scope and Completion'` returned 2. Repaired with `git checkout -- CLAUDE.md` across all 12, since they were fresh clones with no other changes.
