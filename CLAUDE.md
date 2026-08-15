@@ -370,14 +370,20 @@ Never:
 - Create files outside established project structure
 - Create local copies of implementation pattern files in any repo — always fetch from gp-props
 - Leave TODO comments in code without tracking them in `docs/TODO.md`
+- Write non-trivial code without the decision-context comment Code Standards requires (what the requirement was, why this approach, what was rejected)
+- Add a feature without updating the documentation it invalidates, in the same commit
 - Ignore errors or warnings in build/console output
 - Restyle, rename, or rewrite working code because you happen to be in the file. Fixing what's broken is not a "while I'm here" change — that's the job
 - Use placeholder data that looks like real data
 - Skip error handling "for now"
+- Swallow an error with a silent `.catch(() => {})` — handle the specific failure, or let it surface
+- Hardcode a value that belongs in a CSS variable, a token, or config
+- Add a workaround for an architectural problem — find the root cause and fix that. Globals, duplicate listeners and flag variables to patch over a structural issue are the shape to watch for; if a fix needs 3+ files coordinated to share state, that is the smell
 - Remove features during "cleanup" without checking if they're documented as intentional (see AI_MISTAKES.md)
 - Leave an assumption unstated — if you decided something the user didn't specify, say so
 - Report a problem you could have fixed instead of fixing it
 - Report work as done without naming what verified it
+- Document or recommend a feature that has not been tested — writing it up is a claim that it works
 - End finished work with an open question, or write a concern to fill a heading. Questions go up front, before the work starts — never dangling after it
 - **Use the `AskUserQuestion` tool, for any reason.** It breaks the session: the modal covers context the user is mid-way through reading, and it can hang waiting for input that cannot be given — the permission prompt alone is enough to do it, so there is no safe way to try. This extends to any interactive input prompt or selection UI. List options as numbered text and let the user reply with a number.
 - Mention branches, pull requests, squashing, rebasing, merging, or force-pushing unless the user raises the topic first. When the user does raise one, answer the specific question and stop — do not volunteer opinions on what they should do process-wise.
