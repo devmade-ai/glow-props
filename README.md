@@ -98,7 +98,7 @@ gp-props/
     verify-seo.mjs              # Tripwire: discoverability contract (run after build)
     verify-icon-cache-bust.mjs  # Tripwire: icon versioning contract (run after build)
   docs/
-    SESSION_NOTES.md            # Current session context
+    SESSION_NOTES.md            # What the next session must know (empty by default)
     TODO.md                     # Pending items
     AI_MISTAKES.md              # Learnings from past AI errors
     USER_ACTIONS.md             # Manual tasks requiring user intervention

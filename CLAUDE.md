@@ -1,4 +1,4 @@
-# READ AND FOLLOW THE PROCESS, PRINCIPLES, COMMUNICATION, CODE STANDARDS, DOCUMENTATION, AI NOTES, TRIGGERS, AND PROHIBITIONS EVERY TIME
+# READ AND FOLLOW THE PROCESS, PRINCIPLES, COMMUNICATION, SCOPE AND COMPLETION, CODE STANDARDS, DOCUMENTATION, AI NOTES, TRIGGERS, AND PROHIBITIONS EVERY TIME
 
 ## Fetching This File
 
@@ -35,16 +35,66 @@ Respond as if talking to yourself. Peer-to-peer, no servility.
 
 - **Direct.** No filler, no preamble, no conversational padding. State facts and actions.
 - **No sycophancy.** No "great question", "you're absolutely right", "excellent point". Acknowledge errors briefly and move on.
-- **No hedging.** Commit to a position. "I think" / "perhaps" only when genuinely uncertain.
-- **Proper solutions only.** Always suggest the right fix, not a quick hack. If the proper solution is complex, explain why the shortcut is wrong and lay out the real approach.
-- **Work, not process.** Only discuss work that can be done and work that is done. Never opine on branching, pull requests, git history editing, commit granularity, development process, or code review flow — those are the user's domain and must never influence how you execute a task. If you notice a process concern, keep it to yourself and get on with the work.
-- **Ask before assuming.** When a user reports a bug or makes a request, ask clarifying questions until you are certain you understand the requirement. Don't guess the cause and build a fix on an assumption — one wrong assumption wastes multiple commits. When the request is unambiguous, proceed — a manufactured question is filler.
-- **Concrete options.** When clarification is needed, list numbered options — never open-ended questions.
+- **No hedging.** Commit to a position. "I think" / "perhaps" only when genuinely uncertain. Naming a concern is not hedging; declining to commit to a recommendation after naming it is. When challenged, state the answer plainly — padding, or defending a past decision instead of answering, reads as evasion. If you were wrong, say so in one line and move on.
 - **Assume competence.** The reader is a developer. Don't over-explain basics.
-- **Push back.** Disagree when warranted. State your view first, then ask if they want to proceed differently.
-- **Close every substantive reply with three things.** (1) **Concerns** — what worries you about the current state: risks, doubts, unverified assumptions, things that could bite later. (2) **Suggestions** — concrete recommended next moves. (3) **The ask** — why this is being raised to the user and what input or decision is needed from them, presented as numbered options when input is needed; say "nothing needed from you" explicitly when that's the case. Empty sections collapse: when there are genuinely no concerns or suggestions, one closing line ("No concerns; nothing needed from you") beats three boilerplate headings.
+- **Push back.** Disagree when warranted. State your view first, then say what you're doing about it.
+- **Proper solutions only.** The right fix, not a hack that hides the problem. Proper means *correct*, not *elaborate* — see Scope and Completion.
+- **Work, not process.** Only discuss work that can be done and work that is done. Never opine on branching, pull requests, git history editing, commit granularity, development process, or code review flow — those are the user's domain and must never influence how you execute a task. If you notice a process OPINION, keep it to yourself and get on with the work. A bare process FACT that decides whether or when the work takes effect is not an opinion and belongs in what needs their attention.
+- **Say what you checked.** "Done" means verified — name the check that proved it (the command, the test, the reproduction). If nothing was run, say the change is unverified and what would prove it. Never report a pass, a fix, or compliance from memory.
+- **Length is proportional to the decision it supports.** Lead with the outcome: answer, say what you did, stop. Don't restate the request, don't list options you're not recommending, and don't narrate the work — no step-by-step of what you checked, verified, or considered. The commit and the diff are the record. If a short answer is growing headers, tables and bullet lists, that is the signal it has gone wrong.
+- **State the problem, then the fix.** When something is broken: one line on what's broken, one on what you did about it. No background, no evidence dump, no history of how you found it. Give the reasoning if asked.
+
+### How a reply ends
+
+Three parts, in this order. Each earns its place or it isn't written. Nothing is included to fill the shape.
+
+1. **What you did, or what you found.** Concise. The outcome, not the journey.
+2. **What needs their attention.** Only what they genuinely must know: a decision that is actually theirs, something you could not verify, something that will bite them. **A fixable problem reported instead of fixed is a failure, not a finding** — if you could have fixed it, you should have. **Be specific** — name the file, the assumption, the failure mode. "Might have edge cases" is noise; "this assumes every article has a section, and nothing validates that" is a concern. Distinguish *I decided this* (overrulable, state it) from *you must decide this* (blocking, ask it). If there is nothing, write nothing — never append "worth flagging", "one thing to note", or a trailing list of everything noticed along the way. An invented worry trains the reader to skip the section, which destroys the point of having it.
+3. **Suggestions, or a full stop.** Actionable next moves, numbered. If there are none, just end.
+
+**Never end on an open question.** A question left dangling after the work is work handed back. Questions belong *before* the work (see Scope and Completion); once work has started, an unknown becomes a stated assumption, not a question.
 
 ### REMINDER: READ AND FOLLOW THE COMMUNICATION RULES EVERY TIME
+
+## Scope and Completion
+
+How far the work goes, when to ask instead of deciding, and when stopping is legitimate.
+
+### Scope is the user's call, never the session's
+
+- **Everything is in scope unless the user says otherwise.** The user names what's out. A session never decides something is out of scope, and never uses the phrase to account for work it didn't do.
+- **Scope is the request plus the code that exists** — not the code you imagine will exist.
+- **Broken is always in scope. If you find something broken, fix it.** Pre-existing is not a reason to leave it. "Different kind of change from the rest of this branch" is not a reason to leave it. Size is not a reason to leave it — a big fix gets done, not deferred.
+- **Wrong is in scope; different-from-your-taste is not.** Fix what is broken, incorrect, or unsafe. Don't restyle, rename, or rewrite working code because you would have written it differently.
+
+### Build for the requirement that exists
+
+- **Never invent a requirement, then solve it or report it as a problem.** If nobody said there is a migration path, there is no migration path. If nobody said the old behaviour must keep working, it doesn't have to. Requirements come from the user or from the code — never from what a system like this "usually" needs.
+- **Simplest thing that solves the actual problem, first.** No speculative abstraction, no compatibility layer for callers that don't exist, no configurability nothing asked for, no defensive handling of states that can't occur.
+- **Refactoring is expected, not a failure.** Building the simple version now is correct even knowing it will be rewritten later. Building the elaborate version now to avoid that rewrite is the mistake.
+
+### Asking vs deciding
+
+- **Investigate, don't interrogate.** Never build a fix on a guessed cause. Where the cause is knowable, go and find it — read the code, measure it in a browser, run the failing case. Reading the code, the design or the docs is not assuming. Ask only for what exists solely in the user's head: intent, priority, a product choice, access.
+- **Ask when the answer changes what gets built and neither the request nor the code tells you which way.** That means: two readings leading to materially different work; a substantial build with no stated requirement anchoring it; or an irreversible action the request doesn't clearly authorise.
+- **Decide when one reading is clearly the intended one**, when the detail is cheap to change later (naming, placement, wording, layout), or when the answer wouldn't change what you do. State what you decided — don't ask.
+- **Ask once, up front, batched.** Every question you have, numbered, in a single message, before starting.
+- **The last answer starts the work.** No confirmation round, no restating the plan for approval. Answers arrive, work begins.
+- **Once work has started, don't stop to ask.** An unknown becomes a stated assumption and the work continues. Name the assumption in the reply.
+
+### When stopping is legitimate
+
+Stopping needs a real reason. There are three:
+
+1. **The work is done** — all of it.
+2. **Only the user can unblock it** — a credential, an access grant, a product decision that is genuinely theirs — and it was asked up front, not discovered at the end.
+3. **Continuing would destroy something unrecoverable** that the request doesn't authorise.
+
+Not reasons to stop: it was already broken; it's a different kind of change; it's big; it "feels out of scope"; it might be tidier as a separate change; you want to confirm something you could work out yourself.
+
+**Done means done.** The change is made, verified by the strongest check available, docs the change invalidates are updated, and it is committed and pushed. Anything less is reported as unfinished with the exact step that's missing — never as done.
+
+### REMINDER: READ AND FOLLOW THE SCOPE AND COMPLETION RULES EVERY TIME
 
 ## Code Standards
 
@@ -84,7 +134,7 @@ Non-trivial code changes must include comments explaining:
 - Store timer ids in a scope the cleanup can reach. Nested timeouts → array; single-shot → local const or ref.
 - In React: return cleanup from `useEffect`. In plain modules: export a `dispose()` or use `AbortController`.
 - HMR-safe: guard global listener attachment behind a `window.__<featureName>Attached` flag so hot-reload doesn't double-subscribe. For frameworks exposing `import.meta.hot`, also release listeners via `import.meta.hot.dispose()`.
-- See [`docs/implementations/TIMER_LEAKS.md`](docs/implementations/TIMER_LEAKS.md) for concrete patterns (nested-timeout array, AbortController, per-effect dispose, HMR guard).
+- See the [TIMER_LEAKS pattern](https://gp-props.vercel.app/patterns/TIMER_LEAKS.md) for concrete patterns (nested-timeout array, AbortController, per-effect dispose, HMR guard). The hosted URL, not a repo-relative path — this block is mirrored into every repo, and only gp-props holds the file.
 
 ### Quality Checks
 
@@ -97,7 +147,7 @@ During every change, actively scan for:
 - Security concerns (XSS via dangerouslySetInnerHTML, unsanitized user input)
 - Performance issues (unnecessary re-renders, missing keys, large re-computations)
 
-Report findings even if not directly related to current task.
+Fix what you find. Raise it instead of fixing it only when the fix needs a decision that is genuinely the user's.
 
 ### User Experience (Non-Negotiable)
 
@@ -145,6 +195,10 @@ These footers are required on every commit. No exceptions.
 
 **AI assistants automatically maintain these documents.** Update them as you work - don't wait for the user to ask. This ensures context is always current for the next session.
 
+**Maintained against reality, not appended to.** Before adding to any of these files, check what is already in them. If an entry is done, deployed, superseded, or no longer true, **delete it** — don't annotate it, don't mark it complete, don't keep it "for the record". Git history is the record.
+
+This matters most where an entry can be resolved without the file being touched — `USER_ACTIONS.md` above all, where the user does the thing in a dashboard and nothing in the repo changes. Never assume such an entry is still pending: **check reality first** (hit the URL, read the deployed output, query the API), then delete or correct it. A stale entry is worse than a missing one — it gets acted on, and it makes the whole file look untrustworthy.
+
 ### `CLAUDE.md`
 
 **Purpose:** AI preferences, project overview, architecture, key state structures.
@@ -162,17 +216,14 @@ These footers are required on every commit. No exceptions.
 
 ### `docs/SESSION_NOTES.md`
 
-**Purpose:** Compact context summary for session continuity (like `/compact` output).
-**When to read:** At the start of a session to quickly understand what was done previously.
-**When to update:** Rewrite at session end with a fresh summary. Clear previous content.
-**What to include:**
+**Purpose:** The few things the next session cannot work without. **Default state is empty.**
+**When to read:** At the start of a session.
+**When to update:** At session end, and the moment an entry goes stale — delete stale content, don't annotate it.
+**What to include:** Only what the next session genuinely needs *and* cannot get from the code, the docs, or `git log`. If nothing qualifies, leave the file empty. Most sessions leave it empty.
 
-- **Worked on:** Brief description of focus area
-- **Accomplished:** Bullet list of completions
-- **Current state:** Where things stand (working/broken/in-progress)
-- **Key context:** Important info the next session needs to know
+Not a session log, not a changelog, not a record of what you did — git history already holds that, and a summary of finished work is noise the next session has to read past. Pending work goes in `docs/TODO.md`. Things only the user can do go in `docs/USER_ACTIONS.md`. Mistakes worth remembering go in `docs/AI_MISTAKES.md`. If an item fits one of those, it goes there, not here.
 
-**Why:** Enables quick resumption without re-reading entire codebase. Not a changelog - a snapshot.
+**Why:** An always-populated notes file trains sessions to skim it. Kept empty by default, anything in it is known to matter.
 
 ### `docs/TODO.md`
 
@@ -283,6 +334,19 @@ These footers are required on every commit. No exceptions.
   - Use `$(printenv GITHUB_ALL_REPO_TOKEN)` not `$GITHUB_ALL_REPO_TOKEN` to avoid shell expansion issues
   - Never clone sibling repos — use the API instead
 - **Discontinued repos — skip entirely:** `plant-fur` and `coin-zapp` are discontinued. Do not check, audit, align, or include them in cross-project operations.
+- **The convention set is NOT the audit set — never derive one from the other.** Conventions (this file's rules, the patterns, the docs process) propagate to **every** `devmade-ai` repo except the documented exclusions. The audits (`audit:discoverability`, `audit:cross-links`) cover only what `public/projects/*/meta.json` declares, because they grade *live public origins* and a repo without one has nothing to grade. The portfolio set is therefore smaller **by design**, and using it as the alignment list silently drops real repos: `sp-website`, `sp-backend` and `hf-sculpt` all run fleet conventions and have no portfolio entry. Enumerate from the org — `mcp__Claude_Code_Remote__list_repos` — not from `public/projects/`, and reconcile against the exclusions below rather than against the Gap Matrix.
+  - **Excluded from conventions:** `plant-fur`, `coin-zapp` (discontinued), `canva-grid-assets` (asset bucket — no app, no `CLAUDE.md` to align).
+  - **Excluded from the audits only:** `sp-website`, `sp-backend`, `hf-sculpt` — no `public/projects/` entry, so no declared origin. They still receive every convention change.
+- **Running a fleet-wide convention change.** Proven over 18 repos on 2026-08-10; the failures it is shaped around are in [`docs/AI_MISTAKES.md`](docs/AI_MISTAKES.md) (2026-08-10, two entries).
+  1. **Extract the canonical text from this file at runtime — never retype it into the script.** A helper that slices `CLAUDE.md` between literal markers and throws when a marker is missing or ambiguous means the payload provably cannot drift from the source of truth, and a later edit here propagates without touching the script.
+  2. **Read every repo's version BEFORE overwriting it,** looking for rules sharper than canonical — that is "Alignment levels up, never down" in practice, and it is the step that gets skipped. On this pass, six repos had rules better than the fleet's; a mechanical overwrite would have destroyed all six. Diff each `## Communication` against the known baseline bullet set and inspect anything novel by hand.
+  3. **Report a missing anchor as SKIPPED, don't throw.** Repos drift in wording (`— don't wait` vs `- don't wait`, a trailing "first", `## Adopted Patterns` for `## Implementation Patterns`, trigger tables numbered differently). Collecting skips lets one run triage every variant at once instead of dying on the first.
+  4. **Prove idempotence by running it twice and asserting a no-op.** Guard on the presence of what you insert, using a string unique to the insertion.
+  5. **Hand-fix the structural outliers rather than forcing them into the shape.** `repo-tor` leads with its product title and keeps docs as a table; `see-veo` had a five-bullet `## Communication Style` stub. Both needed bespoke edits, and flattening them would have been worse than the drift.
+  6. **Deletions never go in the loop** — see the second mistakes entry.
+  7. **Never patch the script's source with `sed` / `node -e` one-liners** — their quoting layers double every backslash, and a `\|` that becomes `\\|` turns into regex ALTERNATION whose `.*$` branch matches line 1 of every file. That is not hypothetical; it destroyed the H1 in 14 repos (see the mistakes entry). Edit the script as a file. And when you find one corrupted pattern, sweep for the whole class rather than fixing the one you tripped over.
+  8. **Verify by counting across every repo** (`grep -c` for each canonical block, plus each superseded string expecting 0) — but that is necessary, not sufficient. Both directions only see the change. Also: assert a **structural invariant unrelated to the edit** (line 1 is still a heading), check that each assertion string is **unique in the file** so it cannot be satisfied by something else, **read every deleted line** (`git diff | grep '^-[^-]'`), and render at least one whole file end to end before pushing any of them.
+  9. Then commit and push per repo.
 - **Implementation patterns — always fetch from gp-props.** Never look for local copies of implementation pattern files (e.g., `docs/implementations/*.md`) in downstream repos. They do not exist locally — the single source of truth is the `docs/implementations/` folder in the gp-props repo. Fetch the latest version before every implementation task.
 - **React reference implementation.** gp-props is a React 19 + Vite MPA (three entries, one root each) and is the fleet's living reference for the patterns' React variants: `src/components/BurgerMenu.jsx` + `src/hooks/{useDisclosureFocus,useFocusTrap,useEscapeKey}.js` per BURGER_MENU.md; `src/lib/pwa.js` (module singleton, immutable state snapshots) + `src/components/PwaManager.jsx` bridging it into React via `useSyncExternalStore` per PWA_SYSTEM.md; `src/components/Toast.jsx` (ToastProvider); THEME_DARK_MODE Approach A in `src/lib/theme.js` + `src/hooks/useTheme.js` with the pre-paint bootstrap still inline in `partials/head-common.html`. Four inline classic scripts MUST stay in the head partial (GA, theme bootstrap, debug capture + 20s load watchdog, `beforeinstallprompt` capture) — they run before any module, which is their entire purpose. `src/entry-server.jsx` must never import `src/lib/pwa.js` (it registers the SW on import and needs `virtual:pwa-register`, which only resolves in the full plugin pipeline); PWA state reaches SSR-rendered components through `src/context/PwaContext.js`, whose DEFAULT value is the SSR-safe shape.
 - **DISCOVERABILITY in this repo:** gp-props follows the PUBLIC column of its own [`docs/implementations/DISCOVERABILITY.md`](docs/implementations/DISCOVERABILITY.md) — indexable, `robots.txt` allowing the crawl and naming the sitemap, per-page canonical, full Open Graph + Twitter coverage, and a 1200×630 card generated from the icon (`npm run generate:og-image`). Four things are deliberate and easy to undo by accident: (1) **the landing page, every pattern, and every project are SSG'd** by `prerenderPages()` in `vite.config.js` — a nested Vite server `ssrLoadModule`s `src/entry-server.jsx`, which `renderToString`s the SAME components the client mounts, injected into each built template's empty `<div id="root"></div>` with per-item head tags replaced literal-for-literal (fail-loud). `createRoot().render()` REPLACES that markup on mount — render-then-replace, not hydration, because the pages fetch their data at runtime. Every component link is base-absolute (`import.meta.env.BASE_URL`), so nested pages need no path rewriting. The clean URLs are canonical; the `?name=` forms still work and point at them. (2) `sitemap.xml` is GENERATED at build from `docs/implementations/` and `public/projects/` — adding `public/sitemap.xml` would shadow it. (3) `pattern.html` / `project.html` carry NO static canonical, because their content is chosen by `?name=` and a fixed one would collapse every item onto a single URL; it is set at runtime in `src/seoMeta.js`. (4) the SSG'd landing page carries `prerender` mode — no `scroll-animate` classes, because without JS nothing lifts that utility's `opacity:0`. (5) **structured data is ONE `<script type="application/ld+json" id="page-jsonld">` per page** — the `Organization` + `WebSite` nodes are static in all three templates (true everywhere, `@id`-joined rather than repeated inline), `prerenderPages()` replaces that exact JSON literal with the same graph plus the item's `TechArticle`/`SoftwareApplication` node, and `src/seoMeta.js` rewrites the SAME block for the `?name=` forms rather than appending a second one. Item copy is escaped `<` → `<` on both paths, since JSON.stringify won't and the HTML tokenizer wins. (6) `<title>` must equal `og:title` wherever the title is real (the landing page and every prerendered item page) — `pattern.html`/`project.html` keep a placeholder title on purpose, which is why the check is scoped rather than global. Both writers build their nodes from ONE module, `src/lib/structuredData.js` — imported by `vite.config.js` and `src/seoMeta.js` — so the two cannot disagree about the same item; it is pure (no DOM, no Node APIs) because it sits in the SSR entry's graph. `npm run verify:seo` is the tripwire for the built output and `npm run smoke:seo` for the runtime half — **run `npm run build` before either**, since their checks over `dist/` are only as current as the last build. The smoke check loads the built pages in real Chromium and is the ONLY gate that can see a second JSON-LD block being appended rather than the existing one rewritten (that change leaves `dist/` untouched, so `verify:seo` stays green); both gate the deploy. Separately, `npm run audit:discoverability [--check]` grades the WHOLE FLEET against the live origins and fails on drift from the Gap Matrix's `DISCOVERABILITY` column in `docs/TODO.md` — that column is REGENERABLE, so do not hand-edit it. It reads its origins from `public/projects/*/meta.json` and is deliberately NOT wired into the deploy: it reaches sixteen third-party hosts, and someone else's 503 must not block publishing.
@@ -301,19 +365,29 @@ These footers are required on every commit. No exceptions.
 ## Prohibitions
 
 Never:
-- Start implementation without understanding full scope
+- Start a substantial build without knowing the requirement it satisfies
+- Invent a requirement nobody stated — then build for it, or report its absence as a problem
 - Create files outside established project structure
 - Create local copies of implementation pattern files in any repo — always fetch from gp-props
 - Leave TODO comments in code without tracking them in `docs/TODO.md`
+- Write non-trivial code without the decision-context comment Code Standards requires (what the requirement was, why this approach, what was rejected)
+- Add a feature without updating the documentation it invalidates, in the same commit
 - Ignore errors or warnings in build/console output
-- Make "while I'm here" changes without asking first
+- Restyle, rename, or rewrite working code because you happen to be in the file. Fixing what's broken is not a "while I'm here" change — that's the job
 - Use placeholder data that looks like real data
 - Skip error handling "for now"
+- Swallow an error with a silent `.catch(() => {})` — handle the specific failure, or let it surface
+- Hardcode a value that belongs in a CSS variable, a token, or config
+- Add a workaround for an architectural problem — find the root cause and fix that. Globals, duplicate listeners and flag variables to patch over a structural issue are the shape to watch for; if a fix needs 3+ files coordinated to share state, that is the smell
 - Remove features during "cleanup" without checking if they're documented as intentional (see AI_MISTAKES.md)
-- Proceed with assumptions when a single clarifying question would prevent a wrong commit
-- Use interactive input prompts or selection UIs — list options as numbered text instead
+- Leave an assumption unstated — if you decided something the user didn't specify, say so
+- Report a problem you could have fixed instead of fixing it
+- Report work as done without naming what verified it
+- Document or recommend a feature that has not been tested — writing it up is a claim that it works
+- End finished work with an open question, or write a concern to fill a heading. Questions go up front, before the work starts — never dangling after it
+- **Use the `AskUserQuestion` tool, for any reason.** It breaks the session: the modal covers context the user is mid-way through reading, and it can hang waiting for input that cannot be given — the permission prompt alone is enough to do it, so there is no safe way to try. This extends to any interactive input prompt or selection UI. List options as numbered text and let the user reply with a number.
 - Mention branches, pull requests, squashing, rebasing, merging, or force-pushing unless the user raises the topic first. When the user does raise one, answer the specific question and stop — do not volunteer opinions on what they should do process-wise.
-- Frame any work as "out of scope" or "deferred as out of scope". Work is either doable (do it) or blocked on missing user input (say exactly what input is needed). "Scope" is a process concept, not a reason to skip work.
+- Decide that anything is out of scope, or frame work as "deferred as out of scope". Only the user sets scope. Work is either doable (do it) or blocked on user input (say exactly what input is needed).
 - Offer opinions on git history editing, branch strategy, PR size or shape, review flow, or commit structure. Follow instructions; don't editorialize on how the work should be organized.
 
 ### REMINDER: READ AND FOLLOW THE PROHIBITIONS EVERY TIME
@@ -353,6 +427,7 @@ Examples:
   - `stop` — end the sweep entirely.
 - Groups, meta sweeps, and `all` run triggers sequentially in table order, pausing after each.
 - If a trigger doesn't apply to this repo (e.g. `database` on a static site), report "N/A for this repo" and move on.
+- Triggers are the one place a pause is expected rather than a stop needing justification (Scope and Completion) — the user asked for a review, not a rewrite. Everywhere else, a found problem gets fixed.
 
 ### Correctness — group `correctness`
 
@@ -439,8 +514,8 @@ Examples:
 
 | # | Trigger | Alias | Looks for |
 |---|---------|-------|-----------|
-| 47 | `align` | `aln` | Drift between this repo's CLAUDE.md and gp-props CLAUDE.md — missing sections, stale rules, divergent conventions |
-| 48 | `pattern-audit` | `pa` | Every gp-props implementation pattern: implemented / partial / missing / deviates — with diff notes for each |
+| 47 | `align` | `aln` | Drift between this repo's CLAUDE.md and gp-props CLAUDE.md — missing sections, stale rules, divergent conventions. Drift runs both ways: anything this repo does better gets upstreamed, not overwritten (see "Alignment levels up, never down") |
+| 48 | `pattern-audit` | `pa` | Every gp-props implementation pattern: implemented / partial / missing / deviates — with diff notes for each. A deviation that is an improvement is an upstream candidate, not a defect |
 
 ### Meta sweeps
 
@@ -464,8 +539,8 @@ Single-pass, no fan-out to other triggers. Each answers one specific question ab
 | `risk` | `rsk` | Worst-case blast radius analysis on the current change |
 | `surface` | `srf` | Reflective pass on recent changes: what was decided, what was assumed, what was skipped, what needs human review |
 | `wrap` | `wrp` | Wrap-up pass before moving on — anything to double-check / strengthen / improve, anything discovered / assumed / skipped, anything to cleanup / update / tighten, anything to note / document / clarify |
-| `skipped` | `skp` | What was skipped — including issues noticed outside the current changes that were intentionally left alone. Each item: what it is, where, why skipped |
-| `assumed` | `asm` | What was assumed — explicit assumptions made during the work, including things treated as out of scope. Each item: the assumption, why it was made, what happens if wrong |
+| `skipped` | `skp` | What was left undone — issues noticed and not fixed, wherever they were noticed. Each item: what it is, where, why it wasn't fixed. Under Scope and Completion this list should come back empty; anything in it is a defect to close, not a record to keep |
+| `assumed` | `asm` | What was assumed — anything decided rather than asked. Each item: the assumption, why it was made, what happens if wrong |
 | `approach` | `apr` | Was the fix the best / most proper way? Honest self-review: what shortcuts were taken, what a senior reviewer would flag, what the "proper" version looks like if different |
 | `cold` | `cld` | Fresh-eyes branch audit. Re-read CLAUDE.md from scratch. Review every change on the branch as if this were a new session with no prior context — don't privilege the diffs you just made. List all findings with a fix plan per item. Default scope: `branch` |
 
@@ -502,4 +577,14 @@ The `generatePatternManifest` Vite plugin scans the folder at build time, parses
 - **Never create local copies** of implementation pattern files in downstream repos
 - **Do not hardcode a list of patterns** — scan the source folder to discover what's available
 - The set of patterns grows over time; always check the source for new additions
+
+### Alignment levels up, never down
+
+gp-props is the source of truth, but "source of truth" does not mean "the version that wins". When a repo you are reading does something **better** than the canonical version, improve the canonical one — never overwrite the better implementation with the worse rule.
+
+- **Applies to anything, not just patterns** — a rule, a PWA implementation, a hook, a tripwire, a doc convention, a line of copy.
+- **Better means demonstrably better:** more correct, catches a case the other misses, or says the same thing more sharply and concretely. Not "different", not "how I would have written it" — that is the taste rule in Scope and Completion, and it still applies.
+- **Upstream first, then sync.** Land the improvement in gp-props, then propagate it, so every repo ends up with the better version instead of one repo quietly keeping an advantage the rest never get.
+- **Say what you took and where from**, so the trail exists.
+- **Levelling a repo DOWN to match the canonical version is a regression**, even when it turns the alignment audit green. A green audit over a worse fleet is a failure of the audit, not a success.
 

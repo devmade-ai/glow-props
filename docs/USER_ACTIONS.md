@@ -2,7 +2,8 @@
 
 ## 1. Stray and non-canonical deployment origins — dashboard only
 
-_Across Vercel, Cloudflare and Railway. Last swept 2026-08-07._
+_Across Vercel, Cloudflare and Railway. Swept 2026-08-07; every origin below
+re-checked live 2026-08-10 and still in the state described._
 
 **Why:** several platform-generated hostnames carrying this fleet's project
 names serve public, crawlable content that is either not ours or not canonical.
@@ -141,10 +142,6 @@ exactly the mistake that let §1a sit unreported earlier the same day.
   (`fl-farlume.vercel.app` 404s). Correct today. But the product is "Farlume"
   served from a `budgy-ting` host, so if the deployment ever moves, `meta.json`
   must move with it or both audits start reporting the wrong thing.
-- **`sp-website.vercel.app`** serves a real site ("Stefan Pedratscher") with no
-  `public/projects/` entry — outside the portfolio, and therefore outside both
-  audits.
-
 ### Why no script caught this
 
 `npm run audit:discoverability` grades the origins `meta.json` names.
@@ -165,21 +162,3 @@ and report anything serving publicly that the portfolio does not declare. That
 inverts the current model — it starts from what exists rather than from what is
 written down, which is the only direction that could have found any of this.
 
-## 2. Re-point anything outside the repos
-
-**Why:** the rename and the host change broke every saved link to
-`devmade-ai.github.io/glow-props/`. GitHub redirects the *repo* URL after a
-rename, but the Pages URL is gone — it now returns 404, so a saved link fails
-outright rather than quietly serving a stale copy.
-
-Worth checking: browser bookmarks, any installed PWA copy of the old site (the
-manifest `id` changed, so an existing install will NOT update — it has to be
-removed and re-installed from the new origin), and any link in a CV, profile or
-external page.
-
----
-
-*Completed and removed: connecting the repo to Vercel (the site serves at
-`https://gp-props.vercel.app/`) and turning GitHub Pages off (both
-`devmade-ai.github.io/glow-props/` and `.../gp-props/` verified 404 on
-2026-08-06).*
