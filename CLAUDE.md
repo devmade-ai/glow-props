@@ -204,7 +204,7 @@ This matters most where an entry can be resolved without the file being touched 
 
 **Purpose:** AI preferences, project overview, architecture, key state structures.
 **When to read:** At the start of every session, before doing any work.
-**When to update:** When project architecture changes, state structure changes, or preferences evolve.
+**When to update:** When project architecture changes, state structure changes, or preferences evolve — and whenever following this file produced bad work. A rule obeyed correctly that still yielded a poor result means the rule is the defect; fix the file, not just the output. Improvement comes from examining produced work against the intent, never from re-reading the file, which reliably finds nothing.
 **What to include:**
 
 - Process, Principles, AI Notes: Update when learning new patterns or preferences
@@ -527,7 +527,7 @@ Run multiple triggers sequentially, pausing after each for `fix` / `skip` / `sto
 | `hot` | `h` | pre-commit | `bugs` + `types` + `errors` — fastest sanity check before committing. Pairs well with `hot staged` |
 | `quick` | `q` | pre-push | `bugs` + `security` + `a11y` — the "don't ship this" triad |
 | `ship` | `shp` | pre-merge | `correctness` + `trust` + `a11y` + `tests` — full pre-merge check |
-| `session` | `ses` | end of session | `surface` + `wrap` + `undone` + `skipped` — "what state am I leaving this in?" |
+| `session` | `ses` | end of session | `surface` + `wrap` + `undone` + `skipped` + `convention` — "what state am I leaving this in?" |
 | `tidy` | `tdy` | weekly | `clean` + `doc-cleanup` + `hacks` + `deps` + `undone` + `dx` — maintenance / hygiene sweep |
 | `all` | `*` | quarterly | Every applicable trigger across every group, in order |
 
@@ -543,6 +543,7 @@ Single-pass, no fan-out to other triggers. Each answers one specific question ab
 | `skipped` | `skp` | What was left undone — issues noticed and not fixed, wherever they were noticed. Each item: what it is, where, why it wasn't fixed. Under Scope and Completion this list should come back empty; anything in it is a defect to close, not a record to keep |
 | `assumed` | `asm` | What was assumed — anything decided rather than asked. Each item: the assumption, why it was made, what happens if wrong |
 | `approach` | `apr` | Was the fix the best / most proper way? Honest self-review: what shortcuts were taken, what a senior reviewer would flag, what the "proper" version looks like if different |
+| `convention` | `cnv` | Audit CLAUDE.md against what this session actually produced. For each place the output was poor, decide which is at fault — the output, or the rule that produced it. Two-directional: a rule that earned no words gets deleted, not amended. Evidence is real output, never a re-read of the file |
 | `cold` | `cld` | Fresh-eyes branch audit. Re-read CLAUDE.md from scratch. Review every change on the branch as if this were a new session with no prior context — don't privilege the diffs you just made. List all findings with a fix plan per item. Default scope: `branch` |
 
 ### REMINDER: READ AND FOLLOW THE TRIGGERS EVERY TIME
