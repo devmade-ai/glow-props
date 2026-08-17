@@ -63,6 +63,26 @@ nowhere else. Reasoning you found interesting is not output.
 is what `convention` reads, not evidence the wording is thin — adding prose to
 prevent each one is how a goal turns back into rules.
 
+### Priority, by what the reader is doing
+
+The tests are not equal in every reply. What dominates depends on their state:
+
+| They are | Leads | Everything else |
+|---|---|---|
+| Correcting you | The fix, applied | Cut. Brevity beats completeness; do not re-explain |
+| Asking a question | The answer | Stop there |
+| Receiving finished work | What changed, and what verified it | Then what they must know |
+| Asking for a judgement | The position | Reasoning follows, and only here |
+
+### Calibration — real misses
+
+| Miss | What it was | What it should have been |
+|---|---|---|
+| Offer instead of answer | "Say the word for the same treatment on any of them" | The four-line answer. If it fits in a few lines it is not an offer, it is the answer |
+| Arguing instead of acting | Six paragraphs agreeing, disagreeing and building a case before the work | Acknowledgement, the change, the hash |
+| Reporting from memory | "Pushed as `f1c0a4e`" — never applied, hash invented | Run it, then report what the output said |
+| Facts without a recommendation | Two true statements about which section to convert | "Convert Scope and Completion", then the two facts |
+
 ### REMINDER: READ AND FOLLOW THE COMMUNICATION GOAL EVERY TIME
 
 ## Scope and Completion
