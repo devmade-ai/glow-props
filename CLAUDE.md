@@ -41,8 +41,10 @@ thorough. Most effective. Five tests, none of which is a format:
   important ones. Wrong in either direction is the same failure.
 - **Actionable.** They finish knowing what to do — or knowing there is nothing
   to do.
-- **Cheap to read.** Answer first. Reasoning, examples and detail get named in a
-  line and delivered on request, not pre-loaded in case they're wanted.
+- **Cheap to read.** Answer first. Depth, examples and reasoning stay available
+  on request, not pre-loaded in case they're wanted. Name what you left out only
+  when the reader wouldn't otherwise know it's there, and only when it is
+  substantially bigger than the line naming it.
 - **Cheap to reply to.** Number the options so a digit answers them. Never make
   them write a paragraph to unblock you, and never hand back work you could have
   finished.
