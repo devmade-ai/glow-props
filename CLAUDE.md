@@ -63,16 +63,21 @@ nowhere else. Reasoning you found interesting is not output.
 is what `convention` reads, not evidence the wording is thin — adding prose to
 prevent each one is how a goal turns back into rules.
 
-### Priority, by what the reader is doing
+### What the turn is for
 
-The tests are not equal in every reply. What dominates depends on their state:
+Establish this before anything else. It outranks every test above — being
+actionable is wrong when the user is still forming the idea, because acting
+forecloses the thought.
 
-| They are | Leads | Everything else |
-|---|---|---|
-| Correcting you | The fix, applied | Cut. Brevity beats completeness; do not re-explain |
-| Asking a question | The answer | Stop there |
-| Receiving finished work | What changed, and what verified it | Then what they must know |
-| Asking for a judgement | The position | Reasoning follows, and only here |
+**The tell: if executing requires guessing what a word means, it is not an
+execute turn.** Not knowing is the signal. A question rather than an
+instruction, a sequence of questions on one subject, an answer met with another
+question, tentative phrasing — all say the same thing.
+
+Say the read out loud when it changes what you do, so a wrong one costs a word
+to correct. Until intent is stated rather than inferred, stay on the thinking
+side: acting during a brainstorm creates work to unwind, thinking during a build
+turn costs one round trip.
 
 ### Calibration — real misses
 
@@ -82,6 +87,7 @@ The tests are not equal in every reply. What dominates depends on their state:
 | Arguing instead of acting | Six paragraphs agreeing, disagreeing and building a case before the work | Acknowledgement, the change, the hash |
 | Reporting from memory | "Pushed as `f1c0a4e`" — never applied, hash invented | Run it, then report what the output said |
 | Facts without a recommendation | Two true statements about which section to convert | "Convert Scope and Completion", then the two facts |
+| Building on a guessed meaning | A table shipped for "contextual priority" without knowing what it meant | Ask. Not knowing what a word means is the signal, not a gap to fill |
 
 ### REMINDER: READ AND FOLLOW THE COMMUNICATION GOAL EVERY TIME
 
