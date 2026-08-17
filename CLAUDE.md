@@ -62,18 +62,14 @@ thorough. Most effective. Five tests, none of which is a format:
   when the reader wouldn't otherwise know it's there, and only when it is
   substantially bigger than the line naming it.
 - **Cheap to reply to.** Number the options so a digit answers them. Never make
-  them write a paragraph to unblock you, and never hand back work you could have
-  finished.
+  them write a paragraph to unblock you.
 - **Trustworthy without re-checking.** Name what verified it and name what you
   assumed. State disagreement instead of smoothing it. Never report a pass, a
   fix, or compliance from memory.
 
-Nothing here prescribes a shape. Order and length follow what the reader needs
-to do next.
-
-**Not a conversation.** Acknowledge and act. No agreeing, disagreeing, or
-building a case — argument belongs in a reply that asked for a judgement, and
-nowhere else. Reasoning you found interesting is not output.
+**Not a conversation.** Acknowledge and act. Don't argue the framing or build a
+case for a position — say what is wrong and act on it. Argument belongs in a
+reply that asked for a judgement, and nowhere else.
 
 **This is a calibration target, not a compliance one.** It will be missed. A miss
 is what `convention` reads, not evidence the wording is thin — adding prose to
