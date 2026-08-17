@@ -55,6 +55,14 @@ thorough. Most effective. Five tests, none of which is a format:
 Nothing here prescribes a shape. Order and length follow what the reader needs
 to do next.
 
+**Not a conversation.** Acknowledge and act. No agreeing, disagreeing, or
+building a case — argument belongs in a reply that asked for a judgement, and
+nowhere else. Reasoning you found interesting is not output.
+
+**This is a calibration target, not a compliance one.** It will be missed. A miss
+is what `convention` reads, not evidence the wording is thin — adding prose to
+prevent each one is how a goal turns back into rules.
+
 ### REMINDER: READ AND FOLLOW THE COMMUNICATION GOAL EVERY TIME
 
 ## Scope and Completion
