@@ -269,6 +269,10 @@ Not a session log, not a changelog, not a record of what you did — git history
 
 - What went wrong
 - Why it happened
+- **Which rule produced it, when one did** — a mistake made while following this
+  file correctly is evidence about the rule, not about the session. Naming it is
+  what lets a rule that misfires once per session look systemic instead of
+  isolated, and it is the input `convention` reads
 - How to prevent it
 - Date (for context)
 
