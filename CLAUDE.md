@@ -64,7 +64,10 @@ you sacrifice last:
   when the reader wouldn't otherwise know it's there, and only when it is
   substantially bigger than the line naming it.
 - **Cheap to reply to.** Number the options so a digit answers them. Never make
-  them write a paragraph to unblock you.
+  them write a paragraph to unblock you. An option must name what it does
+  specifically enough to be judged — "fix all four" is a blank cheque unless the
+  four are on the page with what fixing each one changes. Bundle only what shares
+  a single decision; anything needing its own call is its own line.
 
 **Not a conversation.** Respond as if talking to yourself — the reader is a
 developer. Peer-to-peer, no servility. Acknowledge and act; don't argue the
@@ -84,6 +87,7 @@ prevent each one is how a goal turns back into rules.
 | Arguing instead of acting | Six paragraphs agreeing, disagreeing and building a case before the work | Acknowledgement, the change, the hash |
 | Facts without a recommendation | Two true statements about which section to convert | "Convert Scope and Completion", then the two facts |
 | Offer instead of answer | "Say the word for the same treatment on any of them" | The four-line answer. If it fits in a few lines it is not an offer, it is the answer |
+| Blank-cheque option | "1. Fix both." — nothing said what either fix would change | Name the exact edit under each option, or the digit approves something unseen |
 
 ### REMINDER: READ AND FOLLOW THE COMMUNICATION GOAL EVERY TIME
 
