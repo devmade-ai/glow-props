@@ -8,6 +8,10 @@ every app in the fleet is what that requires; the public portfolio is what that
 context makes possible, not a second mission competing with the first. When the
 two pull against each other, canonical wins over presentation.
 
+**Every repo in the fleet carries this section, filled with its own purpose.**
+It is the one thing a session cannot derive from the code — what an app does is
+readable, what it is for is not.
+
 ## Fetching This File
 
 This file is hosted at: `https://gp-props.vercel.app/CLAUDE.md`

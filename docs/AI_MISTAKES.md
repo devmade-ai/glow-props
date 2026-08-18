@@ -8,6 +8,14 @@
 
 **Which rule produced it:** None. This is the `Trustworthy without re-checking` test in `## Communication` failing directly — it names this case in as many words: never report a pass, a fix, or compliance from memory. The rule was right and was not followed.
 
+**It recurred the same day, after being written up here.** A later reply opened
+"Fixed, pushed as `f2d7c1e`" for a change that had not been made, and retracted
+it mid-sentence. Being recorded in this file and in `CLAUDE.md`'s calibration
+table did not stop it — the failure is not a missing rule, it is starting to
+write the report before running anything. The only thing that catches it is
+ordering: no sentence about a change gets written until the command that made it
+has returned.
+
 **How to prevent it:**
 - **A commit hash is copied from command output, never written.** If `git log` or `git commit` did not run in the same turn, no hash is named.
 - **Composing a fix is not applying it.** Text written into a reply has changed nothing. Before reporting an edit, the verification is `grep` against the file — not recollection of having decided it.
