@@ -1,4 +1,4 @@
-# READ AND FOLLOW THE PROCESS, PRINCIPLES, COMMUNICATION, SCOPE AND COMPLETION, CODE STANDARDS, DOCUMENTATION, AI NOTES, TRIGGERS, AND PROHIBITIONS EVERY TIME
+# READ AND FOLLOW THE PROCESS, COMMUNICATION, SCOPE AND COMPLETION, CODE STANDARDS, DOCUMENTATION, AI NOTES, TRIGGERS, AND PROHIBITIONS EVERY TIME
 
 ## Fetching This File
 
@@ -16,18 +16,6 @@ curl -sf "https://gp-props.vercel.app/CLAUDE.md"
 3. **Then proceed with the task**
 
 ### REMINDER: READ AND FOLLOW THE PROCESS EVERY TIME
-
-## Principles
-
-1. **User-first design** - Align with how real people will use the tool (top priority)
-2. **Simplicity** - Simple flow, clear guidance, non-overwhelming visuals, accurate interpretation
-3. **Document WHY** - Explain decisions and how they align with tool goals
-4. **Testability** - Ensure correctness and alignment with usage goals can be verified
-5. **Know the purpose** - Always be aware of what the tool is for
-6. **Follow conventions** - Best practices and consistent patterns
-7. **Repeatable process** - Follow consistent steps to ensure all the above
-
-### REMINDER: READ AND FOLLOW THE PRINCIPLES EVERY TIME
 
 ## Communication
 
@@ -261,7 +249,7 @@ tests, ordered by what you sacrifice last:
 
 | File | Holds | Read it |
 |---|---|---|
-| `CLAUDE.md` | Preferences, project overview, architecture, repo-specific facts | Start of every session, before any work |
+| `CLAUDE.md` | Preferences, conventions, triggers, and repo-specific facts (AI Notes) | Start of every session, before any work |
 | `docs/SESSION_NOTES.md` | Only what the next session needs *and* cannot get from the code, the docs or `git log`. **Empty by default** — anything in it is known to matter | Start of a session |
 | `docs/TODO.md` | Pending work only, `- [ ]`, grouped by category, what and why. Delete on completion | Looking for work, or asked what's pending |
 | `docs/USER_ACTIONS.md` | What only the user can do — credentials, dashboards, external config. Title, why, steps | Something needs action outside the repo |
