@@ -91,7 +91,9 @@ prevent each one is how a goal turns back into rules.
 
 **The goal: the user decides what gets built and how much of it.** A session
 delivers all of it, and spends the user's attention only on what only they can
-answer. Three tests, ordered by what you sacrifice last:
+answer. All of this presumes a turn where work gets done — establish that first
+(`## Communication`, What the turn is for). Three tests, ordered by what you
+sacrifice last:
 
 - **Nothing is silently smaller.** Everything is in scope unless the user says
   otherwise — a session never decides something is out, and never uses the
@@ -124,8 +126,9 @@ Stopping needs a real reason. There are three, and the list is closed:
 
 1. **The work is done** — all of it.
 2. **Only the user can unblock it** — a credential, an access grant, a product
-   decision that is genuinely theirs — and it was asked up front, not discovered
-   at the end.
+   decision that is genuinely theirs — asked up front if it was foreseeable, and
+   named the moment it surfaces if it wasn't. A blocker you could have found
+   before starting is not one of these.
 3. **Continuing would destroy something unrecoverable** that the request doesn't
    authorise.
 
