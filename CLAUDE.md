@@ -89,43 +89,56 @@ prevent each one is how a goal turns back into rules.
 
 ## Scope and Completion
 
-How far the work goes, when to ask instead of deciding, and when stopping is legitimate.
+**The goal: the user decides what gets built and how much of it.** A session
+delivers all of it, and spends the user's attention only on what only they can
+answer. Three tests, ordered by what you sacrifice last:
 
-### Scope is the user's call, never the session's
-
-- **Everything is in scope unless the user says otherwise.** The user names what's out. A session never decides something is out of scope, and never uses the phrase to account for work it didn't do.
-- **Scope is the request plus the code that exists** — not the code you imagine will exist.
-- **Broken is always in scope. If you find something broken, fix it.** Pre-existing is not a reason to leave it. "Different kind of change from the rest of this branch" is not a reason to leave it. Size is not a reason to leave it — a big fix gets done, not deferred.
-- **Wrong is in scope; different-from-your-taste is not.** Fix what is broken, incorrect, or unsafe. Don't restyle, rename, or rewrite working code because you would have written it differently.
-
-### Build for the requirement that exists
-
-- **Never invent a requirement, then solve it or report it as a problem.** If nobody said there is a migration path, there is no migration path. If nobody said the old behaviour must keep working, it doesn't have to. Requirements come from the user or from the code — never from what a system like this "usually" needs.
-- **Simplest thing that solves the actual problem, first.** No speculative abstraction, no compatibility layer for callers that don't exist, no configurability nothing asked for, no defensive handling of states that can't occur.
-- **Refactoring is expected, not a failure.** Building the simple version now is correct even knowing it will be rewritten later. Building the elaborate version now to avoid that rewrite is the mistake.
-
-### Asking vs deciding
-
-- **Investigate, don't interrogate.** Never build a fix on a guessed cause. Where the cause is knowable, go and find it — read the code, measure it in a browser, run the failing case. Reading the code, the design or the docs is not assuming. Ask only for what exists solely in the user's head: intent, priority, a product choice, access.
-- **Ask when the answer changes what gets built and neither the request nor the code tells you which way.** That means: two readings leading to materially different work; a substantial build with no stated requirement anchoring it; or an irreversible action the request doesn't clearly authorise.
-- **Decide when one reading is clearly the intended one**, when the detail is cheap to change later (naming, placement, wording, layout), or when the answer wouldn't change what you do. State what you decided — don't ask.
-- **Ask once, up front, batched.** Every question you have, numbered, in a single message, before starting.
-- **The last answer starts the work.** No confirmation round, no restating the plan for approval. Answers arrive, work begins.
-- **Once work has started, don't stop to ask.** An unknown becomes a stated assumption and the work continues. Name the assumption in the reply.
+- **Nothing is silently smaller.** Everything is in scope unless the user says
+  otherwise — a session never decides something is out, and never uses the
+  phrase to account for work it didn't do. Broken is in scope: pre-existing,
+  big, or a different kind of change from the rest of the branch are not reasons
+  to leave it. If the whole thing is not delivered, the reply names the exact
+  step that is missing.
+- **Build the requirement that exists.** It comes from the user or from the
+  code, never from what a system like this usually needs — no migration path
+  nobody asked for, no compatibility layer for callers that don't exist, no
+  configurability nothing needs, no defensive handling of states that can't
+  occur. Fix what is broken, incorrect or unsafe; not what you would have
+  written differently. The simple version now is correct even knowing it gets
+  rewritten later; the elaborate version built to avoid that rewrite is the
+  mistake.
+- **Their attention is the scarce resource.** Never build on a guessed cause
+  when the cause is knowable — read the code, run the failing case, measure it.
+  Reading the code, the design or the docs is not assuming. Ask only for what
+  exists solely in their head: intent, priority, a product choice, access. Ask
+  when the answer changes what gets built and neither the request nor the code
+  says which way; decide when one reading is clearly the intended one or the
+  detail is cheap to change later, and say what you decided. Every question at
+  once, numbered, before starting. The last answer starts the work — no
+  confirmation round, no restating the plan for approval. After that an unknown
+  becomes a stated assumption, not a question.
 
 ### When stopping is legitimate
 
-Stopping needs a real reason. There are three:
+Stopping needs a real reason. There are three, and the list is closed:
 
 1. **The work is done** — all of it.
-2. **Only the user can unblock it** — a credential, an access grant, a product decision that is genuinely theirs — and it was asked up front, not discovered at the end.
-3. **Continuing would destroy something unrecoverable** that the request doesn't authorise.
+2. **Only the user can unblock it** — a credential, an access grant, a product
+   decision that is genuinely theirs — and it was asked up front, not discovered
+   at the end.
+3. **Continuing would destroy something unrecoverable** that the request doesn't
+   authorise.
 
-Not reasons to stop: it was already broken; it's a different kind of change; it's big; it "feels out of scope"; it might be tidier as a separate change; you want to confirm something you could work out yourself.
+Not reasons to stop: it was already broken; it's a different kind of change;
+it's big; it "feels out of scope"; it might be tidier as a separate change; you
+want to confirm something you could work out yourself.
 
-**Done means done.** The change is made, verified by the strongest check available, docs the change invalidates are updated, and it is committed and pushed. Anything less is reported as unfinished with the exact step that's missing — never as done.
+**Done means done.** The change is made, verified by the strongest check
+available, docs the change invalidates are updated, and it is committed and
+pushed. Anything less is reported as unfinished with the exact step that's
+missing — never as done.
 
-### REMINDER: READ AND FOLLOW THE SCOPE AND COMPLETION RULES EVERY TIME
+### REMINDER: READ AND FOLLOW THE SCOPE AND COMPLETION GOAL EVERY TIME
 
 ## Code Standards
 
