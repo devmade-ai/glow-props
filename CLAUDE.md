@@ -240,132 +240,43 @@ These footers are required on every commit. No exceptions.
 
 ## Documentation
 
-**AI assistants automatically maintain these documents.** Update them as you work - don't wait for the user to ask. This ensures context is always current for the next session.
+**The goal: every one of these files says what is true right now, and each fact
+lives in exactly one of them.** Maintained as you work, never when asked. Three
+tests, ordered by what you sacrifice last:
 
-**Maintained against reality, not appended to.** Before adding to any of these files, check what is already in them. If an entry is done, deployed, superseded, or no longer true, **delete it** — don't annotate it, don't mark it complete, don't keep it "for the record". Git history is the record.
+- **Nothing in them is stale.** Before adding, read what is already there. If an
+  entry is done, deployed, superseded or no longer true, **delete it** — don't
+  annotate it, don't mark it complete, don't keep it for the record. Git history
+  is the record. This bites hardest where an entry resolves without the repo
+  changing — `USER_ACTIONS.md` above all, where the user does the thing in a
+  dashboard. Never assume such an entry is still pending: **check reality first**
+  (hit the URL, read the deployed output, query the API), then delete or correct
+  it. A stale entry is worse than a missing one — it gets acted on, and it makes
+  the whole file look untrustworthy.
+- **Each fact has one home.** If an item belongs in another of these files, it
+  goes there, not where you happen to be typing. Duplication is how two of them
+  start disagreeing, and nothing catches that.
+- **Updated in the same commit as the change that invalidated them.** Not
+  afterwards, not on request.
 
-This matters most where an entry can be resolved without the file being touched — `USER_ACTIONS.md` above all, where the user does the thing in a dashboard and nothing in the repo changes. Never assume such an entry is still pending: **check reality first** (hit the URL, read the deployed output, query the API), then delete or correct it. A stale entry is worse than a missing one — it gets acted on, and it makes the whole file look untrustworthy.
+| File | Holds | Read it |
+|---|---|---|
+| `CLAUDE.md` | Preferences, project overview, architecture, repo-specific facts | Start of every session, before any work |
+| `docs/SESSION_NOTES.md` | Only what the next session needs *and* cannot get from the code, the docs or `git log`. **Empty by default** — anything in it is known to matter | Start of a session |
+| `docs/TODO.md` | Pending work only, `- [ ]`, grouped by category, what and why. Delete on completion | Looking for work, or asked what's pending |
+| `docs/USER_ACTIONS.md` | What only the user can do — credentials, dashboards, external config. Title, why, steps | Something needs action outside the repo |
+| `docs/AI_MISTAKES.md` | What went wrong, why, **which rule produced it when one did**, how to prevent it, date | Start of a session |
+| `docs/PROJECT_DOCS.md` | gp-props only: status table and process for the `public/projects/*/` mirrors | Before mirroring or scrubbing a project's docs |
+| `README.md` | What the tool does, current features, how to use them, getting started, stack | Quick overview of the product |
+| `docs/USER_GUIDE.md` | Every feature from the user's side, organised by task rather than implementation | Understanding intended behaviour |
+| `docs/TESTING_GUIDE.md` | Manual scenarios with exact actions and expected results, regression checklist | Before verifying a change |
 
-### `CLAUDE.md`
-
-**Purpose:** AI preferences, project overview, architecture, key state structures.
-**When to read:** At the start of every session, before doing any work.
-**When to update:** When project architecture changes, state structure changes, or preferences evolve — and whenever following this file produced bad work. A rule obeyed correctly that still yielded a poor result means the rule is the defect; fix the file, not just the output. Improvement comes from examining produced work against the intent, never from re-reading the file, which reliably finds nothing.
-**What to include:**
-
-- Process, Principles, AI Notes: Update when learning new patterns or preferences
-- Project Status: Current working features (bullet list)
-- Architecture: File structure with brief descriptions
-- Key State Structure: Important state shapes with comments
-- Any section that becomes outdated after feature changes
-
-**Why:** This is the primary context for AI assistants. Accurate info here prevents mistakes.
-
-### `docs/SESSION_NOTES.md`
-
-**Purpose:** The few things the next session cannot work without. **Default state is empty.**
-**When to read:** At the start of a session.
-**When to update:** At session end, and the moment an entry goes stale — delete stale content, don't annotate it.
-**What to include:** Only what the next session genuinely needs *and* cannot get from the code, the docs, or `git log`. If nothing qualifies, leave the file empty. Most sessions leave it empty.
-
-Not a session log, not a changelog, not a record of what you did — git history already holds that, and a summary of finished work is noise the next session has to read past. Pending work goes in `docs/TODO.md`. Things only the user can do go in `docs/USER_ACTIONS.md`. Mistakes worth remembering go in `docs/AI_MISTAKES.md`. If an item fits one of those, it goes there, not here.
-
-**Why:** An always-populated notes file trains sessions to skim it. Kept empty by default, anything in it is known to matter.
-
-### `docs/TODO.md`
-
-**Purpose:** AI-managed backlog of ideas and potential improvements.
-**When to read:** When looking for work to do, or when the user asks about pending tasks.
-**When to update:** When noticing potential improvements. Delete completed items (git history tracks them).
-**What to include:**
-
-- Group by category (Features, UX, Technical, etc.)
-- Use `- [ ]` for pending items only
-- Brief description of what and why
-- When complete, delete from TODO (git history tracks completions — no separate changelog needed)
-
-**Why:** User reviews this to prioritize work. Keeps TODO focused on pending items only.
-
-### `docs/USER_ACTIONS.md`
-
-**Purpose:** Manual actions requiring user intervention outside the codebase.
-**When to read:** When something requires manual user intervention (deployments, API keys, external config).
-**When to update:** When tasks need external action. Clear when completed.
-**What to include:**
-
-- Action title and description
-- Why it's needed
-- Steps to complete
-- Keep empty when nothing pending (with placeholder text)
-
-**Why:** Some tasks require credentials, dashboards, or manual config the AI can't do.
-
-### `docs/PROJECT_DOCS.md` (gp-props only)
-
-**Purpose:** Status table + process for the mirrored per-project docs under `public/projects/*/`.
-**When to read:** Before mirroring or scrubbing a downstream project's docs into the portfolio.
-**When to update:** After any mirror pass — refresh the status table and the "Last mirrored" date.
-
-### `docs/AI_MISTAKES.md`
-
-**Purpose:** Record significant AI mistakes and learnings to prevent repetition.
-**When to read:** When starting a session, to avoid repeating past mistakes.
-**When to update:** After making a mistake that wasted time or broke things.
-**What to include:**
-
-- What went wrong
-- Why it happened
-- **Which rule produced it, when one did** — a mistake made while following this
-  file correctly is evidence about the rule, not about the session. Naming it is
-  what lets a rule that misfires once per session look systemic instead of
-  isolated, and it is the input `convention` reads
-- How to prevent it
-- Date (for context)
-
-**Why:** AI assistants repeat mistakes across sessions. This document builds institutional memory.
-
-### `README.md`
-
-**Purpose:** User-facing guide for the application.
-**When to read:** When you need a quick overview of what the tool does and its main features.
-**When to update:** When features change that affect how users interact with the tool.
-**What to include:**
-
-- What the tool does (overview)
-- Current features (keep in sync with actual functionality)
-- How to use each feature (user guide)
-- Getting started / installation
-- Tech stack and deployment info
-
-**Why:** Users and contributors read this first. Must accurately reflect the current state.
-
-### `docs/USER_GUIDE.md`
-
-**Purpose:** Comprehensive user documentation explaining how to use every feature.
-**When to read:** When you need to understand what users can do with the tool, or how a feature is supposed to work from the user's perspective.
-**When to update:** When adding new features, changing UI workflows, or modifying how existing features work.
-**What to include:**
-
-- Tab-by-tab walkthrough of the interface
-- Explanation of every control and what it does
-- Workflow tips and best practices
-- Organized by user tasks, not technical implementation
-
-**Why:** Serves as the authoritative reference for user-facing behavior. Helps ensure AI assistants understand the user experience.
-
-### `docs/TESTING_GUIDE.md`
-
-**Purpose:** Manual test scenarios for verifying the application works correctly.
-**When to read:** Before testing changes, or when you need to verify specific functionality works.
-**When to update:** When adding new features that need test coverage, or when existing tests become outdated.
-**What to include:**
-
-- Step-by-step test scenarios with exact actions
-- Where to click/look for each step
-- Expected results for each action
-- Regression checklist for quick verification
-
-**Why:** Ensures consistent, thorough testing. Prevents regressions by documenting what to verify after changes.
+**`CLAUDE.md` is falsifiable by its own output.** Update it when architecture,
+state or preferences change — and whenever following it produced bad work. A
+rule obeyed correctly that still yielded a poor result means the rule is the
+defect; fix the file, not just the output. Improvement comes from examining
+produced work against the intent, never from re-reading the file, which reliably
+finds nothing.
 
 ### REMINDER: READ AND FOLLOW THE DOCUMENTATION EVERY TIME
 
