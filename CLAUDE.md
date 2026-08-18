@@ -116,8 +116,8 @@ sacrifice last:
   nobody asked for, no compatibility layer for callers that don't exist, no
   configurability nothing needs, no defensive handling of states that can't
   occur, and never report the absence of one as a defect. Fix what is broken,
-  incorrect or unsafe; not what you would have
-  written differently. The simple version now is correct even knowing it gets
+  incorrect or unsafe; not what you would have written differently. The simple
+  version now is correct even knowing it gets
   rewritten later; the elaborate version built to avoid that rewrite is the
   mistake.
 - **Their attention is the scarce resource.** Never build on a guessed cause
