@@ -1,4 +1,12 @@
-# READ AND FOLLOW THE PROCESS, COMMUNICATION, SCOPE AND COMPLETION, CODE STANDARDS, DOCUMENTATION, AI NOTES, TRIGGERS, AND PROHIBITIONS EVERY TIME
+# READ AND FOLLOW THE PURPOSE, PROCESS, COMMUNICATION, SCOPE AND COMPLETION, CODE STANDARDS, DOCUMENTATION, AI NOTES, TRIGGERS, AND PROHIBITIONS EVERY TIME
+
+## Purpose
+
+**The goal: be the fleet's source of truth — the patterns, preferences and
+standards every other devmade-ai repo aligns to.** Holding current context on
+every app in the fleet is what that requires; the public portfolio is what that
+context makes possible, not a second mission competing with the first. When the
+two pull against each other, canonical wins over presentation.
 
 ## Fetching This File
 
@@ -249,7 +257,7 @@ tests, ordered by what you sacrifice last:
 
 | File | Holds | Read it |
 |---|---|---|
-| `CLAUDE.md` | Preferences, conventions, triggers, and repo-specific facts (AI Notes) | Start of every session, before any work |
+| `CLAUDE.md` | What this repo is for, plus preferences, conventions, triggers, and repo-specific facts (AI Notes) | Start of every session, before any work |
 | `docs/SESSION_NOTES.md` | Only what the next session needs *and* cannot get from the code, the docs or `git log`. **Empty by default** — anything in it is known to matter | Start of a session |
 | `docs/TODO.md` | Pending work only, `- [ ]`, grouped by category, what and why. Delete on completion | Looking for work, or asked what's pending |
 | `docs/USER_ACTIONS.md` | What only the user can do — credentials, dashboards, external config. Title, why, steps | Something needs action outside the repo |
