@@ -1,27 +1,23 @@
-<!--
-  FLEET CANONICAL. This is the version every devmade-ai repo aligns to, and the
-  file served at https://gp-props.vercel.app/CLAUDE.md. It carries no gp-props
-  specifics — gp-props keeps those in its own root CLAUDE.md, exactly as every
-  other repo does with its own.
-
-  Edit conventions HERE. gp-props' root CLAUDE.md is a copy of this plus its
-  local sections, and is synced like any other repo's.
--->
-
 # READ AND FOLLOW THE PURPOSE, PROCESS, COMMUNICATION, SCOPE AND COMPLETION, CODE STANDARDS, DOCUMENTATION, AI NOTES, TRIGGERS, AND PROHIBITIONS EVERY TIME
 
 ## Purpose
 
-**State here what this repo is for.** Not what it does — what it is for, who it
-serves, and what wins when two of its jobs pull against each other. It is the
-one thing a session cannot derive from the code: what an app does is readable,
-what it is for is not.
-
-**Every repo in the fleet carries this section, filled with its own purpose.**
+**Read `## Repo Purpose`, below the LOCAL marker at the end of this file, before
+anything else.** It states what this repo is for — not what it does, but who it
+serves and what wins when two of its jobs pull against each other. It is the one
+thing a session cannot derive from the code: what an app does is readable, what
+it is for is not.
 
 ## Fetching This File
 
-This file is hosted at: `https://gp-props.vercel.app/CLAUDE.md`
+**This file is this repo's copy: the fleet-canonical text, a `LOCAL` marker, then
+this repo's own sections.** Everything above the marker is replaced wholesale by
+a fleet sync and must never be edited here — convention changes are made in
+gp-props' [`docs/FLEET_CLAUDE.md`](https://gp-props.vercel.app/CLAUDE.md) and
+propagated. Everything below the marker belongs to this repo and no sync touches
+it.
+
+The canonical version is hosted at: `https://gp-props.vercel.app/CLAUDE.md`
 
 To fetch it directly:
 ```bash

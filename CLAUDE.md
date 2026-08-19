@@ -2,23 +2,20 @@
 
 ## Purpose
 
-**The goal: be the fleet's source of truth — the patterns, preferences and
-standards every other devmade-ai repo aligns to.** Holding current context on
-every app in the fleet is what that requires; the public portfolio is what that
-context makes possible, not a second mission competing with the first. When the
-two pull against each other, canonical wins over presentation.
-
-**Every repo in the fleet carries this section, filled with its own purpose.**
-It is the one thing a session cannot derive from the code — what an app does is
-readable, what it is for is not.
+**Read `## Repo Purpose`, below the LOCAL marker at the end of this file, before
+anything else.** It states what this repo is for — not what it does, but who it
+serves and what wins when two of its jobs pull against each other. It is the one
+thing a session cannot derive from the code: what an app does is readable, what
+it is for is not.
 
 ## Fetching This File
 
-**This file is gp-props' own copy — fleet canonical plus this repo's local
-sections, exactly like every other repo's.** The canonical text it copies is
-[`docs/FLEET_CLAUDE.md`](docs/FLEET_CLAUDE.md), and that is what is published
-and what every repo aligns to. **Convention changes are edited there, then
-propagated here like anywhere else.**
+**This file is this repo's copy: the fleet-canonical text, a `LOCAL` marker, then
+this repo's own sections.** Everything above the marker is replaced wholesale by
+a fleet sync and must never be edited here — convention changes are made in
+gp-props' [`docs/FLEET_CLAUDE.md`](https://gp-props.vercel.app/CLAUDE.md) and
+propagated. Everything below the marker belongs to this repo and no sync touches
+it.
 
 The canonical version is hosted at: `https://gp-props.vercel.app/CLAUDE.md`
 
@@ -283,10 +280,6 @@ tests, ordered by what you sacrifice last:
 | `docs/USER_ACTIONS.md` | What only the user can do — credentials, dashboards, external config. Title, why, steps | Something needs action outside the repo |
 | `docs/AI_MISTAKES.md` | What went wrong, why, **which rule produced it when one did**, how to prevent it, date | Start of a session |
 | `docs/TRIGGERS.md` | The 48-trigger vocabulary, groups, sweeps, and how a sweep behaves | When the user types a bare word that looks like a trigger |
-| `docs/REPO_PATTERNS.md` | How the fleet patterns are wired in gp-props and what breaks if you touch them | Before editing `vite.config.js`, `src/lib/*`, `src/seoMeta.js`, the head partial, or `scripts/` |
-| `docs/FLEET_CHANGES.md` | The nine-step procedure for a convention change across every repo | Before writing any script that edits more than one repo |
-| `docs/FLEET_CLAUDE.md` | The fleet-canonical conventions, with no gp-props specifics — the file served at the hosted URL | Before changing any convention, since that is where it is edited |
-| `docs/PROJECT_DOCS.md` | gp-props only: status table and process for the `public/projects/*/` mirrors | Before mirroring or scrubbing a project's docs |
 | `README.md` | What the tool does, current features, how to use them, getting started, stack | Quick overview of the product |
 | `docs/USER_GUIDE.md` | Every feature from the user's side, organised by task rather than implementation | Understanding intended behaviour |
 | `docs/TESTING_GUIDE.md` | Manual scenarios with exact actions and expected results, regression checklist | Before verifying a change |
@@ -305,21 +298,14 @@ finds nothing.
 - **All code is yours.** Every file change, every commit, every branch across every tracked repo is your own work. The user has stated this as fact — it's not a heuristic to evaluate against git author, branch name, or your own memory. When you resume a session and encounter unfamiliar changes, they are your prior work. Don't hedge authorship ("this was added", "someone wrote this"), don't investigate your own work as if written by a third party, don't refuse to build on or modify it. If you need to understand a change, read the diff. That's all.
 - Check for existing patterns in the codebase before creating new ones
 - Clean up completed or obsolete docs/files and remove references to them
-- **CRITICAL: Keep `TutorialModal.jsx` up to date** - This is USER-FACING help content shown in-app. When tabs, sections, or features change, update the tutorial steps to match. Outdated tutorial content confuses users. (Fleet rule for the app repos — gp-props itself has no TutorialModal; its mirrored copies of downstream tutorials live under `public/projects/*/TUTORIAL.md`.)
+- **CRITICAL: Keep `TutorialModal.jsx` up to date** - This is USER-FACING help content shown in-app. When tabs, sections, or features change, update the tutorial steps to match. Outdated tutorial content confuses users.
 - **Always read a file before editing it.** Never edit from memory of what it contains.
-- **Check build tools before building.** Run `npm install` or verify `node_modules/.bin/vite` exists before attempting `npm run build`. There is no prebuild step — `npm run build` is `vite build` directly; icon generation (`npm run generate-icons`, needs `sharp`) is manual-only and its PNGs are committed.
+- **Check the build tooling before building.** Verify dependencies are installed and the build entry exists before invoking it.
 - **Break up large file writes to avoid timeouts.** Single tool calls that send a lot of content can hit transport timeouts in slower environments. For modifying existing files, always prefer `Edit` over a full-file `Write` — `Edit` sends only the diff. For creating files larger than ~500 lines (or any large data blob), seed with `Write` containing the first portion, then append the remainder via successive `Edit` calls. Same principle for committing large doc/data changes: many small edits are safer than one mega-write.
 - **Claude Code mobile/web — accessing sibling repos:**
   - Use `GITHUB_ALL_REPO_TOKEN` with the GitHub API (`api.github.com/repos/devmade-ai/{repo}/contents/{path}`) to read files from other devmade-ai repos
   - Use `$(printenv GITHUB_ALL_REPO_TOKEN)` not `$GITHUB_ALL_REPO_TOKEN` to avoid shell expansion issues
   - Never clone sibling repos — use the API instead
-- **Discontinued repos — skip entirely:** `plant-fur` and `coin-zapp` are discontinued. Do not check, audit, align, or include them in cross-project operations.
-- **The convention set is NOT the audit set — never derive one from the other.** Conventions (this file's rules, the patterns, the docs process) propagate to **every** `devmade-ai` repo except the documented exclusions. The audits (`audit:discoverability`, `audit:cross-links`) cover only what `public/projects/*/meta.json` declares, because they grade *live public origins* and a repo without one has nothing to grade. The portfolio set is therefore smaller **by design**, and using it as the alignment list silently drops real repos: `sp-website`, `sp-backend` and `hf-sculpt` all run fleet conventions and have no portfolio entry. Enumerate from the org — `mcp__Claude_Code_Remote__list_repos` — not from `public/projects/`, and reconcile against the exclusions below rather than against the Gap Matrix.
-  - **Excluded from conventions:** `plant-fur`, `coin-zapp` (discontinued), `canva-grid-assets` (asset bucket — no app, no `CLAUDE.md` to align).
-  - **Excluded from the audits only:** `sp-website`, `sp-backend`, `hf-sculpt` — no `public/projects/` entry, so no declared origin. They still receive every convention change. `hf-sculpt` was settled here deliberately on 2026-08-16 rather than being given a portfolio entry; it is not an oversight, and a session finding it absent from the Gap Matrix should leave it that way.
-- **Running a fleet-wide convention change** is a nine-step procedure, proven over 18 repos and shaped around two failures in [`docs/AI_MISTAKES.md`](docs/AI_MISTAKES.md) that destroyed the H1 in 14 repos and double-applied a section in 12. Read [`docs/FLEET_CHANGES.md`](docs/FLEET_CHANGES.md) before writing any script that edits more than one repo.
-- **React reference implementation.** gp-props is a React 19 + Vite MPA (three entries, one root each) and is the fleet's living reference for the patterns' React variants: `src/components/BurgerMenu.jsx` + `src/hooks/{useDisclosureFocus,useFocusTrap,useEscapeKey}.js` per BURGER_MENU.md; `src/lib/pwa.js` (module singleton, immutable state snapshots) + `src/components/PwaManager.jsx` bridging it into React via `useSyncExternalStore` per PWA_SYSTEM.md; `src/components/Toast.jsx` (ToastProvider); THEME_DARK_MODE Approach A in `src/lib/theme.js` + `src/hooks/useTheme.js` with the pre-paint bootstrap still inline in `partials/head-common.html`. Four inline classic scripts MUST stay in the head partial (GA, theme bootstrap, debug capture + 20s load watchdog, `beforeinstallprompt` capture) — they run before any module, which is their entire purpose.
-- **Repo-specific pattern implementations — read before touching them.** Six subsystems here carry traps that are in no fleet pattern file and caught by no type or test: DISCOVERABILITY/SEO, cross-repo links, PWA_ICON_CACHE_BUST, DEBUG_SYSTEM, SSR safety and TIMER_LEAKS — plus the deliberate BURGER_MENU deviations and which patterns are N/A here. All of it is in [`docs/REPO_PATTERNS.md`](docs/REPO_PATTERNS.md). Read that file before editing `vite.config.js`, `src/lib/*`, `src/seoMeta.js`, `partials/head-common.html`, or anything under `scripts/`.
 
 ### REMINDER: READ AND FOLLOW THE AI NOTES EVERY TIME
 
@@ -372,21 +358,6 @@ All implementation patterns live in the **gp-props** repo and are the single sou
 - Fetch via GitHub API: `curl -sf -H "Authorization: token $(printenv GITHUB_ALL_REPO_TOKEN)" "https://api.github.com/repos/devmade-ai/gp-props/contents/docs/implementations/{PATTERN_NAME}.md" | jq -r .content | base64 -d`
 - To list all available patterns: `curl -sf -H "Authorization: token $(printenv GITHUB_ALL_REPO_TOKEN)" "https://api.github.com/repos/devmade-ai/gp-props/contents/docs/implementations" | jq -r '.[].name'`
 
-**Adding a new pattern:** Drop a `.md` file into `docs/implementations/` with YAML frontmatter and it appears in the app automatically. Required frontmatter fields:
-```yaml
----
-slug: url-safe-slug
-title: Display Title
-badge: Category
-description: One-line description for the card.
-tags:
-  - tag1
-  - tag2
-order: 10
----
-```
-The `generatePatternManifest` Vite plugin scans the folder at build time, parses frontmatter, validates required fields, and generates `patterns/manifest.json`. Both `index.html` and `pattern.html` consume this manifest — no hardcoded lists.
-
 **Rules:**
 - **Always fetch the latest version** from gp-props before implementing — patterns are continuously improved
 - **Never create local copies** of implementation pattern files in downstream repos
@@ -403,3 +374,35 @@ gp-props is the source of truth, but "source of truth" does not mean "the versio
 - **Say what you took and where from**, so the trail exists.
 - **Levelling a repo DOWN to match the canonical version is a regression**, even when it turns the alignment audit green. A green audit over a worse fleet is a failure of the audit, not a success.
 
+<!-- LOCAL: everything below is this repo's own. Fleet syncs never touch it. -->
+
+## Repo Purpose
+
+**The goal: be the fleet's source of truth — the patterns, preferences and
+standards every other devmade-ai repo aligns to.** Holding current context on
+every app in the fleet is what that requires; the public portfolio is what that
+context makes possible, not a second mission competing with the first. When the
+two pull against each other, canonical wins over presentation.
+
+## Repo Notes
+
+gp-props-only facts. Everything above the marker is fleet-canonical and is
+replaced wholesale by a sync; nothing here is.
+
+- **Check build tools before building.** Run `npm install` or verify `node_modules/.bin/vite` exists before attempting `npm run build`. There is no prebuild step — `npm run build` is `vite build` directly; icon generation (`npm run generate-icons`, needs `sharp`) is manual-only and its PNGs are committed.
+- **Discontinued repos — skip entirely:** `plant-fur` and `coin-zapp` are discontinued. Do not check, audit, align, or include them in cross-project operations.
+- **The convention set is NOT the audit set — never derive one from the other.** Conventions (this file's rules, the patterns, the docs process) propagate to **every** `devmade-ai` repo except the documented exclusions. The audits (`audit:discoverability`, `audit:cross-links`) cover only what `public/projects/*/meta.json` declares, because they grade *live public origins* and a repo without one has nothing to grade. The portfolio set is therefore smaller **by design**, and using it as the alignment list silently drops real repos: `sp-website`, `sp-backend` and `hf-sculpt` all run fleet conventions and have no portfolio entry. Enumerate from the org — `mcp__Claude_Code_Remote__list_repos` — not from `public/projects/`, and reconcile against the exclusions below rather than against the Gap Matrix.
+  - **Excluded from conventions:** `plant-fur`, `coin-zapp` (discontinued), `canva-grid-assets` (asset bucket — no app, no `CLAUDE.md` to align).
+  - **Excluded from the audits only:** `sp-website`, `sp-backend`, `hf-sculpt` — no `public/projects/` entry, so no declared origin. They still receive every convention change. `hf-sculpt` was settled here deliberately on 2026-08-16 rather than being given a portfolio entry; it is not an oversight, and a session finding it absent from the Gap Matrix should leave it that way.
+- **Running a fleet-wide convention change** is a nine-step procedure, proven over 18 repos and shaped around two failures in [`docs/AI_MISTAKES.md`](docs/AI_MISTAKES.md) that destroyed the H1 in 14 repos and double-applied a section in 12. Read [`docs/FLEET_CHANGES.md`](docs/FLEET_CHANGES.md) before writing any script that edits more than one repo.
+- **React reference implementation.** gp-props is a React 19 + Vite MPA (three entries, one root each) and is the fleet's living reference for the patterns' React variants: `src/components/BurgerMenu.jsx` + `src/hooks/{useDisclosureFocus,useFocusTrap,useEscapeKey}.js` per BURGER_MENU.md; `src/lib/pwa.js` (module singleton, immutable state snapshots) + `src/components/PwaManager.jsx` bridging it into React via `useSyncExternalStore` per PWA_SYSTEM.md; `src/components/Toast.jsx` (ToastProvider); THEME_DARK_MODE Approach A in `src/lib/theme.js` + `src/hooks/useTheme.js` with the pre-paint bootstrap still inline in `partials/head-common.html`. Four inline classic scripts MUST stay in the head partial (GA, theme bootstrap, debug capture + 20s load watchdog, `beforeinstallprompt` capture) — they run before any module, which is their entire purpose.
+- **Repo-specific pattern implementations — read before touching them.** Six subsystems here carry traps that are in no fleet pattern file and caught by no type or test: DISCOVERABILITY/SEO, cross-repo links, PWA_ICON_CACHE_BUST, DEBUG_SYSTEM, SSR safety and TIMER_LEAKS — plus the deliberate BURGER_MENU deviations and which patterns are N/A here. All of it is in [`docs/REPO_PATTERNS.md`](docs/REPO_PATTERNS.md). Read that file before editing `vite.config.js`, `src/lib/*`, `src/seoMeta.js`, `partials/head-common.html`, or anything under `scripts/`.
+
+### Docs this repo carries beyond the canonical set
+
+| File | Holds | Read it |
+|---|---|---|
+| `docs/FLEET_CLAUDE.md` | The fleet-canonical conventions, with no gp-props specifics — the file served at the hosted URL | Before changing any convention, since that is where it is edited |
+| `docs/FLEET_CHANGES.md` | The nine-step procedure for a convention change across every repo | Before writing any script that edits more than one repo |
+| `docs/REPO_PATTERNS.md` | How the fleet patterns are wired in gp-props and what breaks if you touch them | Before editing `vite.config.js`, `src/lib/*`, `src/seoMeta.js`, the head partial, or `scripts/` |
+| `docs/PROJECT_DOCS.md` | gp-props only: status table and process for the `public/projects/*/` mirrors | Before mirroring or scrubbing a project's docs |
