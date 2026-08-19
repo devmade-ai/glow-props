@@ -26,6 +26,9 @@ const CANONICAL_SECTIONS = new Set([
   'Scope and Completion', 'Code Standards', 'Documentation', 'AI Notes',
   'Prohibitions', 'Triggers', 'Implementation Patterns (Source of Truth)',
   'Implementation Patterns', 'Adopted Patterns', 'Communication Style',
+  // Superseded by canonical's "Fetching This File", which now describes the
+  // canonical/LOCAL structure. Anything novel inside them still gets rescued.
+  'Fetching the Fleet Standards', 'Fleet Ruleset Source',
 ]);
 
 const norm = (s) => s.replace(/\s+/g, ' ').trim().toLowerCase();
@@ -61,8 +64,12 @@ for (const f of readdirSync(SB).filter(n => n.endsWith('.md') && !n.startsWith('
     const title = sec.title;
     const isCanonical = title !== null && CANONICAL_SECTIONS.has(title);
     if (title === null) {
-      // Preamble: product title, intro prose, shared-standards banner. Always local.
-      if (sec.lines.join('').trim()) localBlocks.push(sec.lines.join('\n').replace(/\n+$/, ''));
+      // Preamble: product title, intro prose, shared-standards banner. Always local
+      // EXCEPT the old fleet H1 banner — canonical now supplies line 1, and keeping
+      // the stale one leaves the file with two H1s, the second listing sections
+      // (Principles) that no longer exist.
+      const kept = sec.lines.filter(l => !/^# READ AND FOLLOW/i.test(l.trim()));
+      if (kept.join('').trim()) localBlocks.push(kept.join('\n').replace(/^\n+|\n+$/g, ''));
       continue;
     }
     if (!isCanonical) { localBlocks.push(sec.lines.join('\n').replace(/\n+$/, '')); continue; }
