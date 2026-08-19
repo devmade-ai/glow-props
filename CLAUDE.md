@@ -284,6 +284,10 @@ tests, ordered by what you sacrifice last:
 | `docs/USER_GUIDE.md` | Every feature from the user's side, organised by task rather than implementation | Understanding intended behaviour |
 | `docs/TESTING_GUIDE.md` | Manual scenarios with exact actions and expected results, regression checklist | Before verifying a change |
 
+These files are created the first time their purpose applies — a fresh repo does
+not pre-create them empty. An empty file claims there was nothing to say, which
+is a different statement from not having been written yet.
+
 **`CLAUDE.md` is falsifiable by its own output.** Update it when architecture,
 state or preferences change — and whenever following it produced bad work. A
 rule obeyed correctly that still yielded a poor result means the rule is the
@@ -313,6 +317,8 @@ finds nothing.
 
 Never:
 - Create files outside established project structure
+- Write a plan, a note, or a scratch file anywhere but `docs/working/` — never the repo root
+- Commit a secret, or expose one to the browser. Service-role keys, SMTP passwords, API keys with write scope: not in the repo, and not behind any client-visible env prefix (`VITE_`, `NEXT_PUBLIC_`, and the like). Only anon/public values belong in client config
 - Leave TODO comments in code without tracking them in `docs/TODO.md`
 - Write non-trivial code without the decision-context comment Code Standards requires (what the requirement was, why this approach, what was rejected)
 - Add a feature without updating the documentation it invalidates, in the same commit
