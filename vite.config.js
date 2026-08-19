@@ -138,7 +138,15 @@ function requestPath(url) {
 }
 
 function copyRootFiles() {
-  const files = ['CLAUDE.md'];
+  // Requirement: /CLAUDE.md is what every downstream repo curls, so it must be
+  // the fleet-canonical text with no gp-props specifics in it.
+  // Approach: publish docs/FLEET_CLAUDE.md AS CLAUDE.md. The root CLAUDE.md is
+  // gp-props' own copy — canonical plus local sections — exactly like every
+  // other repo's, and is not what gets served.
+  // Alternative: serve the root file and strip local sections at build time.
+  //   Rejected — that is a parse, and the same class of parse destroyed the H1
+  //   in 14 repos (docs/AI_MISTAKES.md, 2026-08-15).
+  const files = [['docs/FLEET_CLAUDE.md', 'CLAUDE.md']];
   const implDir = resolve(__dirname, 'docs', 'implementations');
   return {
     name: 'copy-root-files',
@@ -165,8 +173,12 @@ function copyRootFiles() {
       });
     },
     closeBundle() {
-      for (const file of files) {
-        copyFileSync(resolve(__dirname, file), resolve(__dirname, 'dist', file));
+      for (const [from, to] of files) {
+        const src = resolve(__dirname, from);
+        // Fail loud: a missing canonical file would otherwise publish nothing
+        // and the 404 would only surface in a downstream repo's curl.
+        if (!existsSync(src)) throw new Error(`copy-root-files: ${from} not found`);
+        copyFileSync(src, resolve(__dirname, 'dist', to));
       }
       // Copy implementation pattern docs to dist/patterns/
       const distPatterns = resolve(__dirname, 'dist', 'patterns');
