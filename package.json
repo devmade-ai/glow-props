@@ -18,7 +18,8 @@
     "smoke:seo": "node scripts/smoke-structured-data.mjs",
     "audit:discoverability": "node scripts/audit-discoverability.mjs",
     "audit:cross-links": "node scripts/audit-cross-links.mjs",
-    "verify": "npm run verify:timer-cleanup && npm run verify:ssr-safety && npm run verify:seo && npm run verify:icons"
+    "verify": "npm run verify:claude-canonical && npm run verify:timer-cleanup && npm run verify:ssr-safety && npm run verify:seo && npm run verify:icons",
+    "verify:claude-canonical": "node scripts/verify-claude-canonical.mjs"
   },
   "devDependencies": {
     "@tailwindcss/vite": "^4.2.2",

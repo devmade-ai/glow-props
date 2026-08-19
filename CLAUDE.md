@@ -402,7 +402,7 @@ replaced wholesale by a sync; nothing here is.
 
 | File | Holds | Read it |
 |---|---|---|
-| `docs/FLEET_CLAUDE.md` | The fleet-canonical conventions, with no gp-props specifics — the file served at the hosted URL | Before changing any convention, since that is where it is edited |
+| `docs/FLEET_CLAUDE.md` | The fleet-canonical conventions, with no gp-props specifics — the file served at the hosted URL. `npm run verify:claude-canonical` fails if CLAUDE.md above the LOCAL marker drifts from it | Before changing any convention, since that is where it is edited |
 | `docs/FLEET_CHANGES.md` | The nine-step procedure for a convention change across every repo | Before writing any script that edits more than one repo |
 | `docs/REPO_PATTERNS.md` | How the fleet patterns are wired in gp-props and what breaks if you touch them | Before editing `vite.config.js`, `src/lib/*`, `src/seoMeta.js`, the head partial, or `scripts/` |
 | `docs/PROJECT_DOCS.md` | gp-props only: status table and process for the `public/projects/*/` mirrors | Before mirroring or scrubbing a project's docs |
