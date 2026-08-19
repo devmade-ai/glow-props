@@ -51,6 +51,28 @@ Legend: **Pass** = compliant, **Partial** = has the feature but with gaps, **Mis
 | dm-website | Pass | Partial | Pass | N/A | N/A | Partial | Pass | N/A | Pass | Missing | Pass |
 | tool-till-tees | Pass | Missing | N/A | N/A | N/A | N/A | ? | ? | N/A | N/A | N/A |
 
+**The `CLAUDE.md` column is graded against each repo's default branch, and is
+accurate as of 2026-08-19.** A fleet sync is finished and verified in all 18
+repos but has not landed on their default branches, so nothing here has moved
+yet. When it lands, three things become wrong and must change together:
+
+- `model-pear` `CLAUDE.md` **Partial → Pass** and `see-veo` **Missing → Pass**;
+  every other cell in that column stays `Pass`. Verified by comparing each
+  repo's text above the `LOCAL` marker against `docs/FLEET_CLAUDE.md`: 18/18
+  byte-identical.
+- Four per-repo blocks below are delivered by the sync and should be deleted,
+  not ticked: model-pear's *Add Communication section*, model-pear's and
+  see-veo's *Triggers — Replace with gp-props version*, and fh-fuelhunt's *Add
+  Timer and Subscription Cleanup subsection*. Each was confirmed present in the
+  synced file.
+- model-pear's *HISTORY.md — Remove* block is only **partly** delivered. Its
+  CLAUDE.md sub-tasks are done; deleting that repo's `docs/HISTORY.md` and the
+  `[x]` items in its own `docs/TODO.md` are not, and stay open.
+
+Two of those blocks now describe an impossible edit — they say to place
+`## Communication` between `Principles` and `Code Standards`, and `Principles`
+no longer exists.
+
 **The DISCOVERABILITY column is the only one graded against deployed reality.**
 Added 2026-08-04 from the fleet public-visibility audit, and every cell was
 checked by fetching the live origin — the home document as a crawler receives it
