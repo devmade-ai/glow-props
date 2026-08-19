@@ -218,6 +218,10 @@ All end users are non-technical. This overrides cleverness.
 - Error messages must say what went wrong AND what to do next, in simple terms
 - Confirm destructive actions with clear consequences explained
 - Provide feedback for all user actions (loading states, success confirmations)
+- Interactive elements meet a 44×44 CSS px touch target (WCAG 2.5.5). Compact
+  variants keep the visual size and gain the target with a min-height/width
+- Every form control has an accessible name, with the label actually attached
+- Text inputs are 16px or larger — iOS Safari auto-zooms into anything smaller
 
 ### Commit Message Format
 
