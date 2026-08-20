@@ -69,9 +69,6 @@ because the sync delivered them. Two options, neither taken yet:
    and could be pointed at any repo.
 2. Keep it judgemental and write down what it means.
 
-The `HISTORY.md — Remove` blocks for model-pear and see-veo stay open: their
-CLAUDE.md sub-tasks are done, deleting each repo's `docs/HISTORY.md` is not.
-
 **The DISCOVERABILITY column is the only one graded against deployed reality.**
 Added 2026-08-04 from the fleet public-visibility audit, and every cell was
 checked by fetching the live origin — the home document as a crawler receives it
@@ -224,17 +221,6 @@ SvelteKit app. APP_ICONS done, DEBUG_SYSTEM foundations done, Implementation Pat
 - model-pear CLAUDE.md uses non-standard top-level headings: `## HARD RULES` (L11) and `## AI SESSION MANAGEMENT` (where `### Principles` lives at L124) instead of gp-props's `## Principles` / `## Code Standards`. Header drift goes beyond just the missing Communication section.
 - **TIMER_LEAKS subsection missing** from CLAUDE.md Code Standards — pattern was upstreamed to gp-props 2026-04-22; downstream CLAUDE.md should inherit `### Timer and Subscription Cleanup` between `### Cleanup` and `### Quality Checks`.
 
-#### HISTORY.md — Remove (cross-fleet policy 2026-04-16)
-
-Git history already tracks completions; a separate changelog is redundant.
-
-1. [ ] Delete `docs/HISTORY.md`
-2. [ ] Remove `### docs/HISTORY.md` section from CLAUDE.md Documentation rules (lines 268-280)
-3. [ ] Change "move completed items to HISTORY.md" → "delete completed items (git history tracks them)" in CLAUDE.md (`docs/TODO.md:254-264` references)
-4. [ ] Delete the 8+ `[x]` completed items from model-pear's local `docs/TODO.md` (lines 40-53), including the "Negotiation Mode" High Priority section which is marked complete
-
-(README.md already has no HISTORY references — verified 2026-04-25, sub-task removed.)
-
 #### BURGER_MENU — Missing → Implement
 
 Reference: `docs/implementations/BURGER_MENU.md`
@@ -287,13 +273,6 @@ model-pear is dark-only with no DaisyUI. This is a ground-up implementation, not
 ### see-veo
 
 React + Vite resume/portfolio site. Single dark theme intentionally. Has partial debug and PWA implementations that need hardening. **2026-04-25 re-classification:** BURGER_MENU, THEME_DARK_MODE, and EVENT_BUS confirmed N/A — minimal resume site, simple `<nav>` for social links (`App.tsx:72`), single dark theme by design, no service-layer pub/sub. Latest commit `5963fd7` 2026-04-23 (data-only changes since 2026-04-21).
-
-#### HISTORY.md — Remove (cross-fleet policy 2026-04-16)
-
-Git history already tracks completions; a separate changelog is redundant. README.md file tree already has no HISTORY.md reference (verified 2026-04-18). CLAUDE.md already has no HISTORY references either (verified 2026-04-25 — only the file deletion remains).
-
-1. [ ] Delete `docs/HISTORY.md` (the file is at `docs/HISTORY.md`, not root `/HISTORY.md`)
-2. **Confirm:** `curl -sf -H "Authorization: token $TOKEN" "https://api.github.com/repos/devmade-ai/see-veo/contents/docs/HISTORY.md"` returns 404.
 
 #### APP_ICONS — Partial → Complete
 
