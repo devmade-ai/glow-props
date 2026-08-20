@@ -51,6 +51,24 @@ Legend: **Pass** = compliant, **Partial** = has the feature but with gaps, **Mis
 | dm-website | Pass | Partial | Pass | N/A | N/A | Partial | Pass | N/A | Pass | Missing | Pass |
 | tool-till-tees | Pass | Missing | N/A | N/A | N/A | N/A | ? | ? | N/A | N/A | N/A |
 
+**The `CLAUDE.md` column is graded against each repo's default branch, and is
+accurate as of 2026-08-19.** A fleet sync is finished and verified in all 18
+repos but has not landed on their default branches, so nothing here has moved
+yet. When it lands, three things become wrong and must change together:
+
+- `model-pear` `CLAUDE.md` **Partial → Pass** and `see-veo` **Missing → Pass**;
+  every other cell in that column stays `Pass`. Verified by comparing each
+  repo's text above the `LOCAL` marker against `docs/FLEET_CLAUDE.md`: 18/18
+  byte-identical.
+- The per-repo blocks the sync delivers have been **deleted** rather than
+  ticked (2026-08-19): model-pear's *Add Communication section*, model-pear's
+  and see-veo's *Triggers — Replace with gp-props version*, fh-fuelhunt's *Add
+  Timer and Subscription Cleanup subsection*, and see-veo's *Align with
+  gp-props*. Each was confirmed delivered in the synced file first.
+- The `HISTORY.md — Remove` blocks for model-pear and see-veo **stay open**.
+  Their CLAUDE.md sub-tasks are done; deleting each repo's `docs/HISTORY.md`,
+  and the `[x]` items in model-pear's own `docs/TODO.md`, are not.
+
 **The DISCOVERABILITY column is the only one graded against deployed reality.**
 Added 2026-08-04 from the fleet public-visibility audit, and every cell was
 checked by fetching the live origin — the home document as a crawler receives it
@@ -203,13 +221,6 @@ SvelteKit app. APP_ICONS done, DEBUG_SYSTEM foundations done, Implementation Pat
 - model-pear CLAUDE.md uses non-standard top-level headings: `## HARD RULES` (L11) and `## AI SESSION MANAGEMENT` (where `### Principles` lives at L124) instead of gp-props's `## Principles` / `## Code Standards`. Header drift goes beyond just the missing Communication section.
 - **TIMER_LEAKS subsection missing** from CLAUDE.md Code Standards — pattern was upstreamed to gp-props 2026-04-22; downstream CLAUDE.md should inherit `### Timer and Subscription Cleanup` between `### Cleanup` and `### Quality Checks`.
 
-#### CLAUDE.md — Add Communication section
-
-"Implementation Patterns (Source of Truth)" section + prohibition already present. Remaining: Communication section. Live-verified: no `^## Communication$` heading exists in model-pear CLAUDE.md — only `## Implementation Patterns (Source of Truth)` at line 365 and `## Triggers` at line 461.
-
-1. [ ] **Add `## Communication` section** — Copy from gp-props CLAUDE.md. Place between Principles and Code Standards. Update top-of-file header line to include COMMUNICATION. Remove any duplicate "ASK before assuming" or "Communication style" bullets from AI Notes.
-2. **Confirm:** `grep -c "^## Communication$" CLAUDE.md` returns `1`. Section exists between Principles and Code Standards.
-
 #### HISTORY.md — Remove (cross-fleet policy 2026-04-16)
 
 Git history already tracks completions; a separate changelog is redundant.
@@ -220,14 +231,6 @@ Git history already tracks completions; a separate changelog is redundant.
 4. [ ] Delete the 8+ `[x]` completed items from model-pear's local `docs/TODO.md` (lines 40-53), including the "Negotiation Mode" High Priority section which is marked complete
 
 (README.md already has no HISTORY references — verified 2026-04-25, sub-task removed.)
-
-#### Triggers — Replace with gp-props version (cross-fleet policy 2026-04-17)
-
-gp-props CLAUDE.md has a redesigned Triggers section: 48 triggers in 8 groups, 6 cadence meta sweeps (`hot` / `quick` / `ship` / `session` / `tidy` / `all`), 7 reflective passes (`risk` / `surface` / `wrap` / `skipped` / `assumed` / `approach` / `cold`), and scope modifiers (`branch` / `staged` / `file <path>`). Replaces the older single-word Triggers section (`rev`/`aud`/`mobile`/`clean`/`start`/etc.).
-
-1. [ ] **Replace the existing `## Triggers` section** — Copy the full new `## Triggers` section from gp-props CLAUDE.md verbatim, including How to invoke, Scope modifiers, Behavior rules, all 8 group tables (`correctness`, `trust`, `speed`, `frontend`, `quality`, `ops`, `design`, `fleet`), Meta sweeps table, and Reflective passes table.
-2. [ ] **Note any name collisions** — If the repo has npm scripts, folders, or conventions using single-word names matching trigger names (e.g. `docs/`, `tests/`, `config/`, `api/`), add a line in AI Notes clarifying context precedence.
-3. **Confirm:** `grep -c "^## Triggers$" CLAUDE.md` returns `1`. All 8 group tables present. No old single-word triggers (`rev`/`aud`/`start`/`go`) remain.
 
 #### BURGER_MENU — Missing → Implement
 
@@ -288,29 +291,6 @@ Git history already tracks completions; a separate changelog is redundant. READM
 
 1. [ ] Delete `docs/HISTORY.md` (the file is at `docs/HISTORY.md`, not root `/HISTORY.md`)
 2. **Confirm:** `curl -sf -H "Authorization: token $TOKEN" "https://api.github.com/repos/devmade-ai/see-veo/contents/docs/HISTORY.md"` returns 404.
-
-#### CLAUDE.md — Align with gp-props
-
-No local `docs/implementations/` folder (correct). CLAUDE.md is **717 lines**. Has **~284 lines of hardcoded inline patterns** in a "Suggested Implementations" section spanning **lines 323–606** (next section "Project-Specific Configuration" at line 607) covering PWA System, App Icons, Download as PDF, Timer Leaks, and HTTPS Proxy — full code examples embedded directly. Missing: any reference to gp-props as pattern source. **Correction 2026-04-25:** `## Communication Style` is already a top-level section header at line 273 (not a bullet list as previously stated). Body content needs replacing with the full gp-props version, not "promoting from a bullet".
-
-1. [ ] **Delete entire "Suggested Implementations" section** — Remove lines 323–606 (~284 lines of inline pattern code for PWA System, App Icons, Download as PDF, Timer Leaks, HTTPS Proxy).
-2. [ ] **Add "Implementation Patterns (Source of Truth)" section** — Replace deleted section with the standard gp-props reference block (source location, fetch from the live site / GitHub API, listing command, rules).
-3. [ ] **Add AI Note** — Add: `**Implementation patterns — always fetch from gp-props.** Never look for local copies of implementation pattern files (e.g., docs/implementations/*.md) in downstream repos. They do not exist locally — the single source of truth is the docs/implementations/ folder in the gp-props repo. Fetch the latest version before every implementation task.`
-4. [ ] **Add prohibition** — Add to Prohibitions: "Create local copies of implementation pattern files in any repo — always fetch from gp-props".
-5. [ ] **Replace `## Communication Style` body with full gp-props `## Communication` content** — Section already exists at line 273; rename to `## Communication` and replace body. Place between Principles and Code Standards. Update header line to include COMMUNICATION. Remove the duplicate "**ASK before assuming.**" bullet from AI Notes (it currently overlaps with Communication content).
-6. **Confirm:** CLAUDE.md is ~284 lines shorter. No inline code examples for patterns remain. Standard fetch commands point to gp-props. Communication section exists between Principles and Code Standards.
-
-**New gaps spotted 2026-04-25:**
-- `## Workflow` section in CLAUDE.md (line 635) is custom and not in the gp-props template — evaluate whether to keep, fold into AI Notes, or drop.
-- `docs/working/` directory exists in repo — verify whether it should be in `.gitignore` per gp-props convention.
-
-#### Triggers — Replace with gp-props version (cross-fleet policy 2026-04-17)
-
-gp-props CLAUDE.md has a redesigned Triggers section: 48 triggers in 8 groups, 6 cadence meta sweeps (`hot` / `quick` / `ship` / `session` / `tidy` / `all`), 7 reflective passes (`risk` / `surface` / `wrap` / `skipped` / `assumed` / `approach` / `cold`), and scope modifiers (`branch` / `staged` / `file <path>`). Replaces the older single-word Triggers section (`rev`/`aud`/`mobile`/`clean`/`start`/etc.).
-
-1. [ ] **Replace the existing `## Triggers` section** — Copy the full new `## Triggers` section from gp-props CLAUDE.md verbatim, including How to invoke, Scope modifiers, Behavior rules, all 8 group tables (`correctness`, `trust`, `speed`, `frontend`, `quality`, `ops`, `design`, `fleet`), Meta sweeps table, and Reflective passes table.
-2. [ ] **Note any name collisions** — If the repo has npm scripts, folders, or conventions using single-word names matching trigger names (e.g. `docs/`, `tests/`, `config/`, `api/`), add a line in AI Notes clarifying context precedence.
-3. **Confirm:** `grep -c "^## Triggers$" CLAUDE.md` returns `1`. All 8 group tables present. No old single-word triggers (`rev`/`aud`/`start`/`go`) remain.
 
 #### APP_ICONS — Partial → Complete
 
@@ -402,18 +382,6 @@ Add to existing APP_ICONS items: **maskable 1024px icon lacks safe-zone padding*
 ### fh-fuelhunt
 
 React Native (Expo) app (package name `fuelhunt`). Metro bundler + Uniwind + custom `sw.js`. CLAUDE.md, APP_ICONS, BURGER_MENU, DEBUG_SYSTEM, THEME_DARK_MODE, PWA visibility pause, Triggers, Z_INDEX_SCALE (`src/constants/zIndex.ts`), ICON_CACHE_BUST (`scripts/inject-icon-hashes.mjs` + `src/components/pwa/IconCacheDisclosure.tsx` + sw.js handles versioned URLs), and **EVENT_BUS** (Not Applicable — documented at `CLAUDE.md:754` with rationale 2026-04-18) all confirmed DONE 2026-04-21, re-confirmed 2026-04-25 against latest commit `da0b8f01` 2026-04-22. Three items remain.
-
-#### CLAUDE.md — Add Timer and Subscription Cleanup subsection (2026-04-25)
-
-Cross-fleet TIMER_LEAKS pattern was upstreamed to gp-props 2026-04-22 with a `### Timer and Subscription Cleanup` subsection in CLAUDE.md Code Standards. fh-fuelhunt's CLAUDE.md predates this and is missing the subsection.
-
-1. [ ] **Add `### Timer and Subscription Cleanup` subsection** between `### Cleanup` and `### Quality Checks` in CLAUDE.md, fetched verbatim from gp-props.
-
-**Bonus finding (not a pattern gap — STILL UNADDRESSED):** `src/debug/debugLog.ts` has a leftover `// TEMPORARY: always-on for PWA alpha diagnostics. Restore` comment (lines 6, 218, 353). The `__DEV__` guard is still missing on `debugAdd()` and the global listener registration — production debug-pill leak risk. Restore:
-
-1. [ ] Add `if (!__DEV__) return;` guard at the top of the init/install function in `src/debug/debugLog.ts` (and the SW-registration path at line ~353).
-2. [ ] Delete the 3 TEMPORARY comment blocks.
-3. **Confirm:** `eas build --profile production` (or equivalent) → debug pill does not render; dev build still works.
 
 #### DOWNLOAD_PDF — Missing → Implement (conditional)
 

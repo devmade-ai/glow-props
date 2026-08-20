@@ -1,9 +1,17 @@
 # Session Notes
 
-**Nothing pending.**
+**`## Communication` is a goal, not rules — and it is on trial.**
 
-Empty is this file's normal state. It carries only what the next session cannot
-work without and cannot get from the code, the docs, or `git log`. Pending work
-belongs in [`TODO.md`](TODO.md), things only the user can do belong in
-[`USER_ACTIONS.md`](USER_ACTIONS.md), and mistakes worth remembering belong in
-[`AI_MISTAKES.md`](AI_MISTAKES.md).
+Replaced 2026-08-17: twelve bullets and a prescribed three-part reply shape
+became one goal and five tests. The other 18 fleet repos still carry the old
+bullets.
+
+**That split is deliberate.** An `align` pass will read this repo as drifted. It
+has not drifted — the fleet is behind. Do not level gp-props back down to the
+twelve bullets, and do not propagate the goal until the user says so.
+
+No script can verify a goal. It is checked by the `convention` trigger and by
+noticing which of the five tests a reply failed; the misses so far are recorded
+in [`AI_MISTAKES.md`](AI_MISTAKES.md).
+
+Delete this once the goal has held for a few sessions and the fleet is synced.
