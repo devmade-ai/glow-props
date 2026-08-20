@@ -218,8 +218,6 @@ SvelteKit app. APP_ICONS done, DEBUG_SYSTEM foundations done, Implementation Pat
 
 **New gaps spotted 2026-04-25 re-validation:**
 - model-pear's local `docs/TODO.md` mixes 8+ `[x]` completed items with `[ ]` open items (lines 40-53, e.g. "Add Industry Standard badges", "One-click save") — needs cleanup as part of the HISTORY.md removal chunk regardless of HISTORY decision.
-- model-pear CLAUDE.md uses non-standard top-level headings: `## HARD RULES` (L11) and `## AI SESSION MANAGEMENT` (where `### Principles` lives at L124) instead of gp-props's `## Principles` / `## Code Standards`. Header drift goes beyond just the missing Communication section.
-- **TIMER_LEAKS subsection missing** from CLAUDE.md Code Standards — pattern was upstreamed to gp-props 2026-04-22; downstream CLAUDE.md should inherit `### Timer and Subscription Cleanup` between `### Cleanup` and `### Quality Checks`.
 
 #### BURGER_MENU — Missing → Implement
 
@@ -436,9 +434,9 @@ Largest backlog: **see-veo**. (four-ems FULLY RESOLVED 2026-05-01 — see four-e
 
 Highest-leverage cross-cutting gaps (post-2026-04-25):
 
-1. **Triggers redesign** — Cross-fleet policy 2026-04-17. **Done in canva-grid, fl-farlume, repo-tor, fh-fuelhunt, sun-sea-o, graphiki, intxt, tool-till-tees, four-ems** (9 repos). Still missing in **model-pear, see-veo** (2 repos).
-2. **CLAUDE.md alignment** — Pass in canva-grid, fl-farlume, repo-tor, graphiki, fh-fuelhunt, sun-sea-o, **intxt, tool-till-tees, four-ems** (9 repos — four-ems landed 2026-05-01, 723 lines down from 957). Partial in **model-pear** (Implementation Patterns + prohibition present; Communication section still missing; non-standard `## HARD RULES` / `## AI SESSION MANAGEMENT` headings; TIMER_LEAKS subsection missing). Worst remaining: see-veo (~284 lines at L323-606, CLAUDE.md = 717 lines).
-3. **HISTORY.md removal** — Done in canva-grid, fl-farlume, repo-tor, graphiki, fh-fuelhunt, sun-sea-o, **intxt, tool-till-tees, four-ems**. Still present in **model-pear, see-veo**.
+1. **Triggers redesign** — **Done fleet-wide 2026-08-19.** All 19 repos carry the canonical `## Triggers` section pointing at gp-props' `docs/TRIGGERS.md`, where the 48-trigger vocabulary now lives; verified on every default branch. four-ems keeps four `daisyui-*` triggers of its own below the LOCAL marker.
+2. **CLAUDE.md alignment** — **Pass fleet-wide 2026-08-19.** Every repo's text above the LOCAL marker is byte-identical to `docs/FLEET_CLAUDE.md`; verified 19/19 on the default branches.
+3. **HISTORY.md removal** — **Done fleet-wide 2026-08-19.** see-veo's was the last, deleted with the reference in its own TODO header; model-pear's had already gone before the entry was checked.
 4. **PWA_ICON_CACHE_BUST** — Full Pass in canva-grid, fl-farlume, repo-tor, graphiki, fh-fuelhunt, sun-sea-o, **intxt, four-ems, gp-props** (9 repos — gp-props implemented 2026-08-01, correcting a false "static site, no PWA icons" N/A). Missing in see-veo. N/A for model-pear (no PWA), tool-till-tees (no PWA).
 5. **EVENT_BUS** — N/A in canva-grid, fl-farlume, repo-tor, sun-sea-o, **intxt**, **see-veo** (minimal resume site), **four-ems** (no service layer; documented in CLAUDE.md "Not Applicable Patterns"), **gp-props** (no service layer; documented in CLAUDE.md "Not Applicable Patterns" 2026-08-01). Pass in graphiki (typed `EventBus<M>`). 3 repos still need an evaluate decision: model-pear, fh-fuelhunt, tool-till-tees.
 6. **DEBUG_SYSTEM: console interception** — Done in canva-grid, fl-farlume, repo-tor, graphiki, model-pear, fh-fuelhunt, sun-sea-o, **intxt, four-ems, gp-props** (2026-08-01, DEV-gated). Still missing in see-veo.
