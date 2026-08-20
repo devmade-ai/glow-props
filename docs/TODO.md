@@ -242,9 +242,7 @@ Reference: `docs/implementations/DOWNLOAD_PDF.md`
 
 Reference: `docs/implementations/PWA_SYSTEM.md`
 
-1. [ ] **Install vite-plugin-pwa** — `npm install -D vite-plugin-pwa workbox-window`. Configure in `apps/web/vite.config.ts` with `registerType: 'prompt'`, `cleanupOutdatedCaches: true`, explicit `globPatterns`.
 2. [ ] **Create manifest** — `id`, `scope`, `display: standalone`, `prefer_related_applications: false`. Reference icons from APP_ICONS step.
-3. [ ] **Add beforeinstallprompt capture** — Inline classic `<script>` in `apps/web/src/app.html` `<head>` to catch the prompt before SvelteKit mounts.
 4. [ ] **Create PWA module** — Module-level singleton for SW state. `usePWAUpdate` with visibility checks, 30-second suppression, `controllerchange` reload guard. `usePWAInstall` for install prompt.
 5. [ ] **Add update banner UI** — Fixed bottom bar with "Update" and "Later" buttons. Z-70 per scale.
 6. [ ] **Add install UI** — "Install app" menu item (once burger menu exists) with browser-specific instructions modal.
@@ -257,10 +255,7 @@ Reference: `docs/implementations/THEME_DARK_MODE.md`, including **Migration Guid
 model-pear is dark-only with no DaisyUI. This is a ground-up implementation, not a migration.
 
 1. [ ] **Install DaisyUI** — `npm install -D daisyui@5`. Configure `@plugin "daisyui"` with 2 starter themes.
-2. [ ] **Add dual-layer theming** — `@custom-variant dark`, `color-scheme`, flash prevention inline script in `apps/web/src/app.html`.
-3. [ ] **Create theme module** — `applyTheme(dark, themeName, skipPersist)`, persistence (pick Approach A or B), cross-tab sync via `storage` event, OS preference fallback.
 4. [ ] **Add dark/light toggle + theme picker** — In burger menu (once built). Follow [Theme UI in Burger Menu](../implementations/BURGER_MENU.md#theme-ui-in-burger-menu) for toggle item (sun/moon icons, label flips), theme picker layout (scrollable list for Approach A, combo buttons for Approach B), and `aria-label` that updates with state.
-5. [ ] **Add `<meta name="theme-color">`** — Two tags with media queries in `apps/web/src/app.html`. Dynamic updates in theme module.
 6. [ ] **Migrate existing styles** — Replace hardcoded dark colors with DaisyUI semantic classes (`bg-base-100`, `text-base-content`, etc.). Follow Phase 1-3 of the migration guide for the audit and mapping process.
 7. **Confirm:** Toggle dark/light. Open two tabs, toggle in one — other follows. Clear localStorage — falls back to OS preference. Check meta theme-color updates in DevTools.
 
@@ -529,6 +524,7 @@ Severity-ordered. The two broken service workers (repo-tor, model-pear) are fixe
 3. [ ] `registration.update()` uncaught at `pwa.js:518` and `:570`; visibility check unthrottled; `_isChecking` is set but never read, so two taps run two concurrent checks.
 5. [ ] Preference write not read back; the toast unconditionally claims the new state. Install `prompt()` not awaited, throw propagates into an uncaught `await` in `Header.jsx:120`.
 6. [ ] Precaches Expo-era leftovers (`adaptive-icon.png`, `splash-icon.png`, a duplicate `apple-touch-icon.png`) the web app never requests.
+4. [ ] `applyUpdate()` has no plain-reload fallback — and `version.json` can report an update with no SW change at all, so "Update Now" silently does nothing.
 
 #### model-pear (the matrix row is wrong)
 
@@ -539,11 +535,11 @@ Severity-ordered. The two broken service workers (repo-tor, model-pear) are fixe
 4. [ ] `launchPhase` has no terminal timeout — if registration never settles (known Safari behaviour) the update banner is suppressed for the whole session.
 5. [ ] Google Fonts loaded from CDN with no runtime route → installed PWA falls back to system fonts offline.
 6. [ ] No `?v=` icon versioning at all; `purpose: 'maskable'` on a plain transparent render; no PWA tests despite a custom launch-apply implementation.
-7. [ ] **Correct this file's own record:** model-pear is listed as PWA_SYSTEM "Missing"/"no vite-plugin-pwa" and ICON_CACHE_BUST "N/A (no PWA)". It is a SvelteKit PWA with a fuller update policy than several repos marked Pass. ICON_CACHE_BUST should read **Missing**, not N/A. The neighbouring "no DaisyUI", "`class="dark"` hardcoded" and "BURGER_MENU still `p-2`" claims are also stale.
+7. [ ] **Correct this file's own record:** the Gap Matrix already reads PWA_SYSTEM `Partial` and ICON_CACHE_BUST `Missing` for model-pear, so the "Missing"/"N/A (no PWA)" wording this item quotes is itself out of date. Confirmed 2026-08-19: vite-plugin-pwa and workbox-window are dependencies, VitePWA() is called with registerType 'prompt'. What remains is deciding whether Partial is still the right grade.
 
 #### fh-fuelhunt
 
-1. [ ] **`usePWAInstall.ts` is orphaned** — 311 lines imported by no component (`App.tsx` and `main.tsx` both reference it zero times); the live path is 5 lines. The separate `InstallInstructionsModal.tsx` this item also named is already deleted, and its rejection is documented at `src/hooks/usePWAInstall.ts:15`. Decide: wire the hook up, or delete it too.
+1. [ ] **The entire install UI is orphaned** — `usePWAInstall.ts` (300 lines) and `InstallInstructionsModal.tsx` (250 lines) are imported by zero components; the live path is 5 lines ending in `window.alert()`. Consequences: the third capture layer doesn't exist at runtime, `IconCacheDisclosure` is unreachable so ICON_CACHE_BUST invariant 5 is unmet in production, and all install analytics are dead. `CLAUDE.md:294` and `TESTING_GUIDE.md:183` claim otherwise.
 2. [ ] **Security: cross-origin cache-first matches by extension and permits query strings**, so Mapbox sprite URLs are cached permanently with the access token in the cache key. Needs a host allowlist; any URL with auth params must be network-only.
 3. [ ] `SW_BUILD` hashes only `dist/_expo/static/`, so `public/` font changes are invisible — fonts are cache-first and unversioned, so replacing one serves stale bytes forever.
 4. [ ] Manifest declares `icon.png` maskable but it is a plain transparent raster, byte-identical to `adaptive-icon.png` and `splash-icon.png`.
@@ -556,6 +552,7 @@ Severity-ordered. The two broken service workers (repo-tor, model-pear) are fixe
 4. [ ] Manifest `theme_color`/`background_color` are the dark base-100 while the first-visit default theme is light → near-black status bar over a light app in Android standalone.
 5. [ ] The icon-cache-bust tripwire never gates a deploy (absent from `build:web` and `vercel.json`, no CI) and still hardcodes `synctone.vercel.app`. `console.log` ships in `public/sw.js` (babel's remove-console only touches the Metro bundle).
 6. [ ] Update affordance is home-screen-only *and* installed-only — a user inside a chat has no update surface; no "Updating…" state, no failure UI. `offlineReady` and `dismiss` are exported and unused.
+3. [ ] `clearAllData()` deletes the precache too, orphaning it until the next SW *install* — which won't happen, because `sw.js` didn't change.
 
 #### four-ems
 
@@ -564,6 +561,7 @@ Severity-ordered. The two broken service workers (repo-tor, model-pear) are fixe
 3. [ ] `checkForUpdate` never reads `registration.waiting`; no shared in-flight promise; `hasUpdate` ORs `needRefresh`; preference write not read back.
 4. [ ] Install capture has no named handler/attach guard/durable flag — so `PwaTab.tsx:197` reports "not captured" forever *and* its truthy-branch copy is backwards. `prompt()` called before clearing; no `CriOS`/`FxiOS`/`EdgiOS`; no iPadOS test.
 5. [ ] No `workbox-window` dependency; no `vercel.json` headers block at all; `pwa-1024x1024.png` declared maskable but is a copy of the transparent icon.
+6. [ ] **The dist tripwire has never run** (`skipIf` + a `npm test` that doesn't build), and `verify-timer-cleanup.mjs` gives a false negative on the module singleton because a `clearInterval` exists in the test-reset helper.
 
 #### canva-grid
 
