@@ -37,8 +37,8 @@ Legend: **Pass** = compliant, **Partial** = has the feature but with gaps, **Mis
 | gp-props | Pass | Pass | Pass | Pass (DEV) | Pass | Pass | Pass | N/A | Pass | Pass | Pass |
 | canva-grid | Pass | Pass | Pass | Pass | Pass (B) | Pass | Pass | N/A | Pass | Pass | Pass |
 | fl-farlume | Pass | Pass | Pass | Pass | Pass | Partial | Pass | N/A | Pass | Pass | Pass (P) |
-| model-pear | Partial | Partial | Missing | Pass | Partial | Partial | Partial | Missing | Pass | Missing | Pass |
-| see-veo | Missing | Partial | N/A | Partial | Partial | Partial | N/A | N/A | Missing | Missing | Pass |
+| model-pear | Pass | Partial | Missing | Pass | Partial | Partial | Partial | Missing | Pass | Missing | Pass |
+| see-veo | Pass | Partial | N/A | Partial | Partial | Partial | N/A | N/A | Missing | Missing | Pass |
 | repo-tor | Pass | Pass | Pass | Pass | Pass | Pass | Pass | N/A | Pass | Pass | Partial |
 | fh-fuelhunt | Pass | Pass | Pass | Pass | Missing | Partial | Pass | N/A | Pass | Pass | Pass |
 | sun-sea-o | Pass | Pass | Pass | Pass | Pass | Pass | Pass | N/A | Pass | Pass | Pass (P) |
@@ -51,23 +51,26 @@ Legend: **Pass** = compliant, **Partial** = has the feature but with gaps, **Mis
 | dm-website | Pass | Partial | Pass | N/A | N/A | Partial | Pass | N/A | Pass | Missing | Pass |
 | tool-till-tees | Pass | Missing | N/A | N/A | N/A | N/A | ? | ? | N/A | N/A | N/A |
 
-**The `CLAUDE.md` column is graded against each repo's default branch, and is
-accurate as of 2026-08-19.** A fleet sync is finished and verified in all 18
-repos but has not landed on their default branches, so nothing here has moved
-yet. When it lands, three things become wrong and must change together:
+**The `CLAUDE.md` column is graded against each repo's default branch.** The
+fleet sync landed on 2026-08-19 and every default branch now carries the
+canonical text: verified by comparing each repo's text above the `LOCAL` marker
+against `docs/FLEET_CLAUDE.md`, 19/19 byte-identical. `model-pear` and `see-veo`
+moved to `Pass` with that merge.
 
-- `model-pear` `CLAUDE.md` **Partial → Pass** and `see-veo` **Missing → Pass**;
-  every other cell in that column stays `Pass`. Verified by comparing each
-  repo's text above the `LOCAL` marker against `docs/FLEET_CLAUDE.md`: 18/18
-  byte-identical.
-- The per-repo blocks the sync delivers have been **deleted** rather than
-  ticked (2026-08-19): model-pear's *Add Communication section*, model-pear's
-  and see-veo's *Triggers — Replace with gp-props version*, fh-fuelhunt's *Add
-  Timer and Subscription Cleanup subsection*, and see-veo's *Align with
-  gp-props*. Each was confirmed delivered in the synced file first.
-- The `HISTORY.md — Remove` blocks for model-pear and see-veo **stay open**.
-  Their CLAUDE.md sub-tasks are done; deleting each repo's `docs/HISTORY.md`,
-  and the `[x]` items in model-pear's own `docs/TODO.md`, are not.
+**The column has no definition.** The only legend is the generic one at the top
+of this matrix, which says nothing about what compliance means for a CLAUDE.md.
+In practice it measured canonical-section coverage, and that could only be
+inferred from the per-repo blocks that were its evidence — blocks now deleted,
+because the sync delivered them. Two options, neither taken yet:
+
+1. Define it as byte-equality — `Pass` = text above the `LOCAL` marker matches
+   `docs/FLEET_CLAUDE.md` exactly, anything else `Missing`, no `Partial`.
+   `npm run verify:claude-canonical` already asserts exactly this for gp-props
+   and could be pointed at any repo.
+2. Keep it judgemental and write down what it means.
+
+The `HISTORY.md — Remove` blocks for model-pear and see-veo stay open: their
+CLAUDE.md sub-tasks are done, deleting each repo's `docs/HISTORY.md` is not.
 
 **The DISCOVERABILITY column is the only one graded against deployed reality.**
 Added 2026-08-04 from the fleet public-visibility audit, and every cell was
