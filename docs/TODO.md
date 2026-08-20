@@ -359,6 +359,11 @@ Reference: `docs/implementations/DOWNLOAD_PDF.md`
 4. [ ] **Add `window.print()` trigger** — Button in the UI (web-only via `Platform.OS === 'web'` guard).
 5. **Confirm:** Click print, verify clean output with no interactive elements.
 
+**Bonus finding (not a pattern gap — STILL UNADDRESSED):** `src/debug/debugLog.ts` has a leftover `// TEMPORARY: always-on for PWA alpha diagnostics. Restore` comment (lines 6, 218, 353). The `__DEV__` guard is still missing on `debugAdd()` and the global listener registration — production debug-pill leak risk. Restore:
+1. [ ] Add `if (!__DEV__) return;` guard at the top of the init/install function in `src/debug/debugLog.ts` (and the SW-registration path at line ~353).
+2. [ ] Delete the 3 TEMPORARY comment blocks.
+3. **Confirm:** `eas build --profile production` (or equivalent) → debug pill does not render; dev build still works.
+
 ### tool-till-tees
 
 **Hybrid repo:** Vercel-hosted Node.js API (`api/`) + a minimal React 19 / Vite landing page (`src/App.tsx`, `src/main.tsx`, `index.css`). Backs three systems: contact/notification endpoint, Four Ems form-builder API, Sancio agreement management — all backed by Supabase. Serves 4 frontend consumers (four-ems, gp-props, see-veo, sun-sea-o) per CORS allowlist in `lib/cors.ts`. Tech stack: React 19.2 + Vite + Tailwind v4 + Vitest 4 + Supabase + Vercel serverless functions + bcryptjs + nodemailer.
