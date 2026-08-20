@@ -242,10 +242,6 @@ Reference: `docs/implementations/DOWNLOAD_PDF.md`
 
 Reference: `docs/implementations/PWA_SYSTEM.md`
 
-1. [ ] **Install vite-plugin-pwa** — `npm install -D vite-plugin-pwa workbox-window`. Configure in `apps/web/vite.config.ts` with `registerType: 'prompt'`, `cleanupOutdatedCaches: true`, explicit `globPatterns`.
-2. [ ] **Create manifest** — `id`, `scope`, `display: standalone`, `prefer_related_applications: false`. Reference icons from APP_ICONS step.
-3. [ ] **Add beforeinstallprompt capture** — Inline classic `<script>` in `apps/web/src/app.html` `<head>` to catch the prompt before SvelteKit mounts.
-4. [ ] **Create PWA module** — Module-level singleton for SW state. `usePWAUpdate` with visibility checks, 30-second suppression, `controllerchange` reload guard. `usePWAInstall` for install prompt.
 5. [ ] **Add update banner UI** — Fixed bottom bar with "Update" and "Later" buttons. Z-70 per scale.
 6. [ ] **Add install UI** — "Install app" menu item (once burger menu exists) with browser-specific instructions modal.
 7. **Confirm:** Build and deploy. Visit in Chrome — install prompt should work. Deploy a new version, reopen — update banner should appear.
@@ -256,11 +252,7 @@ Reference: `docs/implementations/THEME_DARK_MODE.md`, including **Migration Guid
 
 model-pear is dark-only with no DaisyUI. This is a ground-up implementation, not a migration.
 
-1. [ ] **Install DaisyUI** — `npm install -D daisyui@5`. Configure `@plugin "daisyui"` with 2 starter themes.
-2. [ ] **Add dual-layer theming** — `@custom-variant dark`, `color-scheme`, flash prevention inline script in `apps/web/src/app.html`.
-3. [ ] **Create theme module** — `applyTheme(dark, themeName, skipPersist)`, persistence (pick Approach A or B), cross-tab sync via `storage` event, OS preference fallback.
 4. [ ] **Add dark/light toggle + theme picker** — In burger menu (once built). Follow [Theme UI in Burger Menu](../implementations/BURGER_MENU.md#theme-ui-in-burger-menu) for toggle item (sun/moon icons, label flips), theme picker layout (scrollable list for Approach A, combo buttons for Approach B), and `aria-label` that updates with state.
-5. [ ] **Add `<meta name="theme-color">`** — Two tags with media queries in `apps/web/src/app.html`. Dynamic updates in theme module.
 6. [ ] **Migrate existing styles** — Replace hardcoded dark colors with DaisyUI semantic classes (`bg-base-100`, `text-base-content`, etc.). Follow Phase 1-3 of the migration guide for the audit and mapping process.
 7. **Confirm:** Toggle dark/light. Open two tabs, toggle in one — other follows. Clear localStorage — falls back to OS preference. Check meta theme-color updates in DevTools.
 
@@ -314,10 +306,6 @@ Reference: `docs/implementations/DOWNLOAD_PDF.md`
 Reference: `docs/implementations/PWA_SYSTEM.md`
 
 1. [ ] **Convert to module-level singleton** — Move `_registration`, `_hasUpdate`, `_userClickedUpdate` from hook-local `useRef`/`useState` to module-scope variables with a pub/sub listener set. See pattern's "Module-Level Singleton" section.
-2. [ ] **Add visibility-based update checks** — `visibilitychange` listener to check for SW updates when tab regains focus.
-3. [ ] **Add 30-second suppression** — `sessionStorage` timestamp after update. See pattern's `wasJustUpdated()`.
-4. [ ] **Add `checkForUpdate()` function** — Manual trigger returning typed result (`'no-sw' | 'done' | 'error'`) for UI feedback.
-5. [ ] **Add `controllerchange` reload guard** — Auto-reload only when user explicitly clicked "Update".
 6. [ ] **Add `onRegisterError` handler** — Log SW registration errors to debug system.
 7. **Confirm:** Deploy new version, background tab, bring back — update detected. Click Update, verify reload. No re-detection within 30 seconds.
 
@@ -371,6 +359,11 @@ Reference: `docs/implementations/DOWNLOAD_PDF.md`
 4. [ ] **Add `window.print()` trigger** — Button in the UI (web-only via `Platform.OS === 'web'` guard).
 5. **Confirm:** Click print, verify clean output with no interactive elements.
 
+**Bonus finding (not a pattern gap — STILL UNADDRESSED):** `src/debug/debugLog.ts` has a leftover `// TEMPORARY: always-on for PWA alpha diagnostics. Restore` comment (lines 6, 218, 353). The `__DEV__` guard is still missing on `debugAdd()` and the global listener registration — production debug-pill leak risk. Restore:
+1. [ ] Add `if (!__DEV__) return;` guard at the top of the init/install function in `src/debug/debugLog.ts` (and the SW-registration path at line ~353).
+2. [ ] Delete the 3 TEMPORARY comment blocks.
+3. **Confirm:** `eas build --profile production` (or equivalent) → debug pill does not render; dev build still works.
+
 ### tool-till-tees
 
 **Hybrid repo:** Vercel-hosted Node.js API (`api/`) + a minimal React 19 / Vite landing page (`src/App.tsx`, `src/main.tsx`, `index.css`). Backs three systems: contact/notification endpoint, Four Ems form-builder API, Sancio agreement management — all backed by Supabase. Serves 4 frontend consumers (four-ems, gp-props, see-veo, sun-sea-o) per CORS allowlist in `lib/cors.ts`. Tech stack: React 19.2 + Vite + Tailwind v4 + Vitest 4 + Supabase + Vercel serverless functions + bcryptjs + nodemailer.
@@ -421,52 +414,22 @@ Re-classified `Partial → Missing` 2026-04-25; **still bare 2026-04-29**. `inde
 
 ---
 
-## Cross-Cutting Gaps (most common across repos)
-
-Updated 2026-04-25 after parallel full-sweep re-validation (13 agents — 1 coverage + 12 per-repo).
-
-Fully clean (no pending items): **gp-props, canva-grid, fl-farlume, sun-sea-o, graphiki, intxt, repo-tor** (7 repos — repo-tor's TIMER_LEAKS subsection landed in PR #117 2026-04-29). gp-props left this list 2026-08-01 when a full self-audit found the earlier self-reported row inaccurate, and rejoined it the same day: every gap was fixed across the audit fix pass, the React conversion, and the PR #59 review-fix passes (see gp-props section).
-Fully clean on patterns, doc-alignment touch-ups only: **fh-fuelhunt** (TIMER_LEAKS subsection + DOWNLOAD_PDF decision + __DEV__ guard restore).
-Mid-backlog: **tool-till-tees** (CLAUDE.md/HISTORY/Triggers DONE via PR #24; remaining: trigger-name collision note, APP_ICONS decision, THEME N/A, EVENT_BUS N/A documentation, backend pattern upstream proposals), **model-pear** (Communication + Z-index done; still needs PWA, THEME_DARK_MODE, BURGER_MENU, HISTORY.md, Triggers, DOWNLOAD_PDF button, EVENT_BUS, TIMER_LEAKS subsection, non-standard headings).
-Largest backlog: **see-veo**. (four-ems FULLY RESOLVED 2026-05-01 — see four-ems section below.)
-
-Highest-leverage cross-cutting gaps (post-2026-04-25):
-
-1. **Triggers redesign** — **Done fleet-wide 2026-08-19.** All 19 repos carry the canonical `## Triggers` section pointing at gp-props' `docs/TRIGGERS.md`, where the 48-trigger vocabulary now lives; verified on every default branch. four-ems keeps four `daisyui-*` triggers of its own below the LOCAL marker.
-2. **CLAUDE.md alignment** — **Pass fleet-wide 2026-08-19.** Every repo's text above the LOCAL marker is byte-identical to `docs/FLEET_CLAUDE.md`; verified 19/19 on the default branches.
-3. **HISTORY.md removal** — **Done fleet-wide 2026-08-19.** see-veo's was the last, deleted with the reference in its own TODO header; model-pear's had already gone before the entry was checked.
-4. **PWA_ICON_CACHE_BUST** — Full Pass in canva-grid, fl-farlume, repo-tor, graphiki, fh-fuelhunt, sun-sea-o, **intxt, four-ems, gp-props** (9 repos — gp-props implemented 2026-08-01, correcting a false "static site, no PWA icons" N/A). Missing in see-veo. N/A for model-pear (no PWA), tool-till-tees (no PWA).
-5. **EVENT_BUS** — N/A in canva-grid, fl-farlume, repo-tor, sun-sea-o, **intxt**, **see-veo** (minimal resume site), **four-ems** (no service layer; documented in CLAUDE.md "Not Applicable Patterns"), **gp-props** (no service layer; documented in CLAUDE.md "Not Applicable Patterns" 2026-08-01). Pass in graphiki (typed `EventBus<M>`). 3 repos still need an evaluate decision: model-pear, fh-fuelhunt, tool-till-tees.
-6. **DEBUG_SYSTEM: console interception** — Done in canva-grid, fl-farlume, repo-tor, graphiki, model-pear, fh-fuelhunt, sun-sea-o, **intxt, four-ems, gp-props** (2026-08-01, DEV-gated). Still missing in see-veo.
-7. **DEBUG_SYSTEM: pre-React inline pill** — Done in canva-grid, fl-farlume, repo-tor, sun-sea-o, graphiki, model-pear, fh-fuelhunt, **intxt, four-ems, gp-props** (capture + 20s watchdog in partials/head-common.html; pill UI is React/DEV-only by design). Still missing in see-veo.
-8. **DEBUG_SYSTEM: inline styles** — Done in canva-grid, repo-tor, graphiki, model-pear, fh-fuelhunt, sun-sea-o, **intxt**. four-ems uses DaisyUI tokens via `--color-base-300`/`--color-base-content` + `color-mix` rather than literal inline styles — equivalent visual contract per the pattern's intent (chrome that flips with theme). see-veo still uses Tailwind/DaisyUI without the contract.
-9. **DEBUG_SYSTEM: PWA Diagnostics tab** — Done in canva-grid, fl-farlume, repo-tor, graphiki, model-pear, sun-sea-o, **intxt, four-ems, gp-props** (2026-08-01: live probes + install-funnel view in the DEV-gated pill). Still missing in see-veo (only 2 tabs), fh-fuelhunt.
-10. **PWA_SYSTEM: visibility-based update checks** — Done in canva-grid, fl-farlume, repo-tor, gp-props, graphiki, fh-fuelhunt, sun-sea-o, **intxt, four-ems**. Still missing in see-veo.
-11. **PWA_SYSTEM: 30-second suppression** — Done in canva-grid, fl-farlume, repo-tor, gp-props, graphiki, sun-sea-o, **four-ems** (`pwa.ts:96-117` + `usePWAUpdate.ts:67`). Still missing in see-veo, fh-fuelhunt. N/A in intxt (chat app, hourly polling adequate).
-12. **PWA_SYSTEM: module singleton** — Done in canva-grid, fl-farlume, gp-props, repo-tor, graphiki, sun-sea-o, **four-ems** (`src/lib/pwa.ts`, 123 lines). Hooks-based but compliant: intxt, fh-fuelhunt. Still missing in see-veo, model-pear.
-13. **BURGER_MENU: focus hooks / shared modal scaffolding** — Done in canva-grid, fl-farlume, repo-tor, graphiki, fh-fuelhunt, sun-sea-o, **intxt** (ModalBackdrop + expo-haptics), **four-ems** (`useDisclosureFocus`/`useEscapeKey` hooks at `src/hooks/`, BurgerMenu disclosure at `src/components/BurgerMenu.tsx`). Still missing in model-pear. N/A in see-veo (resume site, no menu).
-14. **THEME_DARK_MODE** — Full in canva-grid, fl-farlume, repo-tor, graphiki, sun-sea-o (Approach A). Approach B in **four-ems** (DaisyUI v5 named-combo, `applyTheme(dark, comboId)` + cross-tab + OS fallback + flash prevention + dual `theme-color` + `migrateLegacyKeys` + 6-tripwire battery). Uniwind variant in fh-fuelhunt, **intxt**. Missing in model-pear. N/A in see-veo. tool-till-tees decision pending.
-15. **Z_INDEX_SCALE** — Pass in gp-props, canva-grid, fl-farlume, repo-tor, graphiki, model-pear, fh-fuelhunt, sun-sea-o, **intxt, four-ems** (10 repos — four-ems via `scripts/audit-z-index.mjs` + `npm run audit:z-index`). Missing in see-veo. N/A in tool-till-tees.
-16. **DOWNLOAD_PDF** — Pass in canva-grid (Approach B pdf-lib), fl-farlume, repo-tor, sun-sea-o, **four-ems** (`SubmissionDetail.tsx:56` Save-as-PDF + `print-color-adjust: exact` at `index.css:147`). **N/A documented** in graphiki (canvas/SVG editor — `CLAUDE.md:710`), intxt (chat app declined). Still Partial in see-veo (missing `print-color-adjust: exact`), model-pear. Decision pending in fh-fuelhunt.
-17. **TIMER_LEAKS self-compliance + cross-fleet inheritance** — gp-props own audit DONE 2026-04-25, and the React conversion (2026-08-01) superseded the audited files: the canonical examples are now `src/lib/pwa.js` and `src/lib/theme.js` (module-level registrations behind `window.__*Attached` HMR guards with paired `import.meta.hot.dispose()` teardown) plus the React pairing contract in every component/hook (`src/pwa.js`, `src/markdown.js`, and `public/theme.js` no longer exist). Tripwire: `npm run verify:timer-cleanup` (`scripts/verify-timer-cleanup.mjs`). **Cross-fleet `### Timer and Subscription Cleanup` subsection presence verified:** PRESENT in canva-grid, fl-farlume, sun-sea-o, graphiki, intxt, tool-till-tees, gp-props, **four-ems** (8 repos — four-ems at `CLAUDE.md:81`, with canonical-examples bullet listing `debugLog.ts`/`theme.ts`/`pwa.ts`/`useAutoSave.ts`/`embedResize.ts` per commit `a7d63c2`). MISSING in model-pear, see-veo, **repo-tor, fh-fuelhunt** (4 repos — the latter two are flagged "FULLY RESOLVED" elsewhere in this file but predate the 2026-04-22 upstream addition; needs a CLAUDE.md doc-alignment touch-up to inherit the new content).
-
----
-
-## App-name → repo map
-
-**App-name → repo map** (from the installed home screen, since several differ): Four Ems=four-ems, CanvaGrid=canva-grid, Model Pear=model-pear, Git Analytics=repo-tor, JT·CV=see-veo, Props=gp-props, Graphiki=graphiki, Farlume=fl-farlume, knowless=kl-website, qi-invoice=qi-invoice, devmade=dm-website, FuelHunt=fh-fuelhunt, inTXT=intxt, **redline=web-arch**, **Sancio=sun-sea-o**.
-
 ## PWA gaps (found 2026-08-03)
 
-**Triaged against the repos 2026-08-19** by `scripts/fleet/verify-todo.mjs`,
-which fetches every file an item cites and reports the ones that no longer
-exist. 151 open items scanned, 23 cite a file, 13 cited one that was gone. Five
-were stale and are deleted, four had paths that moved, one was half-done and is
-rewritten, and three were correct — the file's absence was the finding.
+**Verified against every repo's source, 2026-08-19.** Each repo was cloned and
+every open item checked against it. Twelve items were deleted as done or stale,
+four paths corrected, and two narrative sections with no open items removed.
 
-**What this pass did NOT verify: the 128 items that cite no file.** Their truth
-needs reading the repo, not fetching a path, and none of them has been checked
-against reality since it was written.
+**The headline finding is that most of this backlog is real.** Items describing
+a defect in existing code — the bulk of it — were confirmed live: the symbol
+they name is still there, which is their premise, not evidence they were fixed.
+Staleness was concentrated in "add X" items where X has since been built.
+
+**Two limits of that pass, so the next one does not assume more than happened.**
+The haystacks were built from source files only, so items about a repo's own
+`.md` files (CLAUDE.md rationale, doc reconciliation) were not judged. And an
+item asserting a defect in code that still exists can only be closed by reading
+the code, which was done for the twelve deleted and not for the rest.
 
 
 Six parallel audits (fl-farlume, graphiki, see-veo, kl-website, qi-invoice, gp-props) compared every PWA repo against PWA_SYSTEM.md / PWA_ICON_CACHE_BUST.md / APP_ICONS.md. The **pattern-side** findings are already folded into those docs. What follows is the **repo-side** drift — each repo should be fixed to match the (now corrected) patterns. Line references were accurate at audit time.
@@ -529,6 +492,7 @@ Severity-ordered. The two broken service workers (repo-tor, model-pear) are fixe
 3. [ ] `registration.update()` uncaught at `pwa.js:518` and `:570`; visibility check unthrottled; `_isChecking` is set but never read, so two taps run two concurrent checks.
 5. [ ] Preference write not read back; the toast unconditionally claims the new state. Install `prompt()` not awaited, throw propagates into an uncaught `await` in `Header.jsx:120`.
 6. [ ] Precaches Expo-era leftovers (`adaptive-icon.png`, `splash-icon.png`, a duplicate `apple-touch-icon.png`) the web app never requests.
+4. [ ] `applyUpdate()` has no plain-reload fallback — and `version.json` can report an update with no SW change at all, so "Update Now" silently does nothing.
 
 #### model-pear (the matrix row is wrong)
 
@@ -539,11 +503,11 @@ Severity-ordered. The two broken service workers (repo-tor, model-pear) are fixe
 4. [ ] `launchPhase` has no terminal timeout — if registration never settles (known Safari behaviour) the update banner is suppressed for the whole session.
 5. [ ] Google Fonts loaded from CDN with no runtime route → installed PWA falls back to system fonts offline.
 6. [ ] No `?v=` icon versioning at all; `purpose: 'maskable'` on a plain transparent render; no PWA tests despite a custom launch-apply implementation.
-7. [ ] **Correct this file's own record:** model-pear is listed as PWA_SYSTEM "Missing"/"no vite-plugin-pwa" and ICON_CACHE_BUST "N/A (no PWA)". It is a SvelteKit PWA with a fuller update policy than several repos marked Pass. ICON_CACHE_BUST should read **Missing**, not N/A. The neighbouring "no DaisyUI", "`class="dark"` hardcoded" and "BURGER_MENU still `p-2`" claims are also stale.
+7. [ ] **Correct this file's own record:** the Gap Matrix already reads PWA_SYSTEM `Partial` and ICON_CACHE_BUST `Missing` for model-pear, so the "Missing"/"N/A (no PWA)" wording this item quotes is itself out of date. Confirmed 2026-08-19: vite-plugin-pwa and workbox-window are dependencies, VitePWA() is called with registerType 'prompt'. What remains is deciding whether Partial is still the right grade.
 
 #### fh-fuelhunt
 
-1. [ ] **`usePWAInstall.ts` is orphaned** — 311 lines imported by no component (`App.tsx` and `main.tsx` both reference it zero times); the live path is 5 lines. The separate `InstallInstructionsModal.tsx` this item also named is already deleted, and its rejection is documented at `src/hooks/usePWAInstall.ts:15`. Decide: wire the hook up, or delete it too.
+1. [ ] **The entire install UI is orphaned** — `usePWAInstall.ts` (300 lines) and `InstallInstructionsModal.tsx` (250 lines) are imported by zero components; the live path is 5 lines ending in `window.alert()`. Consequences: the third capture layer doesn't exist at runtime, `IconCacheDisclosure` is unreachable so ICON_CACHE_BUST invariant 5 is unmet in production, and all install analytics are dead. `CLAUDE.md:294` and `TESTING_GUIDE.md:183` claim otherwise.
 2. [ ] **Security: cross-origin cache-first matches by extension and permits query strings**, so Mapbox sprite URLs are cached permanently with the access token in the cache key. Needs a host allowlist; any URL with auth params must be network-only.
 3. [ ] `SW_BUILD` hashes only `dist/_expo/static/`, so `public/` font changes are invisible — fonts are cache-first and unversioned, so replacing one serves stale bytes forever.
 4. [ ] Manifest declares `icon.png` maskable but it is a plain transparent raster, byte-identical to `adaptive-icon.png` and `splash-icon.png`.
@@ -556,6 +520,7 @@ Severity-ordered. The two broken service workers (repo-tor, model-pear) are fixe
 4. [ ] Manifest `theme_color`/`background_color` are the dark base-100 while the first-visit default theme is light → near-black status bar over a light app in Android standalone.
 5. [ ] The icon-cache-bust tripwire never gates a deploy (absent from `build:web` and `vercel.json`, no CI) and still hardcodes `synctone.vercel.app`. `console.log` ships in `public/sw.js` (babel's remove-console only touches the Metro bundle).
 6. [ ] Update affordance is home-screen-only *and* installed-only — a user inside a chat has no update surface; no "Updating…" state, no failure UI. `offlineReady` and `dismiss` are exported and unused.
+3. [ ] `clearAllData()` deletes the precache too, orphaning it until the next SW *install* — which won't happen, because `sw.js` didn't change.
 
 #### four-ems
 
@@ -564,6 +529,7 @@ Severity-ordered. The two broken service workers (repo-tor, model-pear) are fixe
 3. [ ] `checkForUpdate` never reads `registration.waiting`; no shared in-flight promise; `hasUpdate` ORs `needRefresh`; preference write not read back.
 4. [ ] Install capture has no named handler/attach guard/durable flag — so `PwaTab.tsx:197` reports "not captured" forever *and* its truthy-branch copy is backwards. `prompt()` called before clearing; no `CriOS`/`FxiOS`/`EdgiOS`; no iPadOS test.
 5. [ ] No `workbox-window` dependency; no `vercel.json` headers block at all; `pwa-1024x1024.png` declared maskable but is a copy of the transparent icon.
+6. [ ] **The dist tripwire has never run** (`skipIf` + a `npm test` that doesn't build), and `verify-timer-cleanup.mjs` gives a false negative on the module singleton because a `clearInterval` exists in the test-reset helper.
 
 #### canva-grid
 

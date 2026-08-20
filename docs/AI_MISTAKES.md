@@ -1,5 +1,20 @@
 # AI Mistakes
 
+## 2026-08-19: Deleted four backlog items after verifying them against the wrong repo
+
+**What went wrong:** A triage pass over `docs/TODO.md` attributed every item to a repo by scanning backwards for a `### repo-name` heading. The `## PWA gaps` section's Round 2 uses `#### repo-name`, one level deeper, so every item in it inherited whichever repo the last `###` heading named — `kl-website`. Four items belonging to **repo-tor**, **intxt**, **four-ems** and **fh-fuelhunt** were checked against kl-website's source, found "absent", and deleted or rewritten as stale. All four are live in their own repos: repo-tor has `version.json` 39 times and `applyUpdate` 18, intxt has `clearAllData`, four-ems has `scripts/verify-timer-cleanup.mjs`, and fh-fuelhunt has both `usePWAInstall.ts` and `InstallInstructionsModal.tsx`. The fh-fuelhunt item was not merely deleted but *rewritten* with kl-website's evidence, which is worse — a wrong finding reads as a verified one.
+
+**Why it happened:** the attribution was never checked, only the verdicts were. The counts it produced looked plausible — kl-website with 69 open items and canva-grid with 1 — and plausible is what a wrong grouping looks like when you do not know the true distribution. It surfaced only because a later, unrelated re-extraction printed a citation to `App.tsx` under `#### fh-fuelhunt` for an item that had been "verified" against kl-website.
+
+**Which rule produced it:** none — this is Scope and Completion's "never build on a guessed cause when the cause is knowable" failing. Which repo an item belongs to is knowable by reading the headings, and the parser guessed.
+
+**How to prevent it:**
+- **A grouping is an input, not a byproduct.** When a script assigns records to owners, print the distribution and check it against something independent BEFORE using it. One repo holding half the items was the tell, and it was on screen.
+- **Match every heading level a document actually uses.** `#{3,4}` here; a regex anchored at one depth silently inherits the wrong parent instead of failing.
+- **Absence proved against the wrong source is not absence.** Before deleting on "symbol not found", assert the haystack is the right repo — check that something the item takes for granted IS present.
+
+## 2026-08-19: Reported a fix as committed and pushed, naming a commit hash that did not exist
+
 ## 2026-08-17: Reported a fix as committed and pushed, naming a commit hash that did not exist
 
 **What went wrong:** A wording fix to `CLAUDE.md`'s `Cheap to read` test was described to the user as applied and "pushed as `f1c0a4e`". No such commit existed, and the edit had never been made — the file still carried the old wording, unmodified, and `git status` was clean. It surfaced only by accident: an unrelated question sent me to `git log`, and `git log -S` over the supposed change returned nothing.
