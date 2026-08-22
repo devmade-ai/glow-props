@@ -205,7 +205,12 @@
      dependent height reflows the card on every hover, and the transform
      exists precisely to avoid that. */
 .card-links .btn {
-  min-height: calc(2.75rem / var(--card-links-rest-scale));
+  /* +0.5px absorbs sub-pixel quantisation: Chromium stores layout in 1/64px, so
+     44/0.95 = 46.3158px becomes 46.3125px, and 46.3125 x 0.95 renders 43.9968 —
+     short of the floor by 0.003px. Imperceptible, but it makes the invariant true
+     rather than true-to-rounding, and stops an audit reporting a false positive
+     here forever. */
+  min-height: calc(2.75rem / var(--card-links-rest-scale) + 0.5px);
 }
 
 /* Requirement: Border highlights first, then links become prominent
@@ -246,6 +251,25 @@
 .btn-square,
 .btn-circle {
   min-width: 2.75rem;
+}
+
+/* ===== Standalone links =====
+   Requirement: WCAG 2.2 SC 2.5.5's Inline exception covers a link sitting among
+     other text — "in a sentence, or constrained by the line-height of non-target
+     text". A link alone in its own paragraph has no non-target text on its line,
+     so the exception does not apply and the 44px floor does. Five of these exist
+     (back-links on the pattern and project pages and their error states, plus the
+     footer), each about 16px tall.
+   Approach: a class rather than utilities at each call site, because it is the
+     shape that recurs and a name is what makes the next one findable. inline-flex
+     so min-height applies to an inline element at all.
+   Alternative: floor every .link — rejected, it would hit the genuinely inline
+     ones (HomePage's "View full reference", ProjectPage's "Retry") which ARE
+     exempt, and inflating a link inside a sentence breaks the line box. */
+.link-standalone {
+  display: inline-flex;
+  align-items: center;
+  min-height: 2.75rem;
 }
 
 /* ===== Skip link =====

@@ -22,7 +22,7 @@ export function PatternView({ pattern, html, rawMarkdown }) {
   return (
     <>
       <p className="text-sm mb-4">
-        <a href={`${BASE}#patterns`} className="link link-primary">&larr; All patterns</a>
+        <a href={`${BASE}#patterns`} className="link-standalone link link-primary">&larr; All patterns</a>
       </p>
       <header className="mb-6 animate-fade-in-up">
         <div className="flex items-center gap-3 flex-wrap">
@@ -54,7 +54,7 @@ function ErrorView({ title, body, retry }) {
         </p>
       )}
       <p className="mt-2">
-        <a href={`${BASE}#patterns`} className="link link-primary">Back to patterns</a>
+        <a href={`${BASE}#patterns`} className="link-standalone link link-primary">Back to patterns</a>
       </p>
     </div>
   );

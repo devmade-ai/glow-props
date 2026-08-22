@@ -68,7 +68,7 @@ export function ProjectView({ meta, slug, docs, currentTab, onTab }) {
   return (
     <>
       <p className="text-sm mb-4">
-        <a href={BASE} className="link link-primary">&larr; All projects</a>
+        <a href={BASE} className="link-standalone link link-primary">&larr; All projects</a>
       </p>
 
       <header className="mb-6 animate-fade-in-up">
@@ -252,7 +252,7 @@ function ErrorView({ title, body, retry }) {
         </p>
       )}
       <p className="mt-2">
-        <a href={BASE} className="link link-primary">Back to portfolio</a>
+        <a href={BASE} className="link-standalone link link-primary">Back to portfolio</a>
       </p>
     </div>
   );

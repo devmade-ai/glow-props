@@ -32,7 +32,7 @@ export function Footer() {
           href="https://github.com/devmade-ai"
           target="_blank"
           rel="noopener"
-          className="link link-hover text-base-content/40 hover:text-base-content/70"
+          className="link-standalone link link-hover text-base-content/40 hover:text-base-content/70"
         >
           github.com/devmade-ai
         </a>
