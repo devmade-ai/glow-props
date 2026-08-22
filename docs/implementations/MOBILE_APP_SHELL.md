@@ -134,7 +134,7 @@ Values 28 through 38 are the shell's subdivision of the single sheets-and-drawer
 5. Sticky chrome always sits below every overlay.
 6. Wrapper elements do not carry a z-index. A positioned parent with a z-index creates a stacking context its children cannot escape.
 
-Tailwind's *named* steps stop at 50, but since v4 `z-index` takes a bare numeric value, so `z-60`, `z-70` and `z-80` compile to real utilities with no brackets and no config. Only v3 needs the arbitrary form `z-[60]`. Either way, name a layer as a utility where its meaning is worth stating at the call site, and keep the numbers greppable.
+Tailwind's *named* steps stop at 50, but since v4 `z-index` takes a bare numeric value, so `z-60`, `z-70` and `z-80` compile to real utilities with no brackets and no config. On v3, whose named scale is the whole scale, these need the arbitrary form `z-[60]`. Either way, name a layer as a utility where its meaning is worth stating at the call site, and keep the numbers greppable.
 
 ### The top layer beats all of it
 
@@ -142,11 +142,11 @@ One escape hatch outranks the entire scale. An element promoted to the **top lay
 
 Where that lands for this shell:
 
-- **Modals: use the native dialog.** It brings the top layer, `::backdrop`, focus containment, an inert background and Escape handling with it — most of sections 6 and 12 stop being code you write. Layer 60 still describes anything that must sit above it.
+- **Modals: use the native dialog.** `showModal()` marks every element in the document except the dialog and its descendants inert, which is section 6's primary mechanism arriving for free, and brings the top layer, `::backdrop` and Escape with it. Two limits it does not cover: focus can still leave for browser UI (whatwg/html#8339, open), and only the containing document is blocked, so a dialog inside an iframe leaves the outer page interactive. Layer 60 still describes anything that must sit above it.
 - **Menus, dropdowns, tooltips: use popover.** Light dismiss and Escape come with it, and a header's blur can no longer trap the dropdown.
 - **Drawers, sheets and toasts stay on the scale.** A drawer is non-modal on desktop, a sheet coexists with the chrome around it, and toasts stack with each other rather than claim one layer. Top-layer ordering is by promotion order, which is the wrong model for all three.
 
-Both are Baseline — dialog since March 2022, popover since April 2024. Where a target cannot use them, React Native above all, the portal rules below are the fallback. They are not the default any more.
+Both are cross-browser: dialog since March 2022, when Safari 15.4 and Firefox 98 shipped it, and popover since April 2024, when Firefox shipped it. Both are Baseline *newly* available at those dates, not widely available — popover's Baseline date has since been restated as January 2025, and it is projected to reach widely available in July 2027. Where a target cannot use them, React Native above all, the portal rules below are the fallback. They are not the default any more.
 
 ### Stacking contexts
 
@@ -374,7 +374,7 @@ The handle is a 4px line inside a 44px target, labelled with the state it moves 
 
 ### Desktop behaviour differs by drawer
 
-**The left drawer overlays, and stays modal.** It is a short interaction — switch workspace, open settings, sign out — so covering the content costs nothing, and the full modal contract from section 2 applies at every breakpoint. Only the AI drawer changes modality between layouts.
+**The left drawer overlays, and stays modal at both breakpoints.** It is a short interaction — switch workspace, open settings, sign out — so covering the content costs nothing. Modal follows from the rules rather than being asserted here: section 4 rule 4 carves out only the AI drawer as non-modal, and a drawer that covers the page without taking focus and inertness would leave the covered content reachable behind it. Only the AI drawer changes modality between layouts.
 
 **The right AI drawer shifts the content column instead.** It exists to be used while reading the content, so covering that content defeats its purpose.
 
@@ -382,7 +382,7 @@ The shift is a translation of the column by half the drawer width, which re-cent
 
 The drawer overlays instead of shifting whenever the column does not fit beside it. Shift only while `clamp(640px, 60vw, 1100px)` is less than or equal to viewport width minus drawer width. Test that **rendered** width, not the 640px minimum: the minimum binds only between 1024 and 1067px, a 43px band at the very bottom of the desktop layout, and the column sits at 60% across everything above it.
 
-With the widths above that puts the crossover at 1400px. Below it the drawer overlays. Testing the minimum instead moves the crossover to 1200px and breaks the band between: at 1280px the column overlaps the drawer by 48px and its leading edge leaves the screen, at 1366px by 14px. Both are common laptop widths, so the wrong test fails on more machines than it works on.
+With the widths above that puts the crossover at 1400px. Below it the drawer overlays. Testing the minimum instead moves the crossover to 1200px, which breaks every width in between: at 1280px the column overlaps the drawer by 48px and its leading edge leaves the screen, at 1366px by 14px, and the overlap only reaches zero at 1400px. Both figures are arithmetic from the widths above, not measurements.
 
 ### Edge affordance
 
@@ -484,7 +484,7 @@ Sources: https://www.w3.org/WAI/WCAG22/Understanding/target-size-minimum.html an
 - Drawer open 220ms, drawer close 160ms, sheet snap 260ms, modal 200ms, content column shift 220ms to match the drawer.
 - Sheets and drawers use a decelerating curve that overshoots slightly at the start of travel. Modals use a standard ease-out.
 - During a drag, movement tracks the pointer exactly with no easing applied. Easing is added only on release.
-- Reduced-motion preference cuts every transition to an instant state change — no travel, no fade. Snap points still apply; only the animation goes. Where a hard cut reads as a glitch rather than a change, a 100ms opacity fade is the one permitted substitute, and it never moves anything.
+- Reduced-motion preference cuts every transition to an instant state change — no travel. Snap points still apply; only the animation goes. Where a hard cut reads as a glitch rather than a change, the one permitted substitute is a short opacity fade that moves nothing, and its duration is a token like every other duration here (section 19). Do not type a number at the call site.
 - Close-then-act delays match the close duration and change with it. They are read from the same token, not typed in twice.
 
 ---
@@ -525,6 +525,7 @@ Motion:
 
 - drawer open, drawer close, sheet snap, modal, column shift durations, per section 17
 - surface easing and overlay easing curves
+- reduced-motion fade duration, for the one substitute section 17 permits
 
 Colour, from the theme pattern, never hardcoded:
 
@@ -591,7 +592,7 @@ Behaviour, checked on device:
 - The same two checks in the installed PWA.
 - Keyboard open on Android Chrome with the meta keyword active.
 - Landscape phone: modals promote to full screen, the sheet stays usable.
-- A narrow iPad window. Since iPadOS 26 replaced Split View with free-form resizable windows, the width is continuous rather than a fixed split — a browser window on a 13-inch iPad Pro can be a few hundred pixels wide. This is the check that earns the no-tablet-band decision in section 1.
+- A narrow iPad window, at roughly 400 to 500px wide. That figure comes from Split View, which iPadOS 26 replaced with free-form resizable windows, so it is now a width the case can take rather than the width it is forced to — the floor a resized window can actually reach is not established here. Test at 400 to 500px because that range is documented; treat anything narrower as untested rather than impossible. This is the check that earns the no-tablet-band decision in section 1.
 - Notch and home indicator: nothing clipped, the backdrop reaches every edge.
 - Tapping outside every surface on a real iPhone, not the simulator, which catches the missing pointer cursor.
 - A modal opened from inside a drawer renders above that drawer's backdrop.
