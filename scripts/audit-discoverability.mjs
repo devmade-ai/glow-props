@@ -1,11 +1,11 @@
 #!/usr/bin/env node
-// Requirement: the Gap Matrix's DISCOVERABILITY column was graded by hand from
-//   a one-off fetch of every origin. Hand-maintained grades rot — that is
-//   exactly how the matrix's other columns ended up four months stale while
-//   still reading as current.
-// Approach: fetch every tracked origin, apply the written criteria
-//   mechanically, and emit the column. `--check` compares what it measures
-//   against what docs/TODO.md claims and fails on drift.
+// Requirement: know what every tracked origin actually serves a crawler, without
+//   anyone maintaining a table of grades by hand. The Gap Matrix this used to
+//   police was hand-graded, went four months stale while still reading as
+//   current, and was deleted 2026-08-19 for exactly that.
+// Approach: fetch every tracked origin, apply the written criteria mechanically,
+//   and print what each one grades right now. The measurement is the answer;
+//   there is nothing to compare it against and nothing to keep in sync.
 // Why not a deploy gate: this reaches 16 third-party origins over the network.
 //   A transient 503 on someone else's host must not block publishing a
 //   documentation change. It is a periodic check, run deliberately.
@@ -23,9 +23,7 @@ import { fileURLToPath } from 'url';
 import { origins } from './lib/fleetOrigins.mjs';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
-const TODO = join(ROOT, 'docs', 'TODO.md');
 
-const CHECK = process.argv.includes('--check');
 const AS_JSON = process.argv.includes('--json');
 
 // Identify as a crawler: if any host varies its response for one, the crawler
@@ -271,7 +269,7 @@ function itemFault(m) {
   return null;
 }
 
-// The criteria from docs/TODO.md, in code. Kept in this order so the reason for
+// The criteria, in code. Kept in this order so the reason for
 // a grade is the first rule that matched.
 function grade(m) {
   if (m.error) return { grade: '?', why: `unreachable: ${m.error}` };
@@ -348,22 +346,6 @@ function grade(m) {
   return { grade: 'Partial', why: why(`missing ${missing.join(', ')}`) };
 }
 
-/** The DISCOVERABILITY cell docs/TODO.md currently claims, per repo. */
-function claimedGrades() {
-  const lines = readFileSync(TODO, 'utf8').split('\n');
-  const start = lines.findIndex((l) => l.startsWith('| Repo |'));
-  if (start === -1) throw new Error('Gap Matrix header not found in docs/TODO.md');
-  const header = lines[start].split('|').slice(1, -1).map((c) => c.trim());
-  const col = header.indexOf('DISCOVERABILITY');
-  if (col === -1) throw new Error('No DISCOVERABILITY column in the Gap Matrix');
-  const claimed = new Map();
-  for (let i = start + 2; i < lines.length && lines[i].startsWith('|'); i++) {
-    const cells = lines[i].split('|').slice(1, -1).map((c) => c.trim());
-    claimed.set(cells[0], cells[col]);
-  }
-  return claimed;
-}
-
 const sites = origins();
 const results = [];
 for (const [name, url, declaration] of sites) {
@@ -400,33 +382,4 @@ for (const r of results) {
   console.log(`  ${r.name.padEnd(16)} ${r.grade.padEnd(10)} ${r.why}`);
 }
 
-if (!CHECK) {
-  console.log('\nColumn cells for the Gap Matrix:\n');
-  for (const r of results) console.log(`  ${r.name.padEnd(16)} | ${r.grade} |`);
-  console.log('\nRun with --check to compare against what docs/TODO.md claims.');
-  process.exit(0);
-}
-
-const claimed = claimedGrades();
-const drift = [];
-for (const r of results) {
-  const was = claimed.get(r.name);
-  if (was === undefined) {
-    drift.push(`${r.name}: measured ${r.grade}, but the repo has no row in the Gap Matrix`);
-  } else if (was !== r.grade) {
-    drift.push(`${r.name}: matrix says ${was}, measured ${r.grade} — ${r.why}`);
-  }
-}
-for (const name of claimed.keys()) {
-  if (!results.some((r) => r.name === name)) {
-    drift.push(`${name}: in the Gap Matrix but not measured (no mirrored meta.json with a live URL)`);
-  }
-}
-
-if (drift.length) {
-  console.error(`\n✗ the matrix and the live sites disagree (${drift.length}):`);
-  for (const d of drift) console.error(`  • ${d}`);
-  console.error('\nUpdate the DISCOVERABILITY column in docs/TODO.md, or fix the site.');
-  process.exit(1);
-}
-console.log(`\n✓ the DISCOVERABILITY column matches all ${results.length} live origins`);
+process.exit(0);
