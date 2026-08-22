@@ -181,14 +181,31 @@
    don't compete with the card content for attention.
    Active: full opacity + normal scale with smooth transition. */
 .card-links {
+  /* One source for the resting scale: the transform below reads it, and the
+     targets inside divide by it (see .card-links .btn). */
+  --card-links-rest-scale: 0.95;
   display: flex;
   flex-wrap: wrap;
   gap: 0.375rem;
   margin-top: 0.5rem;
   opacity: 0.4;
-  transform: scale(0.95);
+  transform: scale(var(--card-links-rest-scale));
   transform-origin: left center;
   transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+/* Requirement: the 44px floor is a RENDERED size, and the scale above shrank
+     these links to 41.8px at rest — the floor's min-height is applied in
+     layout space, before the transform, so it does not survive the scale.
+   Approach: divide the floor by the resting scale. Rendered height is then
+     44px at rest and grows with the card, which is what the animation intends.
+   Alternative: drop the scale and de-emphasise with opacity alone — rejected,
+     the grow-in is a deliberate part of the card interaction (above).
+   Alternative: raise min-height only while resting — rejected, a state-
+     dependent height reflows the card on every hover, and the transform
+     exists precisely to avoid that. */
+.card-links .btn {
+  min-height: calc(2.75rem / var(--card-links-rest-scale));
 }
 
 /* Requirement: Border highlights first, then links become prominent
@@ -200,6 +217,66 @@
   opacity: 1;
   transform: scale(1);
   transition-delay: 0.12s;
+}
+
+/* ===== Touch target floor =====
+   Requirement: every interactive element meets a 44x44 CSS px touch target
+     (CLAUDE.md "User Experience (Non-Negotiable)"; WCAG 2.2 SC 2.5.5 Target
+     Size (Enhanced), AAA). DaisyUI 5 sizes its controls off --size-field
+     (.25rem), which lands .btn at 40px, .btn-sm at 32px and .tab at 40px —
+     every one under the floor. Only BurgerMenu's trigger had opted in, with
+     min-h-11 at the call site.
+   Approach: one min-height floor on the sized control classes, so a button
+     added later inherits it instead of depending on min-h-11 being remembered
+     at each call site. min-height clamps DaisyUI's `height: var(--size)`, and
+     both classes are inline-flex with centred content, so nothing shifts.
+   Alternatives:
+     - min-h-11 at each call site: rejected — 23 of them, and nothing keeps the
+       next one honest.
+     - Raise --size-field: rejected — it drives padding and the whole field
+       scale, not just height, so it rescales the site rather than the target.
+     - Invisible extended hit area: rejected here — these sit in normal flow
+       with room to grow, and overlapping invisible targets would make the
+       homepage's tag rows ambiguous to tap. Used for .code-copy-btn, which
+       overlays code and cannot grow. */
+.btn,
+.tab {
+  min-height: 2.75rem;
+}
+.btn-square,
+.btn-circle {
+  min-width: 2.75rem;
+}
+
+/* ===== Skip link =====
+   Requirement: the first thing a keyboard user reaches must read as a real
+     button and meet the 44px floor above. It was rendering as a 141x18 bar
+     with no padding and none of btn-primary's colour.
+   Cause: the link needs `focus:not-sr-only` to become visible, and Tailwind's
+     not-sr-only resets `height: auto` and `padding: 0` — exactly the two
+     properties DaisyUI's .btn relies on (`height: var(--size)`,
+     `padding-inline: var(--btn-p)`). Tailwind utilities sort after DaisyUI's
+     component layer, so the reset won and `focus:btn focus:btn-primary
+     focus:btn-sm` collapsed to bare text.
+   Approach: an unlayered rule here, which outranks every @layer, describes the
+     focused appearance directly. min-height (not height) so not-sr-only's
+     `height: auto` still clamps up to the floor.
+   Alternative: keep focus:btn and add focus:px-4 focus:min-h-11 — rejected,
+     that leans on Tailwind's intra-layer utility ordering to beat
+     not-sr-only's `padding` shorthand, which is not a contract and would
+     break silently on a Tailwind upgrade. */
+.skip-link:focus {
+  display: inline-flex;
+  align-items: center;
+  min-height: 2.75rem;
+  padding-inline: 1rem;
+  border-radius: var(--radius-field, 0.5rem);
+  background-color: var(--color-primary);
+  color: var(--color-primary-content);
+  font-size: 0.875rem;
+  font-weight: 500;
+  text-decoration: none;
+  box-shadow: 0 4px 12px -2px oklch(0 0 0 / 0.25);
 }
 
 /* ===== Markdown renderer classes =====
@@ -237,6 +314,27 @@
   @apply absolute top-2 right-2 px-2 py-0.5 text-xs rounded
     bg-base-content/10 text-base-content/50 hover:bg-base-content/20
     hover:text-base-content/80 transition-colors cursor-pointer z-10;
+}
+/* Requirement: the copy chip renders about 46x20 CSS px — under the 44px floor
+     above, and under even WCAG 2.2 SC 2.5.8's 24px AA minimum.
+   Approach: an invisible ::after centred on the chip extends the TARGET to
+     44x44 while the chip's visual size stays put. Clicks on a pseudo-element
+     resolve to its originating element, so Markdown.jsx's delegated
+     `closest('[data-copy-code]')` handler still matches, and the "Copied!"
+     text swap replaces textContent, which leaves generated content alone.
+   Alternative: grow the chip itself to 44px — rejected, it is absolutely
+     positioned over the code block and would cover the first two lines of
+     every sample. Visual size and target size are independent. */
+.code-copy-btn::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  translate: -50% -50%;
+  width: 100%;
+  height: 100%;
+  min-width: 2.75rem;
+  min-height: 2.75rem;
 }
 /* Requirement: Indicate horizontal scroll on code blocks for mobile users
    Approach: Fading right edge via mask-image gradient. When content overflows,

@@ -8,10 +8,13 @@ import { Navbar } from './Navbar.jsx';
 export function SkipLink() {
   // z-50 clears the sticky navbar (z-30) — its whole job — while staying below
   // modals (60) and toasts (70). See docs/implementations/Z_INDEX_SCALE.md.
+  // The focused appearance is .skip-link in main.css, not focus:btn utilities:
+  // focus:not-sr-only resets height and padding, which is exactly what DaisyUI's
+  // .btn sets, and utilities outrank its layer — see the rule's comment there.
   return (
     <a
       href="#main"
-      className="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-50 focus:btn focus:btn-primary focus:btn-sm"
+      className="skip-link sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-50"
     >
       Skip to main content
     </a>
