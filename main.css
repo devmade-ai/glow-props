@@ -339,6 +339,21 @@
 /* Requirement: Indicate horizontal scroll on code blocks for mobile users
    Approach: Fading right edge via mask-image gradient. When content overflows,
      the fade hints that there's more to scroll. Transparent on non-overflow. */
+/* Requirement: pattern docs cite their sources as bare URLs, and one long
+     unbreakable URL pushes the whole page sideways — 455px of content in a
+     390px viewport, i.e. a horizontal scroll on this site's primary target.
+   Approach: allow breaks inside rendered links and inline code, the only two
+     places an unbreakable run occurs in this content. `anywhere` rather than
+     `break-word` because only `anywhere` feeds back into the min-content size,
+     which is what actually stops the parent from overflowing.
+   Alternative: rewrite the URLs as short labelled links — rejected, that fixes
+     one document and the next pattern doc with a citation reintroduces it.
+   Alternative: apply it to .md-render wholesale — rejected, it would break
+     ordinary prose mid-word on a narrow screen. */
+.md-render a,
+.md-render :not(pre) > code {
+  overflow-wrap: anywhere;
+}
 .md-render pre {
   @apply bg-base-300/50 rounded-lg p-4 overflow-x-auto text-sm;
   -webkit-overflow-scrolling: touch;
