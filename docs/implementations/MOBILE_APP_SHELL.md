@@ -142,7 +142,9 @@ One escape hatch outranks the entire scale. An element promoted to the **top lay
 
 Where that lands for this shell:
 
-- **Modals: use the native dialog.** `showModal()` marks every element in the document except the dialog and its descendants inert, which is section 6's primary mechanism arriving for free, and brings the top layer, `::backdrop` and Escape with it. Two limits it does not cover: focus can still leave for browser UI (whatwg/html#8339, open), and only the containing document is blocked, so a dialog inside an iframe leaves the outer page interactive. Layer 60 still describes anything that must sit above it.
+- **Modals: use the native dialog.** `showModal()` marks every element in the document except the dialog and its descendants inert, which is section 6's primary mechanism arriving for free, and brings the top layer, `::backdrop` and Escape with it. Layer 60 still describes anything that must sit above it.
+
+  It does not give you the whole modal contract. Section 2 says modal means backdrop, focus containment, inert background and scroll lock **together, never a subset**, and a native dialog supplies the first three. **The page behind an open modal dialog scrolls normally** — measured in Chromium: `showModal()`, then a wheel event, and the background moves from scrollY 0 to 600 with `body { overflow: visible }` throughout. Add the section 14 lock explicitly; it is the one piece you still own. Two further limits: focus can still leave for browser UI (whatwg/html#8339, open), and only the containing document is blocked, so a dialog inside an iframe leaves the outer page interactive.
 - **Menus, dropdowns, tooltips: use popover.** Light dismiss and Escape come with it, and a header's blur can no longer trap the dropdown.
 - **Drawers, sheets and toasts stay on the scale.** A drawer is non-modal on desktop, a sheet coexists with the chrome around it, and toasts stack with each other rather than claim one layer. Top-layer ordering is by promotion order, which is the wrong model for all three.
 
@@ -169,7 +171,7 @@ Two consequences bite this shell specifically.
 1. **Portal the backdrop, not the dropdown.** Leave the menu inside the header and render only the click-to-close backdrop to the document root, at a layer *below* the header's own. The backdrop still covers the page; the menu still sits above it, because it is inside a stacking context that outranks the backdrop's layer. This is the only fix that keeps both a real backdrop and the dropdown's DOM position, so tab order and the trigger's `aria-controls` relationship need no repair. It is the one exception to rule 2, and [Z_INDEX_SCALE.md](Z_INDEX_SCALE.md) carries it.
 2. **Render the dropdown as a sibling of the header** rather than a child. Moves it out of tab order behind its trigger; needs explicit focus management.
 3. **Mount the dropdown at the document root.** Same tab-order caveat as 2.
-4. **Drop the backdrop element** and use a document-level outside-click handler. Keeps the DOM intact but gives up dimming, and on iOS Safari a delegated click on a non-interactive element does not reliably fire (section 20).
+4. **Drop the backdrop element** and use a document-level outside-click handler. Keeps the DOM intact but gives up dimming, and leaves nothing to hang the iOS `cursor: pointer` workaround on, since there is no element. Note what section 20 actually claims, which is narrower than it may sound: iOS Safari does not fire click events on **empty elements**. It says nothing about event delegation, so treat outside-click on iOS as untested rather than known-broken.
 
 ### Audit
 
