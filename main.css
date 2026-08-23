@@ -229,17 +229,23 @@
      (CLAUDE.md "User Experience (Non-Negotiable)"; WCAG 2.2 SC 2.5.5 Target
      Size (Enhanced), AAA). DaisyUI 5 sizes its controls off --size-field
      (.25rem), which lands .btn at 40px, .btn-sm at 32px and .tab at 40px —
-     every one under the floor. Only BurgerMenu's trigger had opted in, with
-     min-h-11 at the call site.
+     every one under the floor. Four call sites had already opted in with
+     min-h-11 — BurgerMenu's trigger and its ITEM_CLASS, and two in Navbar —
+     which is the problem, not the mitigation: opting in one at a time is how
+     the other 17 stayed missed.
    Approach: one min-height floor on the sized control classes, so a button
      added later inherits it instead of depending on min-h-11 being remembered
      at each call site. min-height clamps DaisyUI's `height: var(--size)`, and
      both classes are inline-flex with centred content, so nothing shifts.
    Alternatives:
-     - min-h-11 at each call site: rejected — 23 of them, and nothing keeps the
+     - min-h-11 at each call site: rejected — 21 of them, and nothing keeps the
        next one honest.
-     - Raise --size-field: rejected — it drives padding and the whole field
-       scale, not just height, so it rescales the site rather than the target.
+     - Raise --size-field: rejected, but not for the reason it looks like — it
+       feeds --size, which is read only by `height` and `width`; padding comes
+       from --btn-p, set per size class. The real objection is scope: it is a
+       THEME variable behind every field control, so raising it inflates inputs,
+       selects and the rest along with buttons, and changes visual size where
+       CLAUDE.md asks compact variants to keep theirs.
      - Invisible extended hit area: rejected here — these sit in normal flow
        with room to grow, and overlapping invisible targets would make the
        homepage's tag rows ambiguous to tap. Used for .code-copy-btn, which
@@ -257,16 +263,22 @@
    Requirement: WCAG 2.2 SC 2.5.5's Inline exception covers a link sitting among
      other text — "in a sentence, or constrained by the line-height of non-target
      text". A link alone in its own paragraph has no non-target text on its line,
-     so the exception does not apply and the 44px floor does. Five of these exist
-     (back-links on the pattern and project pages and their error states, plus the
-     footer), each about 16px tall.
+     so the exception does not apply and the 44px floor does. Two shapes need it.
+     Five are JSX call sites — back-links on the pattern and project pages and
+     their error states, plus the footer — measured at 16px where they render.
+     The rest come from markdown: an item whose entire content is one link
+     (`- [User Guide](USER_GUIDE.md)`, in every project README) is the same case,
+     so `src/lib/markdown.js` marks those `.md-li-link` and the selector below
+     covers them. An item with trailing text after the link stays exempt and
+     stays 16px — verified both ways, on a project page and a pattern page.
    Approach: a class rather than utilities at each call site, because it is the
      shape that recurs and a name is what makes the next one findable. inline-flex
      so min-height applies to an inline element at all.
    Alternative: floor every .link — rejected, it would hit the genuinely inline
      ones (HomePage's "View full reference", ProjectPage's "Retry") which ARE
      exempt, and inflating a link inside a sentence breaks the line box. */
-.link-standalone {
+.link-standalone,
+.md-render li.md-li-link > a {
   display: inline-flex;
   align-items: center;
   min-height: 2.75rem;
@@ -279,9 +291,13 @@
    Cause: the link needs `focus:not-sr-only` to become visible, and Tailwind's
      not-sr-only resets `height: auto` and `padding: 0` — exactly the two
      properties DaisyUI's .btn relies on (`height: var(--size)`,
-     `padding-inline: var(--btn-p)`). Tailwind utilities sort after DaisyUI's
-     component layer, so the reset won and `focus:btn focus:btn-primary
-     focus:btn-sm` collapsed to bare text.
+     `padding-inline: var(--btn-p)`). Both rules live in @layer utilities, but
+     DaisyUI's sits in a NESTED sub-layer inside it (daisyui.l1.l2.l3), and a
+     nested layer loses to unlayered content in the same parent layer whatever
+     the specificity or source order — so the reset won and `focus:btn
+     focus:btn-primary focus:btn-sm` collapsed to bare text. Established by
+     walking the built stylesheet's layer nesting, not inferred from the
+     symptom.
    Approach: an unlayered rule here, which outranks every @layer, describes the
      focused appearance directly. min-height (not height) so not-sr-only's
      `height: auto` still clamps up to the floor.
@@ -367,9 +383,12 @@
      unbreakable URL pushes the whole page sideways — 455px of content in a
      390px viewport, i.e. a horizontal scroll on this site's primary target.
    Approach: allow breaks inside rendered links and inline code, the only two
-     places an unbreakable run occurs in this content. `anywhere` rather than
-     `break-word` because only `anywhere` feeds back into the min-content size,
-     which is what actually stops the parent from overflowing.
+     places an unbreakable run occurs in this content. Measured: `normal` gives
+     455px in a 390px viewport, and BOTH `anywhere` and `break-word` fix it — so
+     the min-content difference between them is not what does the work here.
+     `anywhere` is the pick because it also contributes to intrinsic sizing,
+     which matters if this content ever lands in a flex or grid track where
+     `break-word` alone would let the track blow out.
    Alternative: rewrite the URLs as short labelled links — rejected, that fixes
      one document and the next pattern doc with a citation reintroduces it.
    Alternative: apply it to .md-render wholesale — rejected, it would break
