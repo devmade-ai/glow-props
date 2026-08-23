@@ -102,7 +102,7 @@ Every surface, regardless of type, answers the same questions. Any surface that 
 
 - Is it open.
 - Is it topmost. Escape, back, and the backdrop belong to the topmost surface alone.
-- Is it modal in the current layout. Modal means backdrop, focus containment, inert background, and scroll lock together, never a subset.
+- Is it modal right now — which can depend on the layout, as it does for the AI drawer, or on the surface's own state, as it does for the sheet at each snap. Modal means backdrop, focus containment, inert background, and scroll lock together, never a subset.
 - Is it dismissible right now, and if not, what confirmation replaces dismissal.
 - What is announced when it opens, and what is announced when its content changes without it closing.
 - What it renders while loading, when empty, and on error.
@@ -139,7 +139,7 @@ Values 26 through 38 are the shell's subdivision of the single sheets-and-drawer
 
 1. Every z-index in the codebase maps to a value in this list. No arbitrary large numbers. A new layer means editing this document first.
 2. A backdrop renders directly beneath the topmost surface it belongs to. Three positions exist for that reason — 26 with the sheet topmost, 30 with a drawer topmost, 40 with a menu or modal topmost. One component, three positions, one mounted at a time.
-3. **Exactly one backdrop is mounted, ever.** It sits directly beneath the topmost surface and dims everything below it in a single pass — page, sheet, drawer, whatever is down there. A second scrim does not dim anything the first one missed; it only doubles the opacity over the page, which is the one thing a backdrop must not do.
+3. **Exactly one backdrop is mounted, ever.** It sits directly beneath the topmost **modal** surface and dims everything below it in a single pass — page, sheet, drawer, whatever is down there. Modal, not merely topmost: a non-modal surface has no backdrop at all (section 4 rule 4), so a non-modal AI drawer open above a modal sheet leaves the backdrop where it was, under the sheet, and floats above it undimmed. That is the point of it being non-modal. When no modal surface is open, no backdrop is mounted. A second scrim does not dim anything the first one missed; it only doubles the opacity over the page, which is the one thing a backdrop must not do.
 
    So a drawer opening over a sheet moves the backdrop from 26 to 30; the sheet is then below it and dims with the page. A modal opening over that drawer moves it to 40; drawer and sheet and page all dim once. The instinct to give the modal "its own" backdrop so it can dim the drawer is the trap — moving the single one up dims the drawer *and* leaves the page at one scrim, which giving it a second does not.
 
@@ -160,7 +160,7 @@ Where that lands for this shell:
 
   It does not give you the whole modal contract. Section 2 says modal means backdrop, focus containment, inert background and scroll lock **together, never a subset**, and a native dialog supplies the first three. **The page behind an open modal dialog scrolls normally** — measured in Chromium: `showModal()`, then a wheel event, and the background moves from scrollY 0 to 600 with `body { overflow: visible }` throughout. Add the section 14 lock explicitly; it is the one piece you still own. Two further limits: focus can still leave for browser UI (whatwg/html#8339, open), and only the containing document is blocked, so a dialog inside an iframe leaves the outer page interactive.
 - **Menus, dropdowns, tooltips: use popover.** Light dismiss and Escape come with it, and a header's blur can no longer trap the dropdown.
-- **Drawers, sheets and toasts stay on the scale.** A drawer is non-modal on desktop, a sheet coexists with the chrome around it, and toasts stack with each other rather than claim one layer. Top-layer ordering is by promotion order, which is the wrong model for all three.
+- **Drawers, sheets and toasts stay on the scale.** A drawer is non-modal on desktop, a sheet is non-modal below the full snap and has to sit in a known relationship to the drawers either way, and toasts stack with each other rather than claim one layer. Top-layer ordering is by promotion order, which is the wrong model for all three.
 
 Both are cross-browser: dialog since March 2022, when Safari 15.4 and Firefox 98 shipped it, and popover since April 2024, when Firefox shipped it. Both are Baseline *newly* available at those dates, not widely available — popover's Baseline date has since been restated as January 2025, and it is projected to reach widely available in July 2027. Where a target cannot use them, React Native above all, the portal rules below are the fallback. They are not the default any more.
 
@@ -636,7 +636,8 @@ Behaviour, checked on device:
 - A narrow iPad window, around 400 to 500px wide. That range came from Split View, which iPadOS 26 replaced with free-form resizable windows; it is carried over from this document's source and has not been confirmed against Apple's own figures, and the floor a freely resized window can reach is not established at all. So treat it as a width worth testing, not a boundary: test there, and treat narrower as untested rather than impossible. This is the check that earns the no-tablet-band decision in section 1.
 - Notch and home indicator: nothing clipped, the backdrop reaches every edge.
 - Tapping outside every surface on a real iPhone, not the simulator, which catches the missing pointer cursor.
-- A modal opened from inside a drawer renders above that drawer's backdrop.
+- A modal opened from inside a drawer renders above the drawer, and **exactly one backdrop is in the DOM** — the drawer's has moved up to sit under the modal, not been joined by a second. Count the scrims, do not just look: two stacked read as one slightly darker one, which is the whole reason this is a rule.
+- A non-modal AI drawer opened on desktop over a sheet at full: the sheet stays dimmed, the drawer does not, and the backdrop has not moved.
 - Two surfaces opened and closed in reverse order: page scroll restored exactly once.
 - Back from an open drawer closes it and stays in the app.
 - The sheet resized entirely by tap, with no drag used at all.
@@ -664,7 +665,7 @@ Behaviour, checked on device:
 2. **The interactive-widget keyword covers Chromium and Firefox only.** WebKit has not shipped it, so measuring the visual viewport on iOS is required, not optional.
 3. **A keyboard focus trap does not contain a screen reader on mobile.** Swipe navigation walks straight past it. Inert is the primary mechanism; the trap is the desktop supplement.
 4. **Subdividing the band is half the job; ordering it is the other half.** One layer for all sheets and drawers is not enough once three can coexist — but this document subdivided the band and still had the sheet painting over the drawer that had just opened. Order the layers by what covers what when two are open at once, and give each its own backdrop, or a shared one leaves a peer bright on top of the surface it should be behind.
-5. **One backdrop, moved, beats several stacked.** It belongs directly beneath the topmost surface and dims everything under it in one pass. Giving each surface its own is the intuitive fix and the wrong one: it double-dims the page without dimming anything the moved one would have missed. Order the surfaces correctly first — a backdrop cannot rescue a band where the sheet paints over the drawer.
+5. **One backdrop, moved, beats several stacked.** It belongs directly beneath the topmost *modal* surface — not merely the topmost, since a non-modal one has none — and dims everything under it in one pass. Giving each surface its own is the intuitive fix and the wrong one: it double-dims the page without dimming anything the moved one would have missed. Order the surfaces correctly first — a backdrop cannot rescue a band where the sheet paints over the drawer.
 6. **Stacking contexts are the real enemy, not z-index values.** Transform-animated drawers trap their children, so modals and toasts mount at the document root — unless they are in the top layer, which no ancestor can trap.
 7. **Reach for the top layer before reaching for a portal.** `<dialog showModal()>` and `popover` escape every stacking context by construction, and bring the backdrop, focus containment, inertness and close requests with them. The portal rules are the fallback for targets that cannot use them, not the default.
 8. **iOS Safari ignores taps on empty elements.** Every backdrop needs a pointer cursor or dismissal silently fails on the most common device.
