@@ -46,7 +46,12 @@ Two layouts, split at 1024px.
 - Below 1024px: mobile layout. Full-bleed content, bottom nav, full-width drawers, sheet snaps.
 - 1024px and above: desktop layout. Centred clamped column, left rail, half-width drawers.
 
-Phones and tablets share the mobile layout. Every iPad below 13 inches falls inside it: iPad viewport widths run from 744px on the mini to 1032px on the 13-inch Pro. A half-width drawer on an 820px iPad is 410px, too narrow for chat and too wide to read as navigation. Thirteen-inch iPads in portrait sit at or above 1024px and get the desktop layout, which is correct at that width.
+Phones share the mobile layout everywhere. **iPads switch layout with orientation**, and that is intended rather than incidental.
+
+- **Portrait**, 744px on the mini to 1032px on the 13-inch Pro: mobile layout for every iPad under 13 inches. A half-width drawer on an 820px iPad would be 410px — too narrow for chat, too wide to read as navigation. Thirteen-inch iPads sit at or above 1024px even in portrait and get the desktop layout, which is correct at that width.
+- **Landscape**, 1133px on the mini, 1210px on the 11-inch, 1376px on the 13-inch: desktop layout for every iPad, without exception. There is no iPad whose landscape width falls below 1024px.
+
+So rotating an iPad swaps bottom nav for rail and full-width drawers for half-width, mid-session, with surfaces possibly open. That is the correct outcome at those widths — a 1210px landscape iPad is a desktop-width screen — but it is a transition to test, not just two layouts to test. Section 22 has the check.
 
 There is no tablet band. A third layout triples the test matrix for a range the mobile layout already handles.
 
@@ -194,7 +199,7 @@ Three values, held once:
 
 - the open surface stack, ordered, last entry topmost
 - the current bottom sheet snap
-- the current keyboard inset in pixels, zero when closed
+- the current keyboard inset in pixels, zero when closed. The manager is the only writer of the CSS custom property section 7 describes; the measurement updates this value and the property mirrors it. Two writers is how the property and the state start disagreeing, and nothing catches that.
 
 Anything else a surface needs is local to that surface.
 
@@ -295,7 +300,7 @@ Both parts are required, not one or the other. A page shipping `viewport-fit=cov
 
 ### The iOS path
 
-iOS needs the visual viewport measured directly and the result exposed as a custom property that bottom-anchored elements consume alongside the safe-area inset.
+iOS needs the visual viewport measured directly and the result exposed as a custom property that bottom-anchored elements consume alongside the safe-area inset. The value lives in the surface manager (section 4) and the property mirrors it — measure into the state, never straight into the property.
 
 Knowledge that governs how:
 
@@ -372,7 +377,7 @@ The handle is a 4px line inside a 44px target, labelled with the state it moves 
 
 ## 10. Side drawers
 
-- Mobile: full width, capped so the drawer can never exceed the viewport minus a margin.
+- Mobile: full width, capped at the viewport minus 56px so a strip of the page behind stays visible. 56px is the header height token, reused rather than chosen: the strip reads as the page continuing, and matching the header keeps the shell to one vertical rhythm.
 - Desktop: half width, capped at 560px, so a 2560px display does not produce a 1280px drawer.
 - Movement is a horizontal translation. Width and offset are never animated.
 - Mobile drawers are modal: surface backdrop, focus containment, inert background, scroll lock.
@@ -413,6 +418,7 @@ With the widths above that puts the crossover at 1400px. Below it the drawer ove
 ## 12. Modals
 
 - 90% of visual viewport height, fixed, regardless of content height. Short content centres inside; the modal does not shrink to fit.
+- Width follows the content column and caps at 640px: full width minus the 16px side padding on mobile, 640px centred once the viewport allows it. 640px is the column's own minimum, reused — a modal wider than the narrowest column the shell considers readable is a modal that is too wide to read.
 - The body scrolls internally. Header and footer stay fixed within the modal.
 - Mounted at the document root. See section 3.
 - Focus containment and inert background, per section 6.
@@ -430,7 +436,8 @@ Blocking dismissal outright traps anyone who opened the modal by mistake. Silent
 ## 13. Toasts and banners
 
 - Layer 70, above every surface, mounted at the document root.
-- Anchored above the bottom nav, and above the bottom sheet when it is open, so the sheet handle stays reachable.
+- Anchored above whichever is highest of the bottom nav, the keyboard inset, and the sheet's top edge — but never above the header. At the 92% snap the sheet's top edge sits in the top 8% of the screen, which would put the toast over the header; a toast at layer 70 covers a header at 20, so this has to be a rule rather than an accident of stacking. Where the sheet would push it that high, the toast returns to the bottom-nav anchor and sits over the sheet instead.
+- That keeps the sheet handle reachable at peek and half, which is where the handle is used. At full the sheet is already the whole screen and the handle is not what the toast would be blocking.
 - Anchored above the keyboard inset when the keyboard is open.
 - Maximum three stacked. Beyond that the oldest is replaced rather than queued; a queue that outlives the action it describes is noise.
 - Four to six seconds for informational toasts. Errors and anything carrying an action persist until dismissed.
@@ -524,6 +531,8 @@ Geometry:
 - minimum target size, 44px; primary destination target size, 48px
 - edge rail visual width, 4px
 - modal height, 90% of visual viewport height (sections 7 and 12)
+- modal width, the content column capped at 640px (section 12)
+- mobile drawer inset, 56px of page left visible beside a full-width drawer (section 10)
 - full-screen promotion threshold, 700px of visual viewport height (sections 7 and 12)
 
 Interaction:
@@ -608,6 +617,7 @@ Behaviour, checked on device:
 - The same two checks in the installed PWA.
 - Keyboard open on Android Chrome with the meta keyword active.
 - Landscape phone: modals promote to full screen, the sheet stays usable.
+- Rotate an iPad with a drawer and the sheet both open. The layout crosses 1024px in both directions: bottom nav and rail swap, drawers resize, and the open surfaces must survive it without losing state, stranding focus, or leaving a scroll lock behind.
 - A narrow iPad window, around 400 to 500px wide. That range came from Split View, which iPadOS 26 replaced with free-form resizable windows; it is carried over from this document's source and has not been confirmed against Apple's own figures, and the floor a freely resized window can reach is not established at all. So treat it as a width worth testing, not a boundary: test there, and treat narrower as untested rather than impossible. This is the check that earns the no-tablet-band decision in section 1.
 - Notch and home indicator: nothing clipped, the backdrop reaches every edge.
 - Tapping outside every surface on a real iPhone, not the simulator, which catches the missing pointer cursor.
