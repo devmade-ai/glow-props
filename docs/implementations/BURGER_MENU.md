@@ -25,7 +25,7 @@ Dropdown navigation menu triggered by a hamburger icon. Uses the WAI-ARIA **disc
 
 See [Z_INDEX_SCALE.md](Z_INDEX_SCALE.md) for the full standard scale. The burger menu uses two layers:
 
-- **Backdrop**: `z-40` — click-to-close overlay with `cursor-pointer` (required for iOS Safari)
+- **Backdrop**: `z-40` — click-to-close overlay with `cursor-pointer` (required for iOS Safari). **Not z-40 when the header creates a stacking context** — see "Externalized backdrop" below, or the backdrop covers the menu it belongs to.
 - **Menu dropdown**: `z-50` — the menu card itself
 
 ## Standard Menu Items
@@ -412,8 +412,12 @@ export function BurgerMenu({ items, id, version }) {
         <>
           {/* Backdrop — z-40. cursor-pointer required for iOS Safari
               (empty divs don't receive click events without it).
-              Note: If parent header has backdrop-filter, render backdrop
-              outside the header stacking context to avoid clipping. */}
+              Note: if the parent header has backdrop-filter, this needs
+              BOTH halves of the fix — render the backdrop outside the
+              header's stacking context AND drop it below the header's own
+              layer. Moving it out while leaving it at 40 puts it above a
+              z-30 header, which covers the menu. See "Externalized
+              backdrop" below. */}
           <div
             className="fixed inset-0 z-40 cursor-pointer"
             onClick={close}
@@ -491,7 +495,11 @@ export function BurgerMenu({ items, id, version }) {
 - **`useFocusTrap` hook**: Tab/Shift+Tab boundary wrapping with previous-focus restoration. Reused by BurgerMenu and InstallInstructionsModal.
 - **`useId()` for unique IDs**: Prevents `aria-controls` collisions if multiple BurgerMenu instances exist on the same page.
 - **`cursor-pointer` on backdrop**: iOS Safari does not fire click events on empty `<div>` elements. Without `cursor-pointer`, tapping outside the menu on iPhone/iPad silently fails to close it.
-- **Externalized backdrop**: If the parent header uses `backdrop-filter`, render the backdrop outside the header stacking context (in the parent layout) to avoid `backdrop-blur-sm` clipping fixed children.
+- **Externalized backdrop**: If the parent header uses `backdrop-filter`, the backdrop needs two changes together, and doing only the first breaks the menu.
+  1. **Render it outside the header's stacking context** (portal it to `<body>`), because `backdrop-filter` makes the header a containing block that clips fixed children.
+  2. **Drop it BELOW the header's own layer** — z-20 under a z-30 header, not the default z-40. The menu lives inside the header's stacking context, so a body-level backdrop at 40 paints above the header and everything in it, including the menu.
+
+  Measured in Chromium on gp-props, which ships this arrangement: with the backdrop at z-20, `elementFromPoint` over the open menu returns a menu item. Setting that same backdrop to z-40 makes it return the backdrop instead — the menu is still visible but no longer tappable. `Z_INDEX_SCALE.md` rule 2 carries this as its one exception.
 - **DaisyUI `menu` classes** (if the app uses DaisyUI): `menu menu-sm` provides theme-aware hover states, padding, and focus indicators automatically.
 - **`min-h-11` (44px) touch targets**: Meets Apple HIG and Material Design minimum touch target guidelines.
 - **`overscroll-contain`**: Prevents scroll chaining without touching `document.body.style.overflow`.
@@ -766,7 +774,8 @@ Vue projects use the same patterns with framework-specific adaptations:
 ## Key Lessons
 
 1. **`role="menu"` is for application menus only** — File/Edit/View style. Screen readers enter forms mode, suppress normal navigation keys, and expect arrow-key item navigation. A burger nav menu is a disclosure — use `aria-expanded` on the trigger and `<nav>` with a `<ul>/<li>` list. Do not use `aria-haspopup` (it signals "this opens an application menu").
-2. **iOS Safari does not fire click events on empty divs** — the backdrop overlay must have `cursor: pointer` (Tailwind: `cursor-pointer`) or it silently fails on all iPhones and iPads. This is an intentional iOS Safari optimization, not a bug, and has persisted across all iOS versions.
+2. **Half of the blurred-header fix is worse than none.** Moving the backdrop out of a `backdrop-filter` header without also dropping it below the header's layer leaves a z-40 backdrop above a z-30 header — the menu renders, and every tap on it hits the backdrop and closes it. Verified by measurement, not by inspection: it looks correct on screen.
+3. **iOS Safari does not fire click events on empty divs** — the backdrop overlay must have `cursor: pointer` (Tailwind: `cursor-pointer`) or it silently fails on all iPhones and iPads. This is an intentional iOS Safari optimization, not a bug, and has persisted across all iOS versions.
 3. **Extract focus logic into reusable hooks** — `useDisclosureFocus`, `useFocusTrap`, and `useEscapeKey` are used by BurgerMenu, modals, and other disclosures. Don't inline focus management in each component.
 4. **Arrow key + Home/End navigation** — cycling through items with wrapping improves keyboard accessibility. Not required by the disclosure pattern spec but expected by power users.
 5. **`overscroll-behavior: contain` avoids the scroll lock race** — two components both writing `document.body.style.overflow = 'hidden'` causes one to overwrite the other's cleanup on unmount. Using `overscroll-contain` on the menu card prevents scroll chaining without touching body styles.

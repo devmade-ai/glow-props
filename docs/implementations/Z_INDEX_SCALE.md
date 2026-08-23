@@ -29,13 +29,15 @@ Standard stacking order for all devmade-ai projects. Prevents conflicts between 
 | Sheets / drawers | 30 | `z-30` | Bottom sheets, side panels, slide-overs |
 | Backdrop | 40 | `z-40` | Click-to-close overlay behind menus and modals |
 | Menu / dropdown | 50 | `z-50` | Burger menu card, dropdowns, popovers, tooltips |
-| Modal | 60 | `z-60` | Dialogs, confirmation modals, full-screen overlays |
-| Toast / banner | 70 | `z-70` | Toast notifications, update banners, install prompts |
-| Debug pill | 80 | `z-80` | Debug overlay (separate React root, must be topmost) |
+| Modal | 60 | `z-60` / `z-[60]` | Dialogs, confirmation modals, full-screen overlays |
+| Toast / banner | 70 | `z-70` / `z-[70]` | Toast notifications, update banners, install prompts |
+| Debug pill | 80 | `z-80` / `z-[80]` | Debug overlay (separate React root, must be topmost) |
+
+Above 50 the table gives two forms: the bare one for Tailwind v4, the bracketed one for v3. Check which your project is on before copying — both produce the same declaration.
 
 **Why these values?** Gaps of 10 between layers leave room for sub-layers if needed (e.g., a dropdown inside a modal could use z-55, though this should be rare). The scale is intentionally small — 8 layers cover every UI pattern across all repos.
 
-**Tailwind note:** Tailwind's *named* steps stop at `z-50`, but since v4 `z-index` accepts a bare numeric value, so `z-60`, `z-70` and `z-80` compile to real utilities with no brackets and no config. Verified in gp-props (Tailwind 4.2): the built stylesheet contains `.z-60{z-index:60}` and `.z-70{z-index:70}`. On Tailwind v3, and only there, these need the arbitrary form `z-[60]`.
+**Tailwind note:** Tailwind's *named* steps stop at `z-50`, but since v4 `z-index` accepts a bare numeric value, so `z-60`, `z-70` and `z-80` compile to real utilities with no brackets and no config. Verified on Tailwind 4.2.2: this repo's built stylesheet contains `.z-60{z-index:60}` and `.z-70{z-index:70}`, and compiling a bare `z-80` through the Tailwind CLI emits `.z-80{z-index:80}`. The v3 half is reasoned from its named scale ending at 50, not tested — no v3 project was available to check.
 
 Either way the values stay greppable. Named utilities are an option where the layer's *meaning* is worth stating at the call site:
 
@@ -49,7 +51,7 @@ Either way the values stay greppable. Named utilities are an option where the la
 ## Rules
 
 1. **Every z-index in the codebase must map to a layer in this scale.** No `z-[9999]`, `z-[1000]`, or `z-[999]`. If you need a new layer, add it to this document first.
-2. **Backdrop and its content are always adjacent.** Menu backdrop (40) + menu (50). Modal backdrop (40) + modal (60). The backdrop is z-40 regardless of what it's behind — with one exception: when the surface is trapped inside an ancestor stacking context (a blurred sticky header is the usual one), its backdrop goes *below* that ancestor's layer instead, because a body-level backdrop at 40 would cover the surface it belongs to. See "Common Trap" below.
+2. **Backdrop and its content are always adjacent.** Menu backdrop (40) + menu (50). Modal backdrop (40) + modal (60). The backdrop is z-40 regardless of what it's behind — with one exception: when the surface is trapped inside an ancestor stacking context (a blurred sticky header is the usual one), its backdrop goes *below* that ancestor's layer instead, because a body-level backdrop at 40 would cover the surface it belongs to. Measured, not reasoned: on gp-props, moving its z-20 backdrop to z-40 makes `elementFromPoint` over the open menu return the backdrop instead of a menu item. See "Common Trap" below.
 3. **Debug pill is always topmost.** Nothing should render above z-80. The pill is in a separate React root and must remain visible during crashes, modals, and toasts.
 4. **Sticky headers stay below overlays.** A sticky navbar (z-20 or z-30) must not overlap a modal (z-60) or toast (z-70).
 5. **Don't nest stacking contexts unnecessarily.** A parent with `z-index` creates a stacking context — children cannot escape it. Avoid setting z-index on wrapper divs unless required.
@@ -67,10 +69,10 @@ Flag any value outside the scale. Common violations and fixes:
 
 | Violation | Fix |
 |-----------|-----|
-| `z-[9999]` on debug pill | `z-80` |
-| `z-[1000]` on modal | `z-60` |
+| `z-[9999]` on debug pill | `z-80` (v3: `z-[80]`) |
+| `z-[1000]` on modal | `z-60` (v3: `z-[60]`) |
 | `z-100` on dropdown | `z-50` |
-| `z-[999]` on toast | `z-70` |
+| `z-[999]` on toast | `z-70` (v3: `z-[70]`) |
 | `z-[50]` on sticky header | `z-30` (or `z-20` if no sheets) |
 
 ## Stacking Context Gotchas
@@ -94,7 +96,7 @@ A sticky navbar using `backdrop-blur-md` creates a stacking context. Any element
 1. **Portal the backdrop, not the dropdown** — leave the menu inside the navbar and render only the click-to-close backdrop to `document.body`, at a layer *below* the navbar's own. The backdrop still covers the page; the menu still sits above it, because it is inside a stacking context that outranks the backdrop's layer. Prefer this one: it is the only fix that keeps both a real backdrop element and the dropdown's DOM position, so tab order and the trigger's `aria-controls` relationship need no repair. gp-props does this — backdrop `createPortal`'d to `<body>` at z-20 under a z-30 navbar (`src/components/BurgerMenu.jsx`).
 2. **Render the menu dropdown outside the navbar** — as a sibling in the DOM, not a child. Moves the dropdown out of tab order behind the trigger; needs explicit focus management.
 3. **Portal the dropdown** to `document.body` (React `createPortal`). Same tab-order caveat as 2.
-4. **Use a document-level click handler** instead of a backdrop overlay. Keeps the DOM intact but gives up the backdrop entirely: no dimming, and on iOS Safari a delegated click on a non-interactive element does not reliably fire, so outside-click needs care (see BURGER_MENU.md).
+4. **Use a document-level click handler** instead of a backdrop overlay. Keeps the DOM intact but gives up the backdrop entirely — no dimming, and nothing to attach the iOS `cursor: pointer` workaround to, since there is no element. What [BURGER_MENU.md](BURGER_MENU.md) documents is narrower than it may sound: iOS Safari does not fire click events on **empty `<div>` elements**. It says nothing about event delegation, so treat outside-click on iOS as untested rather than known-broken.
 
 Whichever you pick, an element that closes a surface by being tapped needs `cursor: pointer` — iOS Safari does not fire click events on empty non-interactive elements without it.
 
