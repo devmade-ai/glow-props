@@ -246,7 +246,7 @@ A keyboard focus trap is not sufficient on a mobile-first shell. TalkBack and Vo
 
 Marking the background inert is therefore the primary mechanism, and the keyboard trap is the desktop supplement. Inert removes the subtree from tab order, pointer events, assistive technology, page search, and text selection at once. `aria-hidden` alone does none of that except the third.
 
-Inert became broadly interoperable in April 2023 with Chrome and Edge 102, Firefox 112 and Safari 15.5, and reached widely-available status around October 2025. Coverage is above 96% as of 2026, and no polyfill is needed for a greenfield project. The legacy polyfill is unmaintained and works by tree-walking, which is expensive; do not add it. A CSS-driven equivalent exists but has narrower support, so the attribute remains the choice.
+Inert became broadly interoperable in April 2023 with Chrome and Edge 102, Firefox 112 and Safari 15.5, and reached Baseline widely available in October 2025 — both dates confirmed against web.dev's Baseline record. No polyfill is needed for a greenfield project. (Do not confuse the HTML `inert` attribute with the CSS `interactivity: inert` property, which is Chromium-only and not Baseline; searches conflate the two.) The legacy polyfill is unmaintained and works by tree-walking, which is expensive; do not add it. A CSS-driven equivalent exists but has narrower support, so the attribute remains the choice.
 
 Source: https://blog.openreplay.com/inert-attribute-focus-interactivity/
 
@@ -592,7 +592,7 @@ Behaviour, checked on device:
 - The same two checks in the installed PWA.
 - Keyboard open on Android Chrome with the meta keyword active.
 - Landscape phone: modals promote to full screen, the sheet stays usable.
-- A narrow iPad window, at roughly 400 to 500px wide. That figure comes from Split View, which iPadOS 26 replaced with free-form resizable windows, so it is now a width the case can take rather than the width it is forced to — the floor a resized window can actually reach is not established here. Test at 400 to 500px because that range is documented; treat anything narrower as untested rather than impossible. This is the check that earns the no-tablet-band decision in section 1.
+- A narrow iPad window, around 400 to 500px wide. That range came from Split View, which iPadOS 26 replaced with free-form resizable windows; it is carried over from this document's source and has not been confirmed against Apple's own figures, and the floor a freely resized window can reach is not established at all. So treat it as a width worth testing, not a boundary: test there, and treat narrower as untested rather than impossible. This is the check that earns the no-tablet-band decision in section 1.
 - Notch and home indicator: nothing clipped, the backdrop reaches every edge.
 - Tapping outside every surface on a real iPhone, not the simulator, which catches the missing pointer cursor.
 - A modal opened from inside a drawer renders above that drawer's backdrop.

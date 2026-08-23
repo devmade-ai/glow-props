@@ -260,10 +260,16 @@
 }
 
 /* ===== Standalone links =====
-   Requirement: WCAG 2.2 SC 2.5.5's Inline exception covers a link sitting among
-     other text — "in a sentence, or constrained by the line-height of non-target
-     text". A link alone in its own paragraph has no non-target text on its line,
-     so the exception does not apply and the 44px floor does. Two shapes need it.
+   Requirement: WCAG 2.2 SC 2.5.5's Inline exception is exactly "The target is in
+     a sentence or block of text" — the longer "constrained by the line-height of
+     non-target text" phrasing belongs to 2.5.8, the AA criterion, and does not
+     appear in 2.5.5. A link alone in its own paragraph, list item or table cell
+     is in neither a sentence nor a block of text, so the floor applies.
+     Judgement call where the wording is thin, resolved by the exception's own
+     rationale: it exists because a target inside reflowing text cannot grow
+     without overlapping its neighbours. A link that owns its whole paragraph,
+     item or cell has no neighbours to overlap — the row just gets taller — so
+     the rationale does not reach it. Two shapes need the fix.
      Five are JSX call sites — back-links on the pattern and project pages and
      their error states, plus the footer — measured at 16px where they render.
      The rest come from markdown: an item whose entire content is one link
@@ -402,6 +408,16 @@
 .md-render a,
 .md-render :not(pre) > code {
   overflow-wrap: anywhere;
+}
+/* ...except inside a table, which already has its own overflow-x-auto wrapper
+   (see table() in src/lib/markdown.js) and so cannot push the PAGE sideways.
+   Breaking there buys nothing and costs readability: it was splitting
+   `window.print()` across two lines as "window.pri / nt()" in DOWNLOAD_PDF.md's
+   approach table. Caught by looking at a screenshot, not by measuring — every
+   geometric check passed while this was live. */
+.md-render th a,
+.md-render td a {
+  overflow-wrap: normal;
 }
 .md-render pre {
   @apply bg-base-300/50 rounded-lg p-4 overflow-x-auto text-sm;
