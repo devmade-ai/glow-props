@@ -37,7 +37,13 @@ export function escapeHtml(str) {
 // uses marked's defaults. Copy buttons carry data-copy-code instead of inline
 // onclick: the Markdown component (and SSG'd pages after mount) handle them
 // via one delegated listener, so no window.* global is needed.
-function isLinkOnlyItem(tokens) {
+// True when a container's entire content is one link — a list item or a table
+// cell holding nothing else. Such a link is a tap target, not prose: WCAG 2.2
+// SC 2.5.5's Inline exception covers a link sitting among other text, and there
+// is none here. Marked wraps list-item content in a text token (paragraph when
+// the list is loose); table cells arrive as inline tokens already, so unwrap
+// before testing. A cell or item with trailing text keeps it and stays exempt.
+function isLinkOnly(tokens) {
   let t = tokens;
   while (t && t.length === 1 && (t[0].type === 'text' || t[0].type === 'paragraph') && t[0].tokens) {
     t = t[0].tokens;
@@ -60,7 +66,12 @@ const renderer = {
   table({ header, rows }) {
     const ths = header.map((cell) => '<th>' + this.parser.parseInline(cell.tokens) + '</th>').join('');
     const trs = rows.map(
-      (row) => '<tr>' + row.map((cell) => '<td>' + this.parser.parseInline(cell.tokens) + '</td>').join('') + '</tr>',
+      (row) => '<tr>' + row.map((cell) =>
+        // Same case as a link-only list item: a doc-index table is a column of
+        // tap targets. Found by auditing every route — nine of these ship in
+        // DOWNLOAD_PDF.md and model-pear's README at 16 to 36px tall.
+        '<td' + (isLinkOnly(cell.tokens) ? ' class="md-td-link"' : '') + '>' +
+        this.parser.parseInline(cell.tokens) + '</td>').join('') + '</tr>',
     ).join('');
     return '<div class="overflow-x-auto"><table><thead><tr>' + ths + '</tr></thead>' +
       '<tbody>' + trs + '</tbody></table></div>\n';
@@ -98,14 +109,8 @@ const renderer = {
 
   listitem(token) {
     const content = this.parser.parse(token.tokens, !!token.loose);
-    // A list item whose whole content is one link is a tap target, not prose.
-    // WCAG 2.2 SC 2.5.5's Inline exception covers a link sitting among other
-    // text; a link-only item has none, so the 44px floor applies. Marked wraps
-    // inline content in a text token (paragraph when the list is loose), so
-    // unwrap before testing — an item like "[Guide](g.md) — the manual" keeps
-    // trailing text and stays exempt, which is why this tests the tokens rather
-    // than matching the rendered HTML.
-    if (!token.task && isLinkOnlyItem(token.tokens)) {
+    // See isLinkOnly above — link-only items are tap targets, not prose.
+    if (!token.task && isLinkOnly(token.tokens)) {
       return '<li class="md-li-link">' + content + '</li>\n';
     }
     if (token.task) {

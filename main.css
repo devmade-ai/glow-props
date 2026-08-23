@@ -278,7 +278,8 @@
      ones (HomePage's "View full reference", ProjectPage's "Retry") which ARE
      exempt, and inflating a link inside a sentence breaks the line box. */
 .link-standalone,
-.md-render li.md-li-link > a {
+.md-render li.md-li-link > a,
+.md-render td.md-td-link > a {
   display: inline-flex;
   align-items: center;
   min-height: 2.75rem;
