@@ -283,6 +283,11 @@
   display: inline-flex;
   align-items: center;
   min-height: 2.75rem;
+  /* Width too — 2.5.5 is 44x44, not 44 tall. A short link text makes the box
+     narrower than the floor on its own: "pdf-lib" measured 43.7px wide in
+     DOWNLOAD_PDF.md's table. Content stays flex-start, so nothing visibly
+     moves; only the target grows. */
+  min-width: 2.75rem;
 }
 
 /* ===== Skip link =====
