@@ -113,9 +113,10 @@ Surfaces differ in geometry and content. They do not differ in this contract.
 
 - 0 to 10: base content, cards, inline elements.
 - 20: sticky chrome, meaning header, bottom nav, left rail.
-- 28: surface backdrop, behind drawers and the bottom sheet.
-- 30: side drawers.
-- 34: bottom sheet.
+- 26: sheet backdrop.
+- 28: bottom sheet.
+- 30: drawer backdrop.
+- 32: side drawers.
 - 38: AI drawer when non-modal on desktop.
 - 40: overlay backdrop, behind menus and modals.
 - 50: menus, dropdowns, popovers, tooltips.
@@ -123,13 +124,15 @@ Surfaces differ in geometry and content. They do not differ in this contract.
 - 70: toasts, update banners, install prompts.
 - 80: debug pill, always topmost.
 
-Values 28 through 38 are the shell's subdivision of the single sheets-and-drawers layer in the base scale. Everything else is unchanged.
+Values 26 through 38 are the shell's subdivision of the single sheets-and-drawers layer in the base scale. Everything else is unchanged.
+
+**Drawers sit above the sheet, and each surface has its own backdrop beneath it.** The two are not alternatives — section 4 rule 3 has a side drawer opening while the sheet stays at peek, so they coexist and something has to cover the other. The drawer is the surface just opened, so it covers; the sheet keeps its selection and its snap underneath. Putting the sheet on top instead is the arrangement this document shipped with, and it inverted the open stack: the surface the user had just opened rendered beneath the one they had not touched. Two backdrops rather than one shared at 28, because a single backdrop below both cannot dim a peer in its own band — with the sheet above it, a modal drawer would leave the sheet bright and reachable on top of the drawer it is supposed to be behind.
 
 ### Rules
 
 1. Every z-index in the codebase maps to a value in this list. No arbitrary large numbers. A new layer means editing this document first.
-2. A backdrop renders directly beneath the surface it belongs to. Two backdrop layers exist for that reason: one at 28 for surfaces in the 30s, one at 40 for menus and modals. Same component, different layer.
-3. One backdrop instance per band, never two in the same band. A second surface in the same band reuses the existing one rather than stacking a second layer of opacity, which would double the dimming. A modal opened from inside a drawer is the case that needs both bands at once: the drawer keeps its backdrop at 28 and the modal gets its own at 40, because the modal has to dim the drawer as well as the page.
+2. A backdrop renders directly beneath the surface it belongs to. Three backdrop layers exist for that reason — 26 under the sheet, 30 under the drawers, 40 under menus and modals. Same component, three layers.
+3. One backdrop instance per layer, never two at the same layer. Two surfaces sharing a layer share one backdrop rather than stacking a second sheet of opacity, which would double the dimming. Surfaces at different layers each get their own: a modal opened from inside a drawer leaves the drawer's backdrop at 30 and adds the modal's at 40, because the modal has to dim the drawer as well as the page. Same for a drawer opened over a sheet — the sheet keeps 26 and the drawer adds 30.
 4. Nothing renders above the debug pill.
 5. Sticky chrome always sits below every overlay.
 6. Wrapper elements do not carry a z-index. A positioned parent with a z-index creates a stacking context its children cannot escape.
@@ -199,7 +202,7 @@ Anything else a surface needs is local to that surface.
 
 1. One modal at a time. Opening a modal closes any open modal first.
 2. Left and right drawers are mutually exclusive.
-3. On mobile, opening a side drawer collapses the bottom sheet to peek rather than closing it. The sheet holds selection context the user returns to.
+3. On mobile, opening a side drawer collapses the bottom sheet to peek rather than closing it. The sheet holds selection context the user returns to. It collapses *underneath* the drawer and its backdrop — dimmed and inert, not sitting on top of the surface just opened. See the layering note in section 3.
 4. On desktop the AI drawer is non-modal: no backdrop, no focus containment, no scroll lock. It exists to be used while working.
 5. On mobile the AI drawer is modal.
 6. Escape and back address the topmost surface only.
@@ -508,6 +511,8 @@ The shell is direction-aware. Left and right are not fixed positions.
 
 Named once, consumed everywhere. A value that appears in two places without a name will diverge.
 
+Derived values are not tokens, and naming them is the way to make them diverge. The desktop drawer crossover in section 10 is the example: it reads 1400px, but it is `clamp(640px, 60vw, 1100px)` measured against viewport minus drawer width, so it moves the moment either input does. Compute it; never store it.
+
 Geometry:
 
 - header height, 56px
@@ -518,6 +523,15 @@ Geometry:
 - sheet snaps, 30%, 55%, 92% of visual viewport height
 - minimum target size, 44px; primary destination target size, 48px
 - edge rail visual width, 4px
+- modal height, 90% of visual viewport height (sections 7 and 12)
+- full-screen promotion threshold, 700px of visual viewport height (sections 7 and 12)
+
+Interaction:
+
+- sheet flick threshold, 500 px/s (section 9)
+- sheet close threshold, a quarter of the peek height dragged below peek (section 9)
+- toast dwell, 4 to 6 seconds for informational toasts (section 13)
+- skeleton delay, 300ms before a loading state is shown (section 15)
 
 Runtime:
 
@@ -624,8 +638,8 @@ Behaviour, checked on device:
 1. **`dvh` is not a keyboard fix.** Viewport units track the layout viewport, and no current mobile browser resizes the layout viewport for the keyboard by default.
 2. **The interactive-widget keyword covers Chromium and Firefox only.** WebKit has not shipped it, so measuring the visual viewport on iOS is required, not optional.
 3. **A keyboard focus trap does not contain a screen reader on mobile.** Swipe navigation walks straight past it. Inert is the primary mechanism; the trap is the desktop supplement.
-4. **One layer for all sheets and drawers is not enough** once three can coexist. Subdivide the band before the first collision, not after.
-5. **A backdrop belongs directly beneath its own surface.** Two backdrop layers, one per band, beats one rule with exceptions.
+4. **Subdividing the band is half the job; ordering it is the other half.** One layer for all sheets and drawers is not enough once three can coexist — but this document subdivided the band and still had the sheet painting over the drawer that had just opened. Order the layers by what covers what when two are open at once, and give each its own backdrop, or a shared one leaves a peer bright on top of the surface it should be behind.
+5. **A backdrop belongs directly beneath its own surface** — one backdrop layer per surface layer, not one shared per band. A shared backdrop cannot dim a peer sitting above it in the same band, which is how a peek sheet ends up bright and clickable on top of the drawer that is supposed to have covered it.
 6. **Stacking contexts are the real enemy, not z-index values.** Transform-animated drawers trap their children, so modals and toasts mount at the document root — unless they are in the top layer, which no ancestor can trap.
 7. **Reach for the top layer before reaching for a portal.** `<dialog showModal()>` and `popover` escape every stacking context by construction, and bring the backdrop, focus containment, inertness and close requests with them. The portal rules are the fallback for targets that cannot use them, not the default.
 8. **iOS Safari ignores taps on empty elements.** Every backdrop needs a pointer cursor or dismissal silently fails on the most common device.
