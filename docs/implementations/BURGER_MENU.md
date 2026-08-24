@@ -15,6 +15,7 @@ order: 3
 Dropdown navigation menu triggered by a hamburger icon. Uses the WAI-ARIA **disclosure pattern** (not `role="menu"`) because a burger nav is a list of links/actions revealed by a toggle, not an application menu (File/Edit/View). Two variants: React (Vite + Tailwind) for web-only projects, React Native (Expo) for cross-platform.
 
 **Related patterns:**
+- [APP_SHELL.md](APP_SHELL.md) — apps adopting the shell baseline (bottom nav + drawers) use its left menu drawer instead of this dropdown: same items, same hooks, different surface
 - [Z_INDEX_SCALE.md](Z_INDEX_SCALE.md) — Menu backdrop (z-40) and dropdown (z-50) positioning in the standard scale
 - [THEME_DARK_MODE.md](THEME_DARK_MODE.md) — Dark/light toggle and theme picker UI live inside the menu (see [Theme UI in Burger Menu](#theme-ui-in-burger-menu))
 - [PWA_SYSTEM.md](PWA_SYSTEM.md) — "Check for updates" and "Install app" are standard menu items triggering PWA hooks
@@ -320,7 +321,9 @@ import { useEscapeKey } from '../hooks/useEscapeKey'
 //   keys, and expect arrow-key navigation. A burger nav is a disclosure.
 // Alternatives:
 //   - role="menu" pattern: Rejected — wrong ARIA semantics for navigation
-//   - Slide-out drawer: Rejected — needs animation lib, fights with bottom nav
+//   - Slide-out drawer: Rejected for header-nav apps (this component's
+//     scope). With a bottom nav the drawer IS the pattern — APP_SHELL.md:
+//     the nav's menu button triggers it, transform+transition animates it
 //   - Headless UI Disclosure: Viable — adds dependency for a single component
 
 export function BurgerMenu({ items, id, version }) {
@@ -590,7 +593,9 @@ import { lightTap } from '../lib/haptics'
 // Requirement: Global nav menu accessible from header
 // Approach: Modal dropdown with transparent backdrop (disclosure pattern)
 // Alternatives:
-//   - react-native-drawer-layout: Rejected — extra dependency, fights with tab nav
+//   - react-native-drawer-layout: Rejected — extra dependency, fights with
+//     tab nav. The library is rejected, not drawers as a class — the drawer
+//     surface itself is defined in APP_SHELL.md
 //   - ActionSheet: Rejected — no custom styling, platform-inconsistent
 
 interface MenuItem {
