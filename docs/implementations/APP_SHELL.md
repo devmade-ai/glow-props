@@ -133,7 +133,10 @@ lives in the bottom nav (and moves into the header only when the nav folds
 into it at the desktop breakpoint). Sticky at z-20, with
 `padding-top: max(0.5rem, env(safe-area-inset-top))` — in standalone mode
 with a translucent status bar the clock sits over the first line otherwise
-(see PWA_SYSTEM.md's platform gotchas).
+(see PWA_SYSTEM.md's platform gotchas). This padding is how the
+`--header-height` token's safe-area term is *realized*, not an addition to
+it — the token already includes the inset, so nothing sizing against the
+header adds it again.
 
 Header action dropdowns are z-50 (the menu layer). **An overlay drawer and a
 header dropdown are never open together** — they share z-50, and the shell
