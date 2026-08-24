@@ -19,6 +19,7 @@ Standard stacking order for all devmade-ai projects. Prevents conflicts between 
 - [DEBUG_SYSTEM.md](DEBUG_SYSTEM.md) — Debug pill (z-80) must render above all other layers, including modals and toasts
 - [PWA_SYSTEM.md](PWA_SYSTEM.md) — Update banner and install prompt toast (z-70), install instructions modal (z-60)
 - [THEME_DARK_MODE.md](THEME_DARK_MODE.md) — Migration Phase 4 normalizes z-index values to this scale
+- [APP_SHELL.md](APP_SHELL.md) — how the shell's surfaces map onto this scale: bottom sheet at 30 (scrimless), overlay drawers as the 40 + 50 pair, split panes and peeks off the scale entirely
 
 ## The Scale
 
@@ -51,6 +52,7 @@ Standard stacking order for all devmade-ai projects. Prevents conflicts between 
 3. **Debug pill is always topmost.** Nothing should render above z-80. The pill is in a separate React root and must remain visible during crashes, modals, and toasts.
 4. **Sticky headers stay below overlays.** A sticky navbar (z-20 or z-30) must not overlap a modal (z-60) or toast (z-70).
 5. **Don't nest stacking contexts unnecessarily.** A parent with `z-index` creates a stacking context — children cannot escape it. Avoid setting z-index on wrapper divs unless required.
+6. **The sheets/drawers layer (30) is scrimless by construction.** It sits below the backdrop (40), so nothing at 30 ever owns a scrim — a surface with tap-outside dismissal is a backdrop (40) + panel (50) pair, the same shape as the menu layer. Push/split panes and in-flow peeks are layout, not layers: they take no z-index at all (a positioned pane creates a stacking context that traps its children's popovers). See [APP_SHELL.md](APP_SHELL.md) for the full shell mapping.
 
 ## Audit
 

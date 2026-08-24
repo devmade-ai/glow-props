@@ -1,0 +1,431 @@
+---
+slug: app-shell
+title: App Shell
+badge: UI
+description: Mobile-first shell baseline — thin header, bottom nav, three drawers, a snap bottom sheet, and two modal kinds. Locked geometry, stacking, concurrency, and keyboard rules.
+tags:
+  - Layout baseline
+  - Drawers + bottom sheet
+  - Mobile-first
+order: 14
+---
+
+# App Shell
+
+The baseline layout for app-like fleet projects: a thin header, a bottom nav,
+left/right/bottom drawers, and two modal kinds — mobile-first, with a centered
+content column on desktop. This document is normative: every rule here was
+locked as a set, and the [Rejected Designs](#rejected-designs) section records
+the alternatives that were proposed and shot down so they are not re-proposed.
+Content sites with a plain header nav (gp-props itself) do not adopt this
+shell; apps with a working canvas, selections, or an assistant surface do.
+
+**Related patterns:**
+- [Z_INDEX_SCALE.md](Z_INDEX_SCALE.md) — the shell's surfaces map onto the standard scale; the scrimless-vs-scrimmed rule lives there as Rule 6
+- [BURGER_MENU.md](BURGER_MENU.md) — where this shell is adopted, the left menu drawer supersedes the dropdown; its focus hooks are mandated here unchanged
+- [PWA_SYSTEM.md](PWA_SYSTEM.md) — `--app-height`, safe areas, and the standalone status bar rules the shell depends on
+- [TIMER_LEAKS.md](TIMER_LEAKS.md) — every listener the shell registers (`popstate`, `visualViewport`, drag) follows its cleanup contract
+
+## Regions and Terms
+
+```
+┌──────────────────────────────┐
+│ thin header                  │  z-20 · safe-area-inset-top
+├──────────────────────────────┤
+│                              │
+│          canvas              │  the app's scrollable content;
+│   (content column ≥768px)    │  snap %s measure THIS area
+│                              │
+│ ┌──────────────────────────┐ │
+│ │ ═══  peek (one line)     │ │  base band, above the nav
+├─┴──────────────────────────┴─┤
+│ bottom nav   [•][•][•][menu] │  z-20 · safe-area-inset-bottom
+└──────────────────────────────┘
+```
+
+Terms every rule below leans on:
+
+- **Canvas** — the region between the header's bottom edge and the nav's top
+  edge: the app's own scrollable content. Bottom-sheet snap percentages
+  measure the canvas, never the viewport — a "90%" snap must not eat the
+  header.
+- **Overlay** — a surface painted over the canvas. *Scrimless* overlays leave
+  the canvas interactive; *scrimmed* overlays add a backdrop and tap-outside
+  dismissal.
+- **Push / split** — a pane that reflows the canvas instead of covering it.
+  Split panes are layout (flex/grid) and take no z-index — see
+  [Stacking](#stacking).
+- **State triad** — every drawer is **closed** (gone), **collapsed** (a thin
+  affordance is visible: the sheet's peek, a side drawer's edge tab), or
+  **expanded**. The three are distinct states, not two states and a styling
+  detail; "no selection" closes the sheet, it does not leave an empty peek.
+
+## Geometry
+
+Percentages are of the **viewport**, and drawers dock to the viewport edge.
+The centered column is content — not a frame the drawers live inside. A drawer
+sized against the column never reaches the screen edge and reads as an inset
+card, not a drawer.
+
+```css
+/* Requirement: wider than mobile on desktop, but never full width (~60%).
+   Approach: clamp with a floor, capped, gutter-guarded.
+   60vw is the preferred value ONLY between 1280px and 1920px — below 1280
+   the 48rem floor wins (then 100% - 2rem clips under ~800px), above 1920
+   the 72rem cap wins. Do not "debug" why 60% does nothing on a 1024px
+   laptop; that is the floor working.
+   Alternatives:
+     - min(60vw, 72rem): Rejected — no floor; a 461px column at the 768px
+       breakpoint.
+     - fixed max-width alone: Rejected — mid-size laptops go full-bleed. */
+.app-column {
+  width: min(100% - 2rem, clamp(48rem, 60vw, 72rem));
+  margin-inline: auto;
+}
+```
+
+**One width breakpoint, plus a short-viewport clause.** Mobile chrome below
+768px, desktop chrome at 768px and up — except when the viewport height is
+under ~500px, which keeps mobile chrome (full-width drawers, bottom nav)
+regardless of width. A landscape phone is not a desktop, and a thin header
+plus a bottom nav on a 370px-tall viewport is most of the screen.
+
+**Tokens.** Every dimension the shell uses is a CSS variable — no hardcoded
+values in components:
+
+```css
+:root {
+  /* Overwritten at runtime with measured innerHeight; dvh is ONLY the
+     pre-JS fallback. See "The shell and the keyboard" below. */
+  --app-height: 100dvh;
+  --header-height: 3rem;
+  --nav-height: 3.5rem;
+  --drawer-width-desktop: 50vw;
+  --sheet-snap-half: 0.5;      /* of the canvas */
+  --sheet-snap-full: 0.9;      /* of the canvas */
+  --shell-transition: 200ms;
+  --canvas-height: calc(
+    var(--app-height) - var(--header-height) - var(--nav-height)
+    - env(safe-area-inset-bottom, 0px)
+  );
+}
+```
+
+## The Surfaces
+
+### Thin header
+
+Identity plus current-view actions. **No second burger** — the menu trigger
+lives in the bottom nav (and moves into the header only when the nav folds
+into it at the desktop breakpoint). Sticky at z-20, with
+`padding-top: max(0.5rem, env(safe-area-inset-top))` — in standalone mode
+with a translucent status bar the clock sits over the first line otherwise
+(see PWA_SYSTEM.md's platform gotchas).
+
+Header action dropdowns are z-50 (the menu layer). **An overlay drawer and a
+header dropdown are never open together** — they share z-50, and the shell
+allows one scrimmed surface at a time. The desktop AI split pane is in-flow,
+so dropdowns work normally while it is open.
+
+### Bottom nav
+
+Primary destinations plus the **menu button**, which opens the left drawer.
+Fixed at z-20 with `padding-bottom: env(safe-area-inset-bottom, 0px)`. At the
+desktop breakpoint the nav folds into the header — no bottom nav at 768px and
+up, unless the short-viewport clause applies.
+
+The expanded bottom sheet covers the nav (sheet z-30 over nav z-20). The peek
+does not — it sits above the nav geometrically and the nav stays tappable.
+
+### Left drawer — the menu
+
+Holds the burger's items — how to use, user guide, theme toggle and picker,
+check for updates, install, sign out, version footer — overflow and settings,
+**not** primary navigation (that is the bottom nav's job). Same
+`MenuItem`-shaped list, same focus hooks, same items table as
+[BURGER_MENU.md](BURGER_MENU.md); only the surface changes from dropdown card
+to drawer.
+
+An **overlay everywhere**: full viewport width on mobile,
+`var(--drawer-width-desktop)` on desktop, scrimmed (backdrop 40 + panel 50),
+dismissed by backdrop tap, Escape, swipe toward its edge, or Android back.
+
+### Right drawer — AI chat
+
+- **Mobile: overlay**, full viewport width, scrimmed 40 + 50 — identical
+  mechanics to the left drawer.
+- **Desktop: push/split pane** at `var(--drawer-width-desktop)`. The canvas
+  takes the remaining width and the 60% column cap is dropped while split —
+  overlaying a 50vw panel on a 60vw column just hides the app. In-flow, no
+  z-index, no scrim; the user works and chats at once.
+
+Chat internals the shell mandates: the message list pins to the bottom while
+a response streams and releases the pin the moment the user scrolls up; the
+collapsed tab carries an unread badge; conversation state survives
+close/reopen. The input adapts to the keyboard the same way modals do
+(below).
+
+### Bottom sheet — contextual detail
+
+The sheet shows detail of the current selection. Its contract:
+
+1. **No selection → no sheet.** Empty is the closed state, not a leftover
+   peek.
+2. **Select something → peek.** A drag-handle pill plus a one-line summary,
+   sitting above the nav plus `env(safe-area-inset-bottom)`. Peek height is
+   UI-sized — handle + one line + safe-area — **never a viewport fraction**.
+   (15% of a phone is ~100px before the nav and home indicator are added.)
+3. **Drag to expand: two snaps, 50% and 90% of the canvas.** Drag
+   rubber-bands to the nearest snap; a drag released at 63% is not a resting
+   state. Content taller than the snap scrolls inside the sheet
+   (`overscroll-behavior: contain`) — it never resizes the sheet.
+4. **Scrimless at every snap, z-30.** The canvas stays live: tapping another
+   item replaces the sheet's content in place — that switch is the reason
+   the sheet exists, and a scrim would turn it into close-then-reselect.
+5. **Close** by dragging down past peek, Escape/Android back, or clearing
+   the selection.
+6. **Desktop: the sheet is content-column width, centered** — not viewport
+   wide — so it can be open on top of the pushed AI panel without covering
+   the panel's input. That combination (selection detail while chatting) is
+   allowed by design.
+
+Snap heights are computed from the canvas; the expanded sheet is anchored to
+the viewport bottom, so it additionally covers the nav band:
+
+```css
+/* Requirement: snaps measure the canvas so 90% never eats the header.
+   The nav-band term exists because the expanded sheet covers the nav. */
+.sheet[data-snap="half"] {
+  height: calc(
+    var(--canvas-height) * var(--sheet-snap-half)
+    + var(--nav-height) + env(safe-area-inset-bottom, 0px)
+  );
+}
+```
+
+The drag handle is a real `<button>`: a 12–16px painted pill inside a 44px
+hit target, a plain-language `aria-label` ("Selection details — resize"),
+and ArrowUp/ArrowDown stepping between peek, half, and full. Drag is an
+enhancement; the keyboard path is the baseline.
+
+## Concurrency
+
+| Combination | Mobile | Desktop |
+|---|---|---|
+| Two expanded overlay drawers | Never — opening one closes the other | Allowed (both side drawers) |
+| Bottom sheet + AI chat | Never (one expanded overlay) | Allowed — sheet over the *pushed* AI panel |
+| Modal over an open drawer | Modal closes expanded drawers; peeks stay | Same |
+| Overlay drawer + header dropdown | Never (shared z-50) | Never |
+
+Mobile exclusivity is not a style choice: a full-width overlay covers
+everything, so "two open drawers" is two invisible layers and a broken back
+button. Desktop's one exception exists because the pushed AI panel is
+in-flow — it is part of the page, not a competing overlay.
+
+## Dismissal and the Back Button
+
+**Tap to open, swipe to close.** Drawers open from taps only — the nav's menu
+button, a header action, the collapsed tab or peek. **No edge-swipe open**:
+it fights the OS back-swipe gesture on both platforms. Swipe is for closing
+(toward the drawer's edge, drag-down on the sheet) and for moving the sheet
+between snaps.
+
+**History integration.** Opening any overlay (drawer, sheet, modal) pushes
+**one** history entry — never one per snap drag — and `popstate` closes the
+topmost open surface. Escape and Android back thus share a single path.
+
+```js
+// Requirement: Android back closes the topmost overlay before navigating.
+// Approach: one history entry per overlay open, popstate pops the top.
+// Gotcha stated on purpose: the FORWARD button re-opens the overlay.
+//   That is how history entries behave and is expected — but say it, or
+//   it gets filed as a bug.
+// Alternatives:
+//   - beforeunload/keydown only: Rejected — Android back navigates away.
+//   - entry per snap: Rejected — back would step 90% → 50% → peek → close,
+//     four presses to leave the page.
+```
+
+**One owner.** A single layout store owns which surfaces are open, the
+history entries, and the body scroll lock. The lock is **refcounted** —
+scrimmed overlays and modals each take and release a count, and the body
+style changes only on 0→1 and 1→0. Two components writing
+`document.body.style.overflow` directly is a known race
+(BURGER_MENU.md Key Lesson 5); nothing outside the store touches history or
+body styles.
+
+## Stacking
+
+Three cases, mapped onto [Z_INDEX_SCALE.md](Z_INDEX_SCALE.md) — the scale
+does not change, and nothing here adds a layer to it:
+
+| Case | Z | Surfaces |
+|---|---|---|
+| In-flow / layout | none | Peek (base band, above the nav geometrically), desktop split panes (flex/grid) |
+| Scrimless overlay | 30 | Expanded bottom sheet, every snap — covers the nav (30 > 20) |
+| Scrimmed overlay | backdrop 40 + panel 50 | Side drawers with tap-outside dismissal |
+
+Modal 60, toast 70, debug 80 are untouched, and the backdrop never moves
+below 30.
+
+- **Split panes take no z-index.** A positioned split pane creates a stacking
+  context that traps every dropdown and popover inside the content column
+  (Z_INDEX_SCALE.md, stacking-context gotchas).
+- **The 30 layer is scrimless by construction.** It sits below the backdrop
+  (40), so nothing at 30 ever owns a scrim — that is Rule 6 of the scale,
+  made explicit by this baseline.
+- **Scrimmed drawers use a real backdrop element** at 40, not a
+  document-level click handler. gp-props' burger uses the handler because
+  its blurred navbar traps a backdrop (a documented local deviation in that
+  repo's notes); the shell has no such constraint, and copying the
+  deviation copies the exception without the reason.
+- **Toast position is separate from toast stacking.** z-70 says what paints
+  on top; on mobile the toast also offsets
+  `bottom: calc(var(--nav-height) + env(safe-area-inset-bottom, 0px) + 0.5rem)`
+  so it clears the nav and the home indicator. Top-pinned banners mirror
+  with `env(safe-area-inset-top)` (PWA_SYSTEM.md).
+
+## Modals
+
+Two kinds — one size for everything was rejected:
+
+- **Workspace modal** (forms, pickers, editors): 90vw × 90% of the viewport,
+  height **not** content-driven, content scrolls inside
+  (`overscroll-behavior: contain`). Stable chrome for multi-step work.
+- **Confirm / alert**: content-sized, capped at 90%. A two-line delete
+  confirmation at 90% fill is the same chrome as a form and hostile to the
+  reader.
+
+Both kinds: backdrop 40 + modal 60, focus trapped and restored, the shell
+behind marked `inert`, closed by Escape/Android back through the same
+history owner as every other overlay.
+
+## The Shell and the Keyboard
+
+The rules that keep the shell alive when the virtual keyboard opens — these
+come from shipped fleet bugs, not preference (PWA_SYSTEM.md, platform
+gotchas; graphiki's `appHeight.ts` is the reference):
+
+1. **The shell ignores the keyboard.** It sizes off `--app-height`, a CSS
+   variable published from measured `window.innerHeight` (refreshed on
+   `pageshow` / `visibilitychange` / `orientationchange` with settle reads),
+   with `100dvh` only as the pre-JS fallback. The shell never tracks
+   `resize` on mobile — the Android soft keyboard fires it, and a shell that
+   follows collapses, sliding the bottom nav off-screen.
+2. **The focused overlay adapts.** The open modal or chat input listens to
+   `visualViewport` resize/scroll: shrink the overlay to
+   `visualViewport.height` and keep the focused field scrolled into view
+   *inside* the overlay — iOS often overlays the keyboard instead of
+   resizing anything, so scrolling the page does not work.
+3. **No `interactive-widget=resizes-content`.** Resizing the layout viewport
+   on keyboard open is the same bug class rule 1 exists to prevent.
+4. **Text inputs are 16px or larger** — the existing fleet rule; iOS Safari
+   auto-zooms into anything smaller, which defeats every layout rule above.
+
+## Accessibility and Motion
+
+- **44×44 hit targets on thin paint.** Every collapsed affordance — the
+  sheet's handle pill, a side drawer's edge tab — paints at 12–16px and
+  extends its hit area to 44px with padding or a pseudo-element. A visible
+  grab affordance, never an invisible edge.
+- **The existing focus hooks are mandated, not reinvented:**
+  `useFocusTrap`, `useDisclosureFocus`, and `useEscapeKey` from
+  [BURGER_MENU.md](BURGER_MENU.md). Scrimmed overlays and modals are
+  `role="dialog"` with `aria-modal="true"` and mark the shell behind them
+  `inert`. The scrimless sheet is a labelled `region` — the canvas stays
+  operable, so claiming modality would lie to assistive tech.
+- **`prefers-reduced-motion`** drops slides and springs to fades.
+- **`overscroll-behavior: contain`** inside every scrollable surface, plus
+  the single refcounted body lock for scrimmed overlays and modals — never
+  both mechanisms written ad hoc per component.
+- **Animation is `transform` + `transition`, no animation library.** This is
+  half of what voids the old drawer rejection (see Supersessions).
+- **RTL flips the side drawers.** Use logical properties
+  (`inset-inline-start`, `margin-inline`) so `dir="rtl"` swaps them for
+  free.
+
+## Supersessions
+
+Adopting this baseline supersedes two written rules, and the supersession
+lands in the same change as the adoption — otherwise an alignment pass reads
+the shell as drift:
+
+- **BURGER_MENU.md's slide-out rejection.** Its React decision comment
+  rejected slide-out drawers ("needs animation lib, fights with bottom
+  nav"). Both grounds are void here: the shell animates with transforms
+  alone, and the nav conflict is resolved by making the nav's menu button
+  the drawer trigger. The dropdown remains correct for header-nav apps
+  without a bottom nav — the rejection is narrowed, not reversed. The React
+  Native note rejects `react-native-drawer-layout` — the library, not
+  drawers as a class — and stands unchanged.
+- **Z_INDEX_SCALE.md** gains Rule 6 (the 30 layer is scrimless by
+  construction; scrimmed overlays are the 40 + 50 pair; split panes and
+  peeks take no layer). The scale's values do not change.
+
+## Rejected Designs
+
+Each of these was proposed during the lock and shot down with a reason. Do
+not re-propose them without new facts:
+
+1. **Expanded sheet as a scrimmed 40 + 50 overlay** — the scrim eats canvas
+   taps, turning selection-switching into close-then-reselect, and dims the
+   desktop AI split pane it is allowed to sit over.
+2. **Sheet at z-50, scrimless** — occupies the menu layer: a side drawer's
+   backdrop (40) would dim everything *except* the sheet, and every header
+   popover becomes a same-layer DOM-order race. The sheet layer (30)
+   already encodes the right stacking.
+3. **Backdrop below 30** — a fleet-wide menu regression to fix a problem
+   the 40 + 50 pair already solves.
+4. **`dvh` as the shell height** — Android standalone `100dvh` latches too
+   tall after the PWA update reload; the bottom nav sits off-screen until
+   full relaunch. Measured `--app-height` is the fix, `dvh` only the
+   fallback.
+5. **`interactive-widget=resizes-content`** — resizes the layout viewport on
+   keyboard open; the shell-collapse bug class again.
+6. **Peek as ~15% of the viewport** — ~100px before the nav and home
+   indicator are added. Peek is UI-sized: handle + one line + safe-area.
+7. **Snaps as viewport fractions** — 90vh eats the header. Snaps measure
+   the canvas.
+8. **One modal size for everything** — a 90%-fill confirm is hostile; see
+   Modals.
+9. **Edge-swipe to open** — fights the OS back-swipe on both platforms.
+10. **`min(60vw, 72rem)` without a floor** — a 461px column at the 768px
+    breakpoint. The clamp's 48rem floor exists for this.
+
+## Key Lessons
+
+1. **Slots and sizes do not define a shell.** What can be open at once, what
+   the percentages are measured against, and how the bottom nav and the
+   sheet's peek share the same edge decide the layout more than any width.
+   Specify those first.
+2. **Snap percentages measure the canvas, widths measure the viewport.**
+   Mixing the two either eats the header (90vh sheet) or turns drawers into
+   inset cards (column-relative widths).
+3. **A scrim is a contract, not a style.** It buys tap-outside dismissal and
+   costs canvas interactivity. The sheet keeps the canvas; the side drawers
+   trade it. Deciding per surface — not per "drawers in general" — is what
+   made the stacking rule fall out cleanly.
+4. **The scale's layers have meanings, not just numbers.** 30 is scrimless
+   by construction because it sits below the backdrop; 50 is the
+   backdrop-paired layer. Both stacking bugs caught during the lock came
+   from reusing a number without its meaning.
+5. **The shell and the overlay have opposite keyboard rules.** The shell
+   ignores the keyboard (measured `--app-height`, no mobile `resize`); the
+   focused overlay adapts (`visualViewport`). Every generic "just use dvh /
+   resize the viewport" prescription breaks one side or the other.
+6. **One owner for exclusivity, history, and the body lock.** Concurrency
+   rules, back-button popping, and scroll locking are the same state
+   machine; three independent boolean flags produce two open drawers and a
+   broken back button.
+7. **The back button is part of the layout.** One history entry per overlay,
+   `popstate` closes the topmost, and forward re-opening is named as
+   expected behavior — undocumented, it reads as a bug.
+8. **A landscape phone is not a desktop.** The width breakpoint needs the
+   short-viewport clause or 500px-tall viewports get 50% drawers and no
+   bottom nav.
+9. **Peek is UI-sized, never a viewport fraction** — it shares its edge with
+   the nav and the home indicator, and a percentage stacks on top of both.
+10. **Record the rejected designs in the pattern.** The scrim-over-sheet
+    mistake surfaced in two different drafts during the lock before the
+    per-surface rule killed it for good. The list above is what stops a
+    third draft.
