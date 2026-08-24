@@ -1,5 +1,18 @@
 # AI Mistakes
 
+## 2026-08-24: Prescribed `dvh` and `interactive-widget` for the app-shell baseline, contradicting the fleet's written viewport/keyboard lesson
+
+**What went wrong:** A gap-analysis pass on the mobile app-shell spec prescribed "use `dvh`/`svh`, not `vh`" for drawer and modal heights, and `interactive-widget=resizes-content` for virtual-keyboard adaptation. Both contradict `PWA_SYSTEM.md` Platform Gotchas: Android standalone `100dvh` latches too tall after the PWA update reload (bottom nav off-screen until full relaunch — the settled fix is a measured `--app-height` from `innerHeight` with `dvh` only as CSS fallback, and no `resize` tracking on the shell), and resizing the layout viewport when the keyboard opens is exactly the shell-collapse class that rule exists to prevent. The same reply also claimed to "extend" `Z_INDEX_SCALE` while listing an invented total order that dropped backdrop, menu, and debug. Caught in review before any of it froze into a pattern doc.
+
+**Why it happened:** The platform advice was answered from general knowledge — both prescriptions are standard mobile-web guidance and read as safe. The pattern docs were consulted for *what exists* (component names, hook names, scale values) but not read for *lessons* before writing prescriptions in the same domains. Where a fleet gotcha exists, it is the settled result of a bug the generic advice causes.
+
+**Which rule produced it:** None by the letter — Process step 2 ("gather context from documentation") was nominally done. The failure is treating a listing of the docs as having gathered them: a prescription in a domain a pattern doc owns requires reading that doc's gotchas first, and `PWA_SYSTEM.md` owns viewport and keyboard behavior.
+
+**How to prevent it:**
+- **Before prescribing in a domain a pattern doc owns, grep that doc for the domain's keywords** (`dvh`, `resize`, `keyboard`, `safe-area`, `z-`). A hit means the fleet already debugged this; the generic best practice is the prior, not the answer.
+- **"Extend the scale" means quoting the scale first.** A stacking order written from memory next to a citation of `Z_INDEX_SCALE.md` claims an alignment it does not have.
+- **Baseline/spec text gets the same verification bar as code** — it becomes canonical and levels the fleet down if wrong, which is worse than one bad commit.
+
 ## 2026-08-19: Deleted four backlog items after verifying them against the wrong repo
 
 **What went wrong:** A triage pass over `docs/TODO.md` attributed every item to a repo by scanning backwards for a `### repo-name` heading. The `## PWA gaps` section's Round 2 uses `#### repo-name`, one level deeper, so every item in it inherited whichever repo the last `###` heading named — `kl-website`. Four items belonging to **repo-tor**, **intxt**, **four-ems** and **fh-fuelhunt** were checked against kl-website's source, found "absent", and deleted or rewritten as stale. All four are live in their own repos: repo-tor has `version.json` 39 times and `applyUpdate` 18, intxt has `clearAllData`, four-ems has `scripts/verify-timer-cleanup.mjs`, and fh-fuelhunt has both `usePWAInstall.ts` and `InstallInstructionsModal.tsx`. The fh-fuelhunt item was not merely deleted but *rewritten* with kl-website's evidence, which is worse — a wrong finding reads as a verified one.
