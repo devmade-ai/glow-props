@@ -1,5 +1,18 @@
 # AI Mistakes
 
+## 2026-08-24: Review reply pre-loaded its evidence and dangled its decisions
+
+**What went wrong:** A review of a proposed fleet guideline broke `## Communication` three ways in one reply, and the user had to point at the section by name. (1) A "What I verified as correct" paragraph exhibited every checked claim — support timelines, WCAG numbers, iPad widths — instead of naming that verification happened and leaving the detail available. (2) The reply ended with three numbered "decisions that are yours", although two carried a stated recommendation, i.e. were already decided — the prohibited dangling hand-back. (3) A mid-turn edit closed with "If you want that bullet gone entirely, say so" — the calibration table's "Offer instead of answer" row in its exact shape. The session's opening reply had the same defect at larger scale: a "summary" of CLAUDE.md that restated most of the file.
+
+**Why it happened:** Thoroughness was treated as what `Trustworthy without re-checking` demands — proving diligence by showing all of it — when the test asks to *name* what verified it. Open items were framed as questions to pose after the work instead of decisions stated with the work; only one of the three was genuinely the user's. Both misses rank completeness above proportionality, which the section calls the same failure in either direction. The session's `xhigh` effort setting fed it: reasoning depth was allowed to leak into reply length, which it does not govern.
+
+**Which rule produced it:** None — a recurrence of the 2026-08-17 "Two rules obeyed exactly" failure *mode* (length as diligence) after the rules had already been rewritten into the goal form to prevent it. The section is right and was not followed.
+
+**How to prevent it:**
+- **Verification is named, not exhibited.** One line — what was checked, against what — detail on request. The evidence dump is for the transcript, not the reply.
+- **A decision with a recommendation is a decision.** State it as taken and let a reply overrule. Only an item whose answer genuinely changes the work is a question, and it goes up front, not after the findings.
+- **Effort governs the work, not the report.** The checking can be exhaustive while the reply stays proportional.
+
 ## 2026-08-19: Deleted four backlog items after verifying them against the wrong repo
 
 **What went wrong:** A triage pass over `docs/TODO.md` attributed every item to a repo by scanning backwards for a `### repo-name` heading. The `## PWA gaps` section's Round 2 uses `#### repo-name`, one level deeper, so every item in it inherited whichever repo the last `###` heading named — `kl-website`. Four items belonging to **repo-tor**, **intxt**, **four-ems** and **fh-fuelhunt** were checked against kl-website's source, found "absent", and deleted or rewritten as stale. All four are live in their own repos: repo-tor has `version.json` 39 times and `applyUpdate` 18, intxt has `clearAllData`, four-ems has `scripts/verify-timer-cleanup.mjs`, and fh-fuelhunt has both `usePWAInstall.ts` and `InstallInstructionsModal.tsx`. The fh-fuelhunt item was not merely deleted but *rewritten* with kl-website's evidence, which is worse — a wrong finding reads as a verified one.
