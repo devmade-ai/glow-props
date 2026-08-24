@@ -55,10 +55,13 @@ Terms every rule below leans on:
 - **Push / split** — a pane that reflows the canvas instead of covering it.
   Split panes are layout (flex/grid) and take no z-index — see
   [Stacking](#stacking).
-- **State triad** — every drawer is **closed** (gone), **collapsed** (a thin
-  affordance is visible: the sheet's peek, a side drawer's edge tab), or
-  **expanded**. The three are distinct states, not two states and a styling
-  detail; "no selection" closes the sheet, it does not leave an empty peek.
+- **State triad** — a surface is **closed** (gone), **collapsed** (a thin
+  affordance is visible), or **expanded**. Collapsed exists only where a
+  surface has a standing affordance: the sheet's peek and the right
+  drawer's unread tab. The left drawer is **closed ↔ expanded only** — its
+  single trigger is the menu button, and an always-on left edge tab would
+  be a second burger. The states are distinct, not a styling detail;
+  "no selection" closes the sheet, it does not leave an empty peek.
 
 ## Geometry
 
@@ -98,7 +101,9 @@ values in components:
   /* Overwritten at runtime with measured innerHeight; dvh is ONLY the
      pre-JS fallback. See "The shell and the keyboard" below. */
   --app-height: 100dvh;
-  --header-height: 3rem;
+  /* Includes the header's own safe-area padding — the bare bar is 3rem,
+     standalone adds the status-bar inset on top of it. */
+  --header-height: calc(3rem + env(safe-area-inset-top, 0px));
   --nav-height: 3.5rem;
   --drawer-width-desktop: 50vw;
   --sheet-snap-half: 0.5;      /* of the canvas */
@@ -108,6 +113,14 @@ values in components:
     var(--app-height) - var(--header-height) - var(--nav-height)
     - env(safe-area-inset-bottom, 0px)
   );
+}
+
+/* The nav folds into the header at the desktop breakpoint — the token MUST
+   fold with it, or --canvas-height reserves a band that is not there and a
+   90% snap eats into the header. min-height keeps the short-viewport
+   clause: under ~500px tall, mobile chrome (and this token) stays. */
+@media (min-width: 768px) and (min-height: 500px) {
+  :root { --nav-height: 0px; }
 }
 ```
 
@@ -144,7 +157,8 @@ check for updates, install, sign out, version footer — overflow and settings,
 **not** primary navigation (that is the bottom nav's job). Same
 `MenuItem`-shaped list, same focus hooks, same items table as
 [BURGER_MENU.md](BURGER_MENU.md); only the surface changes from dropdown card
-to drawer.
+to drawer. Closed ↔ expanded only — no collapsed edge tab (see the state
+triad above).
 
 An **overlay everywhere**: full viewport width on mobile,
 `var(--drawer-width-desktop)` on desktop, scrimmed (backdrop 40 + panel 50),
@@ -182,19 +196,28 @@ The sheet shows detail of the current selection. Its contract:
 4. **Scrimless at every snap, z-30.** The canvas stays live: tapping another
    item replaces the sheet's content in place — that switch is the reason
    the sheet exists, and a scrim would turn it into close-then-reselect.
-5. **Close** by dragging down past peek, Escape/Android back, or clearing
-   the selection.
+5. **Closing the sheet clears the selection.** Drag-down past peek,
+   Escape/Android back, and clearing the selection all land in the same
+   state: nothing selected, no sheet. A selected item with a closed sheet
+   is not a state — after Back, tapping the item again reopens at peek.
+   (The alternative — Back collapsing to peek first — is the snap-stepping
+   the history rule rejects: it turns leaving the page into three presses.)
 6. **Desktop: the sheet is content-column width, centered** — not viewport
    wide — so it can be open on top of the pushed AI panel without covering
    the panel's input. That combination (selection detail while chatting) is
-   allowed by design.
+   allowed by design. The peek follows the same geometry: with the nav
+   folded it sits on the bottom edge of the content column, same width as
+   the expanded sheet, centered in the content region (the remaining pane
+   while the AI split is open) — never glued across the full viewport.
 
 Snap heights are computed from the canvas; the expanded sheet is anchored to
 the viewport bottom, so it additionally covers the nav band:
 
 ```css
 /* Requirement: snaps measure the canvas so 90% never eats the header.
-   The nav-band term exists because the expanded sheet covers the nav. */
+   The nav-band term exists because the expanded sheet covers the nav;
+   on desktop --nav-height is 0px (the nav folded), so the term — and the
+   band it would wrongly reserve — vanishes with it. */
 .sheet[data-snap="half"] {
   height: calc(
     var(--canvas-height) * var(--sheet-snap-half)
@@ -212,15 +235,20 @@ enhancement; the keyboard path is the baseline.
 
 | Combination | Mobile | Desktop |
 |---|---|---|
-| Two expanded overlay drawers | Never — opening one closes the other | Allowed (both side drawers) |
-| Bottom sheet + AI chat | Never (one expanded overlay) | Allowed — sheet over the *pushed* AI panel |
+| Left drawer + AI chat | Never — opening one closes the other | Allowed — only because the AI side is an in-flow split; two *scrimmed* overlays never stack |
+| Bottom sheet + AI chat | Chat opens over the sheet; the sheet and its selection stay underneath | Allowed — sheet (content-column width) over the *pushed* panel |
+| Bottom sheet + left drawer | Menu opens over the sheet; the sheet and its selection stay underneath | Same |
 | Modal over an open drawer | Modal closes expanded drawers; peeks stay | Same |
 | Overlay drawer + header dropdown | Never (shared z-50) | Never |
 
-Mobile exclusivity is not a style choice: a full-width overlay covers
-everything, so "two open drawers" is two invisible layers and a broken back
-button. Desktop's one exception exists because the pushed AI panel is
-in-flow — it is part of the page, not a competing overlay.
+Exclusivity is between the two overlay *drawers*, and only one scrimmed
+surface is ever open: a full-width overlay covers everything, so "two open
+drawers" is two invisible layers and a broken back button. The scrimless
+sheet is not in that pool — a drawer opens over it (the drawer's scrim at 40
+dims the sheet at 30, exactly the stacking the scale encodes), and closing
+the drawer returns to the same detail. Desktop's left + AI allowance exists
+only because the pushed AI panel is in-flow — part of the page, not a
+competing overlay.
 
 ## Dismissal and the Back Button
 
@@ -231,8 +259,10 @@ it fights the OS back-swipe gesture on both platforms. Swipe is for closing
 between snaps.
 
 **History integration.** Opening any overlay (drawer, sheet, modal) pushes
-**one** history entry — never one per snap drag — and `popstate` closes the
-topmost open surface. Escape and Android back thus share a single path.
+**one** history entry — never one per snap drag, and never one per selection
+change: replacing the sheet's detail content is not a new overlay, so the
+sheet gets one entry for its whole open life. `popstate` closes the topmost
+open surface. Escape and Android back thus share a single path.
 
 ```js
 // Requirement: Android back closes the topmost overlay before navigating.
@@ -244,6 +274,8 @@ topmost open surface. Escape and Android back thus share a single path.
 //   - beforeunload/keydown only: Rejected — Android back navigates away.
 //   - entry per snap: Rejected — back would step 90% → 50% → peek → close,
 //     four presses to leave the page.
+//   - entry per selection change: Rejected — replacing the sheet's detail
+//     is not a new overlay; one entry for the sheet's whole open life.
 ```
 
 **One owner.** A single layout store owns which surfaces are open, the
@@ -275,7 +307,9 @@ below 30.
   (40), so nothing at 30 ever owns a scrim — that is Rule 6 of the scale,
   made explicit by this baseline.
 - **Scrimmed drawers use a real backdrop element** at 40, not a
-  document-level click handler. gp-props' burger uses the handler because
+  document-level click handler — and the backdrop carries `cursor-pointer`,
+  or iOS Safari silently drops taps on the empty div (BURGER_MENU.md Key
+  Lesson 2). gp-props' burger uses the handler because
   its blurred navbar traps a backdrop (a documented local deviation in that
   repo's notes); the shell has no such constraint, and copying the
   deviation copies the exception without the reason.
@@ -289,8 +323,9 @@ below 30.
 
 Two kinds — one size for everything was rejected:
 
-- **Workspace modal** (forms, pickers, editors): 90vw × 90% of the viewport,
-  height **not** content-driven, content scrolls inside
+- **Workspace modal** (forms, pickers, editors): 90vw wide × 90% of
+  `--app-height` — not `vh`/`dvh`, or rejected design 4 leaks back in
+  through the modal. Height **not** content-driven, content scrolls inside
   (`overscroll-behavior: contain`). Stable chrome for multi-step work.
 - **Confirm / alert**: content-sized, capped at 90%. A two-line delete
   confirmation at 90% fill is the same chrome as a form and hostile to the
@@ -325,7 +360,7 @@ gotchas; graphiki's `appHeight.ts` is the reference):
 ## Accessibility and Motion
 
 - **44×44 hit targets on thin paint.** Every collapsed affordance — the
-  sheet's handle pill, a side drawer's edge tab — paints at 12–16px and
+  sheet's handle pill, the right drawer's collapsed tab — paints at 12–16px and
   extends its hit area to 44px with padding or a pseudo-element. A visible
   grab affordance, never an invisible edge.
 - **The existing focus hooks are mandated, not reinvented:**

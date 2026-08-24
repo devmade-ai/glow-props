@@ -27,9 +27,9 @@ Standard stacking order for all devmade-ai projects. Prevents conflicts between 
 |-------|---------|----------------|----------|
 | Base content | 0–10 | `z-0` – `z-10` | Page content, cards, inline elements |
 | Sticky headers | 20 | `z-20` | App bar, bottom nav, sticky table headers |
-| Sheets / drawers | 30 | `z-30` | Bottom sheets, side panels, slide-overs |
+| Sheets (scrimless) | 30 | `z-30` | Bottom sheets and slide-overs without a scrim — canvas stays interactive (Rule 6) |
 | Backdrop | 40 | `z-40` | Click-to-close overlay behind menus and modals |
-| Menu / dropdown | 50 | `z-50` | Burger menu card, dropdowns, popovers, tooltips |
+| Menu / dropdown | 50 | `z-50` | Burger menu card, dropdowns, popovers, tooltips, scrimmed side drawers (with backdrop 40 — [APP_SHELL.md](APP_SHELL.md)) |
 | Modal | 60 | `z-[60]` | Dialogs, confirmation modals, full-screen overlays |
 | Toast / banner | 70 | `z-[70]` | Toast notifications, update banners, install prompts |
 | Debug pill | 80 | `z-[80]` | Debug overlay (separate React root, must be topmost) |
