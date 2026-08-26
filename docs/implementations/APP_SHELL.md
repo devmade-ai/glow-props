@@ -39,7 +39,7 @@ shell; apps with a working canvas, selections, or an assistant surface do.
 │ ┌──────────────────────────┐ │
 │ │ ═══  peek (one line)     │ │  base band, above the nav
 ├─┴──────────────────────────┴─┤
-│ bottom nav   [•][•][•][menu] │  z-20 · safe-area-inset-bottom
+│ bottom nav   [•][•][•][menu] │  z-20 · var(--safe-bottom)
 └──────────────────────────────┘
 ```
 
@@ -348,7 +348,10 @@ history owner as every other overlay.
 
 The rules that keep the shell alive when the virtual keyboard opens — these
 come from shipped fleet bugs, not preference (PWA_SYSTEM.md, platform
-gotchas; graphiki's `appHeight.ts` is the reference):
+gotchas). Two reference implementations, one per concern: graphiki's
+`appHeight.ts` for the height rules (1–3), fc-fanfare-chess's
+`src/lib/appHeight.js` for the phantom-inset rule (5) — the latter also
+carries the height rules, folded into one module:
 
 1. **The shell ignores the keyboard.** It sizes off `--app-height`, a CSS
    variable published from measured `window.innerHeight` (refreshed on
