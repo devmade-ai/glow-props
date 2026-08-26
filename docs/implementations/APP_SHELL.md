@@ -104,6 +104,12 @@ values in components:
   /* Includes the header's own safe-area padding — the bare bar is 3rem,
      standalone adds the status-bar inset on top of it. */
   --header-height: calc(3rem + env(safe-area-inset-top, 0px));
+  /* Effective bottom safe-area inset. Defaults to the raw env() value; the
+     appHeight module overrides it to 0px when the inset is phantom (see
+     "The Shell and the Keyboard", rule 5). Every bottom-inset rule in the
+     shell consumes this token, never raw env(safe-area-inset-bottom);
+     top/left/right stay raw env() — no phantom sightings there. */
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
   --nav-height: 3.5rem;
   --drawer-width-desktop: 50vw;
   --sheet-snap-half: 0.5;      /* of the canvas */
@@ -111,7 +117,7 @@ values in components:
   --shell-transition: 200ms;
   --canvas-height: calc(
     var(--app-height) - var(--header-height) - var(--nav-height)
-    - env(safe-area-inset-bottom, 0px)
+    - var(--safe-bottom)
   );
 }
 
@@ -146,7 +152,7 @@ so dropdowns work normally while it is open.
 ### Bottom nav
 
 Primary destinations plus the **menu button**, which opens the left drawer.
-Fixed at z-20 with `padding-bottom: env(safe-area-inset-bottom, 0px)`. At the
+Fixed at z-20 with `padding-bottom: var(--safe-bottom)`. At the
 desktop breakpoint the nav folds into the header — no bottom nav at 768px and
 up, unless the short-viewport clause applies.
 
@@ -189,7 +195,7 @@ The sheet shows detail of the current selection. Its contract:
 1. **No selection → no sheet.** Empty is the closed state, not a leftover
    peek.
 2. **Select something → peek.** A drag-handle pill plus a one-line summary,
-   sitting above the nav plus `env(safe-area-inset-bottom)`. Peek height is
+   sitting above the nav plus `var(--safe-bottom)`. Peek height is
    UI-sized — handle + one line + safe-area — **never a viewport fraction**.
    (15% of a phone is ~100px before the nav and home indicator are added.)
 3. **Drag to expand: two snaps, 50% and 90% of the canvas.** Drag
@@ -224,7 +230,7 @@ the viewport bottom, so it additionally covers the nav band:
 .sheet[data-snap="half"] {
   height: calc(
     var(--canvas-height) * var(--sheet-snap-half)
-    + var(--nav-height) + env(safe-area-inset-bottom, 0px)
+    + var(--nav-height) + var(--safe-bottom)
   );
 }
 ```
@@ -318,7 +324,7 @@ below 30.
   deviation copies the exception without the reason.
 - **Toast position is separate from toast stacking.** z-70 says what paints
   on top; on mobile the toast also offsets
-  `bottom: calc(var(--nav-height) + env(safe-area-inset-bottom, 0px) + 0.5rem)`
+  `bottom: calc(var(--nav-height) + var(--safe-bottom) + 0.5rem)`
   so it clears the nav and the home indicator. Top-pinned banners mirror
   with `env(safe-area-inset-top)` (PWA_SYSTEM.md).
 
@@ -359,6 +365,25 @@ gotchas; graphiki's `appHeight.ts` is the reference):
    on keyboard open is the same bug class rule 1 exists to prevent.
 4. **Text inputs are 16px or larger** — the existing fleet rule; iOS Safari
    auto-zooms into anything smaller, which defeats every layout rule above.
+5. **The shell doesn't trust a phantom bottom safe-area inset.** Firefox on
+   Android reports the system bar's height as `env(safe-area-inset-bottom)`
+   even in browser mode, where the layout viewport ends *above* that bar
+   (measured on-device in fc-fanfare-chess, 2026-08-26: 38.67px inset
+   claimed while 138px of screen sat outside the viewport; Chrome on the
+   same phone honestly reports 0). A shell that pads with the raw env()
+   value renders a dead band under the bottom nav. The same appHeight
+   module that publishes `--app-height` therefore also publishes
+   `--safe-bottom`: it reads the env() value off a hidden probe element,
+   and overrides the token to `0px` when the inset is demonstrably
+   phantom — `screen.height − innerHeight >= inset`, i.e. at least an
+   inset's worth of screen already sits outside the viewport, so chrome
+   owns that strip and the page never reaches it. A genuine edge-to-edge
+   viewport (installed PWA, fullscreen) has ~0 missing height, so real
+   insets always pass through; when not phantom the override is *removed*
+   so CSS's live env() keeps tracking without JS. UA-sniffing Firefox was
+   rejected — the math measures the bug, not the browser, and stays
+   correct when the bug is fixed or spreads. fc-fanfare-chess
+   `src/lib/appHeight.js` is the reference.
 
 ## Accessibility and Motion
 
