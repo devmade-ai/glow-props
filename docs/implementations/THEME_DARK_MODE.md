@@ -19,6 +19,7 @@ User-controlled dark/light mode with system preference fallback, persistence, fl
 - **The palette** (how a "theme" maps to colours) is per-app. **DaisyUI** is one implementation, used by several fleet apps because its `data-theme` + named themes make multi-theme trivial; **raw Tailwind** (`dark:` utilities) and **custom CSS variables** are equally valid. The DaisyUI-specific sections below are optional — skip them if the app isn't on DaisyUI.
 
 **Related patterns:**
+- [DESIGN_TOKENS.md](DESIGN_TOKENS.md) — the palette vocabulary for new apps and for any app from its Claude Design pass onward; this document's palette options remain valid for existing apps until then, and its mechanics layer applies to both tracks unchanged
 - [Z_INDEX_SCALE.md](Z_INDEX_SCALE.md) — Migration Phase 4 normalizes z-index values to the standard scale
 - [BURGER_MENU.md](BURGER_MENU.md) — Dark/light toggle and theme picker UI spec (see [Theme UI in Burger Menu](BURGER_MENU.md#theme-ui-in-burger-menu))
 - [PWA_SYSTEM.md](PWA_SYSTEM.md) — Manifest `theme_color` and dynamic `<meta name="theme-color">` must match active theme
