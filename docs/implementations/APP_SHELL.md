@@ -25,6 +25,7 @@ shell; apps with a working canvas, selections, or an assistant surface do.
 - [BURGER_MENU.md](BURGER_MENU.md) — where this shell is adopted, the left menu drawer supersedes the dropdown; its focus hooks are mandated here unchanged
 - [PWA_SYSTEM.md](PWA_SYSTEM.md) — `--app-height`, safe areas, and the standalone status bar rules the shell depends on
 - [TIMER_LEAKS.md](TIMER_LEAKS.md) — every listener the shell registers (`popstate`, `visualViewport`, drag) follows its cleanup contract
+- [DESIGN_TOKENS.md](DESIGN_TOKENS.md) — the token contract the shell's chrome is styled against; the boundary rules live in [The Design Handoff](#the-design-handoff)
 
 ## Regions and Terms
 
@@ -114,6 +115,9 @@ values in components:
   --drawer-width-desktop: 50vw;
   --sheet-snap-half: 0.5;      /* of the canvas */
   --sheet-snap-full: 0.9;      /* of the canvas */
+  /* A DURATION alias, not a transition shorthand. 200ms is the
+     pre-design starter value; at the design handoff it is set from the
+     design's --dur-base (Design Handoff rule 3). */
   --shell-transition: 200ms;
   --canvas-height: calc(
     var(--app-height) - var(--header-height) - var(--nav-height)
@@ -145,9 +149,11 @@ Four boundary rules govern where that contract meets this shell:
    references design-side geometry tokens.
 2. **Stacking is Z_INDEX_SCALE-owned.** A design system's `--z-*` tokens,
    where they exist, are design-side only — apps never consume them.
-3. **Tempo is mapped, never assumed.** `--shell-transition` takes the
-   design's `--dur-base`. The surveyed systems run 150–200ms; the mapping,
-   not a hardcoded value, is the rule.
+3. **Tempo is mapped, never assumed.** `--shell-transition` is a duration
+   alias (never a full `transition` shorthand) and takes the design's
+   `--dur-base` at the handoff; its 200ms in the token block above is
+   only the pre-design starter. The surveyed systems run 150–200ms; the
+   mapping, not a hardcoded value, is the rule.
 4. **Shell chrome consumes semantic roles only** — header and nav on
    `--surface-page`/`--surface-card` with `--border-hairline`, active nav
    state on `--accent`, the expanded sheet at `--shadow-lg`, transitions
@@ -270,6 +276,13 @@ the height catches up:
     var(--canvas-height) * var(--sheet-snap-half)
     + var(--nav-height) + var(--safe-bottom)
   );
+}
+/* The sheet's positioned wrapper: `bottom` MUST be in the transition
+   alongside height — the anchor drops from above-the-nav (peek) to the
+   viewport edge (expanded), and an untransitioned anchor dips the sheet
+   onto the nav for a frame (see the peek rule above). */
+.sheet-wrapper {
+  transition: bottom var(--shell-transition) ease-out;
 }
 ```
 

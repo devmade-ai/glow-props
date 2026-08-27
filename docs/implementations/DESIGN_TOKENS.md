@@ -30,12 +30,38 @@ app.
 - [THEME_DARK_MODE.md](THEME_DARK_MODE.md) — the toggle machinery that flips the `[data-theme]` scopes defined here
 - [Z_INDEX_SCALE.md](Z_INDEX_SCALE.md) — stacking is owned there; it is deliberately NOT part of this contract
 
+## Scope — Relationship to THEME_DARK_MODE and Existing Palettes
+
+This contract is **forward-scoped**. It governs two situations, and only
+those:
+
+1. **Every new app**, from its first commit (via the starter set below).
+2. **Any existing app at the moment its Claude Design pass lands** — the
+   design arrives in this vocabulary, and the app's palette moves to it
+   as part of that handoff.
+
+Apps on [THEME_DARK_MODE.md](THEME_DARK_MODE.md)'s existing palette
+tracks — DaisyUI semantic classes, custom `--color-*` variables, raw
+`dark:` utilities — **remain compliant on those tracks until their design
+pass**. This document does not retro-invalidate them, and nothing here is
+a directive to migrate an app ahead of its design. What it does forbid is
+**mixing vocabularies inside one app**: an app is on its legacy track or
+on this contract, never both at once.
+
+THEME_DARK_MODE's split still holds: its **mechanics layer** (system
+fallback, persistence, flash prevention, cross-tab sync, meta
+`theme-color`) applies unchanged to apps on this contract — only the
+**palette layer** is what this document standardizes going forward.
+
 ## The One Styling Interface
 
 An app's styling arrives **only** as this token layer:
 
 1. **Components consume semantic tokens, never raw values and never raw
-   palette ramps.** A hex in a component is a defect.
+   palette ramps.** A hex in a component is a defect — with the same
+   exceptions THEME_DARK_MODE documents: SVG icon fills, chart/canvas
+   data colors, and brand marks may stay literal. Everything that themes
+   goes through tokens.
 2. **Utility classes are generated from the tokens** (Tailwind v4 builds
    utilities from CSS variables directly). The utility layer is a
    convenience view of the tokens, not a second vocabulary.
