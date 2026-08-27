@@ -130,6 +130,30 @@ values in components:
 }
 ```
 
+## The Design Handoff
+
+The app is styled against the fleet token contract —
+[DESIGN_TOKENS.md](DESIGN_TOKENS.md) — from its first commit (its starter
+set before the design exists, the design system's published values after).
+Four boundary rules govern where that contract meets this shell:
+
+1. **Geometry is shell-owned.** `--app-height`, `--header-height`,
+   `--nav-height`, `--canvas-height`, `--safe-bottom`, and the snap
+   fractions are never read from a design system. A design may *propose*
+   geometry (a header height, a content max-width); the app adopts such a
+   value into its shell tokens once, as a deliberate edit — runtime never
+   references design-side geometry tokens.
+2. **Stacking is Z_INDEX_SCALE-owned.** A design system's `--z-*` tokens,
+   where they exist, are design-side only — apps never consume them.
+3. **Tempo is mapped, never assumed.** `--shell-transition` takes the
+   design's `--dur-base`. The surveyed systems run 150–200ms; the mapping,
+   not a hardcoded value, is the rule.
+4. **Shell chrome consumes semantic roles only** — header and nav on
+   `--surface-page`/`--surface-card` with `--border-hairline`, active nav
+   state on `--accent`, the expanded sheet at `--shadow-lg`, transitions
+   on `--dur-base` + `--ease-out`. With that discipline, restyling an app
+   is a token delivery with zero shell edits.
+
 ## The Surfaces
 
 ### Thin header
