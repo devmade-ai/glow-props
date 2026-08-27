@@ -193,11 +193,21 @@ close/reopen. The input adapts to the keyboard the same way modals do
 The sheet shows detail of the current selection. Its contract:
 
 1. **No selection → no sheet.** Empty is the closed state, not a leftover
-   peek.
+   peek. Read "selection" as **content**, not navigation: in a route-bound
+   sheet the route always exists, but the detail it summarizes may not —
+   fc-fanfare-chess's game route spans a setup phase with no moves and no
+   captures, and rendering the sheet there produced an empty drawer whose
+   peek merely duplicated the status banner. Gate the sheet on the states
+   where its content exists, not on the selection existing.
 2. **Select something → peek.** A drag-handle pill plus a one-line summary,
    sitting above the nav plus `var(--safe-bottom)`. Peek height is
    UI-sized — handle + one line + safe-area — **never a viewport fraction**.
    (15% of a phone is ~100px before the nav and home indicator are added.)
+   At peek, **hide the sheet's body outright** (`visibility: hidden`), not
+   just clip it — clipped body content bleeds its top rows into the peek
+   band and reads as a broken half-open drawer (seen on-device). Un-hide it
+   while a drag is in progress so content appears as the sheet grows under
+   the finger.
 3. **Drag to expand: two snaps, 50% and 90% of the canvas.** Drag
    rubber-bands to the nearest snap; a drag released at 63% is not a resting
    state. Content taller than the snap scrolls inside the sheet
@@ -220,7 +230,11 @@ The sheet shows detail of the current selection. Its contract:
    while the AI split is open) — never glued across the full viewport.
 
 Snap heights are computed from the canvas; the expanded sheet is anchored to
-the viewport bottom, so it additionally covers the nav band:
+the viewport bottom, so it additionally covers the nav band. **When the
+anchor moves between peek (above the nav) and expanded (viewport bottom),
+transition `bottom` alongside the height** — an untransitioned anchor drops
+instantly on peek → half and the sheet dips onto the nav for a frame before
+the height catches up:
 
 ```css
 /* Requirement: snaps measure the canvas so 90% never eats the header.
@@ -312,6 +326,15 @@ below 30.
 - **Split panes take no z-index.** A positioned split pane creates a stacking
   context that traps every dropdown and popover inside the content column
   (Z_INDEX_SCALE.md, stacking-context gotchas).
+- **Page-owned overlays portal to `<body>`.** The canvas realizes its height
+  with `position: fixed`, which makes it a stacking context — a z-30 sheet
+  or z-60 dialog rendered *inside* it paints UNDER the z-20 header/nav no
+  matter what its z-index says (found by screenshot in fc-fanfare-chess,
+  2026-08-26: the expanded sheet sat below the nav). Any overlay a page
+  renders — sheet, confirm dialog, picker — must `createPortal` to
+  `document.body`; only outside the canvas does the Z scale work as
+  written. Shell-owned surfaces (drawers, tutorial) already mount outside
+  the canvas in the shell component and need nothing.
 - **The 30 layer is scrimless by construction.** It sits below the backdrop
   (40), so nothing at 30 ever owns a scrim — that is Rule 6 of the scale,
   made explicit by this baseline.
