@@ -178,25 +178,21 @@ headHtml = mustReplace(
 writeFileSync(join(root, 'partials/head-common.html'), headHtml);
 console.log('Updated partials/head-common.html');
 
-// 3. index.html / pattern.html / project.html — initial meta tag values.
-// All three pages carry the theme-color pair; missing one lets it silently
-// drift on the next DaisyUI update.
+// 3. index.html / pattern.html / project.html — the initial meta tag value.
+// All three pages carry ONE unqualified theme-color meta (the default light
+// theme's color — the no-JS truth; the pre-paint bootstrap owns it from load
+// on). The media-qualified pair was dropped: Chromium re-evaluates those
+// unreliably after a JS content update in standalone/WebAPK (THEME_DARK_MODE
+// pattern). Missing a page lets it silently drift on the next DaisyUI update.
 const defaultLightColor = metaColors['caramellatte'] || '#000000';
-const defaultDarkColor = metaColors['coffee'] || '#261b25';
 for (const htmlFile of ['index.html', 'pattern.html', 'project.html']) {
   const htmlPath = join(root, htmlFile);
   let html = readFileSync(htmlPath, 'utf8');
   html = mustReplace(
     html,
-    /(<meta name="theme-color" content=")#[0-9a-fA-F]{6}(" media="\(prefers-color-scheme: light\)")/,
+    /(<meta name="theme-color" content=")#[0-9a-fA-F]{6}(">)/,
     `$1${defaultLightColor}$2`,
-    `${htmlFile} light theme-color meta`,
-  );
-  html = mustReplace(
-    html,
-    /(<meta name="theme-color" content=")#[0-9a-fA-F]{6}(" media="\(prefers-color-scheme: dark\)")/,
-    `$1${defaultDarkColor}$2`,
-    `${htmlFile} dark theme-color meta`,
+    `${htmlFile} theme-color meta`,
   );
   writeFileSync(htmlPath, html);
   console.log(`Updated ${htmlFile}`);
