@@ -5,14 +5,24 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <meta name="color-scheme" content="light dark">
   <!-- Requirement: PWA status bar color that matches the active DaisyUI theme
-       Approach: Two meta tags with media queries — browser picks the one matching OS preference
-         on initial load. JavaScript overwrites both to the active theme's color on every change.
-         Light themes use primary hex, dark themes use base-100 hex — white status bar
+       Approach: ONE unqualified meta, owned by JS — the pre-paint bootstrap
+         (head-common.html) sets it to the active theme's color synchronously
+         during head parse, and the theme module re-sets it on every change.
+         The static value is the default light theme's color: dark is only
+         ever applied by JS, so a no-JS page is always light. Light themes
+         use primary hex, dark themes use base-100 hex — white status bar
          text must always be legible (see docs/AI_MISTAKES.md).
-       Alternative: Single meta tag without media — rejected, causes flash on iOS where the
-         browser reads the tag before JS runs and OS preference determines initial text color. -->
-  <meta name="theme-color" content="#000000" media="(prefers-color-scheme: light)">
-  <meta name="theme-color" content="#261b25" media="(prefers-color-scheme: dark)">
+       Alternative: a media-qualified pair (one per prefers-color-scheme) —
+         rejected 2026-08-28: Chromium re-evaluates media-qualified
+         theme-color metas unreliably after a JS content update in
+         standalone/WebAPK, sticking the Android status bar on the load-time
+         color when the in-app theme disagrees with the OS scheme (observed
+         on device in fc-fanfare-chess; the fix originated there and was
+         upstreamed). The pair was also wrong for no-JS pages, which are
+         always light. The feared iOS parse-gap flash of the single meta is
+         sub-frame (the bootstrap is the adjacent head node) and was never
+         observed. -->
+  <meta name="theme-color" content="#000000">
   <!-- Requirement: Defense-in-depth against XSS — restrict script/style sources
        Approach: CSP meta tag allowing self, inline scripts (required for flash prevention),
          Google Fonts, and Google Analytics (gtag.js + GA4 beacons).
