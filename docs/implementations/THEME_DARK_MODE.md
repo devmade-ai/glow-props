@@ -567,18 +567,30 @@ The script should update every file that contains theme lists or color maps so t
 
 #### HTML Setup
 
-Two meta tags with media queries provide the correct initial color before JavaScript runs:
+**ONE unqualified meta tag, owned by JS.** Its static value is the default
+light theme's color — dark only ever happens via JS, so a no-JS page is
+always light:
 
 ```html
-<meta name="theme-color" content="<default-light-hex>" media="(prefers-color-scheme: light)">
-<meta name="theme-color" content="<default-dark-hex>" media="(prefers-color-scheme: dark)">
+<meta name="theme-color" content="<default-light-hex>">
 ```
 
-These should also be updated by the build script.
+This should also be updated by the build script.
+
+> **Do NOT use a media-qualified pair** (`media="(prefers-color-scheme: …)"`,
+> one meta per scheme). Chromium re-evaluates media-qualified theme-color
+> metas unreliably after a JS `content` update in standalone/WebAPK — the
+> Android status bar sticks on the load-time color whenever the in-app theme
+> disagrees with the OS scheme (observed on device in fc-fanfare-chess,
+> 2026-08-28: cream bar over a dark app). The pair is also wrong for no-JS
+> pages, which are always light. The single meta's pre-JS window is the
+> parse gap to the adjacent bootstrap script — sub-frame, never observed as
+> a flash.
 
 #### JavaScript Update
 
-Update **both** meta tags on every theme change — overwriting the media-specific values so the active theme's color always wins regardless of OS preference:
+Set the meta's color on every theme change (`querySelectorAll` keeps this
+robust even if a page still carries stragglers):
 
 ```javascript
 const color = META_COLORS[activeTheme] || '#808080'
