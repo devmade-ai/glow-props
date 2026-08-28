@@ -187,7 +187,13 @@ desktop breakpoint the nav folds into the header — no bottom nav at 768px and
 up, unless the short-viewport clause applies.
 
 The expanded bottom sheet covers the nav (sheet z-30 over nav z-20). The peek
-does not — it sits above the nav geometrically and the nav stays tappable.
+does not: at rest it sits BELOW the nav's z (z-10 under z-20), anchored at the
+viewport bottom with its lower band tucked behind the opaque nav — the visible
+peek strip sits above the nav geometrically and the nav stays tappable. Never
+float the peek above the nav at a higher z: its shadow spills onto the bar and
+the card reads as broken layering — a sheet stacked over the chrome (observed
+on device in fc-fanfare-chess, 2026-08-28). Grabbing or expanding lifts the
+sheet to z-30, where it covers the nav.
 
 ### Left drawer — the menu
 
@@ -259,31 +265,37 @@ The sheet shows detail of the current selection. Its contract:
    the expanded sheet, centered in the content region (the remaining pane
    while the AI split is open) — never glued across the full viewport.
 
-Snap heights are computed from the canvas; the expanded sheet is anchored to
-the viewport bottom, so it additionally covers the nav band. **When the
-anchor moves between peek (above the nav) and expanded (viewport bottom),
-transition `bottom` alongside the height** — an untransitioned anchor drops
-instantly on peek → half and the sheet dips onto the nav for a frame before
-the height catches up:
+Snap heights are computed from the canvas, and the sheet is **always anchored
+at the viewport bottom** — every snap height (peek included) adds the nav
+band, and at rest-peek that extra band simply hides behind the opaque nav
+(the z rule above). One anchor means one animated dimension: only the height
+transitions, and the whole class of anchor/height desync bugs (the sheet
+dipping onto the nav for a frame mid-snap) cannot occur. The earlier shape —
+peek anchored above the nav, anchor dropping to the viewport edge on expand,
+`bottom` transitioned alongside height — is superseded: it needed the paired
+transition to stay glitch-free and still produced the floating-peek layering
+the z rule forbids.
 
 ```css
 /* Requirement: snaps measure the canvas so 90% never eats the header.
-   The nav-band term exists because the expanded sheet covers the nav;
+   The nav-band term is in EVERY snap (the sheet is always anchored at the
+   viewport bottom; peek's band hides behind the nav, expanded covers it);
    on desktop --nav-height is 0px (the nav folded), so the term — and the
    band it would wrongly reserve — vanishes with it. */
+.sheet[data-snap="peek"] {
+  height: calc(
+    var(--sheet-peek-height) + var(--nav-height) + var(--safe-bottom)
+  );
+}
 .sheet[data-snap="half"] {
   height: calc(
     var(--canvas-height) * var(--sheet-snap-half)
     + var(--nav-height) + var(--safe-bottom)
   );
 }
-/* The sheet's positioned wrapper: `bottom` MUST be in the transition
-   alongside height — the anchor drops from above-the-nav (peek) to the
-   viewport edge (expanded), and an untransitioned anchor dips the sheet
-   onto the nav for a frame (see the peek rule above). */
-.sheet-wrapper {
-  transition: bottom var(--shell-transition) ease-out;
-}
+/* The sheet's positioned wrapper stays at bottom: 0 in every snap; the
+   z-index is the only thing that changes (rest-peek below the nav,
+   dragging/expanded above — see the stacking rule). */
 ```
 
 The drag handle is a real `<button>`: a 12–16px painted pill inside a 44px
