@@ -40,7 +40,7 @@ shell; apps with a working canvas, selections, or an assistant surface do.
 │ ┌──────────────────────────┐ │
 │ │ ═══  peek (one line)     │ │  base band, above the nav
 ├─┴──────────────────────────┴─┤
-│ bottom nav   [•][•][•][menu] │  z-20 · var(--safe-bottom)
+│ [menu] ┃  [•]  [•]  ┃ [slot] │  z-20 · var(--safe-bottom)
 └──────────────────────────────┘
 ```
 
@@ -185,6 +185,16 @@ Primary destinations plus the **menu button**, which opens the left drawer.
 Fixed at z-20 with `padding-bottom: var(--safe-bottom)`. At the
 desktop breakpoint the nav folds into the header — no bottom nav at 768px and
 up, unless the short-viewport clause applies.
+
+**Zone layout:** the menu button sits far LEFT behind a hairline separator;
+the destinations distribute **evenly** (`justify-evenly`) across the middle
+zone; a second hairline closes the zone, followed by a reserved far-right
+slot with the menu button's exact footprint — empty until an item needs it,
+so its arrival never shifts the layout. (Adopted from fc-fanfare-chess
+2026-08-28; the earlier destinations-left / menu-right shape is superseded.)
+Destination icons are stroke glyphs matching one line weight — an app's
+filled artwork (fc's Cburnett pieces) is content imagery, not iconography,
+and a filled mark is illegible on one of the two themes.
 
 The expanded bottom sheet covers the nav (sheet z-30 over nav z-20). The peek
 does not: at rest it sits BELOW the nav's z (z-10 under z-20), anchored at the
