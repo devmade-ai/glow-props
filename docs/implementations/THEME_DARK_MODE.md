@@ -587,6 +587,22 @@ This should also be updated by the build script.
 > parse gap to the adjacent bootstrap script — sub-frame, never observed as
 > a flash.
 
+> **Installed-WebAPK caveat — dynamic may not work at all.** An installed
+> WebAPK can pin the status bar to the manifest's **baked** `theme_color`
+> and ignore page-meta updates entirely (observed on device in
+> fc-fanfare-chess even after the single-meta fix). The manifest holds one
+> value, so per-theme switching has no reliable channel there. If the
+> installed app's bar matters, prefer **one static color that works over
+> every theme**, stamped into the meta AND the manifest `theme_color` by
+> the build script — and pick it for OS icon legibility: clearly bright
+> (the OS picks dark icons) or clearly dark/saturated (light icons), never
+> near the ~3:1 contrast-with-white boundary where the icon choice becomes
+> a per-device coin flip. fc-fanfare-chess uses its dark-theme brass
+> `#e8b64a` this way; the static route also deletes the whole dynamic
+> update machinery (bootstrap meta block, theme-module updater, color-map
+> module). Dynamic per-theme updates remain fine for browser-tab-first
+> apps — this is a decision, not a migration order.
+
 #### JavaScript Update
 
 Set the meta's color on every theme change (`querySelectorAll` keeps this
