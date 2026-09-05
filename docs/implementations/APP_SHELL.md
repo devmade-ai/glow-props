@@ -188,10 +188,33 @@ up, unless the short-viewport clause applies.
 
 **Zone layout:** the menu button sits far LEFT behind a hairline separator;
 the destinations distribute **evenly** (`justify-evenly`) across the middle
-zone; a second hairline closes the zone, followed by a reserved far-right
-slot with the menu button's exact footprint — empty until an item needs it,
-so its arrival never shifts the layout. (Adopted from fc-fanfare-chess
-2026-08-28; the earlier destinations-left / menu-right shape is superseded.)
+zone; a second hairline closes the zone, followed by a far-right slot with the
+menu button's exact footprint. (Adopted from fc-fanfare-chess 2026-08-28; the
+earlier destinations-left / menu-right shape is superseded.)
+
+**The far-right slot may be CONTEXTUAL, not only permanent.** It holds an
+empty same-footprint spacer by default, and an app may swap a control into it
+for the routes where that control means something — rendering the spacer
+everywhere else, so the swap costs no layout shift. That is what the reserved
+footprint buys, and it is what makes the slot usable at all for a control the
+whole app does not share: a permanent item that is inert on most routes is
+worse than no item, especially carrying a badge that means nothing there.
+Two rules hold either way:
+
+- **The slot is not a destination.** Destinations live in the middle zone; the
+  slot takes an action or an overlay opener, the same category as the menu
+  button beside it.
+- **One visible opener per breakpoint.** The nav folds away at the desktop
+  breakpoint, so a control mounted here needs a header mount for desktop —
+  the same arrangement the menu trigger already uses (`hidden
+  shell-desktop:inline-flex` on the header copy). Two visible openers at one
+  breakpoint is the "second burger" the thin-header rule bans.
+
+(Contextual use adopted from fc-fanfare-chess 2026-09-05, where the slot
+carries the in-game chat opener on a game screen with an opponent: chat is
+per-game, so it is dead on four of five routes as a permanent item, while
+bottom-right is the reachable corner for a control tapped repeatedly mid-game
+— which the header placement it replaced gave up.)
 Destination icons are stroke glyphs matching one line weight — an app's
 filled artwork (fc's Cburnett pieces) is content imagery, not iconography,
 and a filled mark is illegible on one of the two themes.
